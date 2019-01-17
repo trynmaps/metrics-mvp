@@ -1,1 +1,1 @@
-# Data Visualization Project for Open Transit
+# Data Visualization Project for OpenTransit
