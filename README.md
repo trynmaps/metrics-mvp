@@ -19,8 +19,3 @@ Key links:
 * Flask backend 
 * React/Vue
 * D3 for visualization
-
-
-# Data Visualization Project for OpenTransit
-
-An application to pull up metrics based on: https://github.com/trynmaps/opentransit-metrics
