@@ -1,4 +1,4 @@
-def get_average_waiting_time(stop_id, route_id, direction, time_bucket):
+def get_average_waiting_time(stop_id, route_id, direction, time_range):
   # Returns the average waiting time for all buses with the given stop, route, and direction, filtered within the given time bucket 
   # and dates
   
@@ -14,7 +14,7 @@ def test_average_waiting_time():
     "101", # stop id
     "14", # route number
     "O", # direction - O for outbound, I for inbound
-    [360, 480] # number of minutes from midnight; this example means we only consider 6am-8am
+    (360, 480) # number of minutes from midnight; this example means we only consider 6am-8am
   )
 
 """
