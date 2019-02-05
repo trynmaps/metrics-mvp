@@ -21,6 +21,8 @@ source venv/bin/activate
 python app.py
 ```
 
+...
+
 ## Notes for developers
 
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt` so other contributors have the latest versions of required packages.
