@@ -13,6 +13,7 @@
     "eslint-plugin-react": "^7.12.4",
     "prop-types": "^15.6.2",
     "react": "^16.7.0",
+    "react-d3-components": "^0.9.1",
     "react-dom": "^16.7.0",
     "react-scripts": "2.1.3"
   },
