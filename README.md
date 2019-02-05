@@ -17,7 +17,6 @@ Make sure you're using Python 3. `python --version` (without your virtual enviro
 ## Running
 
 ```
-virtualenv -p python3 venv
 source venv/bin/activate
 python app.py
 ```
