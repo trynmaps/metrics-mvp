@@ -7,7 +7,7 @@
 ```
 virtualenv -p python3 venv
 source venv/bin/activate
-pip install flask flask-cors
+pip install -r requirements.txt
 ```
 
 Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
@@ -19,6 +19,10 @@ virtualenv -p python3 venv
 source venv/bin/activate
 python app.py
 ```
+
+## Notes for developers
+
+If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt` so other contributors have the latest versions of required packages.
 
 ## Old Stuff
 
