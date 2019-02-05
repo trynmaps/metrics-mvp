@@ -5,12 +5,20 @@
 > Todo: consider requiring virtualenv https://testdriven.io/blog/developing-a-single-page-app-with-flask-and-vuejs/
 
 ```
+virtualenv -p python3 venv
+source venv/bin/activate
 pip install flask flask-cors
 ```
 
+Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
+
 ## Running
 
-
+```
+virtualenv -p python3 venv
+source venv/bin/activate
+python app.py
+```
 
 ## Old Stuff
 
