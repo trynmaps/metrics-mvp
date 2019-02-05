@@ -1,4 +1,5 @@
 from flask import Flask
+import mock_metrics
 app = Flask(__name__)
 
 @app.route('/')
