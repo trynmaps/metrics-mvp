@@ -1,3 +1,19 @@
+# OpenTransit's Metrics MVP
+
+## Getting started
+
+> Todo: consider requiring virtualenv https://testdriven.io/blog/developing-a-single-page-app-with-flask-and-vuejs/
+
+```
+pip install flask flask-cors
+```
+
+## Running
+
+
+
+## Old Stuff
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
