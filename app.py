@@ -21,7 +21,7 @@ def ping_pong():
 # hello world
 @app.route('/', methods=['GET'])
 def index():
-    return "hello, world"
+    return "hello, san francisco"
 
 
 if __name__ == '__main__':
