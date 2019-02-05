@@ -24,7 +24,8 @@ python app.py
 
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt` so other contributors have the latest versions of required packages.
 
-## Old Stuff
+
+# HERE BE OLD STUFF
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
