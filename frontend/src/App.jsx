@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { BarChart } from 'react-d3-components';
 import './App.css';
+import ControlPanel from './components/ControlPanel';
 
 const data = [{
   label: 'somethingA',
@@ -31,11 +32,12 @@ class App extends Component {
       <div
         className="App"
         style={
-        {
-          padding: '10%',
+          {
+            padding: '10%',
+          }
         }
-      }
       >
+        <ControlPanel />
         <BarChart
           data={data}
           width={400}

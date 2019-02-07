@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import Control from './Control';
 
 class ControlPanel extends Component {
   constructor(props) {
@@ -8,17 +8,13 @@ class ControlPanel extends Component {
   }
 
   render() {
-    const { trynState } = this.props || {};
     return (
-      <div>
-        {trynState}
+      <div className="controls-wrapper">
+        <Control name="weirdo" />
       </div>
     );
   }
 }
 
-ControlPanel.propTypes = {
-  trynState: PropTypes.string.isRequired,
-};
 
 export default ControlPanel;
