@@ -1,6 +1,11 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 
+"""
+This is the app's main file!
+"""
+
+from backend import mock_metrics
 
 # configuration
 DEBUG = True
@@ -21,7 +26,7 @@ def ping_pong():
 # hello world
 @app.route('/', methods=['GET'])
 def index():
-    return "hello, san francisco"
+    return "hello, this is a message: " + mock_metrics.test()
 
 
 if __name__ == '__main__':
