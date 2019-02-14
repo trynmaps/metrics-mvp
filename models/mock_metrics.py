@@ -16,6 +16,9 @@ def get_average_waiting_time(stop_id, route_id, direction, time_range):
         route_id (str): the numeric ID of the bus route, e.g. "12"
         direction (str): "O" for outbound, "I" for inbound
         time_range ((int, int)): number of minutes from midnight to filter by. (540, 1020) means 9a-5p.
+
+    Returns:
+        float: average waiting time,, in minutes
     """
 
   # TODO: later on, add filtering for days of week, dates, and times of year
