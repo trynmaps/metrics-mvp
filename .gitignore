@@ -335,3 +335,6 @@ typings/
 .venv/
 
 # End of https://www.gitignore.io/api/node,flask,python,intellij
+#
+# idea
+.idea
