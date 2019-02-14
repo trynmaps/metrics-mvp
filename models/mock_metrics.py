@@ -25,10 +25,10 @@ def get_average_waiting_time(stop_id, route_id, direction, date_range, time_rang
         double: average waiting time, in minutes
     """
 
-  # TODO: later on, add filtering for days of week, dates, and times of year
+    # TODO: later on, add filtering for days of week, dates, and times of year
 
-  # This is a stub function so we return some random number :)
-  return 5.0
+    # This is a stub function so we return some random number :)
+    return 5.5
 
 """
 josh's comments
