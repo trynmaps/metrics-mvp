@@ -10,7 +10,7 @@ class ControlPanel extends Component {
   render() {
     return (
       <div className="controls-wrapper">
-        <DropdownControl prettyName="Route" name="route" options={[1, 2, 3, 4, 5]} />
+        <DropdownControl prettyName="Route" name="route" options={[1, 2, 3, 4, 5]} variant="success" />
       </div>
     );
   }

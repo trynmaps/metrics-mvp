@@ -9,21 +9,25 @@ class DropdownControl extends Component {
   }
 
   render() {
-    const { name, prettyName, options } = this.props;
-    const selectId = `${name}-select`;
+    const {
+      name,
+      prettyName,
+      options,
+      variant,
+    } = this.props;
     const controlClass = `${name}-control`;
     const dropdownId = `${name}-dropdown`;
     return (
       <div className={controlClass}>
         <Dropdown>
-          <Dropdown.Toggle variant="success" id={dropdownId}>
+          <Dropdown.Toggle variant={variant} id={dropdownId}>
             {prettyName}
           </Dropdown.Toggle>
 
           <Dropdown.Menu>
             {
               options.map((index, value) => (
-                <Dropdown.Item href="#">{value}</Dropdown.Item>
+                <Dropdown.Item key={index} href="#">{value}</Dropdown.Item>
               ))
             }
           </Dropdown.Menu>
@@ -37,6 +41,7 @@ DropdownControl.propTypes = {
   name: PropTypes.string.isRequired,
   options: PropTypes.instanceOf(Array).isRequired,
   prettyName: PropTypes.string.isRequired,
+  variant: PropTypes.string.isRequired,
 };
 
 export default DropdownControl;
