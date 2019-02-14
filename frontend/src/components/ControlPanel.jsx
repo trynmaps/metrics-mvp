@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import Control from './Control';
+import DropdownControl from './DropdownControl';
 
 class ControlPanel extends Component {
   constructor(props) {
@@ -10,7 +10,7 @@ class ControlPanel extends Component {
   render() {
     return (
       <div className="controls-wrapper">
-        <Control name="weirdo" />
+        <DropdownControl prettyName="Route" name="route" options={[1, 2, 3, 4, 5]} />
       </div>
     );
   }
