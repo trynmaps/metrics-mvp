@@ -1,15 +1,18 @@
+def test():
+    return "test test test"
+
 def get_average_waiting_time(stop_id, route_id, direction, time_range):
-  # Returns the average waiting time for all buses with the given stop, route, and direction, filtered within the given time bucket 
+  # Returns the average waiting time for all buses with the given stop, route, and direction, filtered within the given time bucket
   # and dates
-  
+
   # Later on, add filtering for days of week and times of year
- 
-    
-  return 5 # in minutes 
+
+
+  return 5 # in minutes
 
 
 def test_average_waiting_time():
-  # Example use of the get_average_waiting_time() function 
+  # Example use of the get_average_waiting_time() function
   return get_average_wait_time(
     "101", # stop id
     "14", # route number
@@ -20,7 +23,7 @@ def test_average_waiting_time():
 """
 josh's comments
 
-  # For 
+  # For
   #  - last weekday
   #  - last weekend day
   #  - last full work week
@@ -32,7 +35,7 @@ josh's comments
   #  - last 5 years
   #  calculate average for each time_buckets
   #  calculate variability of each time buckets
-  #  include comparison of actual to scheduled 
-  
-  
+  #  include comparison of actual to scheduled
+
+
 """

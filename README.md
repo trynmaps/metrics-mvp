@@ -4,7 +4,9 @@ The Flask app lives here, the React app lives in the subfolder.
 
 ## Getting started
 
-> Todo: consider requiring virtualenv https://testdriven.io/blog/developing-a-single-page-app-with-flask-and-vuejs/
+Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
+
+Then run:
 
 ```
 virtualenv -p python3 venv
@@ -12,16 +14,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
-
 ## Running
 
 ```
 source venv/bin/activate
 python app.py
 ```
-
-...
 
 ## Notes for developers
 
