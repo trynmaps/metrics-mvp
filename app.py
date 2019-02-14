@@ -32,10 +32,11 @@ def index():
         stop_id="4970",
         route_id="12",
         direction="O",
+        date_range=["2019-01-01", "2019-01-02", "2019-01-03"]
         # use the last month; calculate it and turn it into timestamps
-        date_range=[d.date().strftime("%Y-%m-%d") for d in
-            pd.date_range(pd.datetime.today(), periods=30).tolist()]
-        ("09:00", "17:00")))
+        # date_range=[d.date().strftime("%Y-%m-%d") for d in
+            # pd.date_range(pd.datetime.today(), periods=30).tolist()]
+        time_range=("09:00", "17:00")))
 
 
 if __name__ == '__main__':
