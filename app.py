@@ -5,6 +5,8 @@ from flask_cors import CORS
 This is the app's main file!
 """
 
+import pandas as pd
+
 from models import mock_metrics
 
 # configuration
@@ -27,9 +29,12 @@ def ping_pong():
 @app.route('/', methods=['GET'])
 def index():
     return "average waiting time is " + str(mock_metrics.get_average_waiting_time(
-        123,
-        14,
-        "O",
+        stop_id="4970",
+        route_id="12",
+        direction="O",
+        # use the last month; calculate it and turn it into timestamps
+        date_range=[d.date().strftime("%Y-%m-%d") for d in
+            pd.date_range(pd.datetime.today(), periods=30).tolist()]
         ("09:00", "17:00")))
 
 
