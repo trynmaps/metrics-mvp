@@ -15,7 +15,8 @@ def get_average_waiting_time(stop_id, route_id, direction, time_range):
         stop_id (str): the numeric ID of the bus stop, e.g. "4970"
         route_id (str): the numeric ID of the bus route, e.g. "12"
         direction (str): "O" for outbound, "I" for inbound
-        time_range ((int, int)): number of minutes from midnight to filter by. (540, 1020) means 9a-5p.
+        time_range ((str, str)): a tuple with start and end times
+            in Pacific Time (UTC-8), formatted as `HH:MM`.
 
     Returns:
         double: average waiting time,, in minutes
