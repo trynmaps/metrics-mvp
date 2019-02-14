@@ -5,7 +5,7 @@ from flask_cors import CORS
 This is the app's main file!
 """
 
-from backend import mock_metrics
+from models import mock_metrics
 
 # configuration
 DEBUG = True
