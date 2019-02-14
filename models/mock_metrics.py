@@ -18,13 +18,13 @@ def get_average_waiting_time(stop_id, route_id, direction, time_range):
         time_range ((int, int)): number of minutes from midnight to filter by. (540, 1020) means 9a-5p.
 
     Returns:
-        float: average waiting time,, in minutes
+        double: average waiting time,, in minutes
     """
 
   # TODO: later on, add filtering for days of week, dates, and times of year
 
-
-  return 5 # in minutes
+  # This is a stub function so we return some random number :)
+  return 5.0
 
 """
 josh's comments
