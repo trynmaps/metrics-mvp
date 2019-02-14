@@ -26,7 +26,11 @@ def ping_pong():
 # hello world
 @app.route('/', methods=['GET'])
 def index():
-    return "hello, this is a message: " + mock_metrics.test()
+    return "average waiting time is " + str(mock_metrics.get_average_waiting_time(
+        123,
+        14,
+        "O",
+        (900, 1700)))
 
 
 if __name__ == '__main__':
