@@ -1,19 +1,18 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_cors import CORS
+import pandas as pd
+
+from models import mock_metrics
 
 """
 This is the app's main file!
 """
 
-import pandas as pd
-
-from models import mock_metrics
-
 # configuration
 DEBUG = True
 
 # instantiate the app
-app = Flask(__name__)
+app = Flask(__name__, template_folder="./frontend/public")
 app.config.from_object(__name__)
 
 # enable CORS
@@ -38,6 +37,9 @@ def index():
             # pd.date_range(pd.datetime.today(), periods=30).tolist()]
         time_range=("09:00", "17:00")))
 
+@app.route('/react', methods=['GET'])
+def react():
+    return render_template("index.html")
 
 if __name__ == '__main__':
     app.run()
