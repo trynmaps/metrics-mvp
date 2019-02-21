@@ -2,11 +2,13 @@ import pandas as pd
 
 from . import get_stops
 
+
 def test():
     return "test test test"
 
-def get_average_waiting_time(stop_id, route_id, direction, 
-                             date_range = [d.date().strftime("%Y-%m-%d") for d in pd.date_range(pd.datetime.today(), periods=30).tolist()], 
+
+def get_average_waiting_time(stop_id, route_id, direction,
+                             date_range = [d.date().strftime("%Y-%m-%d") for d in pd.date_range(pd.datetime.today(), periods=30).tolist()],
                              time_range = ("00:00", "23:59")):
     """Gets average waiting time for all buses with given parameters.
 

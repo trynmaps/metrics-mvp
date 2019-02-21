@@ -1,8 +1,7 @@
 from flask import Flask, jsonify, render_template
 from flask_cors import CORS
-import pandas as pd
 
-from models import mock_metrics
+from models import metrics
 
 """
 This is the app's main file!
@@ -29,7 +28,7 @@ def ping_pong():
 # hello world
 @app.route('/', methods=['GET'])
 def index():
-    return "average waiting time is " + str(mock_metrics.get_average_waiting_time(
+    return "average waiting time is " + str(metrics.get_average_waiting_time(
         stop_id="4970",
         route_id="12",
         direction="O",
