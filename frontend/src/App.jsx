@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 import ControlPanel from './components/ControlPanel';
-import Info from './components/Info.jsx';
+import Info from './components/Info';
 
 
 class App extends Component {
@@ -13,8 +13,8 @@ class App extends Component {
   render() {
     return (
       <div>
-        <ControlPanel></ControlPanel>
-        <Info></Info>
+        <ControlPanel />
+        <Info />
       </div>
     );
   }

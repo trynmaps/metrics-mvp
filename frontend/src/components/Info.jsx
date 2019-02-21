@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-import { BarChart } from 'react-d3-components';
-import { LineChart } from 'react-d3-components';
+import { BarChart, LineChart } from 'react-d3-components';
 
 const barData = [{
   label: 'somethingA',
@@ -22,29 +21,31 @@ const barData = [{
 
 const lineData = [
   {
-    label: '', values: [
+    label: '',
+    values: [
       {
         x: '5am',
-        y: 2
+        y: 2,
       },
       {
         x: '7am',
-        y: 4
+        y: 4,
       },
       {
         x: '9am',
-        y: 7
+        y: 7,
       },
       {
         x: '11am',
-        y: 7
+        y: 7,
       },
       {
         x: '1pm',
-        y: 5
-      }
-            ]},
-]
+        y: 5,
+      },
+    ],
+  },
+];
 
 class Info extends Component {
   constructor(props) {
@@ -53,7 +54,6 @@ class Info extends Component {
   }
 
   render() {
-    const { name } = this.props;
     return (
       <div
         className="App"
@@ -74,11 +74,11 @@ class Info extends Component {
                   {
                     top: 10,
                     bottom: 50,
-                    left: .5,
-                    right: 20
+                    left: 0.5,
+                    right: 20,
                   }
                 }
-               />
+              />
             </div>
             <div className="col-md-6">
               <BarChart
@@ -96,7 +96,6 @@ class Info extends Component {
               />
             </div>
           </div>
-
         </div>
       </div>
     );
