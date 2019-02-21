@@ -9,6 +9,9 @@ class DropdownControl extends Component {
   }
 
   render() {
+    const handleChange = (event) => {
+      event.preventDefault();
+    };
     const {
       name,
       prettyName,
@@ -27,7 +30,7 @@ class DropdownControl extends Component {
           <Dropdown.Menu>
             {
               options.map((index, value) => (
-                <Dropdown.Item key={index} href="#">{value}</Dropdown.Item>
+                <Dropdown.Item onClick={handleChange} key={index} eventKey={index} href="#">{value}</Dropdown.Item>
               ))
             }
           </Dropdown.Menu>
