@@ -5,20 +5,19 @@ import Dropdown from 'react-bootstrap/Dropdown';
 class DropdownControl extends Component {
   constructor(props) {
     super(props);
-    this.state = 0;
+    this.state = { selected: [] };
   }
 
   render() {
-    const handleChange = (event) => {
-      event.preventDefault();
-    };
+    const { selected } = this.state;
     const {
       name,
       prettyName,
       options,
       variant,
+      handleSelected,
     } = this.props;
-    const controlClass = `${name}-control`;
+    const controlClass = `${name}-control control`;
     const dropdownId = `${name}-dropdown`;
     return (
       <div className={controlClass}>
@@ -26,11 +25,11 @@ class DropdownControl extends Component {
           <Dropdown.Toggle variant={variant} id={dropdownId}>
             {prettyName}
           </Dropdown.Toggle>
-
+          {selected}
           <Dropdown.Menu>
             {
               options.map((index, value) => (
-                <Dropdown.Item onClick={handleChange} key={index} eventKey={index} href="#">{value}</Dropdown.Item>
+                <Dropdown.Item onClick={handleSelected} key={index} eventKey={value} href="#">{value}</Dropdown.Item>
               ))
             }
           </Dropdown.Menu>
@@ -45,6 +44,7 @@ DropdownControl.propTypes = {
   options: PropTypes.instanceOf(Array).isRequired,
   prettyName: PropTypes.string.isRequired,
   variant: PropTypes.string.isRequired,
+  handleSelected: PropTypes.func.isRequired,
 };
 
 export default DropdownControl;

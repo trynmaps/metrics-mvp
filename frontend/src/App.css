@@ -15,3 +15,11 @@
 .App-link {
   color: #61dafb;
 }
+
+.controls-wrapper {
+  display: flex;
+}
+
+.control {
+  flex: 0 1 100%;
+}
