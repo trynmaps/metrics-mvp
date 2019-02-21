@@ -1,0 +1,11 @@
+ports:
+  - port: 5000
+    onOpen: open-browser
+
+tasks:
+- command: |
+    virtualenv -p python3 venv &&
+    source venv/bin/activate &&
+    pip install -r requirements.txt &&
+    python app.py
+- command: git status && git pull
