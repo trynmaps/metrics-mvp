@@ -10,26 +10,28 @@ class DropdownControl extends Component {
 
   render() {
     const { selected } = this.state;
-    const {
-      name,
+    const { obj } = this.props;
+    const [
+      handleSelected,
       prettyName,
+      name,
       options,
       variant,
-      handleSelected,
-    } = this.props;
-    const controlClass = `${name}-control control`;
-    const dropdownId = `${name}-dropdown`;
+    ] = obj;
+
+    const controlClass = `${name.name}-control control`;
+    const dropdownId = `${name.name}-dropdown`;
     return (
       <div className={controlClass}>
         <Dropdown>
-          <Dropdown.Toggle variant={variant} id={dropdownId}>
-            {prettyName}
+          <Dropdown.Toggle variant={variant.variant} id={dropdownId}>
+            {prettyName.prettyName}
           </Dropdown.Toggle>
           {selected}
           <Dropdown.Menu>
             {
-              options.map((index, value) => (
-                <Dropdown.Item onClick={handleSelected} key={index} eventKey={value} href="#">{value}</Dropdown.Item>
+              options.options.map((index, value) => (
+                <Dropdown.Item onClick={handleSelected.handleSelected} key={index} eventKey={value} href="#">{value}</Dropdown.Item>
               ))
             }
           </Dropdown.Menu>
@@ -40,11 +42,7 @@ class DropdownControl extends Component {
 }
 
 DropdownControl.propTypes = {
-  name: PropTypes.string.isRequired,
-  options: PropTypes.instanceOf(Array).isRequired,
-  prettyName: PropTypes.string.isRequired,
-  variant: PropTypes.string.isRequired,
-  handleSelected: PropTypes.func.isRequired,
+  obj: PropTypes.instanceOf(Array).isRequired,
 };
 
 export default DropdownControl;
