@@ -19,7 +19,7 @@ pip install -r requirements.txt
 ### Option 2: in the cloud
 
 If you don't want to handle configuring your system, installing packages,
-wrangling Python versions, and stuff, just [use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp).
+wrangling Python versions, and stuff, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
 This will automatically install requirements on a cloud machine
 and get the app running for you instantly.
 
