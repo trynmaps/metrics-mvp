@@ -4,7 +4,7 @@ The Flask app lives here, the React app lives in the subfolder.
 
 ## Getting started
 
-### Option 1: on your own machine
+### Option 1: Local Environment
 
 Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
 
@@ -16,7 +16,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Option 2: in the cloud
+### Option 2: Cloud Environment
 
 If you don't want to handle configuring your system, installing packages,
 wrangling Python versions, and stuff, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
