@@ -25,9 +25,17 @@ CORS(app)
 def ping_pong():
     return jsonify('pong!')
 
-# hello world
+
+# home
 @app.route('/', methods=['GET'])
+def home():
+    return jsonify('hello! go to /metrics to see metrics')
+
+
+# hello world
+@app.route('/metrics', methods=['GET'])
 def index():
+    # TODO problem: this query times out i think
     return "average waiting time is " + str(metrics.get_average_waiting_time(
         stop_id="4970",
         route_id="12",
