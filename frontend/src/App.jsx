@@ -13,16 +13,20 @@ class App extends Component {
     super();
     this.state = 0;
   }
-  componentDidMount() {
+  fetchAvgWaitHandler = (selected, date, time) => {
     const {fetchGraphData} = this.props;
-    fetchGraphData();
+    var ms = date.getTime() + 86400000;
+    var tomorrow = new Date(ms);
+    const formattedDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000 )).toISOString().split("T")[0];
+    const formattedDate2 = new Date(tomorrow.getTime() - (tomorrow.getTimezoneOffset() * 60000 )).toISOString().split("T")[0];
+    fetchGraphData([...selected, formattedDate,formattedDate2]);
   }
   render() {
     const {graphData} = this.props;
     return (
       <div>
         {graphData}
-        <ControlPanel />
+        <ControlPanel avgWaitHandler={this.fetchAvgWaitHandler} />
         <Info />
       </div>
     );
@@ -35,7 +39,7 @@ class App extends Component {
   };
 
 const mapDispatchToProps = dispatch => ({
-  fetchGraphData: () => dispatch(fetchGraphData())
+  fetchGraphData: (data) => dispatch(fetchGraphData(data))
 });
 
 App.propTypes = {
