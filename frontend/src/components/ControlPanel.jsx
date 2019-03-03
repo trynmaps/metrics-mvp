@@ -6,7 +6,7 @@ import TimeKeeper from 'react-timekeeper';
 class ControlPanel extends Component {
   constructor(props) {
     super(props);
-    this.state = { selected: [],
+    this.state = { selected: {},
      date: new Date('2019-02-01T03:50'),
      displayTimepicker: false,
      time: '6:50 am'
@@ -14,14 +14,17 @@ class ControlPanel extends Component {
     this.handleSelected = this.handleSelected.bind(this);
   }
 
-  handleSelected(selected) {
-    let selectedValue=selected;
-    if(selected.indexOf('sid:')!== -1) {
-      selectedValue = selected.split("sid:")[1];
+  handleSelected(selectedValue, prettyName) {
+    const {selected} = this.state;
+    let selectedCopy = {...selected};
+    /*
+      temp fix. Should not pass sid through text
+    */
+    if(selectedValue.indexOf('sid:')!== -1) {
+      selectedValue = selectedValue.split("sid:")[1];
     }
-    this.setState(state => ({
-      selected: [...state.selected, selectedValue],
-    }));
+    selectedCopy[prettyName]=selectedValue;
+    this.setState({selected:selectedCopy});
   }
 
     onChange = date => this.setState({ date });
@@ -35,8 +38,7 @@ class ControlPanel extends Component {
     onSubmit = () => {
       const {avgWaitHandler} = this.props;
       const {selected, date, time} = this.state;
-      debugger;
-      avgWaitHandler([...selected], date, time);
+      avgWaitHandler({...selected}, date, time);
     }   
   render() {
     const {date, time} = this.state;

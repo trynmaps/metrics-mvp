@@ -15,18 +15,17 @@ class App extends Component {
   }
   fetchAvgWaitHandler = (selected, date, time) => {
     const {fetchGraphData} = this.props;
-    var ms = date.getTime() + 86400000;
-    var tomorrow = new Date(ms);
     const formattedDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000 )).toISOString().split("T")[0];
-    const formattedDate2 = new Date(tomorrow.getTime() - (tomorrow.getTimezoneOffset() * 60000 )).toISOString().split("T")[0];
-    fetchGraphData([...selected, formattedDate,formattedDate2]);
+    const values = {...selected};
+    values['date'] = formattedDate;
+    fetchGraphData(values);
   }
   render() {
     const {graphData} = this.props;
     return (
       <div>
         <ControlPanel avgWaitHandler={this.fetchAvgWaitHandler} />
-        <div className="center">
+        <div className="center metricsWidth">
           {graphData}
         </div>
         <Info />
