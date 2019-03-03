@@ -34,7 +34,14 @@ source venv/bin/activate
 cd frontend
 yarn build
 cd ..
-FLASK_APP=app.py flask run
+FLASK_APP=metrics-api.py flask run
+```
+
+To run just the Flask app:
+
+```
+source venv/bin/activate
+python app.py
 ```
 
 ## Notes for developers
