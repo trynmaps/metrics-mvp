@@ -13,6 +13,10 @@ And make sure you're using npm 8.11.3 or higher.
 virtualenv -p python3 venv
 source venv/bin/activate
 pip install -r requirements.txt
+cd frontend
+npm install
+yarn build
+cd ..
 ```
 
 ### Option 2: Cloud Environment
@@ -28,21 +32,10 @@ on GitHub.
 
 ## Running
 
-To run the Flask app and React apps:
+Just do:
 
 ```
-source venv/bin/activate
-cd frontend
-yarn build
-cd ..
-FLASK_APP=metrics-api.py flask run
-```
-
-To run just the Flask app:
-
-```
-source venv/bin/activate
-python app.py
+FLASK_APP=metrics-api.py flask run --host 0.0.0.0
 ```
 
 ## Notes for developers
@@ -50,27 +43,6 @@ python app.py
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt` so other contributors have the latest versions of required packages.
 
 Keep in mind this setup doesn't support hot reloading.
-
-
-## The new master instructions file
-
-Setup:
-
-```
-virtualenv -p python3 venv
-source venv/bin/activate
-pip install -r requirements.txt
-cd frontend
-npm install
-yarn build
-cd ..
-```
-
-Running:
-
-```
-FLASK_APP=metrics-api.py flask run --host 0.0.0.0
-```
 
 ## Demo
 
