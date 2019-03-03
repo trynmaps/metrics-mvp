@@ -45,3 +45,7 @@ If you'd like to run the React and Flask apps at the same time, do the following
 4. `FLASK_APP=metrics-api.py flask run`
 
 Keep in mind this setup doesn't support hot reloading.
+
+## Demo
+
+[Check out this demo!](https://opentransit.herokuapp.com/metrics)
