@@ -48,19 +48,6 @@ def metrics_page():
         # pd.date_range(pd.datetime.today(), periods=30).tolist()]
         time_range=("09:00", "10:00")))
 
-
-# ajax test
-@app.route('/ajaxCall', methods=['POST'])
-def ajax():
-    return jsonify('I just made an ajax call :)')
-
-
-# sanity check/testing function
-@app.route('/hello', methods=['GET'])
-def hello():
-    return jsonify('hello, world')
-
-
 if __name__ == '__main__':
     app.run(use_reloader=True, port=5000, threaded=True, host='0.0.0.0')
     # TODO: figure out why host='0.0.0.0' doesn't work
