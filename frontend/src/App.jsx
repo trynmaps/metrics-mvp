@@ -25,8 +25,10 @@ class App extends Component {
     const {graphData} = this.props;
     return (
       <div>
-        {graphData}
         <ControlPanel avgWaitHandler={this.fetchAvgWaitHandler} />
+        <div className="center">
+          {graphData}
+        </div>
         <Info />
       </div>
     );
