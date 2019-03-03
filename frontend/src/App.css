@@ -18,8 +18,17 @@
 
 .controls-wrapper {
   display: flex;
+  justify-content: space-between;
 }
 
 .control {
   flex: 0 1 100%;
+}
+.center.metricsWidth {
+  width:80%;
+}
+.center {
+  margin:auto;
+  width:15%;
+  padding-top:5%;
 }
