@@ -5,12 +5,10 @@ export function fetchGraphData(data) {
         axios.get("/metricsAPI", {
         
                 params: {
-                    route_id: data[0],
-                    stop_id: data[1],
-                    direction: data[2] === "inbound" ? "O" : "I",
-                    date: data[3],
-                    date2: data[4]
-                }
+                    route_id: data['Route'],
+                    stop_id: data['From Stop'],
+                    direction: data['Direction'] === "inbound" ? "I" : "O",
+                    date: data['date']                }
             }) 
             .then((response) => {
                 dispatch({ type: "RECEIVED_GRAPH_DATA", payload: response.data })

@@ -16,9 +16,17 @@ class DropdownControl extends Component {
     */
   }
   handleSelectedValue = (event) => {
+    const { obj } = this.props;
+    const [
+      handleSelected,
+      prettyName,
+      name,
+      options,
+      variant,
+    ] = obj;
     const selectedValue = event.target.textContent;
     this.setState({selectedValue});
-    this.props.handleSelected(selectedValue);
+    this.props.handleSelected(selectedValue, prettyName.prettyName);
   }
   render() {
     const { selected, selectedValue} = this.state;
