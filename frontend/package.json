@@ -40,7 +40,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "heroku-postbuild": "yarn build"
+    "heroku-postbuild": "yarn build",
+    "lint": "node ./node_modules/eslint/bin/eslint.js --fix --ext .jsx"
   },
   "eslintConfig": {
     "extends": "react-app"
