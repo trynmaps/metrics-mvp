@@ -5,32 +5,33 @@ import Dropdown from 'react-bootstrap/Dropdown';
 class DropdownControl extends Component {
   constructor(props) {
     super(props);
-    this.state = 0;
+    this.state = { selected: [] };
   }
 
   render() {
-    const handleChange = (event) => {
-      event.preventDefault();
-    };
-    const {
-      name,
+    const { selected } = this.state;
+    const { obj } = this.props;
+    const [
+      handleSelected,
       prettyName,
+      name,
       options,
       variant,
-    } = this.props;
-    const controlClass = `${name}-control`;
-    const dropdownId = `${name}-dropdown`;
+    ] = obj;
+
+    const controlClass = `${name.name}-control control`;
+    const dropdownId = `${name.name}-dropdown`;
     return (
       <div className={controlClass}>
         <Dropdown>
-          <Dropdown.Toggle variant={variant} id={dropdownId}>
-            {prettyName}
+          <Dropdown.Toggle variant={variant.variant} id={dropdownId}>
+            {prettyName.prettyName}
           </Dropdown.Toggle>
-
+          {selected}
           <Dropdown.Menu>
             {
-              options.map((index, value) => (
-                <Dropdown.Item onClick={handleChange} key={index} eventKey={index} href="#">{value}</Dropdown.Item>
+              options.options.map((index, value) => (
+                <Dropdown.Item onClick={handleSelected.handleSelected} key={index} eventKey={value} href="#">{value}</Dropdown.Item>
               ))
             }
           </Dropdown.Menu>
@@ -41,10 +42,7 @@ class DropdownControl extends Component {
 }
 
 DropdownControl.propTypes = {
-  name: PropTypes.string.isRequired,
-  options: PropTypes.instanceOf(Array).isRequired,
-  prettyName: PropTypes.string.isRequired,
-  variant: PropTypes.string.isRequired,
+  obj: PropTypes.instanceOf(Array).isRequired,
 };
 
 export default DropdownControl;
