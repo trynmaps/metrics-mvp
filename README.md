@@ -27,11 +27,14 @@ on GitHub.
 
 ## Running
 
-To run the Flask app"
+To run the Flask app and React apps:
 
 ```
 source venv/bin/activate
-python app.py
+cd frontend
+yarn build
+cd ..
+FLASK_APP=app.py flask run
 ```
 
 ## Notes for developers
