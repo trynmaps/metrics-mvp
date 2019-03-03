@@ -2,7 +2,7 @@ import axios from "axios";
 
 export function fetchGraphData(data) {
     return function(dispatch) {
-        axios.get("/metricsAPI", {
+        axios.get("/metrics", {
         
                 params: {
                     route_id: data['Route'],
