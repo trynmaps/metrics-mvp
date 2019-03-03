@@ -16,27 +16,26 @@ def serve(path):
 # hello world
 @app.route('/metrics', methods=['GET'])
 def index():
-    route_id = request.args.get('route_id')
+    route_id = str(request.args.get('route_id'))
     if route_id is None:
-        route_id = '37'
-    stop_id = request.args.get('stop_id')
+        route_id = '12'
+    stop_id = str(request.args.get('stop_id'))
     if stop_id is None:
         stop_id = '4970'
     date = request.args.get('date')
     if date is None:
         date = "2019-02-01"
-    #date2 = request.args.get('date2')
-    #if date2 is None:
-    #    date2 = "2019-02-02"
     direction = request.args.get('direction')
     if direction is None:
-    	direction = "0"
-    #date = [date,date2]
-    print (":) ", route_id, " ", stop_id, " ", date)
-    return "average waiting time at stop " + stop_id + " for route " + route_id + "  on " + date + " is " + str(metrics.get_average_waiting_time(
+    	direction = "O"
+    directionString = "inbound"
+    if direction is "O":
+    	directionString = "outbound"
+    print(":)", route_id, stop_id, date, direction)    
+    return "average waiting time at stop " + stop_id + " for route " + route_id + "  on " + date + " going " + directionString + " is " + str(metrics.get_average_waiting_time(
         stop_id=stop_id,
         route_id=route_id,
-        direction=direction,
+        direction="O",
         date_range=[date],
         # use the last month; calculate it and turn it into timestamps
         # date_range=[d.date().strftime("%Y-%m-%d") for d in
