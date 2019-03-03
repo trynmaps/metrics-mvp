@@ -1,7 +1,5 @@
 # OpenTransit's Metrics MVP
 
-The Flask app lives here, the React app lives in the subfolder.
-
 ## Getting started
 
 ### Option 1: Local Environment
