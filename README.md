@@ -6,7 +6,7 @@
 
 Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
 
-Then run:
+To set up the Flask app:
 
 ```
 virtualenv -p python3 venv
@@ -26,6 +26,8 @@ on GitHub.
 
 
 ## Running
+
+To run the Flask app"
 
 ```
 source venv/bin/activate
