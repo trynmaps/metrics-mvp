@@ -24,7 +24,9 @@
 .control {
   flex: 0 1 100%;
 }
-
+.center.metricsWidth {
+  width:80%;
+}
 .center {
   margin:auto;
   width:15%;
