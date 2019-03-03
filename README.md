@@ -2,6 +2,7 @@
 
 ## Getting started
 
+
 ### Option 1: Local Environment
 
 Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
@@ -47,6 +48,29 @@ python app.py
 ## Notes for developers
 
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt` so other contributors have the latest versions of required packages.
+
+Keep in mind this setup doesn't support hot reloading.
+
+
+## The new master instructions file
+
+Setup:
+
+```
+virtualenv -p python3 venv
+source venv/bin/activate
+pip install -r requirements.txt
+cd frontend
+npm install
+yarn build
+cd ..
+```
+
+Running:
+
+```
+FLASK_APP=metrics-api.py flask run --host 0.0.0.0
+```
 
 ## Demo
 

@@ -5,11 +5,31 @@ import Dropdown from 'react-bootstrap/Dropdown';
 class DropdownControl extends Component {
   constructor(props) {
     super(props);
-    this.state = { selected: [] };
+    this.state = { selected: [], selectedValue:null };
   }
 
+  componentDidMount() {
+    /*
+    const {obj} = this.props;
+    //const [prettyName] = obj;
+    this.setState({selectedValue:obj[1].prettyName});
+    */
+  }
+  handleSelectedValue = (event) => {
+    const { obj } = this.props;
+    const [
+      handleSelected,
+      prettyName,
+      name,
+      options,
+      variant,
+    ] = obj;
+    const selectedValue = event.target.textContent;
+    this.setState({selectedValue});
+    this.props.handleSelected(selectedValue, prettyName.prettyName);
+  }
   render() {
-    const { selected } = this.state;
+    const { selected, selectedValue} = this.state;
     const { obj } = this.props;
     const [
       handleSelected,
@@ -21,17 +41,18 @@ class DropdownControl extends Component {
 
     const controlClass = `${name.name}-control control`;
     const dropdownId = `${name.name}-dropdown`;
+    const shownValue = selectedValue == null ? prettyName.prettyName : selectedValue;
     return (
-      <div className={controlClass}>
+      <div>
         <Dropdown>
           <Dropdown.Toggle variant={variant.variant} id={dropdownId}>
-            {prettyName.prettyName}
+            {shownValue}
           </Dropdown.Toggle>
           {selected}
           <Dropdown.Menu>
             {
-              options.options.map((index, value) => (
-                <Dropdown.Item onClick={handleSelected.handleSelected} key={index} eventKey={value} href="#">{value}</Dropdown.Item>
+              options.options.map((value, index) => (
+                <Dropdown.Item onClick={this.handleSelectedValue} key={index} eventKey={value} href="#">{value}</Dropdown.Item>
               ))
             }
           </Dropdown.Menu>

@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, render_template
 from flask_cors import CORS
-from flask import request
+
 from models import metrics
 
 """
@@ -25,35 +25,18 @@ CORS(app)
 def ping_pong():
     return jsonify('pong!')
 
-
-# home
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify('hello! go to /metrics to see metrics')
-
-
 # hello world
-@app.route('/metrics', methods=['GET'])
-def index():
-    route_id = request.args.get('route_id')
-    if route_id is None:
-        route_id = '12'
-    stop_id = request.args.get('stop_id')
-    if stop_id is None:
-        stop_id = '4970'
-    date = request.args.get('date')
-    if date is None:
-        date = "2019-02-01"
-
-    return "average waiting time at stop " + stop_id + " for route " + route_id + "  on " + date + " is " + str(metrics.get_average_waiting_time(
-        stop_id=stop_id,
-        route_id=route_id,
-        direction="O",
-        date_range=[date],
+#@app.route('/', methods=['GET'])
+#def index():
+   # return "average waiting time is " + str(metrics.get_average_waiting_time(
+    #    stop_id="4970",
+    #    route_id="12",
+    #    direction="O",
+    #    date_range=["2019-01-01", "2019-01-02", "2019-01-03"],
         # use the last month; calculate it and turn it into timestamps
         # date_range=[d.date().strftime("%Y-%m-%d") for d in
         # pd.date_range(pd.datetime.today(), periods=30).tolist()]
-        time_range=("09:00", "10:00")))
+     #   time_range=("09:00", "17:00")))
 
 
 @app.route('/react', methods=['GET'])
