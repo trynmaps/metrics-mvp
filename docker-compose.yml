@@ -1,0 +1,11 @@
+version: "3.0"
+services:
+  flask:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    command: ["python3", "app.py"]
