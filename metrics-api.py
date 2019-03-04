@@ -15,15 +15,6 @@ DEBUG = True
 # Create the app
 app = Flask(__name__, static_folder='frontend/build')
 
-# Serve React App
-@app.route('/', defaults={'path': ''})
-@app.route('/app/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists("frontend/build/" + path):
-        return send_from_directory('frontend/build', path)
-    else:
-        return send_from_directory('frontend/build', 'index.html')
-
 
 # "Command Line"-esque endpoints
 @app.route('/metrics', methods=['GET'])
@@ -47,6 +38,17 @@ def metrics_page():
         # date_range=[d.date().strftime("%Y-%m-%d") for d in
         # pd.date_range(pd.datetime.today(), periods=30).tolist()]
         time_range=("09:00", "10:00")))
+
+
+# Serve React App
+@app.route('/', defaults={'path': ''})
+@app.route('/app/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists("frontend/build/" + path):
+        return send_from_directory('frontend/build', path)
+    else:
+        return send_from_directory('frontend/build', 'index.html')
+    
 
 if __name__ == '__main__':
     app.run(use_reloader=True, port=5000, threaded=True, host='0.0.0.0')
