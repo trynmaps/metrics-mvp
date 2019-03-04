@@ -1,15 +1,16 @@
 import pandas as pd
 
-from . import get_stops
-
+#from . import get_stops
+import get_stops
+import wait_times
 
 def test():
     return "test test test"
 
 
 def get_average_waiting_time(stop_id, route_id, direction,
-                             date_range = [d.date().strftime("%Y-%m-%d") for d in pd.date_range(pd.datetime.today(), periods=30).tolist()],
-                             time_range = ("00:00", "23:59")):
+                             date_range = ["2018-11-11"], #[d.date().strftime("%Y-%m-%d") for d in pd.date_range(pd.datetime.today(), periods=30).tolist()],
+                             time_range = ("08:00", "09:00")): #("00:00", "23:59")):
     """Gets average waiting time for all buses with given parameters.
 
     Uses historical data to compute this. Gets the average waiting time for all
@@ -32,12 +33,11 @@ def get_average_waiting_time(stop_id, route_id, direction,
     Returns:
         double: average waiting time, in minutes
     """
-    stops = get_stops.get_stops(date_range, [route_id], f"{route_id}___{direction}_F00", [stop_id], time_range)
-    waits = get_stops.all_wait_times(stops, time_range, ['SID'])
+    stops = get_stops.get_stops(data = None, dates = date_range, routes = [route_id], directions = f"{route_id}___{direction}_F00", stops = [stop_id], timespan = time_range)
+    waits = wait_times.get_all_wait_times(stops, time_range, ['SID'])
 
     # TODO: later on, add filtering for days of week, dates, and times of year
 
-    # This is a stub function so we return some random number :)
     return waits['WAIT'].mean()/60
 
 """
@@ -59,3 +59,5 @@ josh's comments
 
 
 # """
+# if __name__ == "__main__":
+#     print(get_average_waiting_time('4970', '12', 'O'))
