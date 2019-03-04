@@ -1,8 +1,0 @@
-{
-  "name": "OpenTransit",
-  "description": "a really cool app",
-  "version": "1.0.0",
-  "scripts": {
-    "heroku-postbuild": "yarn build"
-  }
-}
