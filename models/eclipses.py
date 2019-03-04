@@ -1,4 +1,5 @@
 import json
+import time
 import requests
 
 from datetime import datetime, timedelta, timezone
@@ -9,40 +10,72 @@ import numpy as np
 
 from typing import List, Union
 
-def query_graphql(start_time: int, end_time: int, route: str) -> list:
-    query = f"""{{
-        trynState(agency: "muni",
-                  startTime: "{start_time}",
-                  endTime: "{end_time}",
-                  routes: ["{route}"]) {{
+def list_string(arr):
+    return f"{[*map(str,arr)]}".replace("'",'"')
+
+def query_graphql(route, dt_params=(2018,10,15,0,1,0), hours=20, per_hour=1):
+    route_data=[]
+    if type(route) != list:
+        route = [route]
+        
+    per_hour=int(per_hour)
+    timestamp=int(datetime(*dt_params, tzinfo = timezone(timedelta(hours = -8))).timestamp())*1000 # use PST for tzinfo
+    T0 = time.time()
+    for i in range(hours*per_hour):
+        t0=time.time()
+        # possible rounding issue here - times near beginning/end of a day can return data from the previous/next day
+        start_time = timestamp + i*36e5/per_hour
+        end_time   = start_time + 36e5/per_hour
+
+        # added direction id to query, needed to obtain stops
+        query = f"""{{
+          trynState(agency: "muni", startTime: "{start_time}", endTime: "{end_time}", routes: {list_string(route)}) {{
             agency
             startTime
             routes {{
-                stops {{
-                    sid
-                    lat
-                    lon
+              rid
+              stops {{
+                sid
+                name
+                lat
+                lon
+              }}
+              routeStates {{
+                vtime
+                vehicles {{
+                  vid
+                  lat
+                  lon
+                  heading
+                  did
                 }}
-                routeStates {{
-                    vtime
-                    vehicles {{
-                        vid
-                        lat
-                        lon
-                        did
-                    }}
-                }}
+              }}
             }}
+          }}
         }}
-    }}
-    """
-    query_url = f"https://06o8rkohub.execute-api.us-west-2.amazonaws.com/dev/graphql?query={query}"
+        """ # Braces need to be doubled for f-string
 
-    request = requests.get(query_url).json()
-    try:
-        return request['data']['trynState']['routes']
-    except KeyError:
-        return None
+        query_url = "https://06o8rkohub.execute-api.us-west-2.amazonaws.com/dev/graphql?query="+query
+        r = requests.get(query_url)
+
+        data = json.loads(r.text)
+        
+        try:
+            data['data']
+        except KeyError as err:
+            print(f"Error for time range {startTime}-{endTime}: {err}")
+        else:
+            if len(data['data']['trynState']['routes']):
+                route_data.extend(data['data']['trynState']['routes'])
+                
+    r_sort = {}
+    for x in route_data:
+        if x['rid'] not in r_sort.keys():
+            r_sort[x['rid']] = {'rid':x['rid'],'routeStates':[],'stops':x['stops']}
+        r_sort[x['rid']]['routeStates'].extend(sorted(x['routeStates'], key=lambda rs: int(rs['vtime'])))
+    r_sort=list(r_sort.values())
+    return r_sort
+
 
 def produce_stops(data: list, route: str) -> pd.DataFrame:
     stops = pd.io.json.json_normalize(data,
@@ -139,16 +172,16 @@ def find_eclipses(buses, stop):
     buscord = eclipses[['LAT', 'LON']].values
     
     # calculate distances again using geopy for the distance<750m values, because geopy is probably more accurate
-    dfromstop = []
-    for row in buscord:
-        busdistance = distance(stopcord,row).meters
-        dfromstop.append(busdistance)
-    eclipses['DIST'] = dfromstop
+    # dfromstop = []
+    # for row in buscord:
+    #     busdistance = distance(stopcord,row).meters
+    #     dfromstop.append(busdistance)
+    # eclipses['DIST'] = dfromstop
     
     # for haversine function:
-    #stopcord = stop[['LAT', 'LON']]
-    #buscord = eclipses[['LAT', 'LON']]
-    #eclipses['DIST'] = haver_distance(stopcord['LAT'],stopcord['LON'],buscord['LAT'],buscord['LON'])
+    stopcord = stop[['LAT', 'LON']]
+    buscord = eclipses[['LAT', 'LON']]
+    eclipses['DIST'] = haver_distance(stopcord['LAT'],stopcord['LON'],buscord['LAT'],buscord['LON'])
     
     eclipses['TIME'] = eclipses['TIME'].astype(np.int64)
     eclipses = eclipses[['TIME', 'VID', 'DIST']]
