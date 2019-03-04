@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, render_template
+import os
+from flask import Flask, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from flask import request
 from models import metrics
@@ -12,7 +13,7 @@ DEBUG = True
 
 
 # instantiate the app
-app = Flask(__name__, template_folder="./frontend/public")
+app = Flask(__name__, static_folder="./frontend/public")
 app.config.from_object(__name__)
 
 
@@ -25,9 +26,16 @@ CORS(app)
 def ping_pong():
     return jsonify('pong!')
 
-
 # home
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET'], defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists("frontend/build/" + path):
+        return send_from_directory('frontend/build', path)
+    else:
+        return send_from_directory('frontend/build', 'index.html')
+
+
 def home():
     return jsonify('hello! go to /metrics to see metrics')
 
@@ -64,4 +72,4 @@ def react():
 if __name__ == '__main__':
     # using 0.0.0.0 makes it externally visible
     # so gitpod.io can run it
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=os.environ["PORT"])

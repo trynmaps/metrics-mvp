@@ -51,3 +51,16 @@ If you ever need to use a new pip library, make sure you run `pip freeze > requi
 ## Demo
 
 [Check out this demo!](https://opentransit.herokuapp.com/metrics)
+
+## To deploy
+
+```
+heroku login
+heroku container:login
+heroku create ...
+heroku container:push web
+heroku container:release web
+heroku ps:scale web=1
+```
+[Source](https://devcenter.heroku.com/articles/container-registry-and-runtime#unsupported-dockerfile-commands)
+
