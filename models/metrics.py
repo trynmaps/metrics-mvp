@@ -1,8 +1,7 @@
 import pandas as pd
 
 #from . import get_stops
-import get_stops
-import wait_times
+from . import get_stops, wait_times
 
 def test():
     return "test test test"
