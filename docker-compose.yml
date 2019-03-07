@@ -8,4 +8,4 @@ services:
       - "5000:5000"
     volumes:
       - .:/app
-    command: ["python3", "app.py"]
+    command: ["python3", "metrics-api.py"]
