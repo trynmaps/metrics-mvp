@@ -57,6 +57,7 @@ Keep in mind this setup doesn't support hot reloading.
 Setup:
 
 ```
+cp -f pre.sh .git/hooks/pre-commit
 virtualenv -p python3 venv
 source venv/bin/activate
 pip install -r requirements.txt

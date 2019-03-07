@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "lint:all": "yarn --cwd=frontend lint:all",
+    "build": "yarn --cwd=frontend build",
+    "start:python": "FLASK_APP=metrics-api.py flask run --host 0.0.0.0"
+  }
+}
