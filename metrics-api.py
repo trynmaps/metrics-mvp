@@ -42,7 +42,7 @@ def metrics_page():
 
 # Serve React App
 @app.route('/', defaults={'path': ''})
-@app.route('/app/<path:path>')
+# @app.route('/app/<path:path>')
 def serve(path):
     if path != "" and os.path.exists("frontend/build/" + path):
         return send_from_directory('frontend/build', path)
