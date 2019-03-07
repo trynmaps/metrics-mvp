@@ -41,15 +41,18 @@ def metrics_page():
 
 
 # Serve React App
-@app.route('/', defaults={'path': ''}, methods=['GET'])
-# @app.route('/app/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists("frontend/build/" + path):
-        return send_from_directory('frontend/build', path)
-    else:
-        return send_from_directory('frontend/build', 'index.html')
+# @app.route('/', defaults={'path': ''}, methods=['GET'])
+# # @app.route('/app/<path:path>')
+# def serve(path):
+#     if path != "" and os.path.exists("frontend/build/" + path):
+#         return send_from_directory('frontend/build', path)
+#     else:
+#         return send_from_directory('frontend/build', 'index.html')
     
-
+@app.route('/', methods=['GET'])
+def serve():
+    return send_from_directory('frontend/build', 'index.html')
+    
 if __name__ == '__main__':
     app.run(use_reloader=True, port=5000, threaded=True, host='0.0.0.0')
     # TODO: figure out why host='0.0.0.0' doesn't work
