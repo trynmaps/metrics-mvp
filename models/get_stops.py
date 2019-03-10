@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from .eclipses import query_graphql, produce_buses, produce_stops, find_eclipses, find_nadirs
-
+from . import nextbus
 
 def get_stops(data = None, **kwargs):
     """Returns a DataFrame containing every instance of a bus arriving at a stop.
@@ -45,11 +45,11 @@ def get_stops_from_data(data):
     bus_stops = pd.DataFrame(columns = ["VID", "TIME", "SID", "DID", "ROUTE"])
 
     for route in {ele['rid'] for ele in data}:
+        route_config = nextbus.get_route_config('sf-muni', route)
+
         #print(f"{datetime.now().strftime('%a %b %d %I:%M:%S %p')}: Starting with {route}.")
         try:
-            stop_ids = [stop['id']
-                for stop
-                in requests.get(f"http://restbus.info/api/agencies/sf-muni/routes/{route}").json()['stops']]
+            stop_ids = [stop['tag'] for stop in route_config['route']['stop']]
 
             route_data = [ele for ele in data if ele['rid'] == route]
 
@@ -88,9 +88,8 @@ def get_queried_stops(dates, routes, directions=[], stops=[], timespan=("00:00",
     bus_stops = pd.DataFrame(columns = ["VID", "TIME", "SID", "DID", "ROUTE"])
 
     for route in routes:
-        stop_ids = [stop['id']
-            for stop
-            in requests.get(f"http://restbus.info/api/agencies/sf-muni/routes/{route}").json()['stops']]
+        route_config = nextbus.get_route_config('sf-muni', route)
+        stop_ids = [stop['tag'] for stop in route_config['route']['stop']]
 
         for stop_id in stop_ids:
             # check if stops to filter were provided, or if the stop_id is in the list of filtered stops
@@ -120,7 +119,6 @@ def get_queried_stops(dates, routes, directions=[], stops=[], timespan=("00:00",
         bus_stops = bus_stops.loc[bus_stops['DID'].apply(lambda x: x in directions)]
 
     return bus_stops
-
 
 # get the arrivals to a single stop on a single route
 def get_arrivals(route, route_data, stop_id):
