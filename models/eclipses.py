@@ -90,17 +90,17 @@ def produce_stops(data: list, route: str) -> pd.DataFrame:
     route_config = nextbus.get_route_config('sf-muni', route)
 
     # obtain stop directions
-    stops['DID'] = stops['SID'].map({stop['tag']: direction['tag']
-                                     for direction in route_config['route']['direction']
-                                     for stop in direction['stop']})
+    stops['DID'] = stops['SID'].map({stop_id: direction_id
+                                     for direction_id in route_config.get_direction_ids()
+                                     for stop_id in route_config.get_stop_ids(direction_id)})
 
     # remove stops that don't have an associated direction
     stops = stops.dropna(axis='index', subset=['DID'])
 
     # obtain stop ordinals
-    stops['ORD'] = stops['SID'].map({stop_meta['tag']: ordinal
-                                     for ordinal, stop_meta
-                                     in enumerate(route_config['route']['stop'])})
+    stops['ORD'] = stops['SID'].map({stop_id: ordinal
+                                     for ordinal, stop_id
+                                     in enumerate(route_config.get_stop_ids())})
 
     return stops
 
