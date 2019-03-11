@@ -4,7 +4,61 @@ import json
 import requests
 import re
 
-def get_route_config(agency_id, route_id):
+class StopInfo:
+    def __init__(self, data):
+        self.id = data['tag']
+        self.title = data['title']
+        self.lat = data['lat']
+        self.lon = data['lon']
+
+class DirectionInfo:
+    def __init__(self, data):
+        self.id = data['tag']
+        self.title = data['title']
+        self.name = data['name']
+        self.data = data
+
+    def get_stop_ids(self):
+        return [stop['tag'] for stop in self.data['stop']]
+
+class RouteConfig:
+    def __init__(self, data):
+        self.data = data
+        self.title = data['title']
+
+    def get_direction_ids(self):
+        return [direction['tag'] for direction in self.data['direction']]
+
+    def get_stop_ids(self, direction_id = None):
+        if direction_id is None:
+            return [stop['tag'] for stop in self.data['stop']]
+        else:
+            dir_info = self.get_direction_info(direction_id)
+            if dir_info is not None:
+                return dir_info.get_stop_ids()
+            else:
+                return None
+
+    def get_stop_info(self, stop_id):
+        for stop in self.data['stop']:
+            if stop['tag'] == stop_id:
+                return StopInfo(stop)
+        return None
+
+    def get_direction_info(self, direction_id):
+        for direction in self.data['direction']:
+            if direction['tag'] == direction_id:
+                return DirectionInfo(direction)
+        return None
+
+    def get_direction_for_stop(self, stop_id):
+        for direction in self.data['direction']:
+            for stop in direction['stop']:
+                if stop['tag'] == stop_id:
+                    return direction['tag']
+        return None
+
+def get_route_config(agency_id, route_id) -> RouteConfig:
     source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     if re.match('^[\w\-]+$', agency_id) is None:
@@ -25,10 +79,9 @@ def get_route_config(agency_id, route_id):
             with open(cache_path, mode='r', encoding='utf-8') as f:
                 data_str = f.read()
                 try:
-                    return json.loads(data_str)
+                    return RouteConfig(json.loads(data_str)['route'])
                 except Exception as err:
                     print(err)
-                    pass
     except FileNotFoundError as err:
         pass
 
@@ -45,4 +98,4 @@ def get_route_config(agency_id, route_id):
     with open(cache_path, mode='w', encoding='utf-8') as f:
         f.write(response.text)
 
-    return data
+    return RouteConfig(data['route'])
