@@ -49,7 +49,7 @@ def metrics_page():
 # @app.route('/app/<path:path>')
 @app.route('/', methods=['GET'])
 def serve_react():
-    return send_from_directory('frontend/build', 'index.html')
+    return send_from_directory('frontend/build/static', 'index.html')
 
 
 # OLD
