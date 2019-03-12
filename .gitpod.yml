@@ -11,6 +11,5 @@ tasks:
 - command: |
     cd frontend &&
     npm install &&
-    yarn global add serve &&
-    serve -s build
+    yarn build
 - command: git status && git pull
