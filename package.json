@@ -3,5 +3,8 @@
   "version": "0.1.0",
   "scripts": {
     "postinstall": "npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "serve": "^10.1.2"
   }
 }

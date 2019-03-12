@@ -7,9 +7,10 @@ tasks:
     virtualenv -p python3 venv &&
     source venv/bin/activate &&
     pip install -r requirements.txt &&
+    FLASK_APP=metrics-api.py flask run --host 0.0.0.0
+- command: |
     cd frontend &&
     npm install &&
-    yarn build &&
-    cd .. &&
-    FLASK_APP=metrics-api.py flask run --host 0.0.0.0
+    yarn global add serve &&
+    serve -s build
 - command: git status && git pull
