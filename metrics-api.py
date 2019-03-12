@@ -14,6 +14,12 @@ DEBUG = True
 # Create the app
 app = Flask(__name__, static_folder='frontend/build')
 
+# Test endpoint
+@app.route('/ping', methods=['GET'])
+def ping():
+    return "pong"
+
+
 # "Command Line"-esque endpoints
 @app.route('/metrics', methods=['GET'])
 def metrics_page():
@@ -40,8 +46,10 @@ def metrics_page():
 
 # Serve React App
 @app.route('/', defaults={'path': ''}, methods=['GET'])
-# @app.route('/app/<path:path>')
+@app.route('/app/<path:path>')
 def serve(path):
+    print("hello")
+    print("path")
     if path != "" and os.path.exists("frontend/build/" + path):
         return send_from_directory('frontend/build', path)
     else:
