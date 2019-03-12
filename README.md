@@ -10,13 +10,14 @@ Make sure you're using Python 3. `python --version` (without your virtual enviro
 And make sure you're using npm 8.11.3 or higher.
 
 ```
-virtualenv -p python3 venv
-source venv/bin/activate
-pip install -r requirements.txt
-cd frontend
-npm install
-yarn build
-cd ..
+    virtualenv -p python3 venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    cd frontend
+    npm install
+    yarn build
+    cd ..
+    FLASK_APP=metrics-api.py flask run --host 0.0.0.0
 ```
 
 ### Option 2: Cloud Environment
@@ -30,12 +31,13 @@ To make changes, make sure you've been added to the trynmaps organization
 on GitHub.
 
 
-## Running
+## Reloading
 
-Just do:
+Each time you change anything, you need to restart the whole app (not ideal,
+but work with us for now.) Do:
 
 ```
-FLASK_APP=metrics-api.py flask run --host 0.0.0.0
+cd frontend && yarn build && cd .. && source venv/bin/activate && FLASK_APP=metrics-api.py flask run --host 0.0.0.0
 ```
 
 ## Notes for developers
