@@ -11,10 +11,8 @@ This is the app's main file!
 # configuration
 DEBUG = True
 
-
 # Create the app
 app = Flask(__name__, static_folder='frontend/build')
-
 
 # "Command Line"-esque endpoints
 @app.route('/metrics', methods=['GET'])
@@ -48,7 +46,7 @@ def serve(path):
         return send_from_directory('frontend/build', path)
     else:
         return send_from_directory('frontend/build', 'index.html')
-    
+
 
 if __name__ == '__main__':
     app.run(use_reloader=True, port=5000, threaded=True, host='0.0.0.0')
