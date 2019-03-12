@@ -45,15 +45,20 @@ def metrics_page():
 
 
 # Serve React App
-@app.route('/', defaults={'path': ''}, methods=['GET'])
-@app.route('/app/<path:path>')
-def serve(path):
-    print("hello")
-    print("path")
-    if path != "" and os.path.exists("frontend/build/" + path):
-        return send_from_directory('frontend/build', path)
-    else:
-        return send_from_directory('frontend/build', 'index.html')
+# @app.route('/', defaults={'path': ''}, methods=['GET'])
+# @app.route('/app/<path:path>')
+@app.route('/', methods=['GET'])
+def serve_react():
+    return send_from_directory('frontend/build', 'index.html')
+
+
+# OLD
+# def serve(path):
+#     print("hello")
+#     if path != "" and os.path.exists("frontend/build/" + path):
+#         return send_from_directory('frontend/build', path)
+#     else:
+#         return send_from_directory('frontend/build', 'index.html')
 
 
 if __name__ == '__main__':
