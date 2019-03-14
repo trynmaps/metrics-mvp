@@ -3,6 +3,7 @@ ports:
     onOpen: open-browser
 
 tasks:
+- command: git status && git pull
 - command: |
     virtualenv -p python3 venv &&
     source venv/bin/activate &&
@@ -11,4 +12,4 @@ tasks:
 - command: |
     npm install --prefix frontend &&
     npm run-script build
-- command: git status && git pull
+
