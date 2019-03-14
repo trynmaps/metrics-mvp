@@ -32,6 +32,7 @@ def get_average_waiting_time(stop_id, route_id, direction,
     Returns:
         double: average waiting time, in minutes
     """
+
     stops = get_stops.get_stops(data = None, dates = date_range, routes = [route_id], directions = f"{route_id}___{direction}_F00", stops = [stop_id], timespan = time_range)
     waits = wait_times.get_all_wait_times(stops, time_range, ['SID'])
 

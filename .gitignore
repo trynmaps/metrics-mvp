@@ -7,6 +7,9 @@ instance/*
 !instance/.gitignore
 .webassets-cache
 
+# local cache
+data/*.json
+
 ### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -338,3 +341,4 @@ typings/
 #
 # idea
 .idea
+# theia
