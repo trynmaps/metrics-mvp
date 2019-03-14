@@ -19,9 +19,9 @@ DEBUG = True
 # Create the app
 app = Flask(__name__, static_folder='frontend/build')
 
-@app.route('/', methods=['GET'])
-def index():
-    return "<a href='/metrics'>/metrics</a>";
+# @app.route('/', methods=['GET'])
+# def index():
+#     return "<a href='/metrics'>/metrics</a>";
 
 # Test endpoint
 @app.route('/ping', methods=['GET'])
