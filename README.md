@@ -3,7 +3,7 @@
 ## Getting started
 
 
-### Option 1: Local Environment
+### Option 1: Local IDE
 
 Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
 
@@ -18,7 +18,7 @@ And make sure you're using npm 10 or higher.
     FLASK_APP=metrics-api.py flask run --host 0.0.0.0
 ```
 
-### Option 2: Cloud Environment
+### Option 2: Cloud IDE
 
 If you don't want to handle configuring your system, installing packages,
 wrangling Python versions, and stuff, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
