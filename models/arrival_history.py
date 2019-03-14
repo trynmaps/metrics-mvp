@@ -197,10 +197,3 @@ def get_by_date(agency: str, route_id: str, d: date) -> ArrivalHistory:
         f.write(r.text)
 
     return ArrivalHistory.from_data(data)
-
-
-def compute_headway_minutes(df: pd.DataFrame):
-    return ((df['TIME'] - df['TIME'].shift(1))/60)
-
-def compute_local_date_time(df: pd.DataFrame, tz):
-    return df['TIME'].apply(lambda timestamp: datetime.fromtimestamp(timestamp, tz))
