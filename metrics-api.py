@@ -60,15 +60,7 @@ def send_frontend(path):
     return send_from_directory('frontend', path)
 
 
-# OLD
-# def serve(path):
-#     print("hello")
-#     if path != "" and os.path.exists("frontend/build/" + path):
-#         return send_from_directory('frontend/build', path)
-#     else:
-#         return send_from_directory('frontend/build', 'index.html')
-
-
 if __name__ == '__main__':
-    app.run(use_reloader=True, port=5000, threaded=True, host='0.0.0.0')
-    # TODO: figure out why host='0.0.0.0' doesn't work
+    # Bind to PORT if defined, otherwise default to 5000.
+    port = int(os.environ.get('PORT', 5000))
+    app.run(use_reloader=True, threaded=True, host='0.0.0.0', port=port)

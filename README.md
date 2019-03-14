@@ -7,16 +7,14 @@
 
 Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
 
-And make sure you're using npm 8.11.3 or higher.
+And make sure you're using npm 10 or higher.
 
 ```
     virtualenv -p python3 venv
     source venv/bin/activate
     pip install -r requirements.txt
-    cd frontend
-    npm install
-    yarn build
-    cd ..
+    npm install --prefix frontend
+    npm run-script build
     FLASK_APP=metrics-api.py flask run --host 0.0.0.0
 ```
 
@@ -33,12 +31,11 @@ on GitHub.
 
 ## Reloading
 
-Each time you change anything, you need to restart the whole app (not ideal,
-but work with us for now.) Do:
+Whenever you change the frontend, run `npm run-script build` to rebuild the frontend.
+No need to rebuild the backend.
 
-```
-cd frontend && yarn build && cd .. && FLASK_APP=metrics-api.py flask run --host 0.0.0.0
-```
+Whenever you change the backend, run `FLASK_APP=metrics-api.py flask run --host 0.0.0.0`.
+No need to rebuild the frontend.
 
 ## Notes for developers
 
