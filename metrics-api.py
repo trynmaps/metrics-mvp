@@ -11,9 +11,13 @@ This is the app's main file!
 # configuration
 DEBUG = True
 
-
 # Create the app
 app = Flask(__name__, static_folder='frontend/build')
+
+# Test endpoint
+@app.route('/ping', methods=['GET'])
+def ping():
+    return "pong"
 
 
 # "Command Line"-esque endpoints
@@ -41,14 +45,29 @@ def metrics_page():
 
 
 # Serve React App
-@app.route('/', defaults={'path': ''})
-@app.route('/app/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists("frontend/build/" + path):
-        return send_from_directory('frontend/build', path)
-    else:
-        return send_from_directory('frontend/build', 'index.html')
-    
+# @app.route('/', defaults={'path': ''}, methods=['GET'])
+# @app.route('/app/<path:path>')
+@app.route('/', methods=['GET'])
+def serve_react():
+    print("hi")
+    return send_from_directory('frontend/build', 'index.html')
+
+
+# serve everything from the `frontend` folder directly
+# (this is mostly static files)
+@app.route('/frontend/<path:path>')
+def send_frontend(path):
+    return send_from_directory('frontend', path)
+
+
+# OLD
+# def serve(path):
+#     print("hello")
+#     if path != "" and os.path.exists("frontend/build/" + path):
+#         return send_from_directory('frontend/build', path)
+#     else:
+#         return send_from_directory('frontend/build', 'index.html')
+
 
 if __name__ == '__main__':
     app.run(use_reloader=True, port=5000, threaded=True, host='0.0.0.0')
