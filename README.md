@@ -31,12 +31,11 @@ on GitHub.
 
 ## Reloading
 
-Each time you change anything, you need to restart the whole app (not ideal,
-but work with us for now.) Do:
+Whenever you change the frontend, run `npm run-script build` to rebuild the frontend.
+No need to rebuild the backend.
 
-```
-cd frontend && yarn build && cd .. && FLASK_APP=metrics-api.py flask run --host 0.0.0.0
-```
+Whenever you change the backend, run `FLASK_APP=metrics-api.py flask run --host 0.0.0.0`.
+No need to rebuild the frontend.
 
 ## Notes for developers
 
