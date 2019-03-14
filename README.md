@@ -7,7 +7,7 @@
 
 Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
 
-And make sure you're using npm 8.11.3 or higher.
+And make sure you're using npm 10 or higher.
 
 ```
     virtualenv -p python3 venv
