@@ -65,7 +65,6 @@ Running:
 FLASK_APP=metrics-api.py flask run --host 0.0.0.0
 ```
 
-=======
 ## Demo
 
 [Check out this demo!](https://opentransit.herokuapp.com/metrics)
