@@ -44,27 +44,6 @@ If you ever need to use a new pip library, make sure you run `pip freeze > requi
 Keep in mind this setup doesn't support hot reloading.
 
 
-## The new master instructions file
-
-Setup:
-
-```
-cp -f pre.sh .git/hooks/pre-commit
-virtualenv -p python3 venv
-source venv/bin/activate
-pip install -r requirements.txt
-cd frontend
-npm install
-yarn build
-cd ..
-```
-
-Running:
-
-```
-FLASK_APP=metrics-api.py flask run --host 0.0.0.0
-```
-
 ## Demo
 
 [Check out this demo!](https://opentransit.herokuapp.com/metrics)
