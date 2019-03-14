@@ -341,3 +341,5 @@ typings/
 #
 # idea
 .idea
+# theia
+.theia
