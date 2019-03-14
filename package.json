@@ -1,10 +1,11 @@
 {
   "name": "opentransit",
   "version": "0.1.0",
-  "license" : "MIT",
+  "license": "MIT",
   "scripts": {
     "postinstall": "npm install --prefix frontend",
-    "lint:all": "yarn --cwd=frontend lint:all",
+    "start": "cd frontend && npm run start",
+    "lint:all": "cd frontend && npm run lint:all",
     "build": "cd frontend && npm run-script build"
   },
   "engines": {
