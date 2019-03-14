@@ -61,4 +61,6 @@ def send_frontend(path):
 
 
 if __name__ == '__main__':
-    app.run(use_reloader=True, threaded=True)
+    # Bind to PORT if defined, otherwise default to something.
+    port = int(os.environ.get('PORT', 33507))
+    app.run(use_reloader=True, threaded=True, port=33507)
