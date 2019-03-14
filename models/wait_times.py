@@ -36,7 +36,7 @@ def get_all_wait_times(df, timespan = ("00:00", "23:59"), group = ['ROUTE']): #p
     # process arrivals df
     arrivals = df.copy(deep = True)
     arrivals['DATE'] = arrivals['TIME'].apply(lambda x: x.date())
-    
+
     dates = arrivals['DATE'].unique()
     avg_over_pd = pd.DataFrame(columns = group + ['DATE', 'TIME', 'WAIT'])
 
@@ -68,3 +68,10 @@ def get_summary_statistics(df, group):
 
 def get_avg_wait_times(df, timespan = ("05:00", "23:59"), group = ['ROUTE']): # defaulting to muni operating hours
     return get_summary_statistics(get_all_wait_times(df, timespan, group), group)
+
+def get_average_waiting_time(waits):
+    """
+    Can be used to answer questions like, "what's the average waiting time at
+    the 9th & Mission stop on the outbound 14 line from 9am-5pm in the last
+    """
+    return waits['WAIT'].mean()/60
