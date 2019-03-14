@@ -5,7 +5,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 class DropdownControl extends Component {
   constructor(props) {
     super(props);
-    this.state = { selected: [], selectedValue:null };
+    this.state = { selected: [], selectedValue: null };
   }
 
   componentDidMount() {
@@ -15,31 +15,25 @@ class DropdownControl extends Component {
     this.setState({selectedValue:obj[1].prettyName});
     */
   }
+
   handleSelectedValue = (event) => {
-    const { obj } = this.props;
-    const [
-      handleSelected,
-      prettyName,
-      name,
-      options,
-      variant,
-    ] = obj;
+    const { obj, handleSelected } = this.props;
+    const [prettyName] = obj;
     const selectedValue = event.target.textContent;
-    this.setState({selectedValue});
-    this.props.handleSelected(selectedValue, prettyName.prettyName);
+    this.setState({ selectedValue });
+    handleSelected(selectedValue, prettyName.prettyName);
   }
+
   render() {
-    const { selected, selectedValue} = this.state;
+    const { selected, selectedValue } = this.state;
     const { obj } = this.props;
     const [
-      handleSelected,
       prettyName,
       name,
       options,
       variant,
     ] = obj;
 
-    const controlClass = `${name.name}-control control`;
     const dropdownId = `${name.name}-dropdown`;
     const shownValue = selectedValue == null ? prettyName.prettyName : selectedValue;
     return (
@@ -51,8 +45,8 @@ class DropdownControl extends Component {
           {selected}
           <Dropdown.Menu>
             {
-              options.options.map((value, index) => (
-                <Dropdown.Item onClick={this.handleSelectedValue} key={index} eventKey={value} href="#">{value}</Dropdown.Item>
+              options.options.map(value => (
+                <Dropdown.Item onClick={this.handleSelectedValue} eventKey={value} href="#">{value}</Dropdown.Item>
               ))
             }
           </Dropdown.Menu>
@@ -64,6 +58,7 @@ class DropdownControl extends Component {
 
 DropdownControl.propTypes = {
   obj: PropTypes.instanceOf(Array).isRequired,
+  handleSelected: PropTypes.func.isRequired,
 };
 
 export default DropdownControl;
