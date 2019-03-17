@@ -35,22 +35,24 @@ if __name__ == '__main__':
     route_config = nextbus.get_route_config(agency, route_id)
 
     s1_info = route_config.get_stop_info(s1)
-    dir = route_config.get_direction_for_stop(s1)
-    if dir is None or s1_info is None:
+    s1_dirs = route_config.get_directions_for_stop(s1)
+    if len(s1_dirs) == 0 or s1_info is None:
         raise Exception(f"invalid stop id {s1}")
 
     s2_info = route_config.get_stop_info(s2)
-    dir2 = route_config.get_direction_for_stop(s2)
-    if dir2 is None or s2_info is None:
+    s2_dirs = route_config.get_directions_for_stop(s2)
+    if len(s1_dirs) == 0 or s2_info is None:
         raise Exception(f"invalid stop id {s2}")
 
     if s1 == s2:
         raise Exception(f"stop {s1} and {s2} are the same")
 
-    if dir != dir2:
+    common_dirs = [dir for dir in s1_dirs if dir in s2_dirs]
+
+    if len(common_dirs) == 0:
         raise Exception(f"stop {s1} and {s2} are in different directions")
 
-    dir_info = route_config.get_direction_info(dir)
+    dir_info = route_config.get_direction_info(common_dirs[0])
 
     for s in dir_info.get_stop_ids():
         if s == s1:
@@ -73,7 +75,7 @@ if __name__ == '__main__':
     print(f"Route: {route_id} ({route_config.title})")
     print(f"From: {s1} ({s1_info.title})")
     print(f"To: {s2} ({s2_info.title})")
-    print(f"Direction: {dir} ({dir_info.title})")
+    print(f"Direction: {','.join(common_dirs)} ({dir_info.title})")
 
     completed_trips_arr = []
 
@@ -87,6 +89,8 @@ if __name__ == '__main__':
         if s1_df.empty:
             print(f"no arrival times found for stop {s1} on {date_str}")
             continue
+
+        s1_df = s1_df.sort_values('TIME', axis=0)
 
         # in case we don't see the vehicle arrive at s2 in the current run,
         # look at the next time the same vehicle arrives back at s1, only look at s2 arrivals before that time
