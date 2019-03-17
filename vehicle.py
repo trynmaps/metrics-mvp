@@ -41,7 +41,7 @@ if __name__ == '__main__':
     for d in dates:
         history = arrival_history.get_by_date(agency, route_id, d)
 
-        df = history.get_data_frame(vid=vid, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
+        df = history.get_data_frame(vehicle_id=vid, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
 
         if df.empty:
             print(f"no arrival times found for vehicle {vid} on {date_str}")
@@ -52,7 +52,6 @@ if __name__ == '__main__':
         for index, row in df.iterrows():
             stop_id = row.SID
             stop_info = route_config.get_stop_info(stop_id)
-            dir = route_config.get_direction_for_stop(stop_id)
-            dir_info = route_config.get_direction_info(dir)
+            dir_info = route_config.get_direction_info(row.DID)
 
-            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) vid:{row.VID} stop:{stop_info.title} ({stop_id}) dir: {dir_info.name}")
+            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) vid:{row.VID} stop:{stop_info.title} ({stop_id}) dir:{dir_info.title} ({row.DID})")
