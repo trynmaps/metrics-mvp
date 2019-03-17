@@ -40,6 +40,8 @@ def metrics_page():
     if stop_id is None:
         stop_id = '4970'
 
+    direction_id = request.args.get('direction_id')
+
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
     date_str = request.args.get('date')
@@ -57,6 +59,7 @@ def metrics_page():
     params = {
         'stop_id': stop_id,
         'route_id': route_id,
+        'direction_id': direction_id,
         'start_date': start_date_str,
         'end_date': end_date_str,
         'start_time': start_time_str,
@@ -75,8 +78,17 @@ def metrics_page():
 
     route_config = nextbus.get_route_config('sf-muni', route_id)
     stop_info = route_config.get_stop_info(stop_id)
-    dir = route_config.get_direction_for_stop(stop_id)
-    dir_info = route_config.get_direction_info(dir)
+
+    if direction_id is not None:
+        dirs = [direction_id]
+        dir_info = route_config.get_direction_info(dir)
+        if dir_info is not None:
+            dir_infos = [dir_info]
+        else:
+            dir_infos = []
+    else:
+        dirs = route_config.get_directions_for_stop(stop_id)
+        dir_infos = [route_config.get_direction_info(dir) for dir in dirs]
 
     headway_min_arr = []
     for d in dates:
@@ -88,7 +100,7 @@ def metrics_page():
                 'error': f"Arrival history not found for route {route_id} on {d}",
             }, indent=2), status=404, mimetype='application/json')
 
-        df = history.get_data_frame(stop_id, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
+        df = history.get_data_frame(stop_id, tz=tz, direction_id=direction_id, start_time_str=start_time_str, end_time_str=end_time_str)
 
         # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
         df['headway_min'] = metrics.compute_headway_minutes(df)
@@ -110,8 +122,7 @@ def metrics_page():
         'params': params,
         'route_title': route_config.title,
         'stop_title': stop_info.title if stop_info else None,
-        'direction_title': dir_info.title if dir_info else None,
-        'direction_id': dir,
+        'directions': [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos],
         'headway_min': {
             'count': len(headway_min),
             'avg': np.average(headway_min),
