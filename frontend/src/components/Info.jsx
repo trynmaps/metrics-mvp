@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { css } from 'emotion';
 import { BarChart, LineChart } from 'react-d3-components';
 
 const barData = [{
@@ -56,21 +57,17 @@ class Info extends Component {
   render() {
     return (
       <div
-        className="App"
-        style={
-          {
-            padding: '10%',
-          }
+        className={css`
+         grid-column: col3-start ;
+        grid-row: row1-start / row2-end;
+        `
         }
       >
-        <div className="container">
-          <div className="row">
-            <div className="col-md-6">
-              <LineChart
-                data={lineData}
-                width={400}
-                height={400}
-                margin={
+        <LineChart
+          data={lineData}
+          width={400}
+          height={400}
+          margin={
                   {
                     top: 10,
                     bottom: 50,
@@ -78,14 +75,12 @@ class Info extends Component {
                     right: 20,
                   }
                 }
-              />
-            </div>
-            <div className="col-md-6">
-              <BarChart
-                data={barData}
-                width={400}
-                height={400}
-                margin={
+        />
+        <BarChart
+          data={barData}
+          width={400}
+          height={400}
+          margin={
                   {
                     top: 10,
                     bottom: 50,
@@ -93,10 +88,7 @@ class Info extends Component {
                     right: 20,
                   }
                 }
-              />
-            </div>
-          </div>
-        </div>
+        />
       </div>
     );
   }

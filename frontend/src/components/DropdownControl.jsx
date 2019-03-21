@@ -37,21 +37,19 @@ class DropdownControl extends Component {
     const dropdownId = `${name.name}-dropdown`;
     const shownValue = selectedValue == null ? prettyName.prettyName : selectedValue;
     return (
-      <div>
-        <Dropdown>
-          <Dropdown.Toggle variant={variant.variant} id={dropdownId}>
-            {shownValue}
-          </Dropdown.Toggle>
-          {selected}
-          <Dropdown.Menu>
-            {
-              options.options.map(value => (
-                <Dropdown.Item onClick={this.handleSelectedValue} eventKey={value} href="#">{value}</Dropdown.Item>
-              ))
-            }
-          </Dropdown.Menu>
-        </Dropdown>
-      </div>
+      <Dropdown>
+        <Dropdown.Toggle variant={variant.variant} id={dropdownId}>
+          {shownValue}
+        </Dropdown.Toggle>
+        {selected}
+        <Dropdown.Menu>
+          {
+            options.options.map(value => (
+              <Dropdown.Item onClick={this.handleSelectedValue} eventKey={value} href="#">{value}</Dropdown.Item>
+            ))
+          }
+        </Dropdown.Menu>
+      </Dropdown>
     );
   }
 }
