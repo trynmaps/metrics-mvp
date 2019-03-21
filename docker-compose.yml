@@ -2,7 +2,7 @@ version: "3.0"
 services:
   flask:
     build:
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-flask
       context: .
     ports:
       - "5000:5000"
@@ -14,7 +14,7 @@ services:
     container_name: react
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-react
     volumes:
       - '.:/usr/src/app'
       - '/usr/src/app/node_modules'
