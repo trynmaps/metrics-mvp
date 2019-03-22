@@ -1,1 +1,5 @@
 node_modules
+frontend/node_modules
+data
+venv
+.git
