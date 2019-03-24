@@ -113,7 +113,6 @@ class ControlPanel extends Component {
         selectedRoute.directions.find(dir => dir.id === directionId) : null;
 
     return (
-      <>
         <div className={css`
           background-color: #add8e6;
           color: #fff;
@@ -151,15 +150,6 @@ class ControlPanel extends Component {
                 } /> : null
             }
         </div>
-        <div className={css`
-          color: #fff;
-          border-radius: 5px;
-          margin-top: 20px;
-          `}
-        >
-          <button type="submit" onClick={this.onSubmit}> Calculate route statistics </button>
-        </div>
-      </>
     );
   }
 }

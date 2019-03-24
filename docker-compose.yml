@@ -1,8 +1,9 @@
 version: "3.0"
 services:
   flask:
+    container_name: metrics-flask
     build:
-      dockerfile: Dockerfile-flask
+      dockerfile: Dockerfile
       context: .
     ports:
       - "5000:5000"
@@ -11,13 +12,13 @@ services:
     environment:
       - NODE_ENV=development
   react:
-    container_name: react
+    container_name: metrics-react
     build:
       context: .
-      dockerfile: Dockerfile-react
+      dockerfile: Dockerfile
+    command: ["npm", "start"]
     volumes:
-      - '.:/usr/src/app'
-      - '/usr/src/app/node_modules'
+      - .:/app
     ports:
       - '3000:3000'
     environment:

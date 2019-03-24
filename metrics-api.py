@@ -164,15 +164,14 @@ def metrics_page():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-# Serve React App
+# Serve production build of React app
 # @app.route('/', defaults={'path': ''}, methods=['GET'])
 # @app.route('/app/<path:path>')
 @app.route('/', methods=['GET'])
 def serve_react():
     return send_from_directory('frontend/build', 'index.html')
 
-
-# serve everything from the `frontend` folder directly
+# serve production build from the `frontend` folder directly
 # (this is mostly static files)
 @app.route('/frontend/<path:path>')
 def send_frontend(path):
