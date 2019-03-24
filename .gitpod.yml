@@ -1,15 +1,14 @@
 ports:
+  - port: 3000
+    onOpen: open-browser
   - port: 5000
     onOpen: open-browser
 
 tasks:
-- command: git status && git pull
+- command: git status
 - command: |
-    virtualenv -p python3 venv &&
-    source venv/bin/activate &&
     pip install -r requirements.txt &&
-    FLASK_APP=metrics-api.py flask run --host 0.0.0.0
+    python metrics-api.py
 - command: |
-    npm install --prefix frontend &&
-    npm run-script build
-
+    (cd frontend && yarn install) &&
+    CHOKIDAR_USEPOLLING=true NODE_ENV=development REACT_APP_METRICS_BASE_URL=`gp url 5000` npm start
