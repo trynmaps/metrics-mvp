@@ -46,7 +46,6 @@ def route_config():
     }
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-# "Command Line"-esque endpoints
 @app.route('/metrics', methods=['GET'])
 def metrics_page():
     metrics_start = time.time()
@@ -153,7 +152,8 @@ def metrics_page():
             'count': len(headway_min),
             'avg': np.average(headway_min),
             'std': np.std(headway_min),
-            'histogram': [{'value': f'{bin}-{bin+bin_size-1}', 'count': int(count)} for bin, count in zip(histogram_bins, histogram)],
+            'histogram': [{'value': f'{bin}-{bin+bin_size-1}', 'count': int(count)}
+                for bin, count in zip(histogram_bins, histogram)],
             'percentiles': [{'percentile': percentile, 'value': value}
                 for percentile, value in zip(percentiles, percentile_values)],
         },
