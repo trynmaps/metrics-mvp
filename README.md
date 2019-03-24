@@ -2,48 +2,93 @@
 
 ## Getting started
 
+### Option 1: Docker + Local IDE
 
-### Option 1: Local IDE
+Install Docker Desktop (https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
 
-Make sure you're using Python 3. `python --version` (without your virtual environment) should return `Python 3.x.x`.
-
-And make sure you're using npm 10 or higher.
-
+Build and run the Docker containers:
 ```
-    virtualenv -p python3 venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    npm install --prefix frontend
-    npm run-script build
-    FLASK_APP=metrics-api.py flask run --host 0.0.0.0
+docker-compose up
 ```
+
+This will run the React frontend in development mode at http://localhost:3000,
+and will run the Flask backend in development mode at http://localhost:5000 .
+
+Your local directory will be shared within the docker container at /app.
+When you edit files in your local directory, the React and Flask containers should automatically update with the new code.
+
+To start a shell within the Flask Docker container, run:
+```
+docker exec -it metrics-flask bash
+```
+
+You can run command line scripts from the shell in the Docker container, e.g:
+```
+python compute_arrivals.py --date=2019-03-01 --route=1
+python headways.py --date=2019-03-01 --route=1 --stop=6290
+```
+
+If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
 
 ### Option 2: Cloud IDE
 
-If you don't want to handle configuring your system, installing packages,
-wrangling Python versions, and stuff, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
-This will automatically install requirements on a cloud machine
-and get the app running for you instantly.
+If you don't want to handle installing anything locally, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
+This will automatically install requirements on a cloud machine and get the app running for you instantly.
 
-To make changes, make sure you've been added to the trynmaps organization
-on GitHub.
+## Computing Arrival Times
 
+The API and command-line scripts generate statistics based on Muni arrival times that are precomputed from the raw GPS data.
+The pre-computed arrival times are stored in S3 http://opentransit-stop-arrivals.s3.amazonaws.com/?prefix=v2 with a separate JSON file
+for each route for each day.
 
-## Reloading
+If the arrival times for a particular route/day haven't been computed yet, you'll get an error when computing statistics.
 
-Whenever you change the frontend, run `npm run-script build` to rebuild the frontend.
-No need to rebuild the backend.
+To get arrival times for one or more routes/days that haven't been precomputed yet, run `compute_arrivals.py`
+to generate the JSON files locally (if using Docker, run this command from a shell within the Docker container
+`docker exec -it metrics-flask bash`), e.g:
+```
+python compute_arrivals.py --date=2019-03-01 --route 1 2 47 38 38X
+```
 
-Whenever you change the backend, run `FLASK_APP=metrics-api.py flask run --host 0.0.0.0`.
-No need to rebuild the frontend.
+The JSON files with computed arrivals will be stored in your local `data/` directory.
+
+Saving computed arrivals to S3 allows other people to access the arrival times without needing to compute them again.
+Adding the `--s3` flag to `compute_arrivals.py` will save the arrival times to S3. To use the `--s3` flag,
+you'll need to get permission to write to the opentransit-stop-arrivals bucket and save AWS credentials in `~/.aws/credentials`.
+
+## Deploying to Heroku
+
+This repository also uses Docker to deploy to Heroku.
+
+Anyone can create a free account on Heroku at https://dashboard.heroku.com/apps to deploy their local version of the repo.
+Create an app in Heroku and follow the instructions to deploy using Heroku Git with an existing Git repository.
+
+The first time you deploy to Heroku, you'll need to tell it to use Docker (heroku.yml) instead of Procfile:
+```
+heroku stack:set container
+```
+
+To deploy the latest commit in your local master branch to Heroku (assuming you have set up a remote named "heroku"):
+```
+git push heroku master
+```
+
+If you are working on another branch besides master, deploy it like this:
+```
+git push heroku local-branch-name:master
+```
+
+## Contributing
+
+To make changes, make sure you've been added to the trynmaps organization on GitHub.
+
+Commit your local changes to a feature branch (i.e. not master), then submit a pull request on Github.
 
 ## Notes for developers
 
-If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt` so other contributors have the latest versions of required packages.
-
-Keep in mind this setup doesn't support hot reloading.
-
+If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt`
+so other contributors have the latest versions of required packages.
 
 ## Demo
 
-[Check out this demo!](https://opentransit.herokuapp.com/metrics)
+[Check out this demo!](https://opentransit.herokuapp.com/)

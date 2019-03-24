@@ -169,7 +169,19 @@ def metrics_page():
 # @app.route('/app/<path:path>')
 @app.route('/', methods=['GET'])
 def serve_react():
-    return send_from_directory('frontend/build', 'index.html')
+    try:
+        return send_from_directory('frontend/build', 'index.html')
+    except Exception as e:
+        source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        if not os.path.isfile(f'{source_dir}/frontend/build/index.html'):
+            return """<h2>Hello!</h2>
+            <p>This is where the production frontend assets would be, but they don't seem to have been built yet.</p>
+            <p>To build the frontend assets, run <code>cd frontend && yarn build</code> from the command line.<br />
+            To view the frontend in dev mode, visit port 3000 instead.<br />
+            To explore the backend API, try <a href="/metrics">/metrics</a></p>
+            """
+        else:
+            raise e
 
 # serve production build from the `frontend` folder directly
 # (this is mostly static files)
