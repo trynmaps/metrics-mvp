@@ -12,7 +12,7 @@ docker-compose up
 ```
 
 This will run the React frontend in development mode at http://localhost:3000,
-and will run the Flask backend in development mode at http://localhost:5000 .
+and will run the Flask backend in development mode at http://localhost:5000.
 
 Your local directory will be shared within the docker container at /app.
 When you edit files in your local directory, the React and Flask containers should automatically update with the new code.
@@ -22,11 +22,7 @@ To start a shell within the Flask Docker container, run:
 docker exec -it metrics-flask bash
 ```
 
-You can run command line scripts from the shell in the Docker container, e.g:
-```
-python compute_arrivals.py --date=2019-03-01 --route=1
-python headways.py --date=2019-03-01 --route=1 --stop=6290
-```
+You can run command line scripts like `compute_arrivals.py` and `headways.py` from the shell in the Docker container.
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
 
@@ -56,14 +52,30 @@ Saving computed arrivals to S3 allows other people to access the arrival times w
 Adding the `--s3` flag to `compute_arrivals.py` will save the arrival times to S3. To use the `--s3` flag,
 you'll need to get permission to write to the opentransit-stop-arrivals bucket and save AWS credentials in `~/.aws/credentials`.
 
+## Command line scripts
+
+Show headways between buses at a particular stop:
+```
+python headways.py --date=2019-02-01 --route=1 --stop=6290
+```
+
+Show trips between two stops:
+```
+python trips.py --date=2019-02-01 --route=1 --s1=6314 --s2=6304
+```
+
+Show stops visited by a particular vehicle:
+```
+python vehicle.py --date=2019-02-01 --route=1 --vid=5737
+```
+
 ## Deploying to Heroku
 
-This repository also uses Docker to deploy to Heroku.
+Anyone can create a free account on Heroku to deploy their local version of the repo.
+Create an app in Heroku at https://dashboard.heroku.com/apps and follow the instructions to deploy using Heroku Git
+with an existing Git repository.
 
-Anyone can create a free account on Heroku at https://dashboard.heroku.com/apps to deploy their local version of the repo.
-Create an app in Heroku and follow the instructions to deploy using Heroku Git with an existing Git repository.
-
-The first time you deploy to Heroku, you'll need to tell it to use Docker (heroku.yml) instead of Procfile:
+The first time you deploy to Heroku, you'll need to tell it to build Docker containers using heroku.yml:
 ```
 heroku stack:set container
 ```
@@ -82,7 +94,7 @@ git push heroku local-branch-name:master
 
 To make changes, make sure you've been added to the trynmaps organization on GitHub.
 
-Commit your local changes to a feature branch (i.e. not master), then submit a pull request on Github.
+Commit your local changes to a feature branch (i.e. not master), then submit a pull request on GitHub.
 
 ## Notes for developers
 
