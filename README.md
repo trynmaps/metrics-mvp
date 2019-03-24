@@ -4,7 +4,7 @@
 
 ### Option 1: Docker + Local IDE
 
-Install Docker Desktop (https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
 
 Build and run the Docker containers:
 ```
@@ -38,7 +38,7 @@ This will automatically install requirements on a cloud machine and get the app 
 ## Computing Arrival Times
 
 The API and command-line scripts generate statistics based on Muni arrival times that are precomputed from the raw GPS data.
-The pre-computed arrival times are stored in S3 http://opentransit-stop-arrivals.s3.amazonaws.com/?prefix=v2 with a separate JSON file
+The pre-computed arrival times are stored in S3 at http://opentransit-stop-arrivals.s3.amazonaws.com/?prefix=v2 with a separate JSON file
 for each route for each day.
 
 If the arrival times for a particular route/day haven't been computed yet, you'll get an error when computing statistics.
