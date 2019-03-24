@@ -177,7 +177,6 @@ def serve_react():
 def send_frontend(path):
     return send_from_directory('frontend', path)
 
-
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5000))
