@@ -22,6 +22,7 @@ RUN pip install -r /app/requirements.txt
 RUN cd /app/frontend && yarn install
 RUN cd /app/frontend && yarn build
 
+RUN mkdir /app/data
 WORKDIR /app
 
 # Override this command with ["npm","start"]
