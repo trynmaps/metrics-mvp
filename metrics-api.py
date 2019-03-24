@@ -10,6 +10,10 @@ import time
 import math
 from models import metrics, util, arrival_history, wait_times, nextbus
 
+"""
+This is the app's main file!
+"""
+
 # configuration
 DEBUG = True
 

@@ -12,6 +12,9 @@ export default function reducer(state={
       if (!routes) {
         routes = [];
       }
+
+      // update the array of all routes to store full configuration
+      // for the requested route (directions, stops, etc.)
       const route = routes.find(route => (route.id === routeId));
       if (route) {
         Object.assign(route, routeConfig);
