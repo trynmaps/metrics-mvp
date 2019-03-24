@@ -1,25 +1,8 @@
 import React, { Component } from 'react';
 import { css } from 'emotion';
-import { BarChart, LineChart } from 'react-d3-components';
+import { BarChart /*, LineChart */ } from 'react-d3-components';
 
-const barData = [{
-  label: 'somethingA',
-  values: [
-    {
-      x: '5am',
-      y: 10,
-    },
-    {
-      x: '10am',
-      y: 4,
-    },
-    {
-      x: '12pm',
-      y: 3,
-    },
-  ],
-}];
-
+/*
 const lineData = [
   {
     label: '',
@@ -47,6 +30,7 @@ const lineData = [
     ],
   },
 ];
+*/
 
 class Info extends Component {
   constructor(props) {
@@ -55,6 +39,11 @@ class Info extends Component {
   }
 
   render() {
+
+    const { graphData, graphError } = this.props;
+
+    const histogram = graphData ? graphData.headway_min.histogram : null;
+
     return (
       <div
         className={css`
@@ -63,7 +52,8 @@ class Info extends Component {
         `
         }
       >
-        <LineChart
+      {histogram ?
+        /* <LineChart
           data={lineData}
           width={400}
           height={400}
@@ -75,10 +65,10 @@ class Info extends Component {
                     right: 20,
                   }
                 }
-        />
+        /> */
         <BarChart
-          data={barData}
-          width={400}
+          data={[{values: histogram.map(bin => ({x:''+bin.value, y:bin.count}))}]}
+          width={Math.max(400, histogram.length * 50)}
           height={400}
           margin={
                   {
@@ -88,7 +78,8 @@ class Info extends Component {
                     right: 20,
                   }
                 }
-        />
+      /> : null }
+      <code>{graphError ? graphError : ''}{ graphData ? JSON.stringify(graphData) : null}</code>
       </div>
     );
   }

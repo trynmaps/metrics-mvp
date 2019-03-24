@@ -22,4 +22,5 @@ services:
       - '3000:3000'
     environment:
       - NODE_ENV=development
+      - REACT_APP_METRICS_BASE_URL=http://localhost:5000
       - CHOKIDAR_USEPOLLING=true

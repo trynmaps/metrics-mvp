@@ -7,26 +7,44 @@ import pandas as pd
 import pytz
 from datetime import datetime
 import time
+import math
 from models import metrics, util, arrival_history, wait_times, nextbus
-
-"""
-This is the app's main file!
-"""
 
 # configuration
 DEBUG = True
 
 # Create the app
 app = Flask(__name__, static_folder='frontend/build')
-
-# @app.route('/', methods=['GET'])
-# def index():
-#     return "<a href='/metrics'>/metrics</a>";
+CORS(app)
 
 # Test endpoint
 @app.route('/ping', methods=['GET'])
 def ping():
     return "pong"
+
+@app.route('/routes', methods=['GET'])
+def routes():
+    route_list = nextbus.get_route_list('sf-muni')
+    data = [{'id': route.id, 'title': route.title} for route in route_list]
+    return Response(json.dumps(data, indent=2), mimetype='application/json')
+
+@app.route('/route', methods=['GET'])
+def route_config():
+    route_id = request.args.get('route_id')
+    route = nextbus.get_route_config('sf-muni', route_id)
+
+    data = {
+        'id': route_id,
+        'title': route.title,
+        'directions': [{
+            'id': dir.id,
+            'title': dir.title,
+            'name': dir.name,
+            'stops': dir.get_stop_ids()
+        } for dir in route.get_direction_infos()],
+        'stops': {stop.id: {'title': stop.title} for stop in route.get_stop_infos()}
+    }
+    return Response(json.dumps(data, indent=2), mimetype='application/json')
 
 # "Command Line"-esque endpoints
 @app.route('/metrics', methods=['GET'])
@@ -113,10 +131,18 @@ def metrics_page():
     if headway_min.empty:
         return Response(json.dumps({
             'params': params,
-            'error': "No arrivals for stop",
+            'error': f"No arrivals for stop {stop_id} on route {route_id}",
         }, indent=2), status=404, mimetype='application/json')
 
     percentiles = range(0,101,5)
+    percentile_values = np.percentile(headway_min, percentiles)
+
+    bin_size = 5
+    bin_min = math.floor(percentile_values[0] / bin_size) * bin_size
+    bin_max = math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
+
+    histogram_bins = range(bin_min, bin_max, bin_size)
+    histogram, bin_edges = np.histogram(headway_min, histogram_bins)
 
     data = {
         'params': params,
@@ -127,8 +153,9 @@ def metrics_page():
             'count': len(headway_min),
             'avg': np.average(headway_min),
             'std': np.std(headway_min),
+            'histogram': [{'value': f'{bin}-{bin+bin_size-1}', 'count': int(count)} for bin, count in zip(histogram_bins, histogram)],
             'percentiles': [{'percentile': percentile, 'value': value}
-                for percentile, value in zip(percentiles, np.percentile(headway_min, percentiles))],
+                for percentile, value in zip(percentiles, percentile_values)],
         },
     }
 
@@ -142,7 +169,6 @@ def metrics_page():
 # @app.route('/app/<path:path>')
 @app.route('/', methods=['GET'])
 def serve_react():
-    print("hi")
     return send_from_directory('frontend/build', 'index.html')
 
 

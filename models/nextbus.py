@@ -44,6 +44,9 @@ class RouteConfig:
             else:
                 return None
 
+    def get_stop_infos(self):
+        return [StopInfo(stop) for stop in self.data['stop']]
+
     def get_stop_info(self, stop_id):
         for stop in self.data['stop']:
             if stop['tag'] == stop_id:
@@ -57,6 +60,9 @@ class RouteConfig:
             return [direction_data]
         else:
             return direction_data
+
+    def get_direction_infos(self):
+        return [DirectionInfo(direction) for direction in self._get_direction_data()]
 
     def get_direction_info(self, direction_id):
         for direction in self._get_direction_data():
