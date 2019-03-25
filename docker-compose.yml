@@ -10,7 +10,7 @@ services:
     volumes:
       - .:/app
     environment:
-      - NODE_ENV=development
+      - FLASK_DEBUG=1
   react:
     container_name: metrics-react
     build:

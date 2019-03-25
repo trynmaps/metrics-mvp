@@ -25,6 +25,8 @@ RUN cd /app/frontend && yarn build
 RUN mkdir /app/data
 WORKDIR /app
 
+ENV FLASK_APP=metrics-api.py
+
 # Override this command with ["npm","start"]
 # to run frontend React server in dev mode
-CMD ["python", "metrics-api.py"]
+CMD ["flask", "run", "--host", "0.0.0.0"]

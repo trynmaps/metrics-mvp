@@ -8,7 +8,7 @@ tasks:
 - command: git status
 - command: |
     pip install -r requirements.txt &&
-    python metrics-api.py
+    FLASK_DEBUG=1 FLASK_APP=metrics-api.py flask run --host=0.0.0.0
 - command: |
     (cd frontend && yarn install) &&
     CHOKIDAR_USEPOLLING=true NODE_ENV=development REACT_APP_METRICS_BASE_URL=`gp url 5000` npm start
