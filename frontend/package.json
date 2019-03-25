@@ -37,6 +37,7 @@
     "redux-thunk": "^2.3.0"
   },
   "scripts": {
+    "install-start": "yarn install && react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

@@ -16,7 +16,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["npm", "start"]
+    working_dir: /app/frontend
+    command: ["npm", "run", "install-start"]
     volumes:
       - .:/app
     ports:
