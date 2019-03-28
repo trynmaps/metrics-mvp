@@ -37,6 +37,9 @@ The API and command-line scripts generate statistics based on Muni arrival times
 The pre-computed arrival times are stored in S3 at http://opentransit-stop-arrivals.s3.amazonaws.com/?prefix=v2 with a separate JSON file
 for each route for each day.
 
+The first time that arrival times are requested for a particular route/day,
+the backend will download the JSON file from S3 and cache it in the data/ directory.
+
 If the arrival times for a particular route/day haven't been computed yet, you'll get an error when computing statistics.
 
 To get arrival times for one or more routes/days that haven't been precomputed yet, run `compute_arrivals.py`
