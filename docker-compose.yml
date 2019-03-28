@@ -1,25 +1,28 @@
 version: "3.0"
 services:
   flask:
+    container_name: metrics-flask
     build:
-      dockerfile: Dockerfile-flask
+      dockerfile: Dockerfile
       context: .
     ports:
       - "5000:5000"
     volumes:
       - .:/app
     environment:
-      - NODE_ENV=development
+      - FLASK_DEBUG=1
   react:
-    container_name: react
+    container_name: metrics-react
     build:
       context: .
-      dockerfile: Dockerfile-react
+      dockerfile: Dockerfile
+    working_dir: /app/frontend
+    command: ["npm", "run", "install-start"]
     volumes:
-      - '.:/usr/src/app'
-      - '/usr/src/app/node_modules'
+      - .:/app
     ports:
       - '3000:3000'
     environment:
       - NODE_ENV=development
+      - REACT_APP_METRICS_BASE_URL=http://localhost:5000
       - CHOKIDAR_USEPOLLING=true
