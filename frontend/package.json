@@ -6,6 +6,7 @@
     "@date-io/date-fns": "^1.1.0",
     "axios": "^0.18.0",
     "bootstrap": "^4.3.1",
+    "emotion": "^10.0.9",
     "eslint": "5.6.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-react-app": "^3.0.6",
@@ -36,6 +37,7 @@
     "redux-thunk": "^2.3.0"
   },
   "scripts": {
+    "install-start": "yarn install && react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
