@@ -2,7 +2,7 @@ import argparse
 import json
 import sys
 from datetime import datetime, timedelta
-from models import nextbus, arrival_history, util, metrics
+from models import nextbus, arrival_history, util, metrics, trip_times
 import pytz
 import numpy
 import pandas as pd
@@ -80,41 +80,24 @@ if __name__ == '__main__':
     completed_trips_arr = []
 
     for d in dates:
-        date_str = str(d)
-
-        history = arrival_history.get_by_date(agency, route_id, d)
-
-        s1_df = history.get_data_frame(stop_id=s1, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
-
+        s1_df = trip_times.get_trip_times(d, agency, tz, start_time_str, end_time_str, route_id, s1, s2)
+        
         if s1_df.empty:
             print(f"no arrival times found for stop {s1} on {date_str}")
-            continue
+        else:
+            for index, row in s1_df.iterrows():
+                print(f"s1_t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) s2_t={row.dest_arrival_time_str} ({row.dest_arrival_time}) vid:{row.VID} trip_minutes:{round(row.trip_min, 1)}")
 
-        s1_df = s1_df.sort_values('TIME', axis=0)
+            completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 
-        # in case we don't see the vehicle arrive at s2 in the current run,
-        # look at the next time the same vehicle arrives back at s1, only look at s2 arrivals before that time
-        def find_dest_arrival_time(row):
-            next_return_time = history.find_next_arrival_time(s1, row.VID, row.TIME)
-            return history.find_next_arrival_time(s2, row.VID, row.TIME, next_return_time)
+    trips = pd.concat(completed_trips_arr)
 
-        s1_df['dest_arrival_time'] = s1_df.apply(find_dest_arrival_time, axis=1)
-        s1_df['trip_min'] = (s1_df.dest_arrival_time - s1_df.TIME)/60
-        s1_df['dest_arrival_time_str'] = s1_df['dest_arrival_time'].apply(lambda timestamp: datetime.fromtimestamp(timestamp, tz).time() if not numpy.isnan(timestamp) else None)
-
-        for index, row in s1_df.iterrows():
-            print(f"s1_t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) s2_t={row.dest_arrival_time_str} ({row.dest_arrival_time}) vid:{row.VID} trip_minutes:{round(row.trip_min, 1)}")
-
-        completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
-
-    trip_times = pd.concat(completed_trips_arr)
-
-    print(f'completed trips     = {len((trip_times))}')
-    if len(trip_times) > 0:
-        print(f'average trip time   = {round(numpy.average(trip_times),1)} min')
-        print(f'standard deviation  = {round(numpy.std(trip_times),1)} min')
-        print(f'shortest trip time  = {round(numpy.min(trip_times),1)} min')
-        print(f'10% trip time       = {round(numpy.quantile(trip_times,0.1),1)} min')
-        print(f'median trip time    = {round(numpy.median(trip_times),1)} min')
-        print(f'90% trip time       = {round(numpy.quantile(trip_times,0.9),1)} min')
-        print(f'longest trip time   = {round(numpy.max(trip_times),1)} min')
+    print(f'completed trips     = {len((trips))}')
+    if len(trips) > 0:
+        print(f'average trip time   = {round(numpy.average(trips),1)} min')
+        print(f'standard deviation  = {round(numpy.std(trips),1)} min')
+        print(f'shortest trip time  = {round(numpy.min(trips),1)} min')
+        print(f'10% trip time       = {round(numpy.quantile(trips,0.1),1)} min')
+        print(f'median trip time    = {round(numpy.median(trips),1)} min')
+        print(f'90% trip time       = {round(numpy.quantile(trips,0.9),1)} min')
+        print(f'longest trip time   = {round(numpy.max(trips),1)} min')

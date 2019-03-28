@@ -1,4 +1,8 @@
 import pandas as pd
+from . import wait_times
+
+def compute_avg_wait_times_minutes(df: pd.DataFrame):
+    return df.mean
 
 def compute_headway_minutes(df: pd.DataFrame):
     return ((df.TIME - df.TIME.shift(1))/60)

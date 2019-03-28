@@ -112,6 +112,7 @@ def metrics_page():
         dir_infos = [route_config.get_direction_info(dir) for dir in dirs]
 
     headway_min_arr = []
+    waits = []
     for d in dates:
         try:
             history = arrival_history.get_by_date('sf-muni', route_id, d)
@@ -125,11 +126,13 @@ def metrics_page():
 
         # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
         df['headway_min'] = metrics.compute_headway_minutes(df)
+        waits.append(wait_times.get_wait_times(df, str(d), start_time_str if start_time_str is not None else "03:00"))
 
         headway_min = df.headway_min[df.headway_min.notnull()] # remove NaN row (first bus of the day)
         headway_min_arr.append(headway_min)
 
     headway_min = pd.concat(headway_min_arr)
+    waits = pd.concat(waits)
 
     if headway_min.empty:
         return Response(json.dumps({
@@ -161,6 +164,13 @@ def metrics_page():
             'percentiles': [{'percentile': percentile, 'value': value}
                 for percentile, value in zip(percentiles, percentile_values)],
         },
+        'wait_times': {
+            'count': len(waits),
+            'avg': np.average(waits),
+            'std': np.std(waits),
+            'percentiles': [{'percentile': percentile, 'value': value}
+                for percentile, value in zip(percentiles, np.percentile(waits, percentiles))],
+        }
     }
 
     metrics_end = time.time()
