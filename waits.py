@@ -57,12 +57,6 @@ if __name__ == '__main__':
     else:
         raise Exception('missing date, start-date, or end-date')
 
-    print(f"Date: {', '.join([str(date) for date in dates])}")
-    print(f"Local Time Range: [{start_time_str}, {end_time_str})")
-    print(f"Route: {route_id} ({route_config.title})")
-    print(f"Stop: {stop} ({stop_info.title})")
-    print(f"Direction: {stop_dir[0]} ({dir_info.title})")
-
     waits = []
 
     for d in dates:
@@ -70,16 +64,29 @@ if __name__ == '__main__':
         hist = arrival_history.get_by_date(agency, route_id, d)
         arrivals = hist.get_data_frame(stop_id = stop, direction_id = stop_dir[0], start_time_str = start_time_str, end_time_str = end_time_str, tz = tz)
 
-        waits.append(wait_times.get_wait_times(arrivals, date, start_time_str))
+        waits.append(wait_times.get_waits(arrivals, date, route_id, start_time_str, end_time_str))
 
     waits = pd.concat(waits)
+    wait_lengths = waits['WAIT'].dropna()
+    start = datetime.fromtimestamp(waits['TIME'].min(), tz = tz)
+    end = datetime.fromtimestamp(waits['TIME'].max(), tz = tz)
+    first_bus = datetime.fromtimestamp(waits['ARRIVAL'].min(), tz = tz)
+    last_bus = datetime.fromtimestamp(waits['ARRIVAL'].max(), tz = tz)
 
-    print(f'computed wait times = {len((waits))}')
-    if len(waits) > 0:
-        print(f'average wait time   = {round(np.average(waits),1)} min')
-        print(f'standard deviation  = {round(np.std(waits),1)} min')
-        print(f'shortest wait time  = {round(np.min(waits),1)} min')
-        print(f'10% wait time       = {round(np.quantile(waits,0.1),1)} min')
-        print(f'median wait time    = {round(np.median(waits),1)} min')
-        print(f'90% wait time       = {round(np.quantile(waits,0.9),1)} min')
-        print(f'longest wait time   = {round(np.max(waits),1)} min')
+    print(f"Date: {', '.join([str(date) for date in dates])}")
+    print(f"Local Time Range: [{start.time().isoformat()}, {end.time().isoformat()}]")
+    print(f"Route: {route_id} ({route_config.title})")
+    print(f"Stop: {stop} ({stop_info.title})")
+    print(f"Direction: {stop_dir[0]} ({dir_info.title})")
+
+    print(f'computed wait times = {len(wait_lengths)}')
+    if len(wait_lengths) > 0:
+        print(f'first bus departure = {first_bus.time().isoformat()}')
+        print(f'last bus departure  = {last_bus.time().isoformat()}')
+        print(f'average wait time   = {round(np.average(wait_lengths),1)} min')
+        print(f'standard deviation  = {round(np.std(wait_lengths),1)} min')
+        print(f'shortest wait time  = {round(np.min(wait_lengths),1)} min')
+        print(f'10% wait time       = {round(np.quantile(wait_lengths,0.1),1)} min')
+        print(f'median wait time    = {round(np.median(wait_lengths),1)} min')
+        print(f'90% wait time       = {round(np.quantile(wait_lengths,0.9),1)} min')
+        print(f'longest wait time   = {round(np.max(wait_lengths),1)} min')

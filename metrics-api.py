@@ -59,7 +59,7 @@ def metrics_page():
         route_id = '12'
     stop_id = request.args.get('stop_id')
     if stop_id is None:
-        stop_id = '4970'
+        stop_id = '3476'
 
     direction_id = request.args.get('direction_id')
 
@@ -126,13 +126,16 @@ def metrics_page():
 
         # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
         df['headway_min'] = metrics.compute_headway_minutes(df)
-        waits.append(wait_times.get_wait_times(df, str(d), start_time_str if start_time_str is not None else "03:00"))
+        waits.append(wait_times.get_waits(df, str(d), route_id, start_time_str, end_time_str))
 
         headway_min = df.headway_min[df.headway_min.notnull()] # remove NaN row (first bus of the day)
         headway_min_arr.append(headway_min)
 
     headway_min = pd.concat(headway_min_arr)
     waits = pd.concat(waits)
+    wait_lengths = waits['WAIT'].dropna()
+    first_bus = datetime.fromtimestamp(waits['ARRIVAL'].min(), tz = tz)
+    last_bus = datetime.fromtimestamp(waits['ARRIVAL'].max(), tz = tz)
 
     if headway_min.empty:
         return Response(json.dumps({
@@ -141,14 +144,19 @@ def metrics_page():
         }, indent=2), status=404, mimetype='application/json')
 
     percentiles = range(0,101,5)
-    percentile_values = np.percentile(headway_min, percentiles)
+    headway_percentile_values = np.percentile(headway_min, percentiles)
+    waits_percentile_values = np.percentile(wait_lengths, percentiles)
 
     bin_size = 5
-    bin_min = math.floor(percentile_values[0] / bin_size) * bin_size
-    bin_max = math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
+    headway_bin_min = math.floor(headway_percentile_values[0] / bin_size) * bin_size
+    headway_bin_max = math.ceil(headway_percentile_values[-1] / bin_size) * bin_size + bin_size
+    waits_bin_min = math.floor(waits_percentile_values[0] / bin_size) * bin_size
+    waits_bin_max = math.ceil(waits_percentile_values[-1] / bin_size) * bin_size + bin_size
 
-    histogram_bins = range(bin_min, bin_max, bin_size)
-    histogram, bin_edges = np.histogram(headway_min, histogram_bins)
+    headway_histogram_bins = range(headway_bin_min, headway_bin_max, bin_size)
+    waits_histogram_bins = range(waits_bin_min, waits_bin_max, bin_size)
+    headways_histogram, bin_edges = np.histogram(headway_min, headway_histogram_bins)
+    waits_histogram, bin_edges = np.histogram(wait_lengths, waits_histogram_bins)
 
     data = {
         'params': params,
@@ -160,16 +168,20 @@ def metrics_page():
             'avg': np.average(headway_min),
             'std': np.std(headway_min),
             'histogram': [{'value': f'{bin}-{bin+bin_size-1}', 'count': int(count)}
-                for bin, count in zip(histogram_bins, histogram)],
+                for bin, count in zip(headway_histogram_bins, headways_histogram)],
             'percentiles': [{'percentile': percentile, 'value': value}
-                for percentile, value in zip(percentiles, percentile_values)],
+                for percentile, value in zip(percentiles, headway_percentile_values)],
         },
-        'wait_times': {
-            'count': len(waits),
-            'avg': np.average(waits),
-            'std': np.std(waits),
+        'wait_times_stats': {
+            'count': len(wait_lengths),
+            'first_bus': first_bus.time().isoformat(),
+            'last_bus': last_bus.time().isoformat(),
+            'avg': np.average(wait_lengths),
+            'std': np.std(wait_lengths),
+            'histogram': [{'value': f'{bin}-{bin+bin_size-1}', 'count': int(count)}
+                for bin, count in zip(waits_histogram_bins, waits_histogram)],
             'percentiles': [{'percentile': percentile, 'value': value}
-                for percentile, value in zip(percentiles, np.percentile(waits, percentiles))],
+                for percentile, value in zip(percentiles, waits_percentile_values)],
         }
     }
 
