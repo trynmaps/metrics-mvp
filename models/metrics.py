@@ -1,8 +1,30 @@
 import pandas as pd
+import numpy as np
+import math
 from . import wait_times
 
-def compute_avg_wait_times_minutes(df: pd.DataFrame):
-    return df.mean
+def get_histogram(df: pd.Series, bin_size: int):
+    percentiles = range(0, 101, bin_size)
+    percentile_values = np.percentile(df, percentiles)
+
+    bin_min = math.floor(percentile_values[0] / bin_size) * bin_size
+    bin_max = math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
+    bins = range(bin_min, bin_max, bin_size)
+
+    histogram, bin_edges = np.histogram(df, bins)
+
+    return [{"value": f"{bin} - {bin + bin_size - 1}", "count": int(count)}
+      for bin, count in zip(bins, histogram)]
+
+def get_percentiles(df: pd.Series, bin_size: int):
+    percentiles = range(0, 101, bin_size)
+    percentile_values = np.percentile(df, percentiles)
+
+    return [{"percentile": percentile, "value": value}
+      for percentile, value in zip(percentiles, percentile_values)]
+
+def compute_wait_times(df: pd.DataFrame):
+    return (df["ARRIVAL"] - df["TIME"])/60
 
 def compute_headway_minutes(df: pd.DataFrame):
     return ((df.TIME - df.TIME.shift(1))/60)
