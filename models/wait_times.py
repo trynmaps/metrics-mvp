@@ -45,7 +45,6 @@ def get_waits(df: pd.DataFrame, d: str, route: str, start_time = None, end_time 
     all_waits = pd.DataFrame({'TIME' : minutes_range}).join(waits.set_index('TIME_FLOOR'), on = 'TIME', how = 'outer')
     all_waits['ARRIVAL'] = all_waits['ARRIVAL'].fillna(method = 'bfill')
     all_waits.index = [datetime.fromtimestamp(t, tz = pst).time() for t in all_waits['TIME']]
-    all_waits['WAIT'] = (all_waits['ARRIVAL'] - all_waits['TIME'])/60
     
     # TODO: deal with NaN values at end of the day
     return all_waits
