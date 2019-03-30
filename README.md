@@ -72,6 +72,11 @@ Show stops visited by a particular vehicle:
 python vehicle.py --date=2019-02-01 --route=1 --vid=5737
 ```
 
+Show summary statistics of waiting times at a particular stop:
+```
+python waits.py --date=2019-02-01 --route=12 --stop=3476 --direction=I
+```
+
 ## Deploying to Heroku
 
 Anyone can create a free account on Heroku to deploy their local version of the repo.
