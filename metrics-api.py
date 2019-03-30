@@ -8,7 +8,7 @@ import pytz
 from datetime import datetime
 import time
 import math
-from models import metrics, util, arrival_history, wait_times, nextbus
+from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 
 """
 This is the app's main file!
@@ -60,6 +60,12 @@ def metrics_page():
     stop_id = request.args.get('stop_id')
     if stop_id is None:
         stop_id = '3476'
+    start_stop = request.args.get('start_stop')
+    if start_stop is None:
+        start_stop = '4970'
+    end_stop = request.args.get('end_stop')
+    if end_stop is None:
+        end_stop = '4973'
 
     direction_id = request.args.get('direction_id')
 
@@ -70,15 +76,21 @@ def metrics_page():
         start_date_str = end_date_str = date_str
     else:
         if start_date_str is None:
-            start_date_str = '2019-02-01'
+            start_date_str = '2019-02-02'
         if end_date_str is None:
             end_date_str = start_date_str
 
     start_time_str = request.args.get('start_time') # e.g. "14:00" (24h time of day)
+    if start_time_str is None:
+        start_time_str = "00:00"
     end_time_str = request.args.get('end_time') # e.g. "18:00" (24h time of day)
+    if end_time_str is None:
+        end_time_str = "23:59"
 
     params = {
         'stop_id': stop_id,
+        'start_stop': start_stop,
+        'end_stop': end_stop,
         'route_id': route_id,
         'direction_id': direction_id,
         'start_date': start_date_str,
@@ -113,6 +125,8 @@ def metrics_page():
 
     headway_min_arr = []
     waits = []
+    completed_trips  = []
+
     for d in dates:
         try:
             history = arrival_history.get_by_date('sf-muni', route_id, d)
@@ -127,12 +141,16 @@ def metrics_page():
         # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
         df['headway_min'] = metrics.compute_headway_minutes(df)
         waits.append(wait_times.get_waits(df, str(d), route_id, start_time_str, end_time_str))
+        trips = trip_times.get_trip_times(history, tz, start_time_str, end_time_str, start_stop, end_stop)
 
         headway_min = df.headway_min[df.headway_min.notnull()] # remove NaN row (first bus of the day)
         headway_min_arr.append(headway_min)
 
+        completed_trips.append(trips.trip_min[trips.trip_min.notnull()])
+
     headway_min = pd.concat(headway_min_arr)
     waits = pd.concat(waits)
+    completed_trips = pd.concat(completed_trips)
     wait_lengths = metrics.compute_wait_times(waits).dropna()
     first_bus = datetime.fromtimestamp(waits['ARRIVAL'].min(), tz = tz)
     last_bus = datetime.fromtimestamp(waits['ARRIVAL'].max(), tz = tz)
@@ -143,6 +161,7 @@ def metrics_page():
             'error': f"No arrivals for stop {stop_id} on route {route_id}",
         }, indent=2), status=404, mimetype='application/json')
 
+    # TODO: dynamically compute bin_size based on range of elements
     bin_size = 5
 
     data = {
@@ -165,6 +184,15 @@ def metrics_page():
             'std': np.std(wait_lengths),
             'histogram': metrics.get_histogram(wait_lengths, bin_size),
             'percentiles': metrics.get_percentiles(wait_lengths, bin_size),
+        },
+        'trip_times': {
+            'start_stop': start_stop,
+            'end_stop': end_stop,
+            'count': len(completed_trips),
+            'avg': np.average(completed_trips),
+            'std': np.std(completed_trips),
+            'histogram': metrics.get_histogram(completed_trips, bin_size),
+            'percentiles': metrics.get_percentiles(completed_trips, bin_size),
         }
     }
 

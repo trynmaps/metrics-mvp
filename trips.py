@@ -80,7 +80,9 @@ if __name__ == '__main__':
     completed_trips_arr = []
 
     for d in dates:
-        s1_df = trip_times.get_trip_times(d, agency, tz, start_time_str, end_time_str, route_id, s1, s2)
+        history = arrival_history.get_by_date(agency, route_id, d)
+
+        s1_df = trip_times.get_trip_times(history, tz, start_time_str, end_time_str, s1, s2)
         
         if s1_df.empty:
             print(f"no arrival times found for stop {s1} on {date_str}")
