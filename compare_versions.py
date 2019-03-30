@@ -11,6 +11,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compare two versions of arrival history')
     parser.add_argument('--route', nargs='*', help='Route id(s)')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
+    parser.add_argument('--stop', help='Stop ID')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
     parser.add_argument('base_version')
@@ -20,6 +21,8 @@ if __name__ == '__main__':
 
     base_version = args.base_version
     other_version = args.other_version
+
+    stop_id = args.stop
 
     agency = 'sf-muni'
 
@@ -49,13 +52,17 @@ if __name__ == '__main__':
     for route_id in route_ids:
         route_configs[route_id] = nextbus.get_route_config(agency, route_id)
 
+    if stop_id:
+        stop_info = route_configs[route_id].get_stop_info(stop_id) if route_id else None
+        print(f"Stop: {stop_info.title if stop_info else '?'} ({stop_id})")
+
     for d in dates:
         for route_id in route_ids:
             base_history = arrival_history.get_by_date(agency, route_id, d, base_version)
             other_history = arrival_history.get_by_date(agency, route_id, d, other_version)
 
-            base_df = base_history.get_data_frame(tz=tz).sort_values('TIME', axis=0)
-            other_df = base_history.get_data_frame(tz=tz).sort_values('TIME', axis=0)
+            base_df = base_history.get_data_frame(stop_id=stop_id, tz=tz).sort_values('TIME', axis=0)
+            other_df = base_history.get_data_frame(stop_id=stop_id, tz=tz).sort_values('TIME', axis=0)
 
             def find_other_arrival_time(row):
                 other_time = other_history.find_closest_arrival_time(row.SID, row.VID, row.TIME)
