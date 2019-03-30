@@ -76,7 +76,7 @@ def metrics_page():
         start_date_str = end_date_str = date_str
     else:
         if start_date_str is None:
-            start_date_str = '2019-02-02'
+            start_date_str = '2019-02-01'
         if end_date_str is None:
             end_date_str = start_date_str
 
@@ -144,16 +144,13 @@ def metrics_page():
         trips = trip_times.get_trip_times(history, tz, start_time_str, end_time_str, start_stop, end_stop)
 
         headway_min = df.headway_min[df.headway_min.notnull()] # remove NaN row (first bus of the day)
-        headway_min_arr.append(headway_min)
+        headway_min_arr.append(df.headway_min)
 
         completed_trips.append(trips.trip_min[trips.trip_min.notnull()])
 
     headway_min = pd.concat(headway_min_arr)
     waits = pd.concat(waits)
     completed_trips = pd.concat(completed_trips)
-    wait_lengths = metrics.compute_wait_times(waits).dropna()
-    first_bus = datetime.fromtimestamp(waits['ARRIVAL'].min(), tz = tz)
-    last_bus = datetime.fromtimestamp(waits['ARRIVAL'].max(), tz = tz)
 
     if headway_min.empty:
         return Response(json.dumps({
@@ -161,39 +158,14 @@ def metrics_page():
             'error': f"No arrivals for stop {stop_id} on route {route_id}",
         }, indent=2), status=404, mimetype='application/json')
 
-    # TODO: dynamically compute bin_size based on range of elements
-    bin_size = 5
-
     data = {
         'params': params,
         'route_title': route_config.title,
         'stop_title': stop_info.title if stop_info else None,
         'directions': [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos],
-        'headway_min': {
-            'count': len(headway_min),
-            'avg': np.average(headway_min),
-            'std': np.std(headway_min),
-            'histogram': metrics.get_histogram(headway_min, bin_size),
-            'percentiles': metrics.get_percentiles(headway_min, bin_size),
-        },
-        'wait_times_stats': {
-            'count': len(wait_lengths),
-            'first_bus': first_bus.time().isoformat(),
-            'last_bus': last_bus.time().isoformat(),
-            'avg': np.average(wait_lengths),
-            'std': np.std(wait_lengths),
-            'histogram': metrics.get_histogram(wait_lengths, bin_size),
-            'percentiles': metrics.get_percentiles(wait_lengths, bin_size),
-        },
-        'trip_times': {
-            'start_stop': start_stop,
-            'end_stop': end_stop,
-            'count': len(completed_trips),
-            'avg': np.average(completed_trips),
-            'std': np.std(completed_trips),
-            'histogram': metrics.get_histogram(completed_trips, bin_size),
-            'percentiles': metrics.get_percentiles(completed_trips, bin_size),
-        }
+        'headway_min_stats': metrics.get_headways_stats(headway_min),
+        'wait_times_stats': metrics.get_wait_times_stats(waits, tz),
+        'trip_times_stats': metrics.get_trip_times_stats(completed_trips, start_stop, end_stop)
     }
 
     metrics_end = time.time()
