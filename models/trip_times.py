@@ -7,10 +7,7 @@ import numpy as np
 from . import arrival_history
 
 
-def get_trip_times(d: date, agency: str, tz: pytz.timezone, start_time_str: str, end_time_str: str, 
-                   route_id: str, s1: str, s2: str):
-    history = arrival_history.get_by_date(agency, route_id, d)
-
+def get_trip_times(history: arrival_history.ArrivalHistory, tz: pytz.timezone, start_time_str: str,                           end_time_str: str, s1: str, s2: str):
     s1_df = history.get_data_frame(stop_id=s1, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
 
     if s1_df.empty:
