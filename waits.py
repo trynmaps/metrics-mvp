@@ -67,7 +67,7 @@ if __name__ == '__main__':
         waits.append(wait_times.get_waits(arrivals, date, route_id, start_time_str, end_time_str))
 
     waits = pd.concat(waits)
-    wait_lengths = waits['WAIT'].dropna()
+    wait_lengths = metrics.compute_wait_times(waits).dropna()
     start = datetime.fromtimestamp(waits['TIME'].min(), tz = tz)
     end = datetime.fromtimestamp(waits['TIME'].max(), tz = tz)
     first_bus = datetime.fromtimestamp(waits['ARRIVAL'].min(), tz = tz)
