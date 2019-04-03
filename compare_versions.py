@@ -14,10 +14,13 @@ if __name__ == '__main__':
     parser.add_argument('--stop', help='Stop ID')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
+    parser.add_argument('--diff-min', help='Print arrivals where difference is larger than this (minutes)', type=float, default=5)
     parser.add_argument('base_version')
     parser.add_argument('other_version')
 
     args = parser.parse_args()
+
+    diff_min = args.diff_min
 
     base_version = args.base_version
     other_version = args.other_version
@@ -79,7 +82,7 @@ if __name__ == '__main__':
 
     df = pd.concat(base_df_arr)
 
-    bad_df = df[(df.abs_time_diff_min.isnull()) | (df.abs_time_diff_min > 5)]
+    bad_df = df[(df.abs_time_diff_min.isnull()) | (df.abs_time_diff_min >= diff_min)]
     for index, row in bad_df.iterrows():
         other_time = int(row.other_time) if not np.isnan(row.other_time) else None
         other_time_str = datetime.fromtimestamp(other_time, tz).time() if other_time else None
