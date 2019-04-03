@@ -6,14 +6,19 @@ import requests
 import pandas as pd
 from . import nextbus, eclipses
 import pytz
+import boto3
+import gzip
+
+DefaultVersion = 'v2'
 
 class ArrivalHistory:
-    def __init__(self, agency, route_id, start_time, end_time, stops_data):
+    def __init__(self, agency, route_id, stops_data, start_time = None, end_time = None, version = DefaultVersion):
         self.agency = agency
         self.route_id = route_id
         self.start_time = start_time
         self.end_time = end_time
         self.stops_data = stops_data
+        self.version = version
 
     def get_data_frame(self, stop_id = None, vehicle_id = None, direction_id = None,
             start_time_str = None, end_time_str = None,
@@ -70,6 +75,23 @@ class ArrivalHistory:
 
         return pd.DataFrame(data = data, columns = columns)
 
+    def find_closest_arrival_time(self, stop_id, vehicle_id, time):
+
+        closest_time = None
+        closest_time_diff = None
+
+        if stop_id in self.stops_data:
+            for direction_id, arrivals in self.stops_data[stop_id]['arrivals'].items():
+                for arrival in arrivals:
+                    if (vehicle_id == arrival['v'] or vehicle_id is None):
+                        arrival_time = arrival['t']
+                        time_diff = abs(arrival_time - time)
+                        if (closest_time is None) or (time_diff < closest_time_diff):
+                            closest_time = arrival_time
+                            closest_time_diff = time_diff
+
+        return closest_time
+
     def find_next_arrival_time(self, stop_id, vehicle_id, after_time, before_time = None):
         '''
         Get the next timestamp when vehicle_id arrives at stop_id
@@ -98,6 +120,7 @@ class ArrivalHistory:
 
     def get_data(self):
         return {
+            'version': self.version,
             'agency': self.agency,
             'route_id': self.route_id,
             'start_time': self.start_time,
@@ -150,9 +173,12 @@ def compute_from_state(agency, route_id, start_time, end_time, route_state) -> A
                 'arrivals': stop_directions_data
             }
 
-    return ArrivalHistory(agency, route_id, start_time, end_time, stops_data)
+    return ArrivalHistory(agency, route_id, stops_data=stops_data, start_time=start_time, end_time=end_time)
 
-def get_cache_path(agency: str, route_id: str, d: date) -> str:
+def get_cache_path(agency: str, route_id: str, d: date, version = DefaultVersion) -> str:
+    if version is None:
+        version = DefaultVersion
+
     date_str = str(d)
     if re.match('^[\w\-]+$', agency) is None:
         raise Exception(f"Invalid agency: {agency}")
@@ -163,19 +189,26 @@ def get_cache_path(agency: str, route_id: str, d: date) -> str:
     if re.match('^[\w\-]+$', date_str) is None:
         raise Exception(f"Invalid date: {date_str}")
 
+    if re.match('^[\w\-]+$', version) is None:
+        raise Exception(f"Invalid version: {version}")
+
     source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    return os.path.join(source_dir, 'data', f"arrivals_v2_{agency}_{date_str}_{route_id}.json")
+    return os.path.join(source_dir, 'data', f"arrivals_{version}_{agency}_{date_str}_{route_id}.json")
 
 def get_s3_bucket() -> str:
     return 'opentransit-stop-arrivals'
 
-def get_s3_path(agency: str, route_id: str, d: date) -> str:
+def get_s3_path(agency: str, route_id: str, d: date, version = DefaultVersion) -> str:
+    if version is None:
+        version = DefaultVersion
+
     date_str = str(d)
     date_path = d.strftime("%Y/%m/%d")
-    return f"v2/{agency}/{date_path}/arrivals_v2_{agency}_{date_str}_{route_id}.json.gz"
+    return f"{version}/{agency}/{date_path}/arrivals_{version}_{agency}_{date_str}_{route_id}.json.gz"
 
-def get_by_date(agency: str, route_id: str, d: date) -> ArrivalHistory:
-    cache_path = get_cache_path(agency, route_id, d)
+def get_by_date(agency: str, route_id: str, d: date, version = DefaultVersion) -> ArrivalHistory:
+
+    cache_path = get_cache_path(agency, route_id, d, version)
 
     try:
         with open(cache_path, "r") as f:
@@ -185,7 +218,7 @@ def get_by_date(agency: str, route_id: str, d: date) -> ArrivalHistory:
         pass
 
     s3_bucket = get_s3_bucket()
-    s3_path = get_s3_path(agency, route_id, d)
+    s3_path = get_s3_path(agency, route_id, d, version)
 
     s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
     r = requests.get(s3_url)
@@ -201,3 +234,27 @@ def get_by_date(agency: str, route_id: str, d: date) -> ArrivalHistory:
         f.write(r.text)
 
     return ArrivalHistory.from_data(data)
+
+def save_for_date(history: ArrivalHistory, d: date, s3=False):
+    data_str = json.dumps(history.get_data())
+
+    version = history.version
+    agency = history.agency
+    route_id = history.route_id
+
+    cache_path = get_cache_path(agency, route_id, d, version)
+    with open(cache_path, "w") as f:
+        f.write(data_str)
+
+    if s3:
+        s3 = boto3.resource('s3')
+        s3_path = get_s3_path(agency, route_id, d, version)
+        s3_bucket = get_s3_bucket()
+        print(f'saving to s3://{s3_bucket}/{s3_path}')
+        object = s3.Object(s3_bucket, s3_path)
+        object.put(
+            Body=gzip.compress(bytes(data_str, 'utf-8')),
+            ContentType='application/json',
+            ContentEncoding='gzip',
+            ACL='public-read'
+        )
