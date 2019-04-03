@@ -82,25 +82,5 @@ if __name__ == '__main__':
             chunk_start_time = chunk_end_time
 
         for route_id, route_state in route_state_map.items():
-
             history = arrival_history.compute_from_state(agency, route_id, start_time, end_time, route_state)
-
-            if history is not None:
-                data_str = json.dumps(history.get_data())
-
-                cache_path = arrival_history.get_cache_path(agency, route_id, d)
-                with open(cache_path, "w") as f:
-                    f.write(data_str)
-
-                if args.s3:
-                    s3 = boto3.resource('s3')
-                    s3_path = arrival_history.get_s3_path(agency, route_id, d)
-                    s3_bucket = arrival_history.get_s3_bucket()
-                    print(f'saving to s3://{s3_bucket}/{s3_path}')
-                    object = s3.Object(s3_bucket, s3_path)
-                    object.put(
-                        Body=gzip.compress(bytes(data_str, 'utf-8')),
-                        ContentType='application/json',
-                        ContentEncoding='gzip',
-                        ACL='public-read'
-                    )
+            arrival_history.save_for_date(history, d, args.s3)
