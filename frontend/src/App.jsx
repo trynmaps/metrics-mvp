@@ -35,6 +35,7 @@ class App extends Component {
       }
       >
         <Intro />
+        TEST
         <ControlPanel routes={routes}
           fetchRouteConfig={this.props.fetchRouteConfig}
           resetGraphData={this.props.resetGraphData}

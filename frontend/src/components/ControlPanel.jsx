@@ -57,8 +57,15 @@ class ControlPanel extends Component {
 
   setDirectionId = (directionId) => this.setState({ directionId }, this.selectedDirectionChanged)
 
-  setStopId = (stopId) => this.setState({ stopId }, this.selectedStopChanged)
+  setStopId = (stopId,selectFirstStopCallback) => {
+    debugger;
+    this.setState({ stopId }, selectFirstStopCallback ? selectFirstStopCallback() : this.selectedStopChanged)
+  }
 
+  onSelectFirstStop = (stopId) => {
+    debugger;
+    this.selectedStopChanged();
+  }
   selectedRouteChanged = () => {
     const { routeId } = this.state;
     const selectedRoute = this.getSelectedRouteInfo();
@@ -126,22 +133,23 @@ class ControlPanel extends Component {
         >
           <DatePicker value={date} onChange={this.setDate} />
           <DropdownControl title="Route" name='route' value={routeId}
-            onSelect={this.setRouteId}
+            onSelect={this.setRouteId} 
             options={
                 (routes || []).map(route => ({label:route.title, key:route.id}))
             } />
-            { selectedRoute ?
-                <DropdownControl title="Direction" name='direction' value={directionId}
-                onSelect={this.setDirectionId}
+            { (selectedDirection) ?
+                <DropdownControl title="Stop" name='stop' value={stopId}
+                onSelect={(stopId) => this.setStopId(stopId, this.onSelectFirstStop)}
                 options={
-                  (selectedRoute.directions || []).map(direction => ({
-                    label:direction.title, key:direction.id
+                  (selectedDirection.stops || []).map(stopId => ({
+                    label: (selectedRoute.stops[stopId] || {title:stopId}).title,
+                    key:stopId
                   }))
                 } /> : null
             }
             { (selectedDirection) ?
                 <DropdownControl title="Stop" name='stop' value={stopId}
-                onSelect={this.setStopId}
+                onSelect={(stopId) => this.setStopId(stopId, null)}
                 options={
                   (selectedDirection.stops || []).map(stopId => ({
                     label: (selectedRoute.stops[stopId] || {title:stopId}).title,
