@@ -11,7 +11,9 @@ class ControlPanel extends Component {
     this.state = {
       routeId: '12',
       directionId: null,
+      secondStopList:[],
       stopId: null,
+      secondStopId: null,
       date: new Date('2019-02-01T03:50'),
       time: '6:50 am',
     };
@@ -59,12 +61,20 @@ class ControlPanel extends Component {
 
   setStopId = (stopId,selectFirstStopCallback) => {
     debugger;
-    this.setState({ stopId }, selectFirstStopCallback ? selectFirstStopCallback() : this.selectedStopChanged)
+    selectFirstStopCallback ? selectFirstStopCallback(stopId) :
+    this.setState({ secondStopId: stopId }, this.selectedStopChanged);
   }
 
-  onSelectFirstStop = (stopId) => {
+  onSelectFirstStop = (selectedStopId) => {
     debugger;
-    this.selectedStopChanged();
+    const {directionId} = this.state;
+    const selectedRoute = {...this.getSelectedRouteInfo()};
+    const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute,directionId);
+    const secondStopListIndex=secondStopInfo.stops.indexOf(selectedStopId);
+    const secondStopList = secondStopInfo.stops.slice(secondStopListIndex+1);
+    debugger;
+    this.setState({stopId: selectedStopId, secondStopList:secondStopList},this.selectedDirectionChanged);
+    //this.selectedStopChanged();
   }
   selectedRouteChanged = () => {
     const { routeId } = this.state;
@@ -80,12 +90,13 @@ class ControlPanel extends Component {
       this.setDirectionId(directionId);
     }
   }
+  getStopsInfoInGivenDirection = (selectedRoute, directionId) => selectedRoute.directions.find(dir => dir.id === directionId);
 
   selectedDirectionChanged = () => {
     const { stopId, directionId } = this.state;
     const selectedRoute = this.getSelectedRouteInfo();
     const selectedDirection = (selectedRoute && selectedRoute.directions && directionId) ?
-        selectedRoute.directions.find(dir => dir.id === directionId) : null;
+        this.getStopsInfoInGivenDirection(selectedRoute,directionId) : null;
     if (stopId) {
       if (!selectedDirection || selectedDirection.stops.indexOf(stopId) === -1) {
         this.setStopId(null);
@@ -113,12 +124,12 @@ class ControlPanel extends Component {
 
   render() {
     const { routes } = this.props;
-    const { date, routeId, directionId, stopId } = this.state;
+    const { date, routeId, directionId, stopId, secondStopId, secondStopList } = this.state;
 
     const selectedRoute = this.getSelectedRouteInfo();
     const selectedDirection = (selectedRoute && selectedRoute.directions && directionId) ?
         selectedRoute.directions.find(dir => dir.id === directionId) : null;
-
+    debugger;
     return (
         <div className={css`
           background-color: #add8e6;
@@ -137,6 +148,15 @@ class ControlPanel extends Component {
             options={
                 (routes || []).map(route => ({label:route.title, key:route.id}))
             } />
+            { selectedRoute ?
+                <DropdownControl title="Direction" name='direction' value={directionId}
+                onSelect={this.setDirectionId}
+                options={
+                  (selectedRoute.directions || []).map(direction => ({
+                    label:direction.title, key:direction.id
+                  }))
+                } /> : null
+            }
             { (selectedDirection) ?
                 <DropdownControl title="Stop" name='stop' value={stopId}
                 onSelect={(stopId) => this.setStopId(stopId, this.onSelectFirstStop)}
@@ -148,10 +168,10 @@ class ControlPanel extends Component {
                 } /> : null
             }
             { (selectedDirection) ?
-                <DropdownControl title="Stop" name='stop' value={stopId}
+                <DropdownControl title="Stop" name='stop' value={secondStopId}
                 onSelect={(stopId) => this.setStopId(stopId, null)}
                 options={
-                  (selectedDirection.stops || []).map(stopId => ({
+                  (secondStopList || []).map(stopId => ({
                     label: (selectedRoute.stops[stopId] || {title:stopId}).title,
                     key:stopId
                   }))
