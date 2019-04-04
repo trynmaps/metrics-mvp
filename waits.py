@@ -13,7 +13,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Compute wait times (in minutes) at a given stop in a given direction on a route, for one or more dates, optionally at particular times of day')
     parser.add_argument('--route', required = True, help = 'Route id')
     parser.add_argument('--stop', required = True, help = 'Stop id')
-    
+
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
@@ -28,8 +28,8 @@ if __name__ == '__main__':
     stop = args.stop
     agency = 'sf-muni'
 
-    start_time_str = "03:00" if args.start_time is None else args.start_time
-    end_time_str = "23:59" if args.end_time is None else args.end_time
+    start_time_str = args.start_time
+    end_time_str = args.end_time
 
     route_config = nextbus.get_route_config(agency, route_id)
     
