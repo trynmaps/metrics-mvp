@@ -1,7 +1,7 @@
 import argparse
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import pytz
 
 import numpy as np
@@ -63,8 +63,8 @@ if __name__ == '__main__':
 
         waits = pd.concat(waits)
         wait_lengths = metrics.compute_wait_times(waits).dropna()
-        start = datetime.fromtimestamp(waits['TIME'].min(), tz = tz)
-        end = datetime.fromtimestamp(waits['TIME'].max(), tz = tz)
+        start = datetime.fromtimestamp(waits['DATE_TIME'].min(), tz = tz)
+        end = datetime.fromtimestamp(waits['DATE_TIME'].max(), tz = tz)
         first_bus = datetime.fromtimestamp(waits['ARRIVAL'].min(), tz = tz)
         last_bus = datetime.fromtimestamp(waits['ARRIVAL'].max(), tz = tz)
 
