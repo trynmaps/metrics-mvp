@@ -68,7 +68,7 @@ def get_headways_stats(df: pd.Series):
     return get_series_stats(df.dropna())
 
 def compute_wait_times(df: pd.DataFrame):
-    return (df["ARRIVAL"] - df["TIME"])/60
+    return (df["ARRIVAL"] - df["DATE_TIME"])/60
 
 def compute_headway_minutes(df: pd.DataFrame):
     return ((df.TIME - df.TIME.shift(1))/60)
