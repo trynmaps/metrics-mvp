@@ -81,8 +81,9 @@ if __name__ == '__main__':
 
     for d in dates:
         history = arrival_history.get_by_date(agency, route_id, d)
+        df = history.get_data_frame(s1, tz = tz, start_time_str = start_time_str, end_time_str = end_time_str)
 
-        s1_df = trip_times.get_trip_times(history, tz, start_time_str, end_time_str, s1, s2)
+        s1_df = trip_times.get_trip_times(df, history, tz, s1, s2)
         
         if s1_df.empty:
             print(f"no arrival times found for stop {s1} on {date_str}")

@@ -1,4 +1,6 @@
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
+import os
+import pytz
 
 # todo: allow specifying day(s) of week
 def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
@@ -26,3 +28,14 @@ def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
             raise Exception(f'too many dates between {start_date_str} and {end_date_str}')
 
     return res
+
+def get_data_dir():
+    return os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+def get_localized_datetime(dt: str):
+    pst = pytz.timezone('US/Pacific')
+
+    try:
+        return pst.localize(datetime.strptime(dt, "%Y-%m-%d %H:%M:%S"))
+    except ValueError:
+        return pst.localize(datetime.strptime(dt, "%Y-%m-%d %H:%M"))
