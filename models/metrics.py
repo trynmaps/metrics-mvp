@@ -15,8 +15,7 @@ def get_bin_size(df: pd.Series):
 
 def get_histogram(df: pd.Series):
     bin_size = get_bin_size(df)
-    percentiles = [0, 100]
-    percentile_values = np.percentile(df, percentiles)
+    percentile_values = np.percentile(df, [0, 100])
 
     bin_min = math.floor(percentile_values[0] / bin_size) * bin_size
     bin_max = math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
