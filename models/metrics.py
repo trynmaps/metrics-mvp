@@ -15,7 +15,7 @@ def get_bin_size(df: pd.Series):
 
 def get_histogram(df: pd.Series):
     bin_size = get_bin_size(df)
-    percentiles = range(0, 101, bin_size)
+    percentiles = [0, 100]
     percentile_values = np.percentile(df, percentiles)
 
     bin_min = math.floor(percentile_values[0] / bin_size) * bin_size
@@ -53,7 +53,7 @@ def get_wait_times_stats(df: pd.DataFrame, tz: pytz.timezone):
             'first_bus': first_bus.time().isoformat(),
             'last_bus': last_bus.time().isoformat(),
         },
-        **get_series_stats(wait_lengths)
+        **get_series_stats(wait_lengths.dropna())
     }
 
 def get_trip_times_stats(df: pd.DataFrame, start_stop: str, end_stop: str):
@@ -62,11 +62,11 @@ def get_trip_times_stats(df: pd.DataFrame, start_stop: str, end_stop: str):
             'start_stop': start_stop,
             'end_stop': end_stop,
         },
-        **get_series_stats(df)
+        **get_series_stats(df.dropna())
     }
 
 def get_headways_stats(df: pd.Series):
-    return get_series_stats(df)
+    return get_series_stats(df.dropna())
 
 def compute_wait_times(df: pd.DataFrame):
     return (df["ARRIVAL"] - df["TIME"])/60
