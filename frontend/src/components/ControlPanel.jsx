@@ -113,33 +113,31 @@ class ControlPanel extends Component {
         selectedRoute.directions.find(dir => dir.id === directionId) : null;
 
     return (
-        <div className={css`
-          background-color: #add8e6;
-          color: #fff;
-          border-radius: 5px;
-          padding: 20px;
-          margin-right: 20px;
-          grid-column: col1-start / col3-start;
-           grid-row: row2-start ;
-      `
-      }
-        >
-          <DatePicker value={date} onChange={this.setDate} />
-          <DropdownControl title="Route" name='route' value={routeId}
+      <div className="row">
+        <div className="col-12 form-group"><DatePicker value={date} onChange={this.setDate} className={css`
+          display: block !important;
+        `} /></div>
+        <div className="col-12 form-group">
+          <DropdownControl title="Route" name="route" value={routeId}
             onSelect={this.setRouteId}
             options={
                 (routes || []).map(route => ({label:route.title, key:route.id}))
-            } />
-            { selectedRoute ?
+            }
+          />
+        </div>
+          { selectedRoute ?
+              <div className="col-12 form-group">
                 <DropdownControl title="Direction" name='direction' value={directionId}
                 onSelect={this.setDirectionId}
                 options={
                   (selectedRoute.directions || []).map(direction => ({
                     label:direction.title, key:direction.id
                   }))
-                } /> : null
-            }
-            { (selectedDirection) ?
+                } />
+              </div>: null
+          }
+          { (selectedDirection) ?
+              <div className="col-12 form-group">
                 <DropdownControl title="Stop" name='stop' value={stopId}
                 onSelect={this.setStopId}
                 options={
@@ -147,9 +145,10 @@ class ControlPanel extends Component {
                     label: (selectedRoute.stops[stopId] || {title:stopId}).title,
                     key:stopId
                   }))
-                } /> : null
-            }
-        </div>
+                } />
+              </div> : null
+          }
+      </div>
     );
   }
 }

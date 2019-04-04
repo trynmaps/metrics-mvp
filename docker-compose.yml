@@ -5,10 +5,11 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
-    ports:
-      - "5000:5000"
+    command: ["npm", "run", "build"]
     volumes:
       - .:/app
+    ports:
+      - "5000:5000"
     environment:
       - FLASK_DEBUG=1
   react:
