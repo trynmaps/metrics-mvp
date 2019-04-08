@@ -29,6 +29,7 @@ class RouteInfo:
 class RouteConfig:
     def __init__(self, data):
         self.data = data
+        self.id = data['tag']
         self.title = data['title']
 
     def get_direction_ids(self):

@@ -12,7 +12,7 @@ class ControlPanel extends Component {
       routeId: '12',
       directionId: null,
       stopId: null,
-      date: new Date('2019-02-01T03:50'),
+      date: new Date('2019-04-08T03:50'),
       time: '6:50 am',
     };
   }

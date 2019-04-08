@@ -115,10 +115,13 @@ if __name__ == '__main__':
 
         t5 = time.time()*1000
 
-        for index, row in df.iterrows():
+        for row in df.itertuples():
             did = row.DID
             dir_info = [dir_info for dir_info in dir_infos if dir_info.id == did][0]
-            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) v:{row.VID}   {round(row.headway_min,1)} min   ({row.ROUTE} - {dir_info.title})")
+            dist_str = f'{row.DIST}'.rjust(3)
+            elapsed = util.render_stop_duration(row.DEPARTURE_TIME - row.TIME)
+            headway_str = f'{round(row.headway_min, 1)}'.rjust(4)
+            print(f"{row.DATE_STR} {row.TIME_STR} ({row.TIME}) {elapsed} vid:{row.VID}  {dist_str}m  {headway_str} min   ({row.ROUTE} - {dir_info.title})")
 
         t6 = time.time()*1000
 

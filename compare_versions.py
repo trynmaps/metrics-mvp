@@ -83,7 +83,7 @@ if __name__ == '__main__':
     df = pd.concat(base_df_arr)
 
     bad_df = df[(df.abs_time_diff_min.isnull()) | (df.abs_time_diff_min >= diff_min)]
-    for index, row in bad_df.iterrows():
+    for row in bad_df.itertuples():
         other_time = int(row.other_time) if not np.isnan(row.other_time) else None
         other_time_str = datetime.fromtimestamp(other_time, tz).time() if other_time else None
 

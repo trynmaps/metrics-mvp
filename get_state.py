@@ -37,11 +37,6 @@ if __name__ == '__main__':
     print(f"route = {route_ids}")
     print(f"start = {local_start} ({start_time})")
     print(f"end = {local_end} ({end_time})")
-    print(f"local_path = {local_path}")
 
     agency = 'sf-muni'
-    data = trynapi.get_state(agency, start_time*1000, end_time*1000, route_ids)
-
-    f = open(local_path, "w")
-    f.write(json.dumps(data))
-    f.close()
+    trynapi.get_state(agency, start_time, end_time, route_ids, cache=True)

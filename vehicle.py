@@ -44,6 +44,8 @@ if __name__ == '__main__':
     print(f"Route: {route_id} ({route_config.title})")
     print(f"Vehicle: {vid}")
 
+    num_stops = 0
+
     for d in dates:
         history = arrival_history.get_by_date(agency, route_id, d, version)
 
@@ -55,9 +57,16 @@ if __name__ == '__main__':
 
         df = df.sort_values('TIME', axis=0)
 
-        for index, row in df.iterrows():
+        for row in df.itertuples():
             stop_id = row.SID
             stop_info = route_config.get_stop_info(stop_id)
             dir_info = route_config.get_direction_info(row.DID)
 
-            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) vid:{row.VID} stop:{stop_info.title if stop_info else '?'} ({stop_id}) dir:{dir_info.title} ({row.DID})")
+            elapsed = util.render_stop_duration(row.DEPARTURE_TIME - row.TIME)
+            dist_str = f'{row.DIST}'.rjust(3)
+
+            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) {elapsed} vid:{row.VID} {dist_str}m stop:{stop_id} {stop_info.title if stop_info else '?'} dir:{dir_info.title if dir_info else '?'} ({row.DID})")
+
+            num_stops += 1
+
+    print(f'num_stops = {num_stops}')
