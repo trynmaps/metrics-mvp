@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-import os 
+import os
 
 import pandas as pd
 from datetime import time
@@ -11,13 +11,13 @@ from . import util
 # return the timetable from one stop on one route, for a given date
 def get_timetable(route_id: str, stop_id: str, d: date):
     source_dir = util.get_data_dir()
-    path = f'{source_dir}/timetables/route_{route_id}_timetables_data.csv'
+    path = f'{source_dir}/../timetables/route_{route_id}_timetables_data.csv'
     tz = pytz.timezone('US/Pacific')
 
     # change timetable to the day being compared to
     day_of_week = d.weekday()
     timetable_type = "Weekday" if day_of_week < 5 else ("Saturday" if day_of_week == 5 else "Sunday")
-    
+
     df = pd.read_csv(path)
     df['DATE_TIME'] = df['TIME'].apply(lambda x: util.get_localized_datetime(d, x.split(" ")[-1]))
 
