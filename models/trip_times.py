@@ -10,6 +10,7 @@ def get_trip_times(df: pd.DataFrame, history: arrival_history.ArrivalHistory, tz
     s1_df = df.copy(deep = True)
 
     if s1_df.empty:
+        s1_df['trip_min'] = []
         return s1_df
 
     s1_df = s1_df.sort_values('TIME', axis=0)
