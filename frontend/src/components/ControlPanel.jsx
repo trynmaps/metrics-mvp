@@ -163,23 +163,13 @@ class ControlPanel extends Component {
                 name="route"
                 variant="info"
                 value={routeId}
+                options={
+                  (routes || []).map(route => ({
+                    label: route.title, key: route.id,
+                  }))
+                }
                 onSelect={this.setRouteId}
               />
-            </ListGroup.Item>
-            <ListGroup.Item>
-              { selectedRoute
-                ? (
-                  <DropdownControl
-                    title="Direction"
-                    name="direction"
-                    variant="info"
-                    value={directionId}
-                    onSelect={this.setDirectionId}
-                    options={
-                (routes || []).map(route => ({ label: route.title, key: route.id }))}
-                  />
-                ) : null
-            }
             </ListGroup.Item>
             { selectedRoute
               ? (
@@ -203,7 +193,7 @@ class ControlPanel extends Component {
               ? (
                 <ListGroup.Item>
                   <DropdownControl
-                    title="Stop"
+                    title="From Stop"
                     name="stop"
                     variant="info"
                     value={firstStopId}
@@ -222,7 +212,7 @@ class ControlPanel extends Component {
               ? (
                 <ListGroup.Item>
                   <DropdownControl
-                    title="Stop"
+                    title="To Stop"
                     name="stop"
                     variant="info"
                     value={secondStopId}
