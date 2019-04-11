@@ -1,6 +1,6 @@
 import React from 'react';
 import { css } from 'emotion';
-
+import logo from '../assets/images/logo.png';
 
 const Intro = () => (
   <div className={css`
@@ -11,15 +11,10 @@ const Intro = () => (
        `
        }
   >
-    <h1> Open transit logo</h1>
-    <p>
-      {' '}
-      some infosome infosome infosome infosome infosome infosome infosome
-      infosome infosome infosome infosome infosome infosome infosome
-      infosome infosome infosome infosome infosome infosome
-      infosome infosome infosome infosome infosome infosome
-       infosome infosome infosome infosome info
-    </p>
+    <h1>
+      <img src={logo} alt="OpenTransit Logo" width="15%" />
+        OpenTransit
+    </h1>
   </div>
 );
 
