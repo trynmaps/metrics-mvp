@@ -18,7 +18,7 @@ def get_waits(df: pd.DataFrame, stopinfo: nextbus.StopInfo, d: date, tz: pytz.ti
                           "TIME_FLOOR" : waits - (waits % 60)})
     # get corresponding timetable to determine the time interval for which to compute wait times
     # TODO: get stop_id from route_config (enable route_config to do this)
-    stop_id = stopinfo.nextbus_id
+    stop_id = stopinfo.location_id
     route_timetable = timetable.get_timetable(route, stop_id, d)
     first_bus = route_timetable["DATE_TIME"].min().replace(second = 0)
     last_bus = route_timetable["DATE_TIME"].max().replace(second = 0)
