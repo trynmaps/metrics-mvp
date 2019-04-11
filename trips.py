@@ -13,6 +13,8 @@ if __name__ == '__main__':
     parser.add_argument('--s1', required=True, help='Initial stop id')
     parser.add_argument('--s2', required=True, help='Destination stop id')
 
+    parser.add_argument('--version')
+
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
@@ -21,6 +23,10 @@ if __name__ == '__main__':
     parser.add_argument('--end-time', help='hh:mm of first local time to exclude each day')
 
     args = parser.parse_args()
+
+    version = args.version
+    if version is None:
+        version = arrival_history.DefaultVersion
 
     route_id = args.route
     date_str = args.date
@@ -80,8 +86,9 @@ if __name__ == '__main__':
     completed_trips_arr = []
 
     for d in dates:
-        history = arrival_history.get_by_date(agency, route_id, d)
+        history = arrival_history.get_by_date(agency, route_id, d, version)
         df = history.get_data_frame(s1, tz = tz, start_time_str = start_time_str, end_time_str = end_time_str)
+        date_str = str(d)
 
         s1_df = trip_times.get_trip_times(df, history, tz, s1, s2)
         
