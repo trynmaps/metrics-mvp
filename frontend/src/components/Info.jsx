@@ -46,7 +46,6 @@ class Info extends Component {
           ) : null }
         <code>
           {graphError || ''}
-          { graphData ? <div className={css`color: white`}>JSON.stringify(graphData) </div> : null}
         </code>
       </div>
     );
