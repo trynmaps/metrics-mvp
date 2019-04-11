@@ -22,6 +22,7 @@ class App extends Component {
 
   render() {
     const { graphData, graphError, routes } = this.props;
+    debugger;
     return (
       <div className={css`
         display: grid;
