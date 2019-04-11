@@ -27,10 +27,11 @@ class App extends Component {
         display: grid;
         grid-gap: 4px;
         grid-template-columns: [col1-start] 300px [col2-start] 400px  [col3-start] auto [col3-end];
-        grid-template-rows: [row1-start] 200px [row2-start] 400px [row2-end];
+        grid-template-rows: [row1-start] 100px [row2-start] 400px [row2-end];
         background-color: #fff;
         color: #444;
         padding: 2%;
+        font-family: 'Roboto', sans-serif;
         `
       }
       >
