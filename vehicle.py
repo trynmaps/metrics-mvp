@@ -13,10 +13,16 @@ if __name__ == '__main__':
     parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
     parser.add_argument('--vid', help='Vehicle ID', required=True)
 
+    parser.add_argument('--version')
+
     parser.add_argument('--start-time', help='hh:mm of first local time to include each day')
     parser.add_argument('--end-time', help='hh:mm of first local time to exclude each day')
 
     args = parser.parse_args()
+
+    version = args.version
+    if version is None:
+        version = arrival_history.DefaultVersion
 
     route_id = args.route
     date_str = args.date
@@ -39,7 +45,7 @@ if __name__ == '__main__':
     print(f"Vehicle: {vid}")
 
     for d in dates:
-        history = arrival_history.get_by_date(agency, route_id, d)
+        history = arrival_history.get_by_date(agency, route_id, d, version)
 
         df = history.get_data_frame(vehicle_id=vid, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
 
@@ -54,4 +60,4 @@ if __name__ == '__main__':
             stop_info = route_config.get_stop_info(stop_id)
             dir_info = route_config.get_direction_info(row.DID)
 
-            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) vid:{row.VID} stop:{stop_info.title} ({stop_id}) dir:{dir_info.title} ({row.DID})")
+            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) vid:{row.VID} stop:{stop_info.title if stop_info else '?'} ({stop_id}) dir:{dir_info.title} ({row.DID})")
