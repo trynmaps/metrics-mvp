@@ -40,6 +40,12 @@ def get_series_stats(df: pd.Series):
       'std': np.std(df),
       'histogram': get_histogram(df),
       'percentiles': get_percentiles(df),
+    } if len(df) > 0 else {
+        'count': 0,
+        'avg': None,
+        'std': None,
+        'histogram': None,
+        'percentiles': None,
     }
 
 def get_wait_times_stats(df: pd.DataFrame, tz: pytz.timezone):
@@ -52,7 +58,7 @@ def get_wait_times_stats(df: pd.DataFrame, tz: pytz.timezone):
             'first_bus': first_bus.time().isoformat(),
             'last_bus': last_bus.time().isoformat(),
         },
-        **get_series_stats(wait_lengths.dropna())
+        **get_series_stats(wait_lengths)
     }
 
 def get_trip_times_stats(df: pd.DataFrame, start_stop: str, end_stop: str):

@@ -30,12 +30,13 @@ def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
     return res
 
 def get_data_dir():
-    return os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
 
-def get_localized_datetime(dt: str):
+def get_localized_datetime(d: date, time_str: str):
+    dt_str = f"{d.isoformat()} {time_str}"
     pst = pytz.timezone('US/Pacific')
 
     try:
-        return pst.localize(datetime.strptime(dt, "%Y-%m-%d %H:%M:%S"))
+        return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"))
     except ValueError:
-        return pst.localize(datetime.strptime(dt, "%Y-%m-%d %H:%M"))
+        return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M"))
