@@ -142,7 +142,7 @@ def metrics_page():
 
             # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
             df['headway_min'] = metrics.compute_headway_minutes(df)
-            waits.append(wait_times.get_waits(df, d, tz, route_id, start_time_str, end_time_str))
+            waits.append(wait_times.get_waits(df, start_stop_info, d, tz, route_id, start_time_str, end_time_str))
             
             if end_stop_id and both_stops_same_dir:
                 trips = trip_times.get_trip_times(df, history, tz, start_stop_id, end_stop_id)
