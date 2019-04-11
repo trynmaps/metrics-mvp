@@ -49,18 +49,21 @@ if __name__ == '__main__':
         raise Exception('missing date, start-date, or end-date')
 
     waits = []
-    
+
+    print(stop, stop_dirs, start_time_str, end_time_str, tz)
+
     # print results for each direction
     for stop_dir in stop_dirs:
         dir_info = route_config.get_direction_info(stop_dir)
         
         for d in dates:
-            date = str(d)
             hist = arrival_history.get_by_date(agency, route_id, d)
             arrivals = hist.get_data_frame(stop_id = stop, direction_id = stop_dir, start_time_str = start_time_str, end_time_str = end_time_str, tz = tz)
-
-            waits.append(wait_times.get_waits(arrivals, date, tz, route_id, start_time_str, end_time_str))
-
+            
+            # only get wait times if there are actually arrivals
+            if len(arrivals) > 0:
+                waits.append(wait_times.get_waits(arrivals, d, tz, route_id, start_time_str, end_time_str))
+        
         waits = pd.concat(waits)
         wait_lengths = metrics.compute_wait_times(waits).dropna()
         start = datetime.fromtimestamp(waits['DATE_TIME'].min(), tz = tz)

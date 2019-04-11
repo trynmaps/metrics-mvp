@@ -1,7 +1,7 @@
 import json
 import requests
 import pytz
-from datetime import datetime, timedelta, time 
+from datetime import datetime, date, timedelta, time 
 
 import pandas as pd
 import numpy as np
@@ -10,7 +10,7 @@ from . import timetable, util
 
 
 # assumes we have a df from one route, one stop, one direction
-def get_waits(df: pd.DataFrame, d: str, tz: pytz.timezone, route: str, start_time = None, end_time = None):
+def get_waits(df: pd.DataFrame, d: date, tz: pytz.timezone, route: str, start_time_str = None, end_time_str = None):
     # for each arrival time, rounding down to the nearest minute gives us the
     # corresponding minute for which that arrival is first arrival
     waits = df['TIME'].copy(deep = True)
@@ -25,17 +25,17 @@ def get_waits(df: pd.DataFrame, d: str, tz: pytz.timezone, route: str, start_tim
 
     # get the minute range in timestamp form
     # truncate time interval to minute before first bus/minute after last bus leave
-    if start_time is None or \
-        (start_time is not None and (time.fromisoformat(start_time) < first_bus.time())):
+    if start_time_str is None or \
+        (start_time_str is not None and (time.fromisoformat(start_time_str) < first_bus.time())):
         start_timestamp = first_bus.timestamp()
     else:
-        start_timestamp = util.get_localized_datetime(f"{d} {start_time}").timestamp()
+        start_timestamp = util.get_localized_datetime(d, start_time_str).timestamp()
 
-    if end_time is None or \
-        (end_time is not None and (time.fromisoformat(end_time) > last_bus.time())):
+    if end_time_str is None or \
+        (end_time_str is not None and (time.fromisoformat(end_time_str) > last_bus.time())):
         end_timestamp = last_bus.timestamp()
     else:
-        end_timestamp = util.get_localized_datetime(f"{d} {end_time}").timestamp()
+        end_timestamp = util.get_localized_datetime(d, end_time_str).timestamp()
         
     minutes_range = [start_timestamp + (60 * i) for i in range(int((end_timestamp - start_timestamp)/60))]
 
