@@ -22,7 +22,6 @@ class App extends Component {
 
   render() {
     const { graphData, graphError, routes } = this.props;
-    debugger;
     return (
       <div className={css`
         display: grid;
@@ -36,7 +35,6 @@ class App extends Component {
       }
       >
         <Intro />
-        TEST
         <ControlPanel routes={routes}
           fetchRouteConfig={this.props.fetchRouteConfig}
           resetGraphData={this.props.resetGraphData}
