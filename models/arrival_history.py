@@ -4,12 +4,13 @@ import os
 import json
 import requests
 import pandas as pd
-from . import nextbus, eclipses
+from . import nextbus, eclipses, util
 import pytz
 import boto3
 import gzip
+import numpy as np
 
-DefaultVersion = 'v2'
+DefaultVersion = 'v3'
 
 class ArrivalHistory:
     def __init__(self, agency, route_id, stops_data, start_time = None, end_time = None, version = DefaultVersion):
@@ -38,7 +39,9 @@ class ArrivalHistory:
         stops = self.stops_data
         data = []
 
-        columns = ("VID", "TIME", "SID", "DID")
+        has_dist = has_departure_time = self.version and self.version[1] >= '3'
+
+        columns = ("VID", "TIME", "DEPARTURE_TIME", "SID", "DID", "DIST")
         if tz:
             columns = columns + ("DATE_TIME", "DATE_STR", "TIME_STR")
 
@@ -54,7 +57,11 @@ class ArrivalHistory:
                         continue
 
                     timestamp = arrival['t']
-                    values = (v, timestamp, s, did)
+
+                    departure_time = arrival['e'] if has_departure_time else timestamp
+                    dist = arrival['d'] if has_dist else np.nan
+
+                    values = (v, timestamp, departure_time, s, did, dist)
                     if tz:
                         dt = datetime.fromtimestamp(timestamp, tz)
                         time_str = dt.strftime('%H:%M:%S')
@@ -115,7 +122,8 @@ class ArrivalHistory:
             route_id = data['route_id'],
             start_time = data['start_time'],
             end_time = data['end_time'],
-            stops_data = data['stops']
+            stops_data = data['stops'],
+            version = data['version'] if 'version' in data else 'v2'
         )
 
     def get_data(self):
@@ -133,47 +141,37 @@ def compute_from_state(agency, route_id, start_time, end_time, route_state) -> A
 
     route_config = nextbus.get_route_config(agency, route_id)
 
-    stop_ids = route_config.get_stop_ids()
-
     buses = eclipses.produce_buses(route_state)
 
+    if not buses.empty:
+        arrivals = eclipses.find_arrivals(buses, route_config)
+        stops_data = make_stops_data(arrivals)
+    else:
+        stops_data = {}
+
+    return ArrivalHistory(agency, route_id, stops_data=stops_data, start_time=start_time, end_time=end_time)
+
+def make_stops_data(arrivals: pd.DataFrame):
     stops_data = {}
-    buses_direction_map = {}
 
-    for stop_id in stop_ids:
-        stop_info = route_config.get_stop_info(stop_id)
-        stop_direction_ids = route_config.get_directions_for_stop(stop_id)
-        stop_directions_data = {}
-        for stop_direction_id in stop_direction_ids:
-            print(f"route_id={route_id} stop_id={stop_id} direction_id={stop_direction_id}")
+    if not arrivals.empty:
+        arrivals = arrivals.sort_values('TIME')
 
-            if stop_direction_id not in buses_direction_map:
-                buses_direction_map[stop_direction_id] = buses[buses.DID == stop_direction_id]
+        for stop_id, stop_arrivals in arrivals.groupby(arrivals['SID']):
+            stop_directions_data = {}
 
-            buses_direction = buses_direction_map[stop_direction_id]
+            for stop_direction_id, stop_direction_arrivals in stop_arrivals.groupby(stop_arrivals['STOP_DID']):
+                arrivals_data = []
 
-            e = eclipses.find_eclipses(buses_direction, stop_info)
+                for row in stop_direction_arrivals.itertuples():
+                    arrivals_data.append({'t': row.TIME, 'e': row.DEPARTURE_TIME, 'd': round(row.DIST), 'v': row.VID})
 
-            nadirs = eclipses.find_nadirs(e)
+                stop_directions_data[stop_direction_id] = arrivals_data
 
-            if not nadirs.empty:
-                arrivals = []
-                sorted_nadirs = nadirs.sort_values('TIME')
-
-                def add_arrival(nadir):
-                    vid = nadir['VID']
-                    time = int(nadir['TIME']/1000)
-                    arrivals.append({'t': time, 'v': vid})
-
-                sorted_nadirs.apply(add_arrival, axis=1)
-                stop_directions_data[stop_direction_id] = arrivals
-
-        if len(stop_directions_data) > 0:
             stops_data[stop_id] = {
                 'arrivals': stop_directions_data
             }
-
-    return ArrivalHistory(agency, route_id, stops_data=stops_data, start_time=start_time, end_time=end_time)
+    return stops_data
 
 def get_cache_path(agency: str, route_id: str, d: date, version = DefaultVersion) -> str:
     if version is None:
@@ -192,8 +190,7 @@ def get_cache_path(agency: str, route_id: str, d: date, version = DefaultVersion
     if re.match('^[\w\-]+$', version) is None:
         raise Exception(f"Invalid version: {version}")
 
-    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    return os.path.join(source_dir, 'data', f"arrivals_{version}_{agency}_{date_str}_{route_id}.json")
+    return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency}_{date_str}_{route_id}.json")
 
 def get_s3_bucket() -> str:
     return 'opentransit-stop-arrivals'
