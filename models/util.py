@@ -1,4 +1,6 @@
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
+import os
+import pytz
 
 # todo: allow specifying day(s) of week
 def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
@@ -30,3 +32,15 @@ def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
 def render_stop_duration(seconds):
     # remove 0 hours and replace 00 minutes with spaces to make it easier to scan column for large durations
     return f'+{timedelta(seconds=round(seconds))}'.replace('+0:','+').replace('+00:','+  :')
+
+def get_data_dir():
+    return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
+
+def get_localized_datetime(d: date, time_str: str):
+    dt_str = f"{d.isoformat()} {time_str}"
+    pst = pytz.timezone('US/Pacific')
+
+    try:
+        return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"))
+    except ValueError:
+        return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M"))
