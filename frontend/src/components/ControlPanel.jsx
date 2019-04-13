@@ -72,7 +72,7 @@ class ControlPanel extends Component {
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
     const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
     const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
-    this.setState({ firstStopId: stopId, secondStopList });
+    this.setState({ firstStopId: stopId, secondStopList }, this.selectedStopChanged);
   }
 
   onSelectSecondStop = (stopId) => {

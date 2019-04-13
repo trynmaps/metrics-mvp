@@ -183,8 +183,7 @@ def metrics_page():
         'headway_min': metrics.get_headways_stats(headway_min),
         #'wait_times': metrics.get_wait_times_stats(waits, tz),
         'trip_times': metrics.get_trip_times_stats(completed_trips, start_stop_id, end_stop_id)
-        if end_stop_id and both_stops_same_dir
-        else (f"Stops {start_stop_id} and {end_stop_id} have no common directions" if end_stop_id else "No end_stop_id given"),
+            if end_stop_id and both_stops_same_dir else None,
     }
 
     metrics_end = time.time()
