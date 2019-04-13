@@ -6,10 +6,10 @@ from datetime import datetime, date, timedelta, time
 import pandas as pd
 import numpy as np
 
-from . import timetable, util
+from . import timetable, util, nextbus
 
 # assumes we have a df from one route, one stop, one direction
-def get_waits(df: pd.DataFrame, d: date, tz: pytz.timezone, route: str, start_time_str = None, end_time_str = None):
+def get_waits(df: pd.DataFrame, stopinfo: nextbus.StopInfo, d: date, tz: pytz.timezone, route: str, start_time_str = None, end_time_str = None):
     # for each arrival time, rounding down to the nearest minute gives us the
     # corresponding minute for which that arrival is first arrival
     waits = df['TIME'].copy(deep = True)
@@ -17,7 +17,7 @@ def get_waits(df: pd.DataFrame, d: date, tz: pytz.timezone, route: str, start_ti
                           "TIME_FLOOR" : waits - (waits % 60)})
     # get corresponding timetable to determine the time interval for which to compute wait times
     # TODO: get stop_id from route_config (enable route_config to do this)
-    stop_id = "1" + df["SID"][0]
+    stop_id = stopinfo.location_id
     route_timetable = timetable.get_timetable(route, stop_id, d)
     first_bus = route_timetable["DATE_TIME"].min().replace(second = 0)
     last_bus = route_timetable["DATE_TIME"].max().replace(second = 0)

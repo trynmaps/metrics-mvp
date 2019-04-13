@@ -144,7 +144,7 @@ def metrics_page():
             df['headway_min'] = metrics.compute_headway_minutes(df)
 
             # temporarily skip calculation of wait times until data is shown in front end
-            #waits.append(wait_times.get_waits(df, d, tz, route_id, start_time_str, end_time_str))
+            #waits.append(wait_times.get_waits(df, start_stop_info, d, tz, route_id, start_time_str, end_time_str))
 
             if end_stop_id and both_stops_same_dir:
                 trips = trip_times.get_trip_times(df, history, tz, start_stop_id, end_stop_id)
