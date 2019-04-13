@@ -1,4 +1,4 @@
-from models import trynapi
+from models import trynapi, util
 import json
 import argparse
 import re
@@ -31,17 +31,11 @@ if __name__ == '__main__':
         if re.match('^[\w\-]+$', route_id) is None:
             raise Exception(f"Invalid route id: {route_id}")
 
-    source_dir = os.path.dirname(os.path.realpath(__file__))
-    local_path = os.path.join(source_dir, 'data', f"state_{agency}_{'+'.join(route_ids)}_{start_time}_{end_time}.json")
+    local_path = os.path.join(util.get_data_dir(), f"state_{agency}_{'+'.join(route_ids)}_{start_time}_{end_time}.json")
 
     print(f"route = {route_ids}")
     print(f"start = {local_start} ({start_time})")
     print(f"end = {local_end} ({end_time})")
-    print(f"local_path = {local_path}")
 
     agency = 'sf-muni'
-    data = trynapi.get_state(agency, start_time*1000, end_time*1000, route_ids)
-
-    f = open(local_path, "w")
-    f.write(json.dumps(data))
-    f.close()
+    trynapi.get_state(agency, start_time, end_time, route_ids, cache=True)

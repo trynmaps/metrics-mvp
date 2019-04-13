@@ -55,21 +55,29 @@ Saving computed arrivals to S3 allows other people to access the arrival times w
 Adding the `--s3` flag to `compute_arrivals.py` will save the arrival times to S3. To use the `--s3` flag,
 you'll need to get permission to write to the opentransit-stop-arrivals bucket and save AWS credentials in `~/.aws/credentials`.
 
+Adding the `--cache-state` flag to compute_arrivals.py will cache the raw state (GPS observations) in the local `data/`
+directory, so that if you run `compute_arrivals.py` again with the same date and routes, it will be much faster.
+
 ## Command line scripts
+
+Show overall statistics for a particular route:
+```
+python route.py --date=2019-04-08 --route=1
+```
 
 Show headways between buses at a particular stop:
 ```
-python headways.py --date=2019-02-01 --route=1 --stop=6290
+python headways.py --date=2019-04-08 --route=1 --stop=6290
 ```
 
 Show trips between two stops:
 ```
-python trips.py --date=2019-02-01 --route=1 --s1=6314 --s2=6304
+python trips.py --date=2019-04-08 --route=1 --s1=6314 --s2=6304
 ```
 
 Show stops visited by a particular vehicle:
 ```
-python vehicle.py --date=2019-02-01 --route=1 --vid=5737
+python vehicle.py --date=2019-04-08 --route=1 --vid=5792
 ```
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
