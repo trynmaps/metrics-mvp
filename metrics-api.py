@@ -8,7 +8,7 @@ import pytz
 from datetime import datetime
 import time
 import math
-from models import metrics, util, arrival_history, wait_times, nextbus
+from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 
 """
 This is the app's main file!
@@ -57,9 +57,10 @@ def metrics_page():
     route_id = request.args.get('route_id')
     if route_id is None:
         route_id = '12'
-    stop_id = request.args.get('stop_id')
-    if stop_id is None:
-        stop_id = '4970'
+    start_stop_id = request.args.get('start_stop_id')
+    if start_stop_id is None:
+        start_stop_id = '3476'
+    end_stop_id = request.args.get('end_stop_id')
 
     direction_id = request.args.get('direction_id')
 
@@ -78,7 +79,8 @@ def metrics_page():
     end_time_str = request.args.get('end_time') # e.g. "18:00" (24h time of day)
 
     params = {
-        'stop_id': stop_id,
+        'start_stop_id': start_stop_id,
+        'end_stop_id': end_stop_id,
         'route_id': route_id,
         'direction_id': direction_id,
         'start_date': start_date_str,
@@ -98,69 +100,89 @@ def metrics_page():
     tz = pytz.timezone('US/Pacific')
 
     route_config = nextbus.get_route_config('sf-muni', route_id)
-    stop_info = route_config.get_stop_info(stop_id)
+    start_stop_info = route_config.get_stop_info(start_stop_id)
+    end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
+
+    # 404 if the given stop isn't on the route
+    # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
+    if start_stop_info is None:
+        return Response(json.dumps({
+                'params': params,
+                'error': f"Stop {start_stop_id} is not on route {route_id}",
+            }, indent=2), status=404, mimetype='application/json')
 
     if direction_id is not None:
-        dirs = [direction_id]
-        dir_info = route_config.get_direction_info(dir)
+        dir_info = route_config.get_direction_info(direction_id)
         if dir_info is not None:
             dir_infos = [dir_info]
         else:
             dir_infos = []
     else:
-        dirs = route_config.get_directions_for_stop(stop_id)
-        dir_infos = [route_config.get_direction_info(dir) for dir in dirs]
+        # TODO: validation for end_stop_id directions if given (see trips.py)
+        dirs = route_config.get_directions_for_stop(start_stop_id)
+        dir_infos = [route_config.get_direction_info(direction) for direction in dirs]
+
+    if end_stop_id:
+        end_stop_dirs = route_config.get_directions_for_stop(end_stop_id)
+        both_stops_same_dir = direction_id in end_stop_dirs
+
+
+    directions = [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos]
 
     headway_min_arr = []
+    waits = []
+    if end_stop_id:
+        completed_trips  = []
+
     for d in dates:
         try:
             history = arrival_history.get_by_date('sf-muni', route_id, d)
+
+            df = history.get_data_frame(start_stop_id, tz=tz, direction_id=direction_id, start_time_str=start_time_str, end_time_str=end_time_str)
+
+            # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
+            df['headway_min'] = metrics.compute_headway_minutes(df)
+            waits.append(wait_times.get_waits(df, d, tz, route_id, start_time_str, end_time_str))
+            
+            if end_stop_id and both_stops_same_dir:
+                trips = trip_times.get_trip_times(df, history, tz, start_stop_id, end_stop_id)
+                completed_trips.append(trips.trip_min[trips.trip_min.notnull()])
+
+            headway_min = df.headway_min[df.headway_min.notnull()] # remove NaN row (first bus of the day)
+            headway_min_arr.append(df.headway_min)
         except FileNotFoundError as ex:
             return Response(json.dumps({
                 'params': params,
-                'error': f"Arrival history not found for route {route_id} on {d}",
+                'error': f"Arrival history not found for route {route_id} on {d.isoformat()}",
             }, indent=2), status=404, mimetype='application/json')
-
-        df = history.get_data_frame(stop_id, tz=tz, direction_id=direction_id, start_time_str=start_time_str, end_time_str=end_time_str)
-
-        # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
-        df['headway_min'] = metrics.compute_headway_minutes(df)
-
-        headway_min = df.headway_min[df.headway_min.notnull()] # remove NaN row (first bus of the day)
-        headway_min_arr.append(headway_min)
+        except IndexError as ex:
+            return Response(json.dumps({
+                'params': params,
+                'error': f"No arrivals found for stop {start_stop_id} on route {route_id} in direction {direction_id} on {d.isoformat()}",
+            }, indent = 2), status = 404, mimetype = 'application/json')
 
     headway_min = pd.concat(headway_min_arr)
+    waits = pd.concat(waits)
+    if end_stop_id and both_stops_same_dir:
+        completed_trips = pd.concat(completed_trips)
 
     if headway_min.empty:
         return Response(json.dumps({
             'params': params,
-            'error': f"No arrivals for stop {stop_id} on route {route_id}",
+            'error': f"No arrivals for stop {start_stop_id} on route {route_id}",
         }, indent=2), status=404, mimetype='application/json')
-
-    percentiles = range(0,101,5)
-    percentile_values = np.percentile(headway_min, percentiles)
-
-    bin_size = 5
-    bin_min = math.floor(percentile_values[0] / bin_size) * bin_size
-    bin_max = math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
-
-    histogram_bins = range(bin_min, bin_max, bin_size)
-    histogram, bin_edges = np.histogram(headway_min, histogram_bins)
 
     data = {
         'params': params,
         'route_title': route_config.title,
-        'stop_title': stop_info.title if stop_info else None,
-        'directions': [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos],
-        'headway_min': {
-            'count': len(headway_min),
-            'avg': np.average(headway_min),
-            'std': np.std(headway_min),
-            'histogram': [{'value': f'{bin}-{bin+bin_size-1}', 'count': int(count)}
-                for bin, count in zip(histogram_bins, histogram)],
-            'percentiles': [{'percentile': percentile, 'value': value}
-                for percentile, value in zip(percentiles, percentile_values)],
-        },
+        'start_stop_title': start_stop_info.title if start_stop_info else None,
+        'end_stop_title': end_stop_info.title if end_stop_info else None,
+        'directions': directions,
+        'headway_min': metrics.get_headways_stats(headway_min),
+        'wait_times': metrics.get_wait_times_stats(waits, tz),
+        'trip_times': metrics.get_trip_times_stats(completed_trips, start_stop_id, end_stop_id) 
+        if end_stop_id and both_stops_same_dir 
+        else (f"Stops {start_stop_id} and {end_stop_id} have no common directions" if end_stop_id else "No end_stop_id given"),
     }
 
     metrics_end = time.time()

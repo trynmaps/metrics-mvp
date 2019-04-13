@@ -88,6 +88,22 @@ and show discrepancies between the two data sets based on differences between ar
 python compare_versions.py --date=2018-11-14 --route=1 t2 v2
 ```
 
+You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
+(available for 2018-09-01 to 2018-11-30), instead of the arrival times computed from GPS coordinates from Nextbus.
+Muni's timepoint data only contains a small subset of stops for each route, so the arrival history does not include all stops.
+
+Parse [CSV timepoint files from Muni](https://muni-timepoint-avl-data.s3.amazonaws.com/muni_timepoint_data_fall_2018.zip)
+ and save arrival history with version `t2` in data/ directory:
+```
+python parse_timepoint_csv.py path/to/next_bus_avl_20180901_20181001.csv path/to/next_bus_avl_20181001_20181101.csv path/to/next_bus_avl_20181101_20181201.csv
+```
+
+Compare timepoints from Muni with arrival times computed from Nextbus GPS coordinates,
+and show discrepancies between the two data sets based on differences between arrival times of each bus at each stop:
+```
+python compare_versions.py --date=2018-11-14 --route=1 t2 v2
+```
+
 ## Deploying to Heroku
 
 Anyone can create a free account on Heroku to deploy their local version of the repo.
