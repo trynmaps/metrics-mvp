@@ -8,6 +8,7 @@ from . import util
 class StopInfo:
     def __init__(self, data):
         self.id = data['tag']
+        self.location_id = data['stopId']
         self.title = data['title']
         self.lat = float(data['lat'])
         self.lon = float(data['lon'])

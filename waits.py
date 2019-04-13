@@ -50,8 +50,6 @@ if __name__ == '__main__':
 
     waits = []
 
-    print(stop, stop_dirs, start_time_str, end_time_str, tz)
-
     # print results for each direction
     for stop_dir in stop_dirs:
         dir_info = route_config.get_direction_info(stop_dir)
@@ -62,7 +60,7 @@ if __name__ == '__main__':
             
             # only get wait times if there are actually arrivals
             if len(arrivals) > 0:
-                waits.append(wait_times.get_waits(arrivals, d, tz, route_id, start_time_str, end_time_str))
+                waits.append(wait_times.get_waits(arrivals, stop_info, d, tz, route_id, start_time_str, end_time_str))
         
         waits = pd.concat(waits)
         wait_lengths = metrics.compute_wait_times(waits).dropna()
