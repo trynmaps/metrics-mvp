@@ -14,16 +14,16 @@ def get_bin_size(df: pd.Series):
     return bin_size
 
 def get_histogram(df: pd.Series):
-    bin_size = get_bin_size(df)
+    bin_size = 5 # get_bin_size(df)
     percentile_values = np.percentile(df, [0, 100])
 
-    bin_min = math.floor(percentile_values[0] / bin_size) * bin_size
+    bin_min = 0 # math.floor(percentile_values[0] / bin_size) * bin_size
     bin_max = math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
     bins = range(bin_min, bin_max, bin_size)
 
     histogram, bin_edges = np.histogram(df, bins)
 
-    return [{"value": f"[{bin}, {bin + bin_size})", "count": int(count)}
+    return [{"value": f"{bin}-{bin + bin_size}", "count": int(count)}
       for bin, count in zip(bins, histogram)]
 
 def get_percentiles(df: pd.Series):
@@ -34,12 +34,16 @@ def get_percentiles(df: pd.Series):
       for percentile, value in zip(percentiles, percentile_values)]
 
 def get_series_stats(df: pd.Series):
+    percentiles = get_percentiles(df)
     return {
       'count': len(df),
       'avg': np.average(df),
       'std': np.std(df),
+      'min': percentiles[0]['value'],
+      'median': percentiles[10]['value'],
+      'max': percentiles[20]['value'],
       'histogram': get_histogram(df),
-      'percentiles': get_percentiles(df),
+      'percentiles': percentiles,
     } if len(df) > 0 else {
         'count': 0,
         'avg': None,

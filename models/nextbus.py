@@ -3,6 +3,7 @@ import time
 import json
 import requests
 import re
+from . import util
 
 class StopInfo:
     def __init__(self, data):
@@ -30,6 +31,7 @@ class RouteInfo:
 class RouteConfig:
     def __init__(self, data):
         self.data = data
+        self.id = data['tag']
         self.title = data['title']
 
     def get_direction_ids(self):
@@ -82,12 +84,11 @@ class RouteConfig:
         ]
 
 def get_route_list(agency_id):
-    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     if re.match('^[\w\-]+$', agency_id) is None:
         raise Exception(f"Invalid agency id: {agency_id}")
 
-    cache_path = os.path.join(source_dir, 'data', f"routes_{agency_id}.json")
+    cache_path = os.path.join(util.get_data_dir(), f"routes_{agency_id}.json")
 
     def route_list_from_data(data):
         return [RouteInfo(route) for route in data['route']]
@@ -121,7 +122,6 @@ def get_route_list(agency_id):
     return route_list_from_data(data)
 
 def get_route_config(agency_id, route_id) -> RouteConfig:
-    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     if re.match('^[\w\-]+$', agency_id) is None:
         raise Exception(f"Invalid agency id: {agency_id}")
@@ -130,7 +130,7 @@ def get_route_config(agency_id, route_id) -> RouteConfig:
         raise Exception(f"Invalid route id: {route_id}")
 
     # cache route config locally to reduce number of requests to nextbus API and improve performance
-    cache_path = os.path.join(source_dir, 'data', f"route_{agency_id}_{route_id}.json")
+    cache_path = os.path.join(util.get_data_dir(), f"route_{agency_id}_{route_id}.json")
 
     try:
         mtime = os.stat(cache_path).st_mtime

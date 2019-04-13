@@ -1,13 +1,12 @@
 import json
 import requests
 import pytz
-from datetime import datetime, date, timedelta, time 
+from datetime import datetime, date, timedelta, time
 
 import pandas as pd
 import numpy as np
 
 from . import timetable, util, nextbus
-
 
 # assumes we have a df from one route, one stop, one direction
 def get_waits(df: pd.DataFrame, stopinfo: nextbus.StopInfo, d: date, tz: pytz.timezone, route: str, start_time_str = None, end_time_str = None):
@@ -36,7 +35,7 @@ def get_waits(df: pd.DataFrame, stopinfo: nextbus.StopInfo, d: date, tz: pytz.ti
         end_timestamp = last_bus.timestamp()
     else:
         end_timestamp = util.get_localized_datetime(d, end_time_str).timestamp()
-        
+
     minutes_range = [start_timestamp + (60 * i) for i in range(int((end_timestamp - start_timestamp)/60))]
 
     # the remaining first arrivals can be obtained by joining the existing waits to a df
