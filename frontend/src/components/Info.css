@@ -1,0 +1,21 @@
+.yAxisLabel{
+    justify-self: end;
+    align-self: center;
+    grid-area: yAxisLabel;
+}
+.xAxisLabel {
+    justify-self: center;
+    align-self: start;
+    grid-area: xAxisLabel;
+}
+.chart1 {
+    grid-area: chart1;
+}
+.wrapper {
+    display: grid;
+    grid-gap: 10px;
+    grid-template-columns: 1fr  9fr;
+    grid-template-areas:
+        "yAxisLabel chart1"
+        ". xAxisLabel";
+}
