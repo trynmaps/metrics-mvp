@@ -16,7 +16,7 @@ class ControlPanel extends Component {
       secondStopList: [],
       firstStopId: null,
       secondStopId: null,
-      date: new Date('2019-02-01T03:50'),
+      date: new Date('2019-04-08T03:50'),
     };
   }
 
