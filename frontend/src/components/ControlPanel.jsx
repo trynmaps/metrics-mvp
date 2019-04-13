@@ -139,7 +139,7 @@ class ControlPanel extends Component {
       <div className={css`
           color: #fff;
           border-radius: 5px;
-          padding: 20px;
+          padding: 10px;
           margin-right: 20px;
           grid-column: col1-start / col3-start;
           grid-row: row2-start ;

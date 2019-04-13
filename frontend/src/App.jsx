@@ -26,8 +26,8 @@ class App extends Component {
       <div className={css`
         display: grid;
         grid-gap: 4px;
-        grid-template-columns: [col1-start] 300px [col2-start] 400px  [col3-start] auto [col3-end];
-        grid-template-rows: [row1-start] 100px [row2-start] 400px [row2-end];
+        grid-template-columns: [col1-start] 200px [col2-start] 300px  [col3-start] auto [col3-end];
+        grid-template-rows: [row1-start] 80px [row2-start] 400px [row2-end];
         background-color: #fff;
         color: #444;
         padding: 2%;
