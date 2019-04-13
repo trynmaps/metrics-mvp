@@ -10,7 +10,7 @@ export function fetchGraphData (params) {
     }).then((response) => {
       dispatch({ type: 'RECEIVED_GRAPH_DATA', payload: response.data });
     }).catch((err) => {
-      const errStr = (err.response.data && err.response.data.error) ? err.response.data.error : err.message;
+      const errStr = (err.response && err.response.data && err.response.data.error) ? err.response.data.error : err.message;
       dispatch({ type: 'RECEIVED_GRAPH_ERROR', payload: errStr });
     });
   };

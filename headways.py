@@ -119,9 +119,9 @@ if __name__ == '__main__':
             did = row.DID
             dir_info = [dir_info for dir_info in dir_infos if dir_info.id == did][0]
             dist_str = f'{row.DIST}'.rjust(3)
-            elapsed = util.render_stop_duration(row.DEPARTURE_TIME - row.TIME)
+            dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
             headway_str = f'{round(row.headway_min, 1)}'.rjust(4)
-            print(f"{row.DATE_STR} {row.TIME_STR} ({row.TIME}) {elapsed} vid:{row.VID}  {dist_str}m  {headway_str} min   ({row.ROUTE} - {dir_info.title})")
+            print(f"{row.DATE_STR} {row.TIME_STR} ({row.TIME}) {dwell_time} vid:{row.VID}  {dist_str}m  {headway_str} min   ({row.ROUTE} - {dir_info.title})")
 
         t6 = time.time()*1000
 

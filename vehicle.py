@@ -62,10 +62,10 @@ if __name__ == '__main__':
             stop_info = route_config.get_stop_info(stop_id)
             dir_info = route_config.get_direction_info(row.DID)
 
-            elapsed = util.render_stop_duration(row.DEPARTURE_TIME - row.TIME)
+            dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
             dist_str = f'{row.DIST}'.rjust(3)
 
-            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) {elapsed} vid:{row.VID} {dist_str}m stop:{stop_id} {stop_info.title if stop_info else '?'} dir:{dir_info.title if dir_info else '?'} ({row.DID})")
+            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) {dwell_time} vid:{row.VID} {dist_str}m stop:{stop_id} {stop_info.title if stop_info else '?'} dir:{dir_info.title if dir_info else '?'} ({row.DID})")
 
             num_stops += 1
 

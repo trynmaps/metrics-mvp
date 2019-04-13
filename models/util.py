@@ -29,7 +29,7 @@ def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
 
     return res
 
-def render_stop_duration(seconds):
+def render_dwell_time(seconds):
     # remove 0 hours and replace 00 minutes with spaces to make it easier to scan column for large durations
     return f'+{timedelta(seconds=round(seconds))}'.replace('+0:','+').replace('+00:','+  :')
 

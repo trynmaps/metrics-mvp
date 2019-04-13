@@ -203,7 +203,7 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_info, is_terminal) 
 
     return pd.DataFrame([
         calc_nadir(eclipse, is_terminal) for eclipse_id, eclipse in eclipses.groupby('ECLIPSE_ID')
-    ], columns=['VID','TIME','WAIT','DIST','REPORTED_DID'])
+    ], columns=['VID','TIME','DEPARTURE_TIME','DIST','REPORTED_DID'])
 
 def calc_nadir(eclipse: pd.DataFrame, is_terminal) -> tuple:
     min_dist = eclipse['DIST'].values.min()
@@ -221,7 +221,7 @@ def calc_nadir(eclipse: pd.DataFrame, is_terminal) -> tuple:
     return (
         at_stop['VID'].values[0],
         arrival_time,
-        at_stop['TIME'].values[-1] - arrival_time,
+        at_stop['TIME'].values[-1],
         min_dist,
         at_stop['DID'].values[0]
     )

@@ -4,7 +4,7 @@ import os
 import json
 import requests
 import pandas as pd
-from . import nextbus, eclipses
+from . import nextbus, eclipses, util
 import pytz
 import boto3
 import gzip
@@ -39,7 +39,7 @@ class ArrivalHistory:
         stops = self.stops_data
         data = []
 
-        has_dist = has_wait_time = self.version and self.version[1] >= '3'
+        has_dist = has_departure_time = self.version and self.version[1] >= '3'
 
         columns = ("VID", "TIME", "DEPARTURE_TIME", "SID", "DID", "DIST")
         if tz:
@@ -58,7 +58,7 @@ class ArrivalHistory:
 
                     timestamp = arrival['t']
 
-                    departure_time = (timestamp + arrival['w']) if has_wait_time else timestamp
+                    departure_time = arrival['e'] if has_departure_time else timestamp
                     dist = arrival['d'] if has_dist else np.nan
 
                     values = (v, timestamp, departure_time, s, did, dist)
@@ -164,7 +164,7 @@ def make_stops_data(arrivals: pd.DataFrame):
                 arrivals_data = []
 
                 for row in stop_direction_arrivals.itertuples():
-                    arrivals_data.append({'t': row.TIME, 'd': round(row.DIST), 'w': row.WAIT, 'v': row.VID})
+                    arrivals_data.append({'t': row.TIME, 'e': row.DEPARTURE_TIME, 'd': round(row.DIST), 'v': row.VID})
 
                 stop_directions_data[stop_direction_id] = arrivals_data
 
@@ -190,8 +190,7 @@ def get_cache_path(agency: str, route_id: str, d: date, version = DefaultVersion
     if re.match('^[\w\-]+$', version) is None:
         raise Exception(f"Invalid version: {version}")
 
-    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    return os.path.join(source_dir, 'data', f"arrivals_{version}_{agency}_{date_str}_{route_id}.json")
+    return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency}_{date_str}_{route_id}.json")
 
 def get_s3_bucket() -> str:
     return 'opentransit-stop-arrivals'

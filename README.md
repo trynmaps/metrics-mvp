@@ -62,22 +62,22 @@ directory, so that if you run `compute_arrivals.py` again with the same date and
 
 Show overall statistics for a particular route:
 ```
-python route.py --date=2019-02-01 --route=1
+python route.py --date=2019-04-08 --route=1
 ```
 
 Show headways between buses at a particular stop:
 ```
-python headways.py --date=2019-02-01 --route=1 --stop=6290
+python headways.py --date=2019-04-08 --route=1 --stop=6290
 ```
 
 Show trips between two stops:
 ```
-python trips.py --date=2019-02-01 --route=1 --s1=6314 --s2=6304
+python trips.py --date=2019-04-08 --route=1 --s1=6314 --s2=6304
 ```
 
 Show stops visited by a particular vehicle:
 ```
-python vehicle.py --date=2019-02-01 --route=1 --vid=5737
+python vehicle.py --date=2019-04-08 --route=1 --vid=5792
 ```
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
