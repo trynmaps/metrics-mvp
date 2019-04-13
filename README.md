@@ -80,6 +80,11 @@ Show stops visited by a particular vehicle:
 python vehicle.py --date=2019-04-08 --route=1 --vid=5792
 ```
 
+Show summary statistics of waiting times at a particular stop:
+```
+python waits.py --date=2019-02-01 --route=12 --stop=3476
+```
+
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
 (available for 2018-09-01 to 2018-11-30), instead of the arrival times computed from GPS coordinates from Nextbus.
 Muni's timepoint data only contains a small subset of stops for each route, so the arrival history does not include all stops.

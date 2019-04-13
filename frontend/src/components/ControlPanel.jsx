@@ -72,7 +72,7 @@ class ControlPanel extends Component {
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
     const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
     const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
-    this.setState({ firstStopId: stopId, secondStopList });
+    this.setState({ firstStopId: stopId, secondStopList }, this.selectedStopChanged);
   }
 
   onSelectSecondStop = (stopId) => {
@@ -139,7 +139,7 @@ class ControlPanel extends Component {
       <div className={css`
           color: #fff;
           border-radius: 5px;
-          padding: 20px;
+          padding: 10px;
           margin-right: 20px;
           grid-column: col1-start / col3-start;
           grid-row: row2-start ;
