@@ -21,7 +21,7 @@ class DropdownControl extends Component {
 
     return (
       <Dropdown>
-        <Dropdown.Toggle variant={variant} id={name + "-dropdown"}>
+        <Dropdown.Toggle variant={variant} id={name + "-dropdown"} className="btn-block">
           {shownValue}
         </Dropdown.Toggle>
         <Dropdown.Menu>
