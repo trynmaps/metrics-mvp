@@ -148,12 +148,14 @@ class ControlPanel extends Component {
       }
       >
         <Card bg="light" style={{ color: 'black' }}>
-          <Card.Header> Select inputs </Card.Header>
+          <Card.Header>Visualize Route</Card.Header>
           <DatePicker
             value={date}
             onChange={this.setDate}
             className={css`
-           padding: 10px!important
+           padding: 10px!important;
+           display: block;
+           width: 100%
          `}
           />
           <ListGroup variant="flush">
