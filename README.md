@@ -17,6 +17,11 @@ and will run the Flask backend in development mode at http://localhost:5000.
 Your local directory will be shared within the docker container at /app.
 When you edit files in your local directory, the React and Flask containers should automatically update with the new code.
 
+To rebuild the production files that are served on port 5000, run:
+```
+npm run build
+``` 
+
 To start a shell within the Flask Docker container, run:
 ```
 docker exec -it metrics-flask bash
