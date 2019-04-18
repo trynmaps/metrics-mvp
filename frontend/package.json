@@ -37,12 +37,12 @@
     "redux-thunk": "^2.3.0"
   },
   "scripts": {
-    "install-start": "yarn install && react-scripts start",
+    "install-start": "npm install && react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "heroku-postbuild": "yarn build",
+    "heroku-postbuild": "npm build",
     "lint": "node ./node_modules/eslint/bin/eslint.js --fix --ext .jsx",
     "lint:all": "node ./node_modules/eslint/bin/eslint.js --fix --ext .jsx src/**/*.jsx src/*.jsx"
   },
