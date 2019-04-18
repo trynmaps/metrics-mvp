@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install yarn
 
 RUN mkdir /app
 
-RUN yarn global add react-scripts@1.1.1
+RUN npm install -g react-scripts@1.1.1
 
 COPY . /app
 
