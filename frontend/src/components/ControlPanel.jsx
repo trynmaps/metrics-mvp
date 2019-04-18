@@ -155,7 +155,7 @@ class ControlPanel extends Component {
             className={css`
            padding: 10px!important;
            display: block;
-           width: 100%se
+           width: 100%
          `}
           />
           <ListGroup variant="flush">
