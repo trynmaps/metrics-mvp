@@ -31,6 +31,13 @@ If you need to install some new dependencies in the Docker images, you can rebui
 If you don't want to handle installing anything locally, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
 This will automatically install requirements on a cloud machine and get the app running for you instantly.
 
+## Commands to know
+
+To rebuild the production files that are served on port 5000, run:
+```
+npm run build
+``` 
+
 ## Computing Arrival Times
 
 The API and command-line scripts generate statistics based on Muni arrival times that are precomputed from the raw GPS data.
