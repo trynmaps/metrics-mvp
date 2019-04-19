@@ -17,6 +17,8 @@ class ControlPanel extends Component {
       firstStopId: null,
       secondStopId: null,
       date: new Date('2019-04-08T03:50'),
+      startTimeStr: null,
+      endTimeStr: null,
     };
   }
 
@@ -33,7 +35,7 @@ class ControlPanel extends Component {
 
   updateGraphData = () => {
     const {
-      routeId, directionId, firstStopId, date, secondStopId,
+      routeId, directionId, firstStopId, date, secondStopId, startTimeStr, endTimeStr
     } = this.state;
 
     this.props.resetGraphData();
@@ -44,6 +46,8 @@ class ControlPanel extends Component {
         direction_id: directionId,
         start_stop_id: firstStopId,
         end_stop_id: secondStopId,
+        start_time: startTimeStr,
+        end_time: endTimeStr,
         date: formattedDate,
       };
       this.props.fetchGraphData(params);
@@ -56,6 +60,15 @@ class ControlPanel extends Component {
   }
 
   setDate = date => this.setState({ date }, this.updateGraphData)
+
+  setTimeRange = timeRange => {
+    if (!timeRange) {
+      this.setState({ startTimeStr: null, endTimeStr: null }, this.updateGraphData);
+    } else {
+      var timeRangeParts = timeRange.split('-');
+      this.setState({ startTimeStr: timeRangeParts[0], endTimeStr: timeRangeParts[1] }, this.updateGraphData);
+    }
+  }
 
   setRouteId = routeId => this.setState({ routeId }, this.selectedRouteChanged)
 
@@ -103,7 +116,7 @@ class ControlPanel extends Component {
       ? this.getStopsInfoInGivenDirection(selectedRoute, directionId) : null;
     if (firstStopId) {
       if (!selectedDirection || selectedDirection.stops.indexOf(firstStopId) === -1) {
-        this.setState({ firstStopId: null, secondStopId: null });
+        this.setState({ firstStopId: null, secondStopId: null }, this.selectedStopChanged);
       }
     }
   }
@@ -129,8 +142,10 @@ class ControlPanel extends Component {
   render() {
     const { routes } = this.props;
     const {
-      date, routeId, directionId, firstStopId, secondStopId, secondStopList,
+      date, routeId, directionId, firstStopId, secondStopId, secondStopList, startTimeStr, endTimeStr
     } = this.state;
+
+    const timeRange = (startTimeStr || endTimeStr) ? (startTimeStr + '-' + endTimeStr) : '';
 
     const selectedRoute = this.getSelectedRouteInfo();
     const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
@@ -158,6 +173,26 @@ class ControlPanel extends Component {
            width: 100%
          `}
           />
+        <ListGroup.Item>
+          <DropdownControl
+            title="Time Range"
+            name="time_range"
+            variant="info"
+            value={timeRange}
+            onSelect={this.setTimeRange}
+            options={
+                [
+                    {label:'All Day', key:''},
+                    {label:'Daytime (7AM - 7PM)', key:'07:00-19:00'},
+                    {label:'Early Morning (3AM - 7AM)', key:'03:00-07:00'},
+                    {label:'AM Peak (7AM - 10AM)', key:'07:00-10:00'},
+                    {label:'Midday (10AM - 4PM)', key:'10:00-16:00'},
+                    {label:'PM Peak (4PM - 7PM)', key:'16:00-19:00'},
+                    {label:'Late Evening (7PM - 3AM)', key:'19:00-03:00+1'},
+                ]
+        }
+          />
+        </ListGroup.Item>
           <ListGroup variant="flush">
             <ListGroup.Item>
               <DropdownControl

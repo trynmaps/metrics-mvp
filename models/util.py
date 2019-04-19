@@ -36,11 +36,19 @@ def render_dwell_time(seconds):
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
 
-def get_localized_datetime(d: date, time_str: str):
-    dt_str = f"{d.isoformat()} {time_str}"
-    pst = pytz.timezone('US/Pacific')
+def get_localized_datetime(d: date, time_str: str, tz: pytz.timezone):
 
-    try:
-        return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"))
-    except ValueError:
-        return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M"))
+    time_str_parts = time_str.split('+') # + number of days
+
+    if len(time_str_parts[0].split(':')) == 2:
+        format = "%Y-%m-%d %H:%M"
+    else:
+        format = "%Y-%m-%d %H:%M:%S"
+
+    dt_str = f"{d.isoformat()} {time_str_parts[0]}"
+
+    dt = datetime.strptime(dt_str, format)
+    if len(time_str_parts) > 1:
+        dt = dt + timedelta(days=int(time_str_parts[1]))
+
+    return tz.localize(dt)
