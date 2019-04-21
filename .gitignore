@@ -9,6 +9,7 @@ instance/*
 
 # local cache
 data/*.json
+data/*.csv
 
 ### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files

@@ -1,0 +1,197 @@
+<html>
+<head>
+ <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+   integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+   crossorigin=""/>
+ <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+   integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+   crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-geodesy/v0.1.0/leaflet-geodesy.js'></script>
+<script src="map-config.js"></script>
+</head>
+<style type='text/css'>
+#mapid { height: 100%; }
+body { padding:0; margin:0; }
+.info {
+    padding:5px;
+    border:1px solid #ccc;
+    background-color:#fff;
+    border-radius:5px;
+}
+</style>
+<body>
+ <div id="mapid"></div>
+<script>
+
+var walkMetersPerMinute = 1.0 * 60;
+
+var mymap = L.map('mapid').setView([37.764374,-122.4173052], 13);
+L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+    maxZoom: 18,
+    id: 'mapbox.streets',
+    accessToken: mapboxAccessToken
+}).addTo(mymap);
+
+function unify(polyList, options)
+{
+  for (var i = 0; i < polyList.length; ++i) {
+    if (i == 0) {
+      var unionTemp = polyList[i].toGeoJSON();
+    } else {
+      unionTemp = turf.union(unionTemp, polyList[i].toGeoJSON());
+    }
+  }
+  return L.geoJson(unionTemp, options);
+}
+
+var circles = {
+    clear: function() {
+        for (var layer of circles.layers)
+        {
+            layer.remove();
+        }
+        circles.layers = [];
+    },
+    layers: [],
+    push: function(circleArr) {
+
+        var walkCircle = circleArr[0];
+        // first circle is walking distance from initial location
+        var c = L.circle(walkCircle.lat_lon, {radius: walkCircle.radius, color:'#00f', fillOpacity:0.1, stroke: false});
+        c.addTo(mymap);
+
+        circles.layers.push(c);
+
+        var circleGroup = new L.LayerGroup();
+        for (var circle of circleArr)
+        {
+            LGeo.circle(circle.lat_lon, circle.radius).addTo(circleGroup);
+        }
+        var circleUnion = unify(circleGroup.getLayers()).addTo(mymap);
+
+        circles.layers.push(circleUnion);
+
+        circleUnion.on('click', function(e) {
+            var latlng = e.latlng;
+
+            var allOptions = [];
+
+            for (var circle of circleArr)
+            {
+                var dist = mymap.distance(circle.lat_lon, latlng);
+                if (dist <= circle.radius)
+                {
+                    var walkMin = dist / walkMetersPerMinute;
+                    var totalElapsed = walkMin + circle.trip_min;
+
+                    allOptions.push({
+                        trip_min: totalElapsed,
+                        walk_min: walkMin,
+                        circle: circle,
+                    });
+                }
+            }
+
+            if (allOptions.length)
+            {
+                allOptions = allOptions.sort(function(o1, o2) {
+                    return o1.trip_min - o2.trip_min;
+                });
+
+                var seenRoutes = {};
+                var numOptions = 0;
+
+                var optionInfo = '';
+                for (var option of allOptions)
+                {
+                    var circle = option.circle;
+
+                    if (seenRoutes[circle.routes])
+                    {
+                        continue;
+                    }
+
+                    seenRoutes[circle.routes] = true;
+
+                    if (numOptions < 2 || !circle.trip_items.length)
+                    {
+                        numOptions++;
+
+                        optionInfo += '<p><div><strong>' + option.trip_min.toFixed(1) + ' min ['+circle.routes+']</strong></div>'
+                            + circle.trip_items.map(function(item) {
+                                return '<div><em>' + item[0].toFixed(1) + ' min</em>: '+item[1]+'</div>';
+                            }).join('')
+                            + (option.walk_min > 0.05 && circle.trip_items.length ? ('<div><em>' + option.walk_min.toFixed(1) + ' min</em>: walk to destination</div>') : '')
+                            + '</p>';
+                    }
+                }
+
+                var popup = L.popup()
+                    .setLatLng(latlng)
+                    .setContent(optionInfo)
+                    .openOn(mymap);
+            }
+        });
+    }
+};
+
+var info = L.control();
+
+info.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+
+    var select = document.createElement('select');
+
+    var scriptIds = [
+        '',
+        'cfa-15',
+        'cfa-30',
+        'cfa-45',
+        'nobhill-15',
+        'nobhill-30',
+        'nobhill-45',
+        'nobhill-60',
+        'castro-30',
+        'zoo-30',
+        'sutrobaths-30',
+        'hunterspoint-30',
+        'pier39-30',
+    ];
+    select.addEventListener('change', function() {
+        var scriptId = select.value;
+
+        circles.clear();
+
+        if (scriptId)
+        {
+            var script = document.createElement('script');
+            script.src = 'circles-' + scriptId + ".js?r=" + Math.random();
+            document.body.appendChild(script);
+        }
+    });
+
+    for (var scriptId of scriptIds)
+    {
+        var option = document.createElement('option');
+        option.value = scriptId;
+        option.appendChild(document.createTextNode(scriptId));
+        select.appendChild(option);
+    }
+
+    this._div.appendChild(select);
+    //this.update();
+    return this._div;
+};
+
+/*
+info.update = function (props) {
+};
+*/
+
+info.addTo(mymap);
+</script>
+
+</body>
+</html>

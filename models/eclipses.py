@@ -11,7 +11,7 @@ import math
 
 from typing import List, Union
 
-from . import nextbus
+from . import nextbus, util
 
 def produce_buses(route_state: dict) -> pd.DataFrame:
     buses = pd.io.json.json_normalize(route_state,
@@ -45,7 +45,7 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
     bus['PREV_LON'] = bus.LON.shift()
     bus['LAT_DIFF'] = bus.LAT - bus.PREV_LAT
     bus['LON_DIFF'] = bus.LON - bus.PREV_LON
-    bus['MOVED_DIST'] = haver_distance(bus.PREV_LAT, bus.PREV_LON, bus.LAT, bus.LON)
+    bus['MOVED_DIST'] = util.haver_distance(bus.PREV_LAT, bus.PREV_LON, bus.LAT, bus.LON)
 
     # interpolate lat/lng/time values between Nextbus observations so that the distance moved between rows
     # is reasonably small (allowing a smaller radius around stop and more precise arrival times),
@@ -76,22 +76,6 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
     resampled_bus['TIME'] = resampled_bus['TIME'].astype(np.int64)
     return resampled_bus
 
-
-# haversine formula for calcuating distance between two coordinates in lat lon
-# from bird eye view; seems to be +- 8 meters difference from geopy distance
-def haver_distance(latstop,lonstop,latbus,lonbus):
-
-    latstop,lonstop,latbus,lonbus = map(np.deg2rad,[latstop,lonstop,latbus,lonbus])
-    eradius = 6371000
-
-    latdiff = (latbus-latstop)
-    londiff = (lonbus-lonstop)
-
-    a = np.sin(latdiff/2)**2 + np.cos(latstop)*np.cos(latbus)*np.sin(londiff/2)**2
-    c = 2*np.arctan2(np.sqrt(a),np.sqrt(1-a))
-
-    distance = eradius*c
-    return distance
 
 def find_arrivals(buses: pd.DataFrame, route_config) -> pd.DataFrame:
 
@@ -168,7 +152,7 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_info, is_terminal) 
     # to the Nextbus API, because sometimes the bus is not actually going in that direction.
 
     # calculate distances fast with haversine function
-    eclipses['DIST'] = haver_distance(stop_info.lat, stop_info.lon, eclipses['LAT'], eclipses['LON'])
+    eclipses['DIST'] = util.haver_distance(stop_info.lat, stop_info.lon, eclipses['LAT'], eclipses['LON'])
 
     #if stop_info.id == '4015':
     #    print(eclipses) #[(eclipses['TIME'] > 1542124300) & (eclipses['TIME'] < 1542125252)])
