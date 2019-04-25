@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import { css } from 'emotion';
-import DatePicker from 'react-date-picker';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
-
+import MultipleDatePicker from './MultipleDatePicker';
 import DropdownControl from './DropdownControl';
 
 class ControlPanel extends Component {
@@ -16,7 +15,7 @@ class ControlPanel extends Component {
       secondStopList: [],
       firstStopId: null,
       secondStopId: null,
-      date: new Date('2019-04-08T03:50'),
+      dates: new Date('2019-04-08T03:50'),
       startTimeStr: null,
       endTimeStr: null,
     };
@@ -142,7 +141,14 @@ class ControlPanel extends Component {
   render() {
     const { routes } = this.props;
     const {
-      date, routeId, directionId, firstStopId, secondStopId, secondStopList, startTimeStr, endTimeStr
+      dates,
+      routeId,
+      directionId,
+      firstStopId,
+      secondStopId,
+      secondStopList,
+      startTimeStr,
+      endTimeStr,
     } = this.state;
 
     const timeRange = (startTimeStr || endTimeStr) ? (startTimeStr + '-' + endTimeStr) : '';
@@ -164,8 +170,8 @@ class ControlPanel extends Component {
       >
         <Card bg="light" style={{ color: 'black' }}>
           <Card.Header>Visualize Route</Card.Header>
-          <DatePicker
-            value={date}
+          <MultipleDatePicker
+            value={dates}
             onChange={this.setDate}
             className={css`
            padding: 10px!important;
@@ -173,26 +179,26 @@ class ControlPanel extends Component {
            width: 100%
          `}
           />
-        <ListGroup.Item>
-          <DropdownControl
-            title="Time Range"
-            name="time_range"
-            variant="info"
-            value={timeRange}
-            onSelect={this.setTimeRange}
-            options={
+          <ListGroup.Item>
+            <DropdownControl
+              title="Time Range"
+              name="time_range"
+              variant="info"
+              value={timeRange}
+              onSelect={this.setTimeRange}
+              options={
                 [
-                    {label:'All Day', key:''},
-                    {label:'Daytime (7AM - 7PM)', key:'07:00-19:00'},
-                    {label:'Early Morning (3AM - 7AM)', key:'03:00-07:00'},
-                    {label:'AM Peak (7AM - 10AM)', key:'07:00-10:00'},
-                    {label:'Midday (10AM - 4PM)', key:'10:00-16:00'},
-                    {label:'PM Peak (4PM - 7PM)', key:'16:00-19:00'},
-                    {label:'Late Evening (7PM - 3AM)', key:'19:00-03:00+1'},
+                  { label: 'All Day', key: '' },
+                  { label: 'Daytime (7AM - 7PM)', key: '07:00-19:00' },
+                  { label: 'Early Morning (3AM - 7AM)', key: '03:00-07:00' },
+                  { label: 'AM Peak (7AM - 10AM)', key: '07:00-10:00' },
+                  { label: 'Midday (10AM - 4PM)', key: '10:00-16:00' },
+                  { label: 'PM Peak (4PM - 7PM)', key: '16:00-19:00' },
+                  { label: 'Late Evening (7PM - 3AM)', key: '19:00-03:00+1' },
                 ]
-        }
-          />
-        </ListGroup.Item>
+              }
+            />
+          </ListGroup.Item>
           <ListGroup variant="flush">
             <ListGroup.Item>
               <DropdownControl
@@ -208,7 +214,7 @@ class ControlPanel extends Component {
                 onSelect={this.setRouteId}
               />
             </ListGroup.Item>
-            { selectedRoute
+            {selectedRoute
               ? (
                 <ListGroup.Item>
                   <DropdownControl
@@ -218,15 +224,15 @@ class ControlPanel extends Component {
                     value={directionId}
                     onSelect={this.setDirectionId}
                     options={
-                  (selectedRoute.directions || []).map(direction => ({
-                    label: direction.title, key: direction.id,
-                  }))
-                }
+                      (selectedRoute.directions || []).map(direction => ({
+                        label: direction.title, key: direction.id,
+                      }))
+                    }
                   />
                 </ListGroup.Item>
               ) : null
             }
-            { (selectedDirection)
+            {(selectedDirection)
               ? (
                 <ListGroup.Item>
                   <DropdownControl
@@ -236,16 +242,16 @@ class ControlPanel extends Component {
                     value={firstStopId}
                     onSelect={this.onSelectFirstStop}
                     options={
-                  (selectedDirection.stops || []).map(firstStopId => ({
-                    label: (selectedRoute.stops[firstStopId] || { title: firstStopId }).title,
-                    key: firstStopId,
-                  }))
-                }
+                      (selectedDirection.stops || []).map(firstStopId => ({
+                        label: (selectedRoute.stops[firstStopId] || { title: firstStopId }).title,
+                        key: firstStopId,
+                      }))
+                    }
                   />
                 </ListGroup.Item>
               ) : null
             }
-            { (selectedDirection)
+            {(selectedDirection)
               ? (
                 <ListGroup.Item>
                   <DropdownControl
@@ -255,11 +261,11 @@ class ControlPanel extends Component {
                     value={secondStopId}
                     onSelect={this.onSelectSecondStop}
                     options={
-                  (secondStopList || []).map(secondStopId => ({
-                    label: (selectedRoute.stops[secondStopId] || { title: secondStopId }).title,
-                    key: secondStopId,
-                  }))
-                }
+                      (secondStopList || []).map(secondStopId => ({
+                        label: (selectedRoute.stops[secondStopId] || { title: secondStopId }).title,
+                        key: secondStopId,
+                      }))
+                    }
                   />
                 </ListGroup.Item>
               ) : null
@@ -272,7 +278,12 @@ class ControlPanel extends Component {
 }
 
 ControlPanel.propTypes = {
+  routes: PropTypes.instanceOf(Array),
   fetchGraphData: PropTypes.func.isRequired,
+};
+
+ControlPanel.defaultProps = {
+  routes: [],
 };
 
 export default ControlPanel;
