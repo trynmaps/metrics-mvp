@@ -5,7 +5,7 @@ ports:
     onOpen: open-browser
 
 tasks:
-- command: git status
+- command: git pull && git status
 - command: |
     pip install -r requirements.txt &&
     FLASK_DEBUG=1 FLASK_APP=metrics-api.py flask run --host=0.0.0.0
