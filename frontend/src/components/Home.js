@@ -14,10 +14,6 @@ import {
 } from '../actions';
 
 class Home extends Component {
-  constructor(props) {
-    super(props);
-  }
-
   componentDidMount() {
     if (!this.props.routes) {
       this.props.fetchRoutes();
