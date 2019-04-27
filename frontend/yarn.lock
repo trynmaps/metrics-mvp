@@ -7805,6 +7805,15 @@ recursive-readdir@2.2.2:
   dependencies:
     minimatch "3.0.4"
 
+redux-first-router-link@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/redux-first-router-link/-/redux-first-router-link-2.1.1.tgz#93097de2d0863578c15547d16e71688b4e8b763a"
+  dependencies:
+    path-to-regexp "^1.7.0"
+    prop-types "^15.5.10"
+    rudy-history "^1.0.0"
+    rudy-match-path "^0.3.0"
+
 redux-first-router@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/redux-first-router/-/redux-first-router-2.1.1.tgz#500acc1f78b545e8d0da7b430c5842a17dbb8619"
