@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
 
 import './App.css';
@@ -13,7 +13,9 @@ const App = ({ page }) => {
     NotFound: <NotFound />
   };
   return (
-    <div>{components[page]}</div>
+    <Fragment>
+      {components[page]}
+    </Fragment>
   );
 };
 
