@@ -217,7 +217,7 @@ class Info extends Component {
             <p>{headwayMin.count + 1} arrivals, average headway {Math.round(headwayMin.avg)} minutes, max headway {Math.round(headwayMin.max)} minutes</p>
             <BarChart
               data={[{ values: headwayMin.histogram.map(bin => ({ x: `${bin.value}`, y: bin.count })) }]}
-              width={Math.max(150, headwayMin.histogram.length * 70 + 50)}
+              width={Math.max(100, headwayMin.histogram.length * 70)}
               className={`css
                 color: 'red'
               `}
@@ -226,7 +226,7 @@ class Info extends Component {
                   {
                     top: 0,
                     bottom: 50,
-                    left: 50,
+                    left: 0,
                     right: 20,
                   }
                 }
@@ -242,7 +242,7 @@ class Info extends Component {
             <p>average wait time {Math.round(waitTimes.avg)} minutes, max wait time {Math.round(waitTimes.max)} minutes</p>
             <BarChart
               data={[{ values: waitTimes.histogram.map(bin => ({ x: `${bin.value}`, y: bin.count })) }]}
-              width={Math.max(150, waitTimes.histogram.length * 70 + 50)}
+              width={Math.max(100, waitTimes.histogram.length * 70)}
               className={`css
                 color: 'red'
               `}
@@ -251,7 +251,7 @@ class Info extends Component {
                   {
                     top: 0,
                     bottom: 50,
-                    left: 50,
+                    left: 0,
                     right: 20,
                   }
                 }
@@ -267,13 +267,13 @@ class Info extends Component {
             <p>{tripTimes.count} trips, average {Math.round(tripTimes.avg)} minutes, max {Math.round(tripTimes.max)} minutes</p>
             <BarChart
               data={[{ values: tripTimes.histogram.map(bin => ({ x: `${bin.value}`, y: bin.count })) }]}
-              width={Math.max(150, tripTimes.histogram.length * 70 + 50)}
+              width={Math.max(100, tripTimes.histogram.length * 70)}
               height={200}
               margin={
                   {
                     top: 0,
                     bottom: 50,
-                    left: 50,
+                    left: 0,
                     right: 20,
                   }
                 }
