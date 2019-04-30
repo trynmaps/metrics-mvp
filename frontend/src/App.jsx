@@ -21,7 +21,7 @@ class App extends Component {
   }
 
   render() {
-    const { graphData, graphError, routes } = this.props;
+    const { graphData, graphError, graphParams, routes } = this.props;
     return (
       <div className={css`
         display: grid;
@@ -42,7 +42,7 @@ class App extends Component {
           fetchGraphData={this.props.fetchGraphData} />
         <div className="center metricsWidth">
         </div>
-        <Info graphData={graphData} graphError={graphError} />
+        <Info graphData={graphData} graphError={graphError} graphParams={graphParams} routes={routes} />
       </div>
     );
   }
@@ -52,6 +52,7 @@ const mapStateToProps = state => ({
   graphData: state.graphData.graphData,
   routes: state.routes.routes,
   graphError: state.graphData.err,
+  graphParams: state.graphData.graphParams,
 });
 
 const mapDispatchToProps = dispatch => ({

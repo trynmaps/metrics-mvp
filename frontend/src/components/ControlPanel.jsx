@@ -88,9 +88,9 @@ class ControlPanel extends Component {
     
     let newSecondStopId = secondStopId;
     
-    # If the "to stop" is not set or is not valid for the current "from stop",
-    # set a default "to stop" that is some number of stops down.  If there aren't
-    # enough stops, use the end of the line.
+    // If the "to stop" is not set or is not valid for the current "from stop",
+    // set a default "to stop" that is some number of stops down.  If there aren't
+    // enough stops, use the end of the line.
     
     const nStops = 5;
     
