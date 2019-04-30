@@ -343,5 +343,8 @@ typings/
 .idea
 # theia
 .theia
-# test notebook
+# test notebooks
 /models/Untitled.ipynb
+/*.ipynb
+# timetable data (~148 MB of csv files)
+/data/*.csv
