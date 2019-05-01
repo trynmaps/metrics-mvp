@@ -7,6 +7,7 @@ import { fetchGraphData, fetchRoutes, fetchRouteConfig, resetGraphData } from '.
 import './App.css';
 import ControlPanel from './components/ControlPanel';
 import Info from './components/Info';
+//import StopMap from './components/StopMap';
 
 class App extends Component {
   constructor() {
@@ -40,6 +41,10 @@ class App extends Component {
           fetchRouteConfig={this.props.fetchRouteConfig}
           resetGraphData={this.props.resetGraphData}
           fetchGraphData={this.props.fetchGraphData} />
+          
+      {/*  <StopMap routes={routes}
+          fetchRouteConfig={this.props.fetchRouteConfig}/> */}
+          
         <div className="center metricsWidth">
         </div>
         <Info graphData={graphData} graphError={graphError} />
