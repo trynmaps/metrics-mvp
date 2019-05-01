@@ -9,6 +9,18 @@ class Info extends Component {
     this.state = 0;
   }
 
+
+   * where percentile is 0-100.
+   */
+  getPercentileValue(histogram, percentile) {
+    const bin = histogram.percentiles.find(x => x.percentile === percentile);
+    if (bin) {
+      return bin.value;
+    } else {
+      return 0;
+    }
+  }
+  
   computeGrades(headwayMin, waitTimes, tripTimes, speed) {
   
     //
@@ -27,12 +39,14 @@ class Info extends Component {
     //
     // grade and score for long wait probability
     // 
-    // where probability of 20 min wait is sum of histogram buckets #4 and higher divided by count
+    // where probability of 20 min wait is:
+    //   the sum of counts of bins whose range starts at 20 or more, divided by count
     //
-    
-    const TWENTY_INDEX = 4;
-    
-    let reducer = (accumulator, currentValue, index) =>  { return index >= TWENTY_INDEX ? (accumulator + currentValue.count) : accumulator; }
+
+    let reducer = (accumulator, currentValue, index) =>  {
+      const LONG_WAIT = 20; // histogram bins are in minutes
+      return currentValue.bin_start >= LONG_WAIT ? (accumulator + currentValue.count) : accumulator;
+    }
     
     let longWaitProbability = 0;
     if (headwayMin) {
@@ -51,7 +65,6 @@ class Info extends Component {
 
     // grade and score for travel speed
     
-    
     const speedScoreScale = d3.scale.linear()
     .domain([5, 10])
     .rangeRound([0, 100])
@@ -60,7 +73,6 @@ class Info extends Component {
     const speedGradeScale = d3.scale.threshold()
     .domain([5, 7.5, 10])
     .range(["D", "C", "B", "A"]);
-
         
     //
     // grade score for travel time variability
@@ -70,7 +82,7 @@ class Info extends Component {
     
     let travelVarianceTime = 0;
     if (tripTimes) {
-        travelVarianceTime = tripTimes.percentiles[18].value - tripTimes.avg;
+        travelVarianceTime = this.getPercentileValue(tripTimes, 90) - tripTimes.avg;
     }
     
     const travelVarianceScoreScale = d3.scale.linear()
@@ -130,19 +142,36 @@ class Info extends Component {
   }
   
   /**
-   * This is approximate straight line distance between two lat/lon's,
-   * assuming a fixed distance per degree of longitude, and that the
-   * distance per degree of latitude varies by cosine of latitude.
-   *
-   * http://jonisalonen.com/2014/computing-distance-between-coordinates-can-be-simple-and-fast/
+   * Returns the distance between two stops in miles. 
    */
   milesBetween(p1, p2) {
-  
-    const degLength = 69.172; // miles per degree at equator
-    const deltaLat = p1.lat - p2.lat;
-    const deltaLon = (p1.lon - p2.lon) * Math.cos(p1.lat * 3.1415926 / 180);
-    return degLength * Math.sqrt(deltaLat * deltaLat + deltaLon * deltaLon);
+    const meters = this.haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
+    return meters / 1609.344; 
   }
+  
+  /**
+   * Haversine formula for calcuating distance between two coordinates in lat lon
+   * from bird eye view; seems to be +- 8 meters difference from geopy distance.
+   *
+   * From eclipses.py.  Returns distance in meters.
+   */
+  haverDistance(latstop,lonstop,latbus,lonbus) {
+
+    const deg2rad = x => x * Math.PI / 180;
+     
+    [latstop,lonstop,latbus,lonbus] = [latstop,lonstop,latbus,lonbus].map(deg2rad);
+    const eradius = 6371000;
+
+    const latdiff = (latbus-latstop);
+    const londiff = (lonbus-lonstop);
+
+    const a = Math.sin(latdiff/2)**2 + Math.cos(latstop) * Math.cos(latbus) * Math.sin(londiff/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    const distance = eradius * c;
+    return distance;
+  }
+  
   
   computeDistance(graphParams, routes) {
 
@@ -175,7 +204,7 @@ class Info extends Component {
     const tripTimes = graphData ? graphData.trip_times : null;
   
     const distance = this.computeDistance(graphParams, routes);
-    const speed = tripTimes ? Math.round(10*distance / (tripTimes.avg / 60.0))/10 : 0; // convert avg trip time to hours
+    const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
 
     return (
@@ -194,7 +223,7 @@ class Info extends Component {
             <tr><th>Metric</th><th>Value</th><th>Grade</th><th>Score</th></tr>
             <tr>
             <td>Average wait</td><td>{Math.round(waitTimes.avg)} minutes<br/>
-            90% of waits under { Math.round(waitTimes.percentiles[18].value) } minutes
+            90% of waits under { Math.round(this.getPercentileValue(waitTimes, 90)) } minutes
             </td><td>{grades.averageWaitGrade}</td><td> {grades.averageWaitScore} </td>
             </tr>
             <tr>
@@ -207,7 +236,7 @@ class Info extends Component {
             </td><td>{grades.speedGrade}</td><td>{grades.speedScore}</td>
             </tr><tr>
             <td>Travel variability</td><td> 
-            90% of trips take { Math.round(tripTimes.percentiles[18].value) } minutes
+            90% of trips take { Math.round(this.getPercentileValue(tripTimes, 90)) } minutes
             
             </td><td> {grades.travelVarianceGrade} </td><td> {grades.travelVarianceScore} </td>
             </tr>
