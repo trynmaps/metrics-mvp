@@ -10,6 +10,8 @@ class Info extends Component {
   }
 
 
+  /**
+   * Helper method to get a specific percentile out of histogram graph data
    * where percentile is 0-100.
    */
   getPercentileValue(histogram, percentile) {
