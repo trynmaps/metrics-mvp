@@ -1,8 +1,3 @@
-import { combineReducers } from "redux"
-import fetchGraphReducer from "./fetchGraphReducer";
-import routesReducer from "./routesReducer";
-
-export default combineReducers({
-    graphData: fetchGraphReducer,
-    routes: routesReducer
-})
+export { default as fetchGraph } from './fetchGraphReducer';
+export { default as routes } from './routesReducer';
+export { default as page } from './page';

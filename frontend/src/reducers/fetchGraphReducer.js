@@ -1,7 +1,9 @@
-export default function reducer(state={
+const initialState = {
   fetching: false,
-  graphData:null
-}, action){
+  graphData: null,
+};
+
+export default (state = initialState, action) => {
   switch(action.type) {
     case "RECEIVED_GRAPH_DATA":
       return {...state, fetched:true, err:null, graphData:action.payload, graphParams: action.graphParams};
@@ -14,4 +16,3 @@ export default function reducer(state={
   }
   return state;
 }
-
