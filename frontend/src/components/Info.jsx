@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { css } from 'emotion';
 import { BarChart } from 'react-d3-components';
+import * as d3 from "d3";
 
 class Info extends Component {
   constructor(props) {
@@ -36,16 +37,16 @@ class Info extends Component {
               height={200}
               margin={
                   {
-                    top: 0,
-                    bottom: 50,
-                    left: 0,
-                    right: 20,
+                    top: 10,
+                    bottom: 30,
+                    left: 50,
+                    right: 10,
                   }
                 }
               xAxis={{label: "minutes"}}
               barPadding={0.3}
               style={{fill: 'red'}}
-              yAxis={{innerTickSize: 10, label: "number"}}
+              yAxis={{innerTickSize: 10, label: "arrivals", tickArguments: [5]}}
             /></div>
           ) : null }
         {waitTimes
@@ -53,7 +54,7 @@ class Info extends Component {
             <h4>Wait Times</h4>
             <p>average wait time {Math.round(waitTimes.avg)} minutes, max wait time {Math.round(waitTimes.max)} minutes</p>
             <BarChart
-              data={[{ values: waitTimes.histogram.map(bin => ({ x: `${bin.value}`, y: bin.count })) }]}
+              data={[{ values: waitTimes.histogram.map(bin => ({ x: `${bin.value}`, y: (bin.count / (waitTimes.histogram.reduce((acc, bin)=>{return acc + bin.count}, 0))) })) }]}
               width={Math.max(100, waitTimes.histogram.length * 70)}
               className={`css
                 color: 'red'
@@ -61,16 +62,16 @@ class Info extends Component {
               height={200}
               margin={
                   {
-                    top: 0,
-                    bottom: 50,
-                    left: 0,
-                    right: 20,
+                    top: 10,
+                    bottom: 30,
+                    left: 50,
+                    right: 10,
                   }
                 }
               xAxis={{label: "minutes"}}
               barPadding={0.3}
               style={{fill: 'red'}}
-              yAxis={{innerTickSize: 10, label: "number"}}
+              yAxis={{innerTickSize: 10, label: "chance", tickArguments: [5], tickFormat: d3.format(".0%")}}
             /></div>
           ) : null }
         {tripTimes
@@ -83,16 +84,16 @@ class Info extends Component {
               height={200}
               margin={
                   {
-                    top: 0,
-                    bottom: 50,
-                    left: 0,
-                    right: 20,
+                    top: 10,
+                    bottom: 30,
+                    left: 50,
+                    right: 10,
                   }
                 }
               xAxis={{label: "minutes"}}
               barPadding={0.3}
               style={{fill: 'red'}}
-              yAxis={{innerTickSize: 10, label: "number"}}
+              yAxis={{innerTickSize: 10, label: "trips", tickArguments: [5]}}
             /></div>
           ) : null }
         <code>
