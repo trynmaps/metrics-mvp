@@ -46,3 +46,9 @@ export function fetchRouteConfig(routeId) {
     });
   };
 }
+
+export function handleRouteSelect(route) {
+  return function (dispatch) {
+      dispatch({ type: 'RECEIVED_ROUTE_SELECTION', payload: route });
+  };
+}
