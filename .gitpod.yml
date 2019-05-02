@@ -2,7 +2,6 @@ ports:
   - port: 3000
     onOpen: open-browser
   - port: 5000
-    onOpen: open-browser
 
 tasks:
 - command: git status
