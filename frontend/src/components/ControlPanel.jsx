@@ -323,13 +323,17 @@ class ControlPanel extends Component {
   plotSelectedRoute() {
     
     const selectedRoute = this.getSelectedRouteInfo();
-    const { directionId, firstStopId, secondStopId } = this.state;
+    const { directionId, firstStopId } = this.state;
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
     const secondStopListIndex = secondStopInfo.stops.indexOf(firstStopId);
     const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
     
     
-    const stops = secondStopList.map(stopID => selectedRoute.stops[stopID]);
+    const stops = secondStopList.map(stopID => { return {
+      stop: selectedRoute.stops[stopID],
+      stopID: stopID
+      }
+    });
      
     
     // to do: indicators for firstStop and secondStop 
@@ -375,19 +379,30 @@ class ControlPanel extends Component {
 
 
 
-    const marker = this.state.hasLocation ? (
+/*    const marker = this.state.hasLocation ? (
       <Marker position={this.state.latLng} opacity="0.01">
         <Popup>You are here</Popup>
       </Marker>
-) : null;      
+) : null;*/      
 
+    // possible first stops near click or current location
+    
     const StartMarkers = () => {  
 
       const items = this.state.startMarkers.map(startMarker => {
         const position = [ startMarker.stop.lat, startMarker.stop.lon ];
-        return <CircleMarker key={startMarker.stopID} center={position} opacity="0.1">
-          <Tooltip permanent="true">
-          {startMarker.routeID}
+        return <CircleMarker key={startMarker.stopID} center={position}radius="8"
+            fillOpacity={this.state.firstStopId === startMarker.stopID ? 1.0 : 0.2}
+             stroke={false}
+             onClick={ e => {
+               this.setState({routeId: startMarker.routeID,
+                 directionId: startMarker.direction.id});
+               this.onSelectFirstStop(startMarker.stopID);
+             }
+             
+             }>
+          <Tooltip>
+          {startMarker.routeTitle} <br/> {startMarker.direction.title}
           </Tooltip>
           <Popup>{startMarker.stop.title}<br/>
             {startMarker.routeTitle}<br/>
@@ -414,11 +429,21 @@ class ControlPanel extends Component {
     }
     
 
+    // stops along the selected route from the first stop 
+    
     const RouteMarkers = () => {  
 
       const items = this.state.routeMarkers.map(routeMarker => {
-        const position = [ routeMarker.lat, routeMarker.lon ]; // just stops directly, was routeMarker.stop.lat
-        return <CircleMarker key={routeMarker.stopID} center={position} opacity="0.1">
+        const position = [ routeMarker.stop.lat, routeMarker.stop.lon ];
+        return <CircleMarker key={routeMarker.stopID} center={position}
+          fillOpacity={this.state.secondStopId === routeMarker.stopID ? 1.0 : 0.2}
+          stroke={false}
+          fillColor="red" radius="8"
+          onClick={e => {
+              e.originalEvent.view.L.DomEvent.stopPropagation(e)          
+              this.onSelectSecondStop(routeMarker.stopID);
+            }
+          }>
         </CircleMarker>
       });
       return <Fragment>{items}</Fragment>
@@ -436,7 +461,7 @@ class ControlPanel extends Component {
           
            this.setState({routeId: startMarker.routeID,
              directionId: startMarker.direction.id});
-             this.onSelectFirstStop(startMarker.stopID);
+           this.onSelectFirstStop(startMarker.stopID);
              }
            }>
           {startMarker.routeTitle} - {startMarker.direction.title}
@@ -446,8 +471,9 @@ class ControlPanel extends Component {
     }
  
  
-    const bounds = this.state.startMarkers.length > 1 ?
-      latLngBounds(this.state.startMarkers.map(startMarker => [startMarker.stop.lat, startMarker.stop.lon])).pad(0.25) : null;
+    const bounds = (this.state.startMarkers.length > 1 || this.state.routeMarkers.length > 1) ?
+      latLngBounds(Array.concat(this.state.startMarkers, this.state.routeMarkers).map(marker =>
+        [marker.stop.lat, marker.stop.lon])).pad(0.1) : null;
  
 
 
@@ -587,7 +613,7 @@ class ControlPanel extends Component {
           
       <Map
         style={{
-          height:"40vw"
+          height:"40vh"
         }}
         bounds={bounds}
         center={this.state.latLng}
