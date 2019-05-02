@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { css } from 'emotion';
 import DatePicker from 'react-date-picker';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
+import {handleRouteSelect} from '../actions';
 
 import DropdownControl from './DropdownControl';
 
@@ -93,11 +95,14 @@ class ControlPanel extends Component {
   }
 
   selectedRouteChanged = () => {
+    debugger;
+    const {onRouteSelect} = this.props;
     const { routeId } = this.state;
     const selectedRoute = this.getSelectedRouteInfo();
     if (!selectedRoute) {
       return;
     }
+    //onRouteSelect(selectedRoute);
     if (!selectedRoute.directions) {
       this.setDirectionId(null);
       this.props.fetchRouteConfig(routeId);
@@ -107,7 +112,14 @@ class ControlPanel extends Component {
     }
   }
 
-  getStopsInfoInGivenDirection = (selectedRoute, directionId) => selectedRoute.directions.find(dir => dir.id === directionId);
+  getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
+    debugger;
+    return selectedRoute.directions.find(dir => dir.id === directionId);
+  }
+  getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
+    const stopSids= selectedRoute.directions.find(dir => dir.name === name);
+    selectedRoute.stops.find(stop, key)
+  }
 
   selectedDirectionChanged = () => {
     const { firstStopId, directionId } = this.state;
@@ -134,7 +146,17 @@ class ControlPanel extends Component {
     const { routeId } = this.state;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
-
+  sendRouteStopsToMap = () => {
+    const {directionId} = this.state;
+    const {onRouteSelect} = this.props;
+    const selectedRoute = this.getSelectedRouteInfo();
+    debugger;
+    onRouteSelect({
+      'Inbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
+      'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
+    });
+    debugger;
+  }
   // toggleTimekeeper(val) {
   //   // this.setState({ displayTimepicker: val });
   // }
@@ -149,7 +171,7 @@ class ControlPanel extends Component {
 
     const selectedRoute = this.getSelectedRouteInfo();
     const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
-      ? selectedRoute.directions.find(dir => dir.id === directionId) : null;
+      ? (selectedRoute.directions.find(dir => dir.id === directionId), this.sendRouteStopsToMap()) : null;
     return (
       <div className={css`
           color: #fff;
@@ -275,4 +297,11 @@ ControlPanel.propTypes = {
   fetchGraphData: PropTypes.func.isRequired,
 };
 
-export default ControlPanel;
+const mapDispatchToProps = dispatch => {
+  return {
+    onRouteSelect: route => {
+      dispatch(handleRouteSelect(route));
+    }
+  }
+}
+export default connect(null,mapDispatchToProps)(ControlPanel);

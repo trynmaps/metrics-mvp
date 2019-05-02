@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { css } from 'emotion';
-
+import MapStops from "./MapStops";
 import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
@@ -41,6 +41,9 @@ class Home extends Component {
           resetGraphData={this.props.resetGraphData}
           fetchGraphData={this.props.fetchGraphData} />
         <div className="center metricsWidth">
+        <div>
+        <MapStops />
+        </div>
         </div>
         <Info graphData={graphData} graphError={graphError} />
       </div>
