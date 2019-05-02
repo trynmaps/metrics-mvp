@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { css } from 'emotion';
 import { BarChart } from 'react-d3-components';
+import Card from 'react-bootstrap/Card';
 import * as d3 from "d3";
 
 class Info extends Component {
@@ -29,12 +30,12 @@ class Info extends Component {
     // grade and score for average wait
     //
     
-    const averageWaitScoreScale = d3.scale.linear()
+    const averageWaitScoreScale = d3.scaleLinear()
     .domain([5, 10])
     .rangeRound([100, 0])
     .clamp(true);
     
-    const averageWaitGradeScale = d3.scale.threshold()
+    const averageWaitGradeScale = d3.scaleThreshold()
     .domain([5, 7.5, 10])
     .range(["A", "B", "C", "D"]);
     
@@ -56,23 +57,23 @@ class Info extends Component {
       longWaitProbability /= waitTimes.count;
     }
     
-    const longWaitScoreScale = d3.scale.linear()
+    const longWaitScoreScale = d3.scaleLinear()
     .domain([0.10, 0.33])
     .rangeRound([100, 0])
     .clamp(true);
     
-    const longWaitGradeScale = d3.scale.threshold()
+    const longWaitGradeScale = d3.scaleThreshold()
     .domain([0.10, 0.20, 0.33])
     .range(["A", "B", "C", "D"]);
 
     // grade and score for travel speed
     
-    const speedScoreScale = d3.scale.linear()
+    const speedScoreScale = d3.scaleLinear()
     .domain([5, 10])
     .rangeRound([0, 100])
     .clamp(true);
     
-    const speedGradeScale = d3.scale.threshold()
+    const speedGradeScale = d3.scaleThreshold()
     .domain([5, 7.5, 10])
     .range(["D", "C", "B", "A"]);
         
@@ -87,17 +88,17 @@ class Info extends Component {
         travelVarianceTime = this.getPercentileValue(tripTimes, 90) - tripTimes.avg;
     }
     
-    const travelVarianceScoreScale = d3.scale.linear()
+    const travelVarianceScoreScale = d3.scaleLinear()
     .domain([5, 10])
     .rangeRound([100, 0])
     .clamp(true);
     
-    const travelVarianceGradeScale = d3.scale.threshold()
+    const travelVarianceGradeScale = d3.scaleThreshold()
     .domain([5, 7.5, 10])
     .range(["A", "B", "C", "D"]);
     
     
-    const totalGradeScale = d3.scale.threshold()
+    const totalGradeScale = d3.scaleThreshold()
     .domain([100, 200, 300])
     .range(["D", "C", "B", "A"]);
 
@@ -219,6 +220,7 @@ class Info extends Component {
       >
         {headwayMin
           ? (<div>
+            <Card><Card.Body>
             <span className="h4">Overall Grade: </span><span className="h1">{grades.totalGrade}</span> ( {grades.totalScore} / {grades.highestPossibleScore} )
 
             <table className="table table-borderless"><tbody>
@@ -243,6 +245,9 @@ class Info extends Component {
             </td><td> {grades.travelVarianceGrade} </td><td> {grades.travelVarianceScore} </td>
             </tr>
             </tbody></table>
+            </Card.Body></Card>
+            
+            <p/>
 
             <h4>Headways</h4>
             <p>{headwayMin.count + 1} arrivals, average headway {Math.round(headwayMin.avg)} minutes, max headway {Math.round(headwayMin.max)} minutes</p>
