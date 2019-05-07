@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pandas as pd
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import math
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
@@ -50,23 +50,20 @@ def route_config():
     }
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-@app.route('/metrics', methods=['GET'])
-def metrics_page():
-    metrics_start = time.time()
-
-    route_id = request.args.get('route_id')
+def calc_metrics(request):
+    route_id = request['route_id']
     if route_id is None:
         route_id = '12'
-    start_stop_id = request.args.get('start_stop_id')
+    start_stop_id = request['start_stop_id']
     if start_stop_id is None:
         start_stop_id = '3476'
-    end_stop_id = request.args.get('end_stop_id')
+    end_stop_id = request['end_stop_id']
 
-    direction_id = request.args.get('direction_id')
+    direction_id = request['direction_id']
 
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
-    date_str = request.args.get('date')
+    start_date_str = request['start_date']
+    end_date_str = request['end_date']
+    date_str = request['date']
     if date_str is not None:
         start_date_str = end_date_str = date_str
     else:
@@ -75,8 +72,8 @@ def metrics_page():
         if end_date_str is None:
             end_date_str = start_date_str
 
-    start_time_str = request.args.get('start_time') # e.g. "14:00" (24h time of day)
-    end_time_str = request.args.get('end_time') # e.g. "18:00" (24h time of day)
+    start_time_str = request['start_time'] # e.g. "14:00" (24h time of day)
+    end_time_str = request['end_time'] # e.g. "18:00" (24h time of day)
 
     params = {
         'start_stop_id': start_stop_id,
@@ -185,11 +182,133 @@ def metrics_page():
         'trip_times': metrics.get_trip_times_stats(completed_trips, start_stop_id, end_stop_id)
             if end_stop_id and both_stops_same_dir else None,
     }
+    return data
+
+def create_calc_metrics_request(request, start_time=None, end_time=None):
+    return {
+        'start_stop_id': request.args.get('start_stop_id'),
+        'end_stop_id': request.args.get('end_stop_id'),
+        'route_id': request.args.get('route_id'),
+        'direction_id': request.args.get('direction_id'),
+        'start_date': request.args.get('start_date'),
+        'end_date': request.args.get('end_date'),
+        'start_time': start_time.strftime('%H:%M') if start_time != None else request.args.get('start_time'),
+        'end_time': end_time.strftime('%H:%M') if end_time != None else request.args.get('end_time'),
+        'date': request.args.get('date'),
+    }
+
+@app.route('/metrics', methods=['GET'])
+def metrics_page():
+    metrics_start = time.time()
+
+    req = create_calc_metrics_request(request)
+    data = calc_metrics(req)
 
     metrics_end = time.time()
     data['processing_time'] = (metrics_end - metrics_start)
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
+
+@app.route('/metrics_by_interval', methods=['GET'])
+def metrics_by_interval():
+    route_id = request.args.get('route_id')
+    if route_id is None:
+        route_id = '12'
+    start_stop_id = request.args.get('start_stop_id')
+    if start_stop_id is None:
+        start_stop_id = '3476'
+    end_stop_id = request.args.get('end_stop_id')
+
+    direction_id = request.args.get('direction_id')
+
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    date_str = request.args.get('date')
+
+    if date_str is not None:
+        start_date_str = end_date_str = date_str
+    else:
+        if start_date_str is None:
+            start_date_str = '2019-02-01'
+        if end_date_str is None:
+            end_date_str = start_date_str
+
+    start_time_str = request.args.get('start_time') # e.g. "14:00" (24h time of day)
+    end_time_str = request.args.get('end_time') # e.g. "18:00" (24h time of day)
+
+    params = {
+        'start_stop_id': start_stop_id,
+        'end_stop_id': end_stop_id,
+        'route_id': route_id,
+        'direction_id': direction_id,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+        'start_time': start_time_str,
+        'end_time': end_time_str,
+    }
+
+    data = {}
+
+    if start_time_str is not None:
+        if end_time_str is not None:
+            if start_time_str > end_time_str:
+                return Response(json.dumps({
+                    'params': params,
+                    'error': 'end time must be after start time'
+                }, indent=2), status=404, mimetype='application/json')
+            data['hourly'] = []
+            # show hourly metrics
+            start_time = datetime.strptime(start_time_str, '%H:%M')
+            start_time.replace(microsecond=0, second=0, minute=0)
+            end_time = datetime.strptime(end_time_str, '%H:%M')
+            end_time.replace(microsecond=0, second=0, minute=0) - timedelta(hours=1)
+
+
+            while start_time < end_time:
+                curr_end_time = start_time + timedelta(seconds=3600)
+                req = create_calc_metrics_request(request, start_time, curr_end_time)
+                curr_data = calc_metrics(req)
+                data['hourly'].append({
+                    'start_time': start_time.strftime('%H:%M'),
+                    'end_time': curr_end_time.strftime('%H:%M'),
+                    'headway_min': curr_data['headway_min'],
+                    'wait_times': curr_data['wait_times'],
+                    'trip_times': curr_data['trip_times'],
+                })
+                start_time = curr_end_time
+        else:
+            return Response(json.dumps({
+                'params': params,
+                'error': 'Need both a start and end time'
+            }, indent=2), status=404, mimetype='application/json')
+
+        route_config = nextbus.get_route_config('sf-muni', route_id)
+        start_stop_info = route_config.get_stop_info(start_stop_id)
+        end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
+
+        if direction_id is not None:
+            dir_info = route_config.get_direction_info(direction_id)
+        if dir_info is not None:
+            dir_infos = [dir_info]
+        else:
+            dir_infos = []
+        directions = [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos]
+
+        # 404 if the given stop isn't on the route
+        # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
+        if start_stop_info is None:
+            return Response(json.dumps({
+                    'params': params,
+                    'error': f"Stop {start_stop_id} is not on route {route_id}",
+                }, indent=2), status=404, mimetype='application/json')
+        data['params'] = params
+        data['route_title'] = route_config.title,
+        data['start_stop_title'] = start_stop_info.title if start_stop_info else None
+        data['end_stop_title'] = end_stop_info.title if end_stop_info else None
+        data['directions'] = directions
+
+        return Response(json.dumps(data, indent=2), mimetype='application/json')
+
 
 # Serve production build of React app
 # @app.route('/', defaults={'path': ''}, methods=['GET'])
