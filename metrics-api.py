@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import time
 import math
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
+import constants
 
 """
 This is the app's main file!
@@ -89,10 +90,7 @@ def calc_metrics(request):
     try:
         dates = util.get_dates_in_range(start_date_str, end_date_str)
     except Exception as ex:
-        return Response(json.dumps({
-            'params': params,
-            'error': str(ex),
-        }, indent=2), status=400, mimetype='application/json')
+        raise Exception(ex)
 
     tz = pytz.timezone('US/Pacific')
 
@@ -103,10 +101,7 @@ def calc_metrics(request):
     # 404 if the given stop isn't on the route
     # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
     if start_stop_info is None:
-        return Response(json.dumps({
-                'params': params,
-                'error': f"Stop {start_stop_id} is not on route {route_id}",
-            }, indent=2), status=404, mimetype='application/json')
+        raise Exception(f"Stop {start_stop_id} is not on route {route_id}")
 
     if direction_id is not None:
         dir_info = route_config.get_direction_info(direction_id)
@@ -150,15 +145,9 @@ def calc_metrics(request):
             headway_min = df.headway_min[df.headway_min.notnull()] # remove NaN row (first bus of the day)
             headway_min_arr.append(df.headway_min)
         except FileNotFoundError as ex:
-            return Response(json.dumps({
-                'params': params,
-                'error': f"Arrival history not found for route {route_id} on {d.isoformat()}",
-            }, indent=2), status=404, mimetype='application/json')
+            raise Exception(f"Arrival history not found for route {route_id} on {d.isoformat()}")
         except IndexError as ex:
-            return Response(json.dumps({
-                'params': params,
-                'error': f"No arrivals found for stop {start_stop_id} on route {route_id} in direction {direction_id} on {d.isoformat()}",
-            }, indent = 2), status = 404, mimetype = 'application/json')
+            raise Exception(f"No arrivals found for stop {start_stop_id} on route {route_id} in direction {direction_id} on {d.isoformat()}")
 
     headway_min = pd.concat(headway_min_arr)
     waits = pd.concat(waits)
@@ -166,10 +155,7 @@ def calc_metrics(request):
         completed_trips = pd.concat(completed_trips)
 
     if headway_min.empty:
-        return Response(json.dumps({
-            'params': params,
-            'error': f"No arrivals for stop {start_stop_id} on route {route_id}",
-        }, indent=2), status=404, mimetype='application/json')
+        raise Exception(f"No arrivals for stop {start_stop_id} on route {route_id}")
 
     data = {
         'params': params,
@@ -202,12 +188,36 @@ def metrics_page():
     metrics_start = time.time()
 
     req = create_calc_metrics_request(request)
-    data = calc_metrics(req)
+    try:
+        data = calc_metrics(req)
+    except Exception as ex:
+        return Response(json.dumps({
+            'params': req,
+            'error': str(ex),
+        }, indent=2), status=400, mimetype='application/json')
 
     metrics_end = time.time()
     data['processing_time'] = (metrics_end - metrics_start)
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
+
+def add_intervals_to_data(arr, time_intervals):
+    for time_interval in time_intervals:
+        start_time = time_interval['start_time']
+        end_time = time_interval['end_time']
+        try:
+            req = create_calc_metrics_request(request, start_time, end_time)
+        except Exception as ex:
+            raise(Exception(ex))
+
+        curr_data = calc_metrics(req)
+        arr.append({
+            'start_time': start_time.strftime('%H:%M'),
+            'end_time': end_time.strftime('%H:%M'),
+            'headway_min': curr_data['headway_min'],
+            'wait_times': curr_data['wait_times'],
+            'trip_times': curr_data['trip_times'],
+        })
 
 @app.route('/metrics_by_interval', methods=['GET'])
 def metrics_by_interval():
@@ -247,67 +257,72 @@ def metrics_by_interval():
         'end_time': end_time_str,
     }
 
-    data = {}
+    data = {'intervals': []}
 
-    if start_time_str is not None:
-        if end_time_str is not None:
-            if start_time_str > end_time_str:
-                return Response(json.dumps({
-                    'params': params,
-                    'error': 'end time must be after start time'
-                }, indent=2), status=404, mimetype='application/json')
-            data['hourly'] = []
-            # show hourly metrics
-            start_time = datetime.strptime(start_time_str, '%H:%M')
-            start_time.replace(microsecond=0, second=0, minute=0)
-            end_time = datetime.strptime(end_time_str, '%H:%M')
-            end_time.replace(microsecond=0, second=0, minute=0) - timedelta(hours=1)
+    if start_time_str is not None and end_time_str is not None:
+        # round start_time down and end_time up to allow for even intervals
+        start_time = datetime.strptime(start_time_str, '%H:%M')
+        start_time.replace(microsecond=0, second=0, minute=0)
+        end_time = datetime.strptime(end_time_str, '%H:%M')
+        end_time.replace(microsecond=0, second=0, minute=0) - timedelta(hours=1)
 
+        hourly_time_intervals = []
+        while start_time != end_time:
+            curr_interval = {}
+            curr_interval['start_time'] = start_time
+            curr_interval['end_time'] = start_time + timedelta(seconds=3600)
+            hourly_time_intervals.append(curr_interval)
+            start_time += timedelta(seconds=3600)
+        try:
+            add_intervals_to_data(data['intervals'], hourly_time_intervals)
+        except Exception as ex:
+            return Response(json.dumps({
+                'params': params,
+                'error': str(ex),
+            }, indent=2), status=400, mimetype='application/json')
 
-            while start_time < end_time:
-                curr_end_time = start_time + timedelta(seconds=3600)
-                req = create_calc_metrics_request(request, start_time, curr_end_time)
-                curr_data = calc_metrics(req)
-                data['hourly'].append({
-                    'start_time': start_time.strftime('%H:%M'),
-                    'end_time': curr_end_time.strftime('%H:%M'),
-                    'headway_min': curr_data['headway_min'],
-                    'wait_times': curr_data['wait_times'],
-                    'trip_times': curr_data['trip_times'],
-                })
-                start_time = curr_end_time
-        else:
+    else:
+        if start_time_str or end_time_str:
             return Response(json.dumps({
                 'params': params,
                 'error': 'Need both a start and end time'
             }, indent=2), status=404, mimetype='application/json')
-
-        route_config = nextbus.get_route_config('sf-muni', route_id)
-        start_stop_info = route_config.get_stop_info(start_stop_id)
-        end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
-
-        if direction_id is not None:
-            dir_info = route_config.get_direction_info(direction_id)
-        if dir_info is not None:
-            dir_infos = [dir_info]
-        else:
-            dir_infos = []
-        directions = [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos]
-
-        # 404 if the given stop isn't on the route
-        # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
-        if start_stop_info is None:
+        print('here')
+        try:
+            add_intervals_to_data(data['intervals'], constants.DEFAULT_TIME_INTERVALS)
+        except Exception as ex:
             return Response(json.dumps({
-                    'params': params,
-                    'error': f"Stop {start_stop_id} is not on route {route_id}",
-                }, indent=2), status=404, mimetype='application/json')
-        data['params'] = params
-        data['route_title'] = route_config.title,
-        data['start_stop_title'] = start_stop_info.title if start_stop_info else None
-        data['end_stop_title'] = end_stop_info.title if end_stop_info else None
-        data['directions'] = directions
+                'params': params,
+                'error': str(ex),
+            }, indent=2), status=400, mimetype='application/json')
 
-        return Response(json.dumps(data, indent=2), mimetype='application/json')
+
+    route_config = nextbus.get_route_config('sf-muni', route_id)
+    start_stop_info = route_config.get_stop_info(start_stop_id)
+    end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
+
+    if direction_id is not None:
+        dir_info = route_config.get_direction_info(direction_id)
+    if dir_info is not None:
+        dir_infos = [dir_info]
+    else:
+        dir_infos = []
+    directions = [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos]
+
+    # 404 if the given stop isn't on the route
+    # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
+    if start_stop_info is None:
+        return Response(json.dumps({
+                'params': params,
+                'error': f"Stop {start_stop_id} is not on route {route_id}",
+            }, indent=2), status=404, mimetype='application/json')
+    data['params'] = params
+    data['route_title'] = route_config.title,
+    data['start_stop_title'] = start_stop_info.title if start_stop_info else None
+    data['end_stop_title'] = end_stop_info.title if end_stop_info else None
+    data['directions'] = directions
+
+    return Response(json.dumps(data, indent=2), mimetype='application/json')
 
 
 # Serve production build of React app
