@@ -4,6 +4,7 @@ from pathlib import Path
 from itertools import product
 
 import pandas as pd
+import numpy as np
 import partridge as ptg
 
 from . import nextbus, util
@@ -83,14 +84,14 @@ class GtfsScraper:
             return d if t < 86400 else d.replace(day = d.day + 1)
 
         # convert "inbound" or "outbound" to gtfs direction id
-        gtfs_direction = self.gtfs_direction_id(direction)
+        gtfs_direction = get_gtfs_direction_id(direction)
             
         trips = self.get_route_trips_by_date(route_id, d)
 
         if len(trips) > 0:
             trips_on_route = trips.trip_id.values
         else:
-            print(f"No trips for route {route_id} on {date} in direction {direction}")
+            print(f"No trips for route {route_id} on {d.isoformat()} in direction {direction}")
             return pd.DataFrame()
 
         stop_times_view = {
@@ -103,18 +104,21 @@ class GtfsScraper:
 
         if len(stop_times) > 0:
             # account for discrepancies in gtfs/nextbus naming
-            excluded_stops = self.get_excluded_stops(route_id, stop_times, route_config, direction, d)
+            # excluded_stops = self.get_excluded_stops(route_id, stop_times, route_config, direction, d)
 
-            for gtfs_id, nextbus_id in excluded_stops["matches"].items():
-                stop_times.loc[stop_times.stop_id == gtfs_id, ["stop_id"]] = nextbus_id
+            # for gtfs_id, nextbus_id in excluded_stops["matches"].items():
+            #     stop_times.loc[stop_times.stop_id == gtfs_id, ["stop_id"]] = nextbus_id
 
             # convert arrival and departure times
             stop_times[["arrival_time", "departure_time"]] = stop_times[["arrival_time", "departure_time"]].applymap(lambda x: util.get_localized_datetime(get_date(x), get_time_isoformat(x)))
             stop_times["direction"] = direction 
 
-            return stop_times[["trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "direction"]].sort_values("arrival_time")
+            # get nextbus stop_ids
+            stop_times["nextbus_id"] = stop_times["stop_id"].apply(lambda x: get_nextbus_stop_id(x, gtfs_direction, route_config))
+
+            return stop_times[["trip_id", "arrival_time", "departure_time", "stop_id", "nextbus_id", "stop_sequence", "direction"]].sort_values("arrival_time")
         else:
-            print(f"Stop times df for route {route_id} on {date} in direction {direction} is empty")
+            print(f"Stop times df for route {route_id} on {date} going {direction} is empty")
             return pd.DataFrame()
 
     def get_excluded_stops(self, route_id, stop_times_df, route_config, direction, d):
@@ -125,7 +129,7 @@ class GtfsScraper:
             for stop in route_config.get_stop_infos()
         }
         # make feed with the trips on one route in one direction
-        gtfs_direction_id = self.gtfs_direction_id(direction)
+        gtfs_direction_id = get_gtfs_direction_id(direction)
         trips = self.get_route_trips_by_date(route_id, d)
         trips_on_route = trips[trips.direction_id == gtfs_direction_id].values
 
@@ -154,15 +158,6 @@ class GtfsScraper:
         }
 
         return excluded_stops
-
-    # convert "inbound" or "outbound" to a gtfs direction id
-    def gtfs_direction_id(self, direction: str):
-        if direction == "inbound":
-            return 1
-        elif direction == "outbound":
-            return 0
-        else:
-            raise Exception("Direction must be either 'inbound' or 'outbound'.")
 
     def get_date_ranges(self):
         calendar_view = ptg.load_geo_feed(self.inpath, {})
@@ -194,16 +189,51 @@ class GtfsScraper:
         for nextbus_route_id, gtfs_route_id in routes.items():
             try:
                 rc = nextbus.get_route_config("sf-muni", nextbus_route_id)
+                csv_path = f"{outpath}/route_{nextbus_route_id}_{d.isoformat()}_timetable.csv"
+                stops = []
 
-                for direction in ["inbound", "outbound"]:
-                    csv_path = f"{outpath}/route_{nextbus_route_id}_{d.isoformat()}_{direction}_timetable.csv"
-                    
-                    if Path(csv_path).is_file():
-                        print(f"The file {csv_path} already exists, skipping: {datetime.now()}")
-                    else:
-                        self.get_stop_times(nextbus_route_id, d, rc, direction).to_csv(csv_path)
-                        print(f"Saved stop times for {nextbus_route_id} {direction}: {datetime.now()}")
+                if Path(csv_path).is_file():
+                    print(f"The file {csv_path} already exists, skipping: {datetime.now()}")
+                else:
+                    for direction in ["inbound", "outbound"]:
+                        stops.append(self.get_stop_times(nextbus_route_id, d, rc, direction))
+                        
+                    pd.concat(stops).to_csv(csv_path)
+                    print(f"Saved stop times for {nextbus_route_id} {direction}: {datetime.now()}")
                         
             except Exception as err:
                 print(f"Error on route {nextbus_route_id} - {err}: {datetime.now()}")
                 continue
+
+def get_gtfs_direction_id(direction: str):
+    if "i" in direction.lower():
+        return 1
+    elif "o" in direction.lower():
+        return 0
+    else:
+        raise Exception("Direction must be either 'inbound' or 'outbound'.")
+
+def get_nextbus_stop_id(gtfs_stop_id: str, direction_id: int, routeconfig: nextbus.RouteConfig):
+    nextbus_stop_ids = routeconfig.get_stop_ids()
+    # gtfs stop ids are a subset of nextbus stop ids
+    stop_directions = routeconfig.get_directions_for_stop(gtfs_stop_id)
+
+    # gtfs labels stops at the beginning/end of route with the same stop id
+    # nextbus appends a number to the front of the stop id in one direction (ex/3476 vs 33476)
+    if len(stop_directions) > 0:
+        if get_gtfs_direction_id(stop_directions[0]) == direction_id:
+            return gtfs_stop_id
+        else:
+            opposite_dir_stop = [stop_id for stop_id in nextbus_stop_ids if gtfs_stop_id in stop_id]
+
+            try:
+                return opposite_dir_stop[0]
+            except Exception as err:
+                raise Exception(f"Could not find nextbus stop id for {gtfs_stop_id}: {err}")
+    else:
+        # if there's no direction on nextbus...
+        # for now just return nan (so it'll be effectively ignored)
+        # TODO: deal with stops w/o direction (on nextbus)
+        return np.nan
+
+    

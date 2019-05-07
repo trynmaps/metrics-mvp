@@ -92,14 +92,14 @@ def filter_by_time_of_day(df: pd.DataFrame, start_time_str, end_time_str) -> pd.
         df = df[df.TIME_STR < end_time_str]
     return df
 
-def compare_timetable_to_actual(tt: timetable.Timetable, df: pd.DataFrame):
+def compare_timetable_to_actual(tt: timetable.Timetable, df: pd.DataFrame, direction: str):
     try:
         stops_df = df.copy(deep = True)
         stop_id = stops_df["SID"].unique().squeeze()
-        timetable = tt.get_data_frame(stop_id, True)
+        timetable = tt.get_data_frame(stop_id, direction)
 
-        # no real-time data from april, so use dummy data for now
-        delta = tt.date - date(2019, 2, 1)
+        #use dummy data for now
+        delta = tt.date - date(2019, 4, 8)
         stops_df["headway"] = compute_headway_minutes(stops_df)
         stops_df["TIME"] = stops_df["TIME"].apply(lambda x: datetime.fromtimestamp(x, tz = timezone(timedelta(hours = -7))) + delta)
 
@@ -113,20 +113,28 @@ def compare_timetable_to_actual(tt: timetable.Timetable, df: pd.DataFrame):
             deltas = (timetable["arrival_time"] - dt).apply(lambda x: abs(x.total_seconds()))
             return timetable.iloc[deltas.idxmin()].arrival_time if ~np.isnan(deltas.idxmin()) else np.nan
 
-        def get_timetable_headway(dt: datetime):
-            return np.nan if pd.isnull(dt) else timetable[timetable["arrival_time"] == dt].arrival_headway.dt.seconds.unique()[0]/60
+        def get_corresponding_scheduled_headway(s: pd.Series):
+            return pd.Series({
+                "closest_scheduled_headway": timetable[timetable["arrival_time"] == s.closest_scheduled_arrival].arrival_headway.values[0],
+                "closest_first_after_headway": timetable[timetable["arrival_time"] == s.first_scheduled_after_arrival].arrival_headway.values[0]
+            })
 
         stops_df["closest_scheduled_arrival"] = stops_df["TIME"].apply(get_closest_timetable_time)
-
         stops_df["first_scheduled_after_arrival"] = stops_df["TIME"].apply(get_closest_nonnegative_timetable_time)
 
         stops_df["closest_delta"] = stops_df["TIME"] - stops_df["closest_scheduled_arrival"]
         stops_df["first_after_delta"] = stops_df["TIME"] - stops_df["first_scheduled_after_arrival"]
         stops_df[["closest_delta", "first_after_delta"]] = stops_df[["closest_delta", "first_after_delta"]].applymap(lambda x: x.total_seconds()/60 if isinstance(x, timedelta) else np.nan)
 
+        stops_df[["closest_scheduled_headway", "closest_first_after_headway"]] = stops_df.apply(get_corresponding_scheduled_headway, axis = "columns")
+        stops_df[["closest_scheduled_headway", "closest_first_after_headway"]] = stops_df[["closest_scheduled_headway", "closest_first_after_headway"]].applymap(lambda x: x.total_seconds()/60 if isinstance(x, timedelta) else np.nan)
+        
+        stops_df["closest_headway_delta"] = stops_df["headway"] - stops_df["closest_scheduled_headway"]
+        stops_df["first_headway_delta"] = stops_df["headway"] - stops_df["closest_first_after_headway"]
+
         stops_df = stops_df.rename(mapper = {"TIME": "actual_arrival_time"}, axis = "columns")
         
-        return stops_df[["actual_arrival_time", "closest_scheduled_arrival", "closest_delta", "first_scheduled_after_arrival", "first_after_delta"]]
+        return stops_df[["actual_arrival_time", "closest_scheduled_arrival", "closest_delta", "first_scheduled_after_arrival", "first_after_delta", "headway", "closest_scheduled_headway", "closest_headway_delta",  "closest_first_after_headway", "first_headway_delta"]]
     except Exception as err:
         print(f"Error occurred while comparing timetable and actual data: {repr(err)}")
         return pd.DataFrame()
@@ -139,7 +147,7 @@ def compare_delta_metrics(s: pd.Series, threshold: float):
     return {
         f"on-time rate (at most {threshold} minutes late)": len(s[(s <= threshold) & (s > 0)])/len(s) * 100,
         "early rate": len(s[s < 0])/len(s) * 100,
-        f"late rate (greater than {threshold} minutes late)": len(s[s > threshold])/len(s) * 100
+        f"late rate (more than {threshold} minutes late)": len(s[s > threshold])/len(s) * 100
     }
 """
 josh's comments
