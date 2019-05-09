@@ -125,7 +125,6 @@ def calc_metrics(request):
     waits = []
     if end_stop_id:
         completed_trips  = []
-
     for d in dates:
         try:
             history = arrival_history.get_by_date('sf-muni', route_id, d)
@@ -148,14 +147,14 @@ def calc_metrics(request):
             raise Exception(f"Arrival history not found for route {route_id} on {d.isoformat()}")
         except IndexError as ex:
             raise Exception(f"No arrivals found for stop {start_stop_id} on route {route_id} in direction {direction_id} on {d.isoformat()}")
-
+    
     headway_min = pd.concat(headway_min_arr)
     waits = pd.concat(waits)
     if end_stop_id and both_stops_same_dir:
         completed_trips = pd.concat(completed_trips)
-
     if headway_min.empty:
-        raise Exception(f"No arrivals for stop {start_stop_id} on route {route_id}")
+        # TODO: need a better error type than this
+        raise BufferError(f"No arrivals for stop {start_stop_id} on route {route_id}")
 
     data = {
         'params': params,
@@ -205,12 +204,15 @@ def add_intervals_to_data(arr, time_intervals):
     for time_interval in time_intervals:
         start_time = time_interval['start_time']
         end_time = time_interval['end_time']
+        req = create_calc_metrics_request(request, start_time, end_time)
         try:
-            req = create_calc_metrics_request(request, start_time, end_time)
+            curr_data = calc_metrics(req)
+        except BufferError:
+            # no trains for the current time interval
+            continue
         except Exception as ex:
             raise(Exception(ex))
 
-        curr_data = calc_metrics(req)
         arr.append({
             'start_time': start_time.strftime('%H:%M'),
             'end_time': end_time.strftime('%H:%M'),
@@ -267,7 +269,7 @@ def metrics_by_interval():
         end_time.replace(microsecond=0, second=0, minute=0) - timedelta(hours=1)
 
         hourly_time_intervals = []
-        while start_time != end_time:
+        while start_time.hour != end_time.hour:
             curr_interval = {}
             curr_interval['start_time'] = start_time
             curr_interval['end_time'] = start_time + timedelta(seconds=3600)
@@ -287,7 +289,6 @@ def metrics_by_interval():
                 'params': params,
                 'error': 'Need both a start and end time'
             }, indent=2), status=404, mimetype='application/json')
-        print('here')
         try:
             add_intervals_to_data(data['intervals'], constants.DEFAULT_TIME_INTERVALS)
         except Exception as ex:
