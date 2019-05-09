@@ -55,7 +55,7 @@ In another terminal tab, do:
 CHOKIDAR_USEPOLLING=true NODE_ENV=development REACT_APP_METRICS_BASE_URL=http://localhost:5000 npm start
 ```
 
-Then open `localhost:3000` in your browser to view the app!
+Then open `localhost:3000` in your browser to view the app! (Don't visit `0.0.0.0:5000` -- that won't work.)
 
 ## Commands to know
 
