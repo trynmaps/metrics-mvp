@@ -10,5 +10,5 @@ tasks:
     pip3 install -r requirements.txt &&
     FLASK_DEBUG=1 FLASK_APP=metrics-api.py python3 -m flask run --host=0.0.0.0
 - command: |
-    (cd frontend && yarn install) &&
+    (cd frontend && npm install) &&
     CHOKIDAR_USEPOLLING=true NODE_ENV=development REACT_APP_METRICS_BASE_URL=`gp url 5000` npm start
