@@ -95,7 +95,6 @@ class ControlPanel extends Component {
   }
 
   selectedRouteChanged = () => {
-    debugger;
     const {onRouteSelect} = this.props;
     const { routeId } = this.state;
     const selectedRoute = this.getSelectedRouteInfo();
@@ -113,12 +112,12 @@ class ControlPanel extends Component {
   }
 
   getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
-    debugger;
     return selectedRoute.directions.find(dir => dir.id === directionId);
   }
   getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
     const stopSids= selectedRoute.directions.find(dir => dir.name === name);
-    selectedRoute.stops.find(stop, key)
+    return stopSids.stops.map(stop => selectedRoute.stops[stop]);
+    
   }
 
   selectedDirectionChanged = () => {
@@ -155,7 +154,6 @@ class ControlPanel extends Component {
       'Inbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
       'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
     });
-    debugger;
   }
   // toggleTimekeeper(val) {
   //   // this.setState({ displayTimepicker: val });
@@ -298,10 +296,9 @@ ControlPanel.propTypes = {
 };
 
 const mapDispatchToProps = dispatch => {
-  return {
-    onRouteSelect: route => {
-      dispatch(handleRouteSelect(route));
-    }
-  }
+  debugger;
+  return ({
+    onRouteSelect: route => dispatch(handleRouteSelect(route))
+  })
 }
 export default connect(null,mapDispatchToProps)(ControlPanel);

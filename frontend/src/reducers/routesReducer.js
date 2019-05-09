@@ -1,14 +1,15 @@
 const initialState = {
   fetching: false,
   routes: null,
+  routeStops : null
 };
 
 export default (state = initialState, action) => {
   switch(action.type) {
     case "RECEIVED_ROUTES":
-      return {...state,fetched:true,routes:action.payload};
-    case "RECEIVED_ROUTE_SELECTION": 
       return {...state,fetched:true, routes:action.payload};
+    case "RECEIVED_ROUTE_SELECTION": 
+      return {...state,fetched:true, routeStops:action.payload};
     case "RECEIVED_ROUTE_CONFIG":
       let { routes } = state;
       const routeConfig = action.payload;

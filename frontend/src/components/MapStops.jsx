@@ -18,6 +18,8 @@ class MapStops extends Component {
   render() {
     const position = [this.state.lat, this.state.lng];
     const mapClass = {width:'400px', height:'400px'};
+    const { routeStops } = this.props;
+    debugger;
     return (
       <Map center={position} zoom={this.state.zoom} style={mapClass}>
         <TileLayer
@@ -35,7 +37,7 @@ class MapStops extends Component {
 }
 const mapStateToProps = state => {
 	return {
-        catFactsAndPicsProps: state.routes.routes
+        routeStops: state.routes.routeStops
     };
 }
 export default connect(mapStateToProps,null)(MapStops);
