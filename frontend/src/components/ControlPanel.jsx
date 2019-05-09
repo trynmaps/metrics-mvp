@@ -80,12 +80,25 @@ class ControlPanel extends Component {
   }
 
   onSelectFirstStop = (stopId) => {
-    const { directionId } = this.state;
+    const { directionId, secondStopId } = this.state;
     const selectedRoute = { ...this.getSelectedRouteInfo() };
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
     const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
     const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
-    this.setState({ firstStopId: stopId, secondStopList }, this.selectedStopChanged);
+    
+    let newSecondStopId = secondStopId;
+    
+    // If the "to stop" is not set or is not valid for the current "from stop",
+    // set a default "to stop" that is some number of stops down.  If there aren't
+    // enough stops, use the end of the line.
+    
+    const nStops = 5;
+    
+    if (secondStopId == null || !secondStopList.includes(secondStopId)) {
+        newSecondStopId = secondStopList.length >= nStops ? secondStopList[nStops-1] :
+            secondStopList[secondStopList.length-1];
+    }
+    this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList }, this.selectedStopChanged);
   }
 
   onSelectSecondStop = (stopId) => {

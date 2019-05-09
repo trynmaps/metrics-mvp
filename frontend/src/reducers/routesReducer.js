@@ -1,7 +1,9 @@
-export default function reducer(state={
+const initialState = {
   fetching: false,
-  routes:null
-}, action){
+  routes: null,
+};
+
+export default (state = initialState, action) => {
   switch(action.type) {
     case "RECEIVED_ROUTES":
       return {...state,fetched:true,routes:action.payload};
@@ -23,10 +25,8 @@ export default function reducer(state={
       }
       return {...state, fetched:true, routes:routes.slice()};
     case "RECEIVED_ROUTES_ERROR":
-      break;
+      return state;
     default:
-      break;
+      return state;
   }
-  return state;
 }
-
