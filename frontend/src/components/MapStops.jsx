@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Map, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Map, TileLayer, CircleMarker, Popup, Marker } from 'react-leaflet';
 
 class MapStops extends Component {
   constructor() {
@@ -26,11 +26,27 @@ class MapStops extends Component {
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url='http://{s}.tile.osm.org/{z}/{x}/{y}.png'
         />
-        <Marker position={position}>
-          <Popup>
-            <span>A pretty CSS3 popup. <br/> Easily customizable.</span>
-          </Popup>
-        </Marker>
+        {routeStops ? routeStops.Inbound.map(stop => {
+        const currentPosition = [stop.lat, stop.lon];
+        return (
+          <CircleMarker 
+                  center={currentPosition}
+                  color="blue" 
+                  radius={15}/>
+        )}) : null
+        }
+        {
+          routeStops ? routeStops.Outbound.map(stop => {
+        const currentPosition = [stop.lat, stop.lon];
+        return (
+          <CircleMarker 
+                  center={currentPosition}
+                  color="red" 
+                  radius={15}/>
+        )}) : null
+        }
+
+      
       </Map>
     );
 }
