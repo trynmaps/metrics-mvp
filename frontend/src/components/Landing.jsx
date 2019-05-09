@@ -1,10 +1,8 @@
-import React, { Component, Fragment } from 'react';
+import React, { Fragment } from 'react';
 import { Link, NavLink } from 'redux-first-router-link';
 
-class About extends Component {
-  render() {
-    return (
-      <Fragment>
+const Landing = () => (
+    <Fragment>
         <button><NavLink 
         to={{ type: 'HOME' }}
         activeStyle={{ fontWeight: "bold", color: 'purple' }}
@@ -23,10 +21,8 @@ class About extends Component {
         exact={true}
         strict={true}
         >Landing</NavLink></button>
-        <h3>About Us</h3>
-      </Fragment>
-    );
-  }
-}
+        <h3>Landing Page</h3>
+    </Fragment>
+);
 
-export default About;
+export default Landing;
