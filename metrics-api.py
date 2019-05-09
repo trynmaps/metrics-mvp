@@ -130,7 +130,7 @@ def metrics_page():
     directions = [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos]
 
     headway_min_arr = []
-    #waits = []
+    waits = []
     if end_stop_id:
         completed_trips  = []
 
@@ -144,7 +144,7 @@ def metrics_page():
             df['headway_min'] = metrics.compute_headway_minutes(df)
 
             # temporarily skip calculation of wait times until data is shown in front end
-            #waits.append(wait_times.get_waits(df, start_stop_info, d, tz, route_id, start_time_str, end_time_str))
+            waits.append(wait_times.get_waits(df, start_stop_info, d, tz, route_id, start_time_str, end_time_str))
 
             if end_stop_id and both_stops_same_dir:
                 trips = trip_times.get_trip_times(df, history, tz, start_stop_id, end_stop_id)
@@ -164,7 +164,7 @@ def metrics_page():
             }, indent = 2), status = 404, mimetype = 'application/json')
 
     headway_min = pd.concat(headway_min_arr)
-    #waits = pd.concat(waits)
+    waits = pd.concat(waits)
     if end_stop_id and both_stops_same_dir:
         completed_trips = pd.concat(completed_trips)
 
@@ -181,7 +181,7 @@ def metrics_page():
         'end_stop_title': end_stop_info.title if end_stop_info else None,
         'directions': directions,
         'headway_min': metrics.get_headways_stats(headway_min),
-        #'wait_times': metrics.get_wait_times_stats(waits, tz),
+        'wait_times': metrics.get_wait_times_stats(waits, tz),
         'trip_times': metrics.get_trip_times_stats(completed_trips, start_stop_id, end_stop_id)
             if end_stop_id and both_stops_same_dir else None,
     }
