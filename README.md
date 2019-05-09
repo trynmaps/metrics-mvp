@@ -32,22 +32,30 @@ If you don't want to handle installing anything locally, just **[use this cloud 
 This will automatically install requirements on a cloud machine and get the app running for you instantly.
 
 ### Option 3: Run it manually
-If you don't want to use the Cloud IDE and can't get Docker running, you can run
-the project manually.
+If you don't want to use the Cloud IDE and can't get Docker running, you can run the project manually.
 
-In one terminal tab, do:
+To set up, first do:
 
 ```
-pip3 install -r requirements.txt &&
+virtualenv venv
+```
+
+To run, do this in one terminal tab:
+
+```
+source venv/bin/activate
+pip3 install -r requirements.txt
 FLASK_DEBUG=1 FLASK_APP=metrics-api.py python3 -m flask run --host=0.0.0.0
 ```
 
 In another terminal tab, do:
 
 ```
-(cd frontend && npm install) &&
+(cd frontend && npm install)
 CHOKIDAR_USEPOLLING=true NODE_ENV=development REACT_APP_METRICS_BASE_URL=http://localhost:5000 npm start
 ```
+
+Then open `localhost:3000` in your browser to view the app!
 
 ## Commands to know
 
