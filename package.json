@@ -10,6 +10,7 @@
   },
   "engines": {
     "node": ">=8.14.0",
-    "npm": ">=6.0.0"
+    "npm": ">=6.0.0",
+    "yarn": "NO LONGER USED - Please use npm"
   }
 }
