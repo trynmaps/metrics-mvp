@@ -170,6 +170,7 @@ class ControlPanel extends Component {
     const selectedRoute = this.getSelectedRouteInfo();
     const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
       ? (selectedRoute.directions.find(dir => dir.id === directionId), this.sendRouteStopsToMap()) : null;
+    debugger;
     return (
       <div className={css`
           color: #fff;
