@@ -17,6 +17,7 @@ services:
       context: .
       dockerfile: Dockerfile
     working_dir: /app/frontend
+    # command: ["sleep", "10000"]
     command: ["npm", "run", "install-start"]
     volumes:
       - .:/app

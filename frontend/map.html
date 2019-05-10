@@ -8,7 +8,11 @@
    crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
 <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-geodesy/v0.1.0/leaflet-geodesy.js'></script>
+<script src="https://unpkg.com/kdbush@3.0.0/kdbush.min.js"></script>
+<script src="https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js"></script>
+
 <script src="map-config.js"></script>
+<script src="locations.js"></script>
 </head>
 <style type='text/css'>
 #mapid { height: 100%; }
@@ -26,22 +30,26 @@ body { padding:0; margin:0; }
 
 var walkMetersPerMinute = 1.0 * 60;
 
+var index = new KDBush(locations, p => p.lat_lon[0], p => p.lat_lon[1]);
+
 var mymap = L.map('mapid').setView([37.764374,-122.4173052], 13);
 
-
-L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+var tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 18,
     id: 'mapbox.streets',
     accessToken: mapboxAccessToken
 }).addTo(mymap);
 
+var routes = {};
 
+/*
 var imageUrl = 'sfmta-webmap-august2017-j2kl-0.8.png',
     imageBounds = [[37.8363,-122.522], [37.7014,-122.3561]];
 L.imageOverlay(imageUrl, imageBounds, {opacity:1}).addTo(mymap);
+*/
 
-function unify(polyList, options)
+function getUnion(polyList)
 {
   for (var i = 0; i < polyList.length; ++i) {
     if (i == 0) {
@@ -50,9 +58,15 @@ function unify(polyList, options)
       unionTemp = turf.union(unionTemp, polyList[i].toGeoJSON());
     }
   }
-  return L.geoJson(unionTemp, options);
+  return unionTemp;
 }
 
+function unify(polyList, options)
+{
+  return L.geoJson(getUnion(polyList), options);
+}
+
+/*
 var circles = {
     clear: function() {
         for (var layer of circles.layers)
@@ -76,6 +90,7 @@ var circles = {
         {
             var c = L.circle(circle.lat_lon, {radius: 100, color:'#00f', fillOpacity:0, stroke: true});
             c.addTo(mymap);
+            circles.layers.push(c);
 
             LGeo.circle(circle.lat_lon, circle.radius).addTo(circleGroup);
         }
@@ -146,11 +161,401 @@ var circles = {
         });
     }
 };
+*/
+
+var routes = {};
+function loadRoute(routeId)
+{
+    if (routes[routeId])
+    {
+        return Promise.resolve(routes[routeId]);
+    }
+    else
+    {
+        return new Promise((resolve, reject) => {
+            var req = new XMLHttpRequest();
+            req.addEventListener("load", function() {
+                var routeInfo = JSON.parse(req.responseText);
+                routes[routeId] = routeInfo;
+                resolve(routeInfo);
+            });
+            req.onerror = () => reject(xhr.statusText);
+            req.open("GET", "/route?route_id=" + routeId);
+            req.send();
+        });
+    }
+}
+function findStopDirectionAndIndex(stopId, routeInfo)
+{
+    for (var dirInfo of routeInfo.directions)
+    {
+        var numStops = dirInfo.stops.length;
+        for (var i = 0; i < numStops; i++)
+        {
+            if (dirInfo.stops[i] == stopId)
+            {
+                return {index:i, direction: dirInfo};
+            }
+        }
+    }
+    return null;
+}
+
+var isochroneLayers = [];
+var curResetCount = 0;
+var maxTripMin = 60;
+
+function resetMap() {
+    mymap.closePopup();
+
+    for (var isochroneLayer of isochroneLayers)
+    {
+        isochroneLayer.layer.remove();
+    }
+    isochroneLayers = [];
+    curResetCount++;
+}
+
+function setMaxTripMin(newMaxTripMin)
+{
+    maxTripMin = newMaxTripMin;
+
+    for (var isochroneLayer of isochroneLayers)
+    {
+        if (isochroneLayer.tripMin <= maxTripMin)
+        {
+            isochroneLayer.layer.addTo(mymap);
+        }
+        else
+        {
+            isochroneLayer.layer.remove();
+        }
+    }
+}
+
+function showTripInfoPopup(endLatLng, reachableCircles)
+{
+    var allOptions = [];
+    for (var circle of reachableCircles)
+    {
+        var dist = mymap.distance(circle, endLatLng);
+        if (dist <= circle.radius)
+        {
+            var walkMin = dist / walkMetersPerMinute;
+            var tripMin = walkMin + circle.tripMin;
+
+            allOptions.push({
+                tripMin: tripMin,
+                walkMin: walkMin,
+                circle: circle,
+            });
+        }
+    }
+
+    if (allOptions.length)
+    {
+        allOptions = allOptions.sort(function(o1, o2) {
+            return o1.tripMin - o2.tripMin;
+        });
+
+        var seenRoutes = {};
+        var numOptions = 0;
+
+        var optionInfo = '';
+        for (var option of allOptions)
+        {
+            var circle = option.circle;
+            //console.log(circle);
+
+            if (seenRoutes[circle.routes])
+            {
+                continue;
+            }
+
+            seenRoutes[circle.routes] = true;
+
+            if (numOptions < 2 || !circle.tripItems.length)
+            {
+                numOptions++;
+
+                optionInfo += '<p><div><strong>' + option.tripMin.toFixed(1) + ' min ['+(circle.routes || 'walk')+']</strong></div>'
+                    + circle.tripItems.map(function(item) {
+                        return '<div><em>' + item[0].toFixed(1) + ' min</em>: '+item[1]+'</div>';
+                    }).join('')
+                    + (option.walkMin > 0.05 && circle.tripItems.length ? ('<div><em>' + option.walkMin.toFixed(1) + ' min</em>: walk to destination</div>') : '')
+                    + '</p>';
+            }
+        }
+
+        var popup = L.popup()
+            .setLatLng(endLatLng)
+            .setContent(optionInfo)
+            .openOn(mymap);
+    }
+
+}
+
+function computeIsochrones(latlng)
+{
+    var resetCount = curResetCount;
+
+    var degLatDist = mymap.distance(latlng, [latlng.lat-0.1, latlng.lng])*10;
+    var degLonDist = mymap.distance(latlng, [latlng.lat, latlng.lng-0.1])*10;
+
+    var queue = new TinyQueue([], function(a, b) {
+        return a.tripMin - b.tripMin;
+    });
+
+    var reachedLocations = [];
+    var addedDirections = {};
+    var busMetersPerMinute = 200;
+
+    var numReachedLocations = 0;
+    var reachedKeys = {};
+    var totalLocations = 0;
+    var startTime = new Date().getTime();
+
+    var displayedTripMinInfo = new TinyQueue([
+        {tripMin:5, layerOptions: {color:'#00e510'}},
+        {tripMin:10, layerOptions: {color:'#3ae100'}},
+        {tripMin:15, layerOptions: {color:'#83dd00'}},
+        {tripMin:20, layerOptions: {color:'#cad900'}},
+        {tripMin:25, layerOptions: {color:'#d59d00'}},
+        {tripMin:30, layerOptions: {color:'#d25400'}},
+        {tripMin:35, layerOptions: {color:'#ce0d00'}},
+        {tripMin:40, layerOptions: {color:'#ca0036'}},
+        {tripMin:45, layerOptions: {color:'#c60077'}},
+        {tripMin:50, layerOptions: {color:'#c200b6'}},
+        {tripMin:55, layerOptions: {color:'#8b00bf'}},
+        {tripMin:60, layerOptions: {color:'#4900bf'}},
+    ], function(a, b) {
+        return a.tripMin - b.tripMin;
+    });
+
+    var lastUnion = null;
+
+    function addNearbyLocations(reachedLocation, radius)
+    {
+        var latRadius = radius/degLatDist;
+        var lonRadius = radius/degLonDist;
+        var results = index.range(reachedLocation.lat-latRadius, reachedLocation.lng-lonRadius, reachedLocation.lat+latRadius, reachedLocation.lng+lonRadius).map(id => locations[id]);
+
+        results.forEach(function(loc) {
+            var dist = mymap.distance(loc.lat_lon, reachedLocation);
+            if (dist <= radius)
+            {
+                var walkMin = dist / walkMetersPerMinute;
+                var nextTripMin = reachedLocation.tripMin + walkMin;
+                var nextTripItems = reachedLocation.tripItems.slice();
+                nextTripItems.push([walkMin, `walk to ${loc.title}`]);
+                //console.log(`can walk to ${loc.title} (${dist.toFixed(0)} m) in ${nextTripMin.toFixed(1)} min`);
+                queue.push({tripMin: nextTripMin, routes:reachedLocation.routes, tripItems: nextTripItems, lat:loc.lat_lon[0], lng: loc.lat_lon[1], loc: loc, title: loc.title, walked: true});
+            }
+        });
+    }
+
+    function addReachableStopsAfterStop(stopId, routeInfo, reachedLocation)
+    {
+        var res = findStopDirectionAndIndex(stopId, routeInfo);
+        if (res)
+        {
+            var { direction, index } = res;
+
+            if (addedDirections[direction.id])
+            {
+                return;
+            }
+            addedDirections[direction.id] = true;
+            //console.log(`direction ${direction.id}`);
+
+            var stopInfo = routeInfo.stops[stopId];
+            var waitMin = 5;
+            var dist = 0;
+            var prevStopInfo = stopInfo;
+
+            for (var i = index + 1; i < direction.stops.length; i++)
+            {
+                var nextStopId = direction.stops[i];
+                var nextStopInfo = routeInfo.stops[nextStopId];
+
+                dist += mymap.distance(prevStopInfo, nextStopInfo);
+
+                var busMin = dist / busMetersPerMinute;
+                var nextTripMin = reachedLocation.tripMin + waitMin + busMin;
+
+                if (nextTripMin <= maxTripMin)
+                {
+                    var nextTripItems = reachedLocation.tripItems.slice();
+                    nextTripItems.push([waitMin, `wait for ${routeInfo.id}`]);
+                    nextTripItems.push([busMin, `take ${routeInfo.id} to ${nextStopInfo.title}`]);
+
+                    var nextRoutes = reachedLocation.routes ? `${reachedLocation.routes}/${routeInfo.id}` : routeInfo.id;
+
+                    //console.log(`will reach ${nextStopId} (${nextStopInfo.title}) (dist=${dist.toFixed(0)}) in ${nextTripMin.toFixed(1)} min`);
+                    queue.push({tripMin: nextTripMin, routes: nextRoutes, lat: nextStopInfo.lat, lng: nextStopInfo.lon, title: nextStopInfo.title, tripItems: nextTripItems, walked: false});
+                }
+
+                prevStopInfo = nextStopInfo;
+            }
+        }
+    }
+
+    function addReachableLocationsLayer(tripMin, layerOptions)
+    {
+        var circleGroup = new L.LayerGroup();
+
+        var reachableCircles = [];
+
+        for (var reachedLocation of reachedLocations)
+        {
+            var walkRadius = walkMetersPerMinute * (tripMin - reachedLocation.tripMin);
+            if (walkRadius > 0)
+            {
+                reachableCircles.push({radius: walkRadius, ...reachedLocation});
+                LGeo.circle(reachedLocation, walkRadius).addTo(circleGroup);
+            }
+        }
+
+        var union = getUnion(circleGroup.getLayers());
+        var unionDiff = lastUnion ? turf.difference(union, lastUnion) : union;
+
+        var diffLayer = L.geoJson(unionDiff, {bubblingMouseEvents: false, fillOpacity:0.2, stroke:false, ...layerOptions});
+
+        diffLayer.addTo(mymap);
+
+        lastUnion = union;
+
+        diffLayer.on('click', function(e) {
+            var endLatLng = e.latlng;
+            showTripInfoPopup(endLatLng, reachableCircles);
+        });
+
+        diffLayer.on('dblclick', function(e) {
+            resetMap();
+            computeIsochrones(e.latlng);
+        });
+
+        isochroneLayers.push({tripMin: tripMin, layer: diffLayer});
+    }
+
+    function showReachableLocations(tripMin)
+    {
+       while (displayedTripMinInfo.length && tripMin >= displayedTripMinInfo.peek().tripMin && resetCount == curResetCount)
+       {
+            var tripMinInfo = displayedTripMinInfo.pop();
+            addReachableLocationsLayer(tripMinInfo.tripMin, tripMinInfo.layerOptions);
+       }
+    }
+
+    async function processLocations()
+    {
+        while (true) {
+            if (!queue.length || numReachedLocations > 10000 || resetCount != curResetCount) {
+                break;
+            }
+
+            totalLocations++;
+
+            var reachedLocation = queue.pop();
+
+            var key = reachedLocation.lat + ',' + reachedLocation.lng;
+
+            if (reachedKeys[key])
+            {
+                continue;
+            }
+
+            reachedKeys[key] = true;
+            numReachedLocations++;
+
+            //console.log(`reached ${reachedLocation.title} in ${reachedLocation.tripMin}`);
+
+            if (reachedLocation.walked)
+            {
+                var promises = reachedLocation.loc.stops.map(function(stop) {
+                    return loadRoute(stop.route_id).then(function(routeInfo) {
+                        //console.log(`starting from ${stop.id} (${routeInfo.stops[stop.id].title}) on ${stop.route_id}`);
+                        addReachableStopsAfterStop(stop.id, routeInfo, reachedLocation);
+                    });
+                });
+
+                await Promise.all(promises);
+            }
+            else
+            {
+                reachedLocations.push(reachedLocation);
+
+                var tripMin = reachedLocation.tripMin;
+
+                showReachableLocations(tripMin);
+
+                var walkRadius = walkMetersPerMinute * (maxTripMin - reachedLocation.tripMin);
+
+                if (walkRadius >= 0)
+                {
+                    //console.log(reachedLocation);
+                    /* console.log(reachedLocation.tripItems.map(function(item) {
+                        return item[0].toFixed(1) + ' min: ' + item[1];
+                    })); */
+                    addNearbyLocations(reachedLocation, walkRadius);
+                }
+            }
+        }
+
+        var endTime = new Date().getTime();
+        console.log(`done (${numReachedLocations} reached locations, ${totalLocations} processed in ${endTime-startTime} ms)!`);
+        showReachableLocations(maxTripMin);
+    }
+
+    queue.push({tripMin: 0, lat: latlng.lat, lng: latlng.lng, routes:null, title: 'initial position', tripItems: [], walked: false});
+    processLocations();
+}
+
+
+mymap.on('click', function(e) {
+    resetMap();
+    computeIsochrones(e.latlng);
+});
 
 var info = L.control();
 
 info.onAdd = function (map) {
     this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+    this._div.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    this._div.addEventListener('dblclick', function(e) {
+        e.stopPropagation();
+    });
+
+    var select = document.createElement('select');
+    for (var tripMin = 5; tripMin <= 60; tripMin += 5)
+    {
+        var option = document.createElement('option');
+        option.value = '' + tripMin;
+        option.appendChild(document.createTextNode(tripMin + ' minutes'));
+        select.appendChild(option);
+    }
+    select.value = '' + maxTripMin;
+
+    select.addEventListener('change', function() {
+        setMaxTripMin(parseInt(select.value, 10));
+    });
+    select.style.display = 'block';
+    select.style.marginBottom = '5px';
+
+
+    this._div.appendChild(select);
+
+    var reset = document.createElement('button');
+    reset.innerHTML = "Reset";
+    reset.addEventListener('click', function(e) {
+        resetMap();
+    });
+    this._div.appendChild(reset);
+
+
+    /*
 
     var select = document.createElement('select');
 
@@ -192,14 +597,12 @@ info.onAdd = function (map) {
     }
 
     this._div.appendChild(select);
+
+    */
+
     //this.update();
     return this._div;
 };
-
-/*
-info.update = function (props) {
-};
-*/
 
 info.addTo(mymap);
 </script>
