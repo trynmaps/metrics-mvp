@@ -8,7 +8,7 @@ export function fetchGraphData (params) {
       params: params,
       baseURL: metricsBaseURL
     }).then((response) => {
-      dispatch({ type: 'RECEIVED_GRAPH_DATA', payload: response.data });
+      dispatch({ type: 'RECEIVED_GRAPH_DATA', payload: response.data, graphParams: params });
     }).catch((err) => {
       const errStr = (err.response && err.response.data && err.response.data.error) ? err.response.data.error : err.message;
       dispatch({ type: 'RECEIVED_GRAPH_ERROR', payload: errStr });

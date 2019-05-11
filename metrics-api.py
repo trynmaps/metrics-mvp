@@ -205,7 +205,7 @@ def serve_react():
         if not os.path.isfile(f'{source_dir}/frontend/build/index.html'):
             return """<h2>Hello!</h2>
             <p>This is where the production frontend assets would be, but they don't seem to have been built yet.</p>
-            <p>To build the frontend assets, run <code>cd frontend && yarn build</code> from the command line.<br />
+            <p>To build the frontend assets, run <code>cd frontend && npm build</code> from the command line.<br />
             To view the frontend in dev mode, visit port 3000 instead.<br />
             To explore the backend API, try <a href="/metrics">/metrics</a></p>
             """
