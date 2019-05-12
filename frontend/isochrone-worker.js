@@ -256,7 +256,7 @@ async function init()
                         turfCircles.push(
                             turf.circle([reachedLocation.lng, reachedLocation.lat], walkRadius / 1000, {steps:16})
                         );
-                        reachableCircles.push({radius: walkRadius, ...reachedLocation});
+                        reachableCircles.push(Object.assign({radius: walkRadius}, reachedLocation));
                     }
                 }
 

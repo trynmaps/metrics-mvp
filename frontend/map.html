@@ -273,7 +273,7 @@ isochroneWorker.onmessage = function(e) {
             addReachableLocationsLayer(data);
         }
     }
-    if (data.type == 'error')
+    else if (data.type == 'error')
     {
         showError(data.error);
     }
@@ -291,7 +291,7 @@ function addReachableLocationsLayer(data)
 
     var layerOptions = tripMinOptions['' + tripMin] || {color:'#666'};
 
-    var diffLayer = L.geoJson(geoJson, {bubblingMouseEvents: false, fillOpacity:0.4, stroke:false, ...layerOptions});
+    var diffLayer = L.geoJson(geoJson, Object.assign({bubblingMouseEvents: false, fillOpacity:0.4, stroke:false}, layerOptions));
 
     diffLayer.addTo(map);
 
@@ -336,17 +336,6 @@ function computeIsochrones(latlng)
 
     var computeId = curComputeId = latlng.lat + ',' + latlng.lng + ',' + maxTripMin + ',' + enabledRoutes.join(',');
 
-    if (computeCache[computeId] && computeCache[computeId][maxTripMin])
-    {
-        for (var tripMin = isochroneMinutes; tripMin <= maxTripMin; tripMin += isochroneMinutes)
-        {
-            addReachableLocationsLayer(computeCache[computeId][tripMin]);
-        }
-        return;
-    }
-
-    computeCache[computeId] = {};
-
     var newLatLng;
     var marker = L.marker(latlng, {draggable: true}).addTo(map);
     marker.on('move', function(e) {
@@ -360,6 +349,17 @@ function computeIsochrones(latlng)
         }
     });
     layers.push(marker);
+
+    if (computeCache[computeId] && computeCache[computeId][maxTripMin])
+    {
+        for (var tripMin = isochroneMinutes; tripMin <= maxTripMin; tripMin += isochroneMinutes)
+        {
+            addReachableLocationsLayer(computeCache[computeId][tripMin]);
+        }
+        return;
+    }
+
+    computeCache[computeId] = {};
 
     isochroneWorker.postMessage({action:'computeIsochrones',
         latlng: latlng,
