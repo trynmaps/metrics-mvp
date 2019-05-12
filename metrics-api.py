@@ -7,6 +7,7 @@ import pandas as pd
 import pytz
 from datetime import datetime
 import time
+import requests
 import math
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 
@@ -30,7 +31,9 @@ def ping():
 def routes():
     route_list = nextbus.get_route_list('sf-muni')
     data = [{'id': route.id, 'title': route.title} for route in route_list]
-    return Response(json.dumps(data, indent=2), mimetype='application/json')
+    res = Response(json.dumps(data, indent=2), mimetype='application/json')
+    res.headers['Cache-Control'] = 'max-age=86400'
+    return res
 
 @app.route('/route', methods=['GET'])
 def route_config():
@@ -49,7 +52,7 @@ def route_config():
         'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon, 'location_id': stop.location_id} for stop in route.get_stop_infos()}
     }
     res = Response(json.dumps(data, indent=2), mimetype='application/json')
-    res.headers['Cache-Control'] = 'max-age=3600'
+    res.headers['Cache-Control'] = 'max-age=86400'
     return res
 
 @app.route('/metrics', methods=['GET'])
@@ -192,6 +195,51 @@ def metrics_page():
     data['processing_time'] = (metrics_end - metrics_start)
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
+
+
+def get_cached_json_file_from_s3(filename):
+    cache_path = f'{util.get_data_dir()}/{filename}'
+    try:
+        with open(cache_path, 'r') as f:
+            json_data = f.read()
+    except FileNotFoundError:
+        s3_bucket = arrival_history.get_s3_bucket()
+        s3_path = filename
+
+        s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
+        r = requests.get(s3_url)
+
+        if r.status_code == 404:
+            raise FileNotFoundError(f"{s3_url} not found")
+        if r.status_code != 200:
+            raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
+
+        json_data = r.text
+
+        with open(cache_path, "w") as f:
+            f.write(json_data)
+
+    res = Response(json_data, mimetype='application/json')
+    res.headers['Cache-Control'] = 'max-age=3600'
+    return res
+
+@app.route('/trip-times', methods=['GET'])
+def trip_times():
+    return get_cached_json_file_from_s3('trip_times_t1_sf-muni.json')
+
+@app.route('/wait-times', methods=['GET'])
+def wait_times():
+    return get_cached_json_file_from_s3('wait_times_t1_sf-muni.json')
+
+@app.route('/locations', methods=['GET'])
+def locations():
+    return get_cached_json_file_from_s3('locations_t1_sf-muni.json')
+
+@app.route('/config', methods=['GET'])
+def config():
+    res = Response(json.dumps({"mapbox_access_token": os.environ.get('MAPBOX_ACCESS_TOKEN')}), mimetype='application/json')
+    res.headers['Cache-Control'] = 'max-age=3600'
+    return res
 
 # Serve production build of React app
 # @app.route('/', defaults={'path': ''}, methods=['GET'])

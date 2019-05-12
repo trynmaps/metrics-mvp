@@ -7,12 +7,7 @@
    integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
    crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
-<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-geodesy/v0.1.0/leaflet-geodesy.js'></script>
-<script src="https://unpkg.com/kdbush@3.0.0/kdbush.min.js"></script>
-<script src="https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js"></script>
-
-<script src="map-config.js"></script>
-<script src="locations.js"></script>
+<script src="common.js?v7"></script>
 </head>
 <style type='text/css'>
 #mapid { height: 100%; }
@@ -25,223 +20,152 @@ body { padding:0; margin:0; }
 }
 </style>
 <body>
- <div id="mapid"></div>
+<div id="mapid"></div>
 <script>
 
-var walkMetersPerMinute = 1.0 * 60;
+var map = L.map('mapid').setView([37.764374,-122.4173052], 13);
 
-var index = new KDBush(locations, p => p.lat_lon[0], p => p.lat_lon[1]);
+loadJson('/config').then(function(config) {
+    if (config.mapbox_access_token)
+    {
+        var tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox.streets',
+            accessToken: config.mapbox_access_token
+        }).addTo(map);
+    }
+}).catch(function(e) {
+    showError("Error loading map config: " + e);
+});
 
-var mymap = L.map('mapid').setView([37.764374,-122.4173052], 13);
-
-var tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 18,
-    id: 'mapbox.streets',
-    accessToken: mapboxAccessToken
-}).addTo(mymap);
-
-var routes = {};
-
-/*
-var imageUrl = 'sfmta-webmap-august2017-j2kl-0.8.png',
+var imageUrl = 'https://www.dropbox.com/s/sgnbbgef9r8f25j/sfmta-webmap-august2017-j2kl-0.8-256.png?dl=1',
     imageBounds = [[37.8363,-122.522], [37.7014,-122.3561]];
-L.imageOverlay(imageUrl, imageBounds, {opacity:1}).addTo(mymap);
-*/
+L.imageOverlay(imageUrl, imageBounds, {opacity:1}).addTo(map);
 
-function getUnion(polyList)
-{
-  for (var i = 0; i < polyList.length; ++i) {
-    if (i == 0) {
-      var unionTemp = polyList[i].toGeoJSON();
-    } else {
-      unionTemp = turf.union(unionTemp, polyList[i].toGeoJSON());
-    }
-  }
-  return unionTemp;
-}
+const isochroneMinutes = 5;
 
-function unify(polyList, options)
-{
-  return L.geoJson(getUnion(polyList), options);
-}
-
-/*
-var circles = {
-    clear: function() {
-        for (var layer of circles.layers)
-        {
-            layer.remove();
-        }
-        circles.layers = [];
-    },
-    layers: [],
-    push: function(circleArr) {
-
-        var walkCircle = circleArr[0];
-        // first circle is walking distance from initial location
-        var c = L.circle(walkCircle.lat_lon, {radius: walkCircle.radius, color:'#00f', fillOpacity:0.1, stroke: false});
-        c.addTo(mymap);
-
-        circles.layers.push(c);
-
-        var circleGroup = new L.LayerGroup();
-        for (var circle of circleArr)
-        {
-            var c = L.circle(circle.lat_lon, {radius: 100, color:'#00f', fillOpacity:0, stroke: true});
-            c.addTo(mymap);
-            circles.layers.push(c);
-
-            LGeo.circle(circle.lat_lon, circle.radius).addTo(circleGroup);
-        }
-        var circleUnion = unify(circleGroup.getLayers()).addTo(mymap);
-
-        circles.layers.push(circleUnion);
-
-        circleUnion.on('click', function(e) {
-            var latlng = e.latlng;
-
-            var allOptions = [];
-
-            for (var circle of circleArr)
-            {
-                var dist = mymap.distance(circle.lat_lon, latlng);
-                if (dist <= circle.radius)
-                {
-                    var walkMin = dist / walkMetersPerMinute;
-                    var totalElapsed = walkMin + circle.trip_min;
-
-                    allOptions.push({
-                        trip_min: totalElapsed,
-                        walk_min: walkMin,
-                        circle: circle,
-                    });
-                }
-            }
-
-            if (allOptions.length)
-            {
-                allOptions = allOptions.sort(function(o1, o2) {
-                    return o1.trip_min - o2.trip_min;
-                });
-
-                var seenRoutes = {};
-                var numOptions = 0;
-
-                var optionInfo = '';
-                for (var option of allOptions)
-                {
-                    var circle = option.circle;
-
-                    if (seenRoutes[circle.routes])
-                    {
-                        continue;
-                    }
-
-                    seenRoutes[circle.routes] = true;
-
-                    if (numOptions < 2 || !circle.trip_items.length)
-                    {
-                        numOptions++;
-
-                        optionInfo += '<p><div><strong>' + option.trip_min.toFixed(1) + ' min ['+circle.routes+']</strong></div>'
-                            + circle.trip_items.map(function(item) {
-                                return '<div><em>' + item[0].toFixed(1) + ' min</em>: '+item[1]+'</div>';
-                            }).join('')
-                            + (option.walk_min > 0.05 && circle.trip_items.length ? ('<div><em>' + option.walk_min.toFixed(1) + ' min</em>: walk to destination</div>') : '')
-                            + '</p>';
-                    }
-                }
-
-                var popup = L.popup()
-                    .setLatLng(latlng)
-                    .setContent(optionInfo)
-                    .openOn(mymap);
-            }
-        });
-    }
+const tripMinOptions = {
+    5: {color:'#00e510'},
+    10: {color:'#3ae100'},
+    15: {color:'#83dd00'},
+    20: {color:'#cad900'},
+    25: {color:'#d59d00'},
+    30: {color:'#d25400'},
+    35: {color:'#ce0d00'},
+    40: {color:'#ca0036'},
+    45: {color:'#c60077'},
+    50: {color:'#c200b6'},
+    55: {color:'#8b00bf'},
+    60: {color:'#4900bf'},
 };
-*/
 
-var routes = {};
-function loadRoute(routeId)
-{
-    if (routes[routeId])
-    {
-        return Promise.resolve(routes[routeId]);
-    }
-    else
-    {
-        return new Promise((resolve, reject) => {
-            var req = new XMLHttpRequest();
-            req.addEventListener("load", function() {
-                var routeInfo = JSON.parse(req.responseText);
-                routes[routeId] = routeInfo;
-                resolve(routeInfo);
-            });
-            req.onerror = () => reject(xhr.statusText);
-            req.open("GET", "/route?route_id=" + routeId);
-            req.send();
-        });
-    }
-}
-function findStopDirectionAndIndex(stopId, routeInfo)
-{
-    for (var dirInfo of routeInfo.directions)
-    {
-        var numStops = dirInfo.stops.length;
-        for (var i = 0; i < numStops; i++)
-        {
-            if (dirInfo.stops[i] == stopId)
-            {
-                return {index:i, direction: dirInfo};
-            }
-        }
-    }
-    return null;
-}
+const defaultDisabledRoutes = [
+    'PH','C','PM',
+    'K_OWL','L_OWL','M_OWL','N_OWL','T_OWL',
+    '41','88','90','91','714','S',
+    'NX','1AX','1BX','7X','8AX','8BX','14X','30X','31AX','31BX','38AX','38BX','76X','81X','82X','83X'
+];
 
 var isochroneLayers = [];
-var curResetCount = 0;
-var maxTripMin = 60;
+var layers = [];
+var tripLayers = [];
+var maxTripMin = 90;
+var computedMaxTripMin;
+var curComputeId;
+var curLatLng;
+var computeCache = {};
 
 function resetMap() {
-    mymap.closePopup();
+    map.closePopup();
+    curComputeId = null;
+    curLatLng = null;
 
     for (var isochroneLayer of isochroneLayers)
     {
         isochroneLayer.layer.remove();
     }
+    for (var layer of layers)
+    {
+        layer.remove();
+    }
+    layers = [];
     isochroneLayers = [];
-    curResetCount++;
+    clearTripLayers();
+}
+
+function clearTripLayers(clearTripInfo)
+{
+    for (var layer of tripLayers)
+    {
+        layer.remove();
+    }
+    tripLayers = [];
+
+    if (clearTripInfo !== false)
+    {
+        tripInfo.innerHTML = '';
+    }
+}
+
+function getDirectionInfo(directionId, routeInfo)
+{
+    for (var dirInfo of routeInfo.directions)
+    {
+        if (dirInfo.id == directionId)
+        {
+            return dirInfo;
+        }
+    }
+    return null;
 }
 
 function setMaxTripMin(newMaxTripMin)
 {
     maxTripMin = newMaxTripMin;
 
-    for (var isochroneLayer of isochroneLayers)
+    if (computedMaxTripMin && newMaxTripMin > computedMaxTripMin)
     {
-        if (isochroneLayer.tripMin <= maxTripMin)
+        recomputeIsochrones();
+    }
+    else
+    {
+        for (var isochroneLayer of isochroneLayers)
         {
-            isochroneLayer.layer.addTo(mymap);
-        }
-        else
-        {
-            isochroneLayer.layer.remove();
+            if (isochroneLayer.tripMin <= maxTripMin)
+            {
+                isochroneLayer.layer.addTo(map);
+            }
+            else
+            {
+                isochroneLayer.layer.remove();
+            }
         }
     }
 }
 
-function showTripInfoPopup(endLatLng, reachableCircles)
+function showError(e) {
+    alert(e);
+}
+
+var redIcon = new L.Icon({
+  iconUrl: 'https://www.dropbox.com/s/2hgssjf8d2c02ky/marker-icon-2x-red.png?dl=1',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+async function showTripInfo(endLatLng, reachableCircles)
 {
     var allOptions = [];
     for (var circle of reachableCircles)
     {
-        var dist = mymap.distance(circle, endLatLng);
+        var dist = map.distance(circle, endLatLng);
         if (dist <= circle.radius)
         {
-            var walkMin = dist / walkMetersPerMinute;
+            var walkMin = dist / WalkMetersPerMinute;
             var tripMin = walkMin + circle.tripMin;
 
             allOptions.push({
@@ -251,6 +175,8 @@ function showTripInfoPopup(endLatLng, reachableCircles)
             });
         }
     }
+
+    clearTripLayers(false);
 
     if (allOptions.length)
     {
@@ -265,7 +191,6 @@ function showTripInfoPopup(endLatLng, reachableCircles)
         for (var option of allOptions)
         {
             var circle = option.circle;
-            //console.log(circle);
 
             if (seenRoutes[circle.routes])
             {
@@ -278,246 +203,255 @@ function showTripInfoPopup(endLatLng, reachableCircles)
             {
                 numOptions++;
 
+                for (tripItem of circle.tripItems)
+                {
+                    if (tripItem.route)
+                    {
+                        await loadRoute(tripItem.route)
+                            .then(function(routeInfo) {
+                                var dirInfo = getDirectionInfo(tripItem.direction, routeInfo);
+                                var fromStopIndex = dirInfo.stops.indexOf(tripItem.fromStop);
+                                var toStopIndex = dirInfo.stops.indexOf(tripItem.toStop);
+                                if (fromStopIndex != -1 && toStopIndex != -1)
+                                {
+                                    var stopPoints = [];
+
+                                    for (var i = fromStopIndex; i <= toStopIndex; i++)
+                                    {
+                                        var stopInfo = routeInfo.stops[dirInfo.stops[i]];
+                                        stopPoints.push(stopInfo);
+                                    }
+
+                                    var polyLine = L.polyline(stopPoints).addTo(map);
+                                    polyLine.bindTooltip(routeInfo.id, {direction:'center', opacity:0.9, permanent:true});
+
+                                    tripLayers.push(polyLine);
+
+                                    var fromStopInfo = routeInfo.stops[tripItem.fromStop];
+                                    var toStopInfo = routeInfo.stops[tripItem.toStop];
+
+                                    tripLayers.push(L.circle(fromStopInfo, 80, {color:'#090', fillOpacity:1, stroke:false}).addTo(map));
+                                    tripLayers.push(L.circle(toStopInfo, 80, {color:'#900', fillOpacity:1, stroke:false}).addTo(map));
+                                }
+                            }).catch(function(e) {
+                                showError("Error loading route config: " + e);
+                            });
+                    }
+                }
+
                 optionInfo += '<p><div><strong>' + option.tripMin.toFixed(1) + ' min ['+(circle.routes || 'walk')+']</strong></div>'
                     + circle.tripItems.map(function(item) {
-                        return '<div><em>' + item[0].toFixed(1) + ' min</em>: '+item[1]+'</div>';
+                        return '<div><em>' + item.t.toFixed(1) + ' min</em>: '+item.desc+'</div>';
                     }).join('')
                     + (option.walkMin > 0.05 && circle.tripItems.length ? ('<div><em>' + option.walkMin.toFixed(1) + ' min</em>: walk to destination</div>') : '')
                     + '</p>';
             }
         }
 
-        var popup = L.popup()
-            .setLatLng(endLatLng)
-            .setContent(optionInfo)
-            .openOn(mymap);
+        var marker = L.marker(endLatLng, {icon:redIcon}).addTo(map);
+
+        tripLayers.push(marker);
+
+        tripInfo.innerHTML = optionInfo;
     }
 
+}
+
+var isochroneWorker = new Worker('isochrone-worker.js?v=' + Math.random());
+
+isochroneWorker.onmessage = function(e) {
+    var data = e.data;
+    if (data.type == 'reachableLocations')
+    {
+        var computeId = data.computeId;
+        if (computeCache[computeId])
+        {
+            computeCache[computeId][data.tripMin] = data;
+        }
+        if (computeId == curComputeId)
+        {
+            addReachableLocationsLayer(data);
+        }
+    }
+    if (data.type == 'error')
+    {
+        showError(data.error);
+    }
+    else
+    {
+        console.log(e.data);
+    }
+}
+
+function addReachableLocationsLayer(data)
+{
+    var tripMin = data.tripMin;
+    var reachableCircles = data.circles;
+    var geoJson = data.geoJson;
+
+    var layerOptions = tripMinOptions['' + tripMin] || {color:'#666'};
+
+    var diffLayer = L.geoJson(geoJson, {bubblingMouseEvents: false, fillOpacity:0.4, stroke:false, ...layerOptions});
+
+    diffLayer.addTo(map);
+
+    diffLayer.on('click', function(e) {
+        var endLatLng = e.latlng;
+        showTripInfo(endLatLng, reachableCircles);
+    });
+
+    diffLayer.on('dblclick', function(e) {
+        resetMap();
+        computeIsochrones(e.latlng);
+    });
+
+    isochroneLayers.push({tripMin: tripMin, layer: diffLayer});
+}
+
+function isInServiceArea(latlng)
+{
+    const point = turf.point([latlng.lng, latlng.lat]);
+
+    for (var feature of ServiceArea.features)
+    {
+        if (turf.booleanWithin(point, feature))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 function computeIsochrones(latlng)
 {
-    var resetCount = curResetCount;
-
-    var degLatDist = mymap.distance(latlng, [latlng.lat-0.1, latlng.lng])*10;
-    var degLonDist = mymap.distance(latlng, [latlng.lat, latlng.lng-0.1])*10;
-
-    var queue = new TinyQueue([], function(a, b) {
-        return a.tripMin - b.tripMin;
-    });
-
-    var reachedLocations = [];
-    var addedDirections = {};
-    var busMetersPerMinute = 200;
-
-    var numReachedLocations = 0;
-    var reachedKeys = {};
-    var totalLocations = 0;
-    var startTime = new Date().getTime();
-
-    var displayedTripMinInfo = new TinyQueue([
-        {tripMin:5, layerOptions: {color:'#00e510'}},
-        {tripMin:10, layerOptions: {color:'#3ae100'}},
-        {tripMin:15, layerOptions: {color:'#83dd00'}},
-        {tripMin:20, layerOptions: {color:'#cad900'}},
-        {tripMin:25, layerOptions: {color:'#d59d00'}},
-        {tripMin:30, layerOptions: {color:'#d25400'}},
-        {tripMin:35, layerOptions: {color:'#ce0d00'}},
-        {tripMin:40, layerOptions: {color:'#ca0036'}},
-        {tripMin:45, layerOptions: {color:'#c60077'}},
-        {tripMin:50, layerOptions: {color:'#c200b6'}},
-        {tripMin:55, layerOptions: {color:'#8b00bf'}},
-        {tripMin:60, layerOptions: {color:'#4900bf'}},
-    ], function(a, b) {
-        return a.tripMin - b.tripMin;
-    });
-
-    var lastUnion = null;
-
-    function addNearbyLocations(reachedLocation, radius)
+    if (!isInServiceArea(latlng))
     {
-        var latRadius = radius/degLatDist;
-        var lonRadius = radius/degLonDist;
-        var results = index.range(reachedLocation.lat-latRadius, reachedLocation.lng-lonRadius, reachedLocation.lat+latRadius, reachedLocation.lng+lonRadius).map(id => locations[id]);
-
-        results.forEach(function(loc) {
-            var dist = mymap.distance(loc.lat_lon, reachedLocation);
-            if (dist <= radius)
-            {
-                var walkMin = dist / walkMetersPerMinute;
-                var nextTripMin = reachedLocation.tripMin + walkMin;
-                var nextTripItems = reachedLocation.tripItems.slice();
-                nextTripItems.push([walkMin, `walk to ${loc.title}`]);
-                //console.log(`can walk to ${loc.title} (${dist.toFixed(0)} m) in ${nextTripMin.toFixed(1)} min`);
-                queue.push({tripMin: nextTripMin, routes:reachedLocation.routes, tripItems: nextTripItems, lat:loc.lat_lon[0], lng: loc.lat_lon[1], loc: loc, title: loc.title, walked: true});
-            }
-        });
+        return;
     }
 
-    function addReachableStopsAfterStop(stopId, routeInfo, reachedLocation)
+    curLatLng = latlng;
+    computedMaxTripMin = maxTripMin;
+
+    var enabledRoutes = getEnabledRoutes();
+
+    var computeId = curComputeId = latlng.lat + ',' + latlng.lng + ',' + maxTripMin + ',' + enabledRoutes.join(',');
+
+    if (computeCache[computeId] && computeCache[computeId][maxTripMin])
     {
-        var res = findStopDirectionAndIndex(stopId, routeInfo);
-        if (res)
+        for (var tripMin = isochroneMinutes; tripMin <= maxTripMin; tripMin += isochroneMinutes)
         {
-            var { direction, index } = res;
-
-            if (addedDirections[direction.id])
-            {
-                return;
-            }
-            addedDirections[direction.id] = true;
-            //console.log(`direction ${direction.id}`);
-
-            var stopInfo = routeInfo.stops[stopId];
-            var waitMin = 5;
-            var dist = 0;
-            var prevStopInfo = stopInfo;
-
-            for (var i = index + 1; i < direction.stops.length; i++)
-            {
-                var nextStopId = direction.stops[i];
-                var nextStopInfo = routeInfo.stops[nextStopId];
-
-                dist += mymap.distance(prevStopInfo, nextStopInfo);
-
-                var busMin = dist / busMetersPerMinute;
-                var nextTripMin = reachedLocation.tripMin + waitMin + busMin;
-
-                if (nextTripMin <= maxTripMin)
-                {
-                    var nextTripItems = reachedLocation.tripItems.slice();
-                    nextTripItems.push([waitMin, `wait for ${routeInfo.id}`]);
-                    nextTripItems.push([busMin, `take ${routeInfo.id} to ${nextStopInfo.title}`]);
-
-                    var nextRoutes = reachedLocation.routes ? `${reachedLocation.routes}/${routeInfo.id}` : routeInfo.id;
-
-                    //console.log(`will reach ${nextStopId} (${nextStopInfo.title}) (dist=${dist.toFixed(0)}) in ${nextTripMin.toFixed(1)} min`);
-                    queue.push({tripMin: nextTripMin, routes: nextRoutes, lat: nextStopInfo.lat, lng: nextStopInfo.lon, title: nextStopInfo.title, tripItems: nextTripItems, walked: false});
-                }
-
-                prevStopInfo = nextStopInfo;
-            }
+            addReachableLocationsLayer(computeCache[computeId][tripMin]);
         }
+        return;
     }
 
-    function addReachableLocationsLayer(tripMin, layerOptions)
-    {
-        var circleGroup = new L.LayerGroup();
+    computeCache[computeId] = {};
 
-        var reachableCircles = [];
-
-        for (var reachedLocation of reachedLocations)
+    var newLatLng;
+    var marker = L.marker(latlng, {draggable: true}).addTo(map);
+    marker.on('move', function(e) {
+        newLatLng = e.latlng;
+    });
+    marker.on('moveend', function(e) {
+        if (newLatLng)
         {
-            var walkRadius = walkMetersPerMinute * (tripMin - reachedLocation.tripMin);
-            if (walkRadius > 0)
-            {
-                reachableCircles.push({radius: walkRadius, ...reachedLocation});
-                LGeo.circle(reachedLocation, walkRadius).addTo(circleGroup);
-            }
-        }
-
-        var union = getUnion(circleGroup.getLayers());
-        var unionDiff = lastUnion ? turf.difference(union, lastUnion) : union;
-
-        var diffLayer = L.geoJson(unionDiff, {bubblingMouseEvents: false, fillOpacity:0.2, stroke:false, ...layerOptions});
-
-        diffLayer.addTo(mymap);
-
-        lastUnion = union;
-
-        diffLayer.on('click', function(e) {
-            var endLatLng = e.latlng;
-            showTripInfoPopup(endLatLng, reachableCircles);
-        });
-
-        diffLayer.on('dblclick', function(e) {
             resetMap();
-            computeIsochrones(e.latlng);
-        });
-
-        isochroneLayers.push({tripMin: tripMin, layer: diffLayer});
-    }
-
-    function showReachableLocations(tripMin)
-    {
-       while (displayedTripMinInfo.length && tripMin >= displayedTripMinInfo.peek().tripMin && resetCount == curResetCount)
-       {
-            var tripMinInfo = displayedTripMinInfo.pop();
-            addReachableLocationsLayer(tripMinInfo.tripMin, tripMinInfo.layerOptions);
-       }
-    }
-
-    async function processLocations()
-    {
-        while (true) {
-            if (!queue.length || numReachedLocations > 10000 || resetCount != curResetCount) {
-                break;
-            }
-
-            totalLocations++;
-
-            var reachedLocation = queue.pop();
-
-            var key = reachedLocation.lat + ',' + reachedLocation.lng;
-
-            if (reachedKeys[key])
-            {
-                continue;
-            }
-
-            reachedKeys[key] = true;
-            numReachedLocations++;
-
-            //console.log(`reached ${reachedLocation.title} in ${reachedLocation.tripMin}`);
-
-            if (reachedLocation.walked)
-            {
-                var promises = reachedLocation.loc.stops.map(function(stop) {
-                    return loadRoute(stop.route_id).then(function(routeInfo) {
-                        //console.log(`starting from ${stop.id} (${routeInfo.stops[stop.id].title}) on ${stop.route_id}`);
-                        addReachableStopsAfterStop(stop.id, routeInfo, reachedLocation);
-                    });
-                });
-
-                await Promise.all(promises);
-            }
-            else
-            {
-                reachedLocations.push(reachedLocation);
-
-                var tripMin = reachedLocation.tripMin;
-
-                showReachableLocations(tripMin);
-
-                var walkRadius = walkMetersPerMinute * (maxTripMin - reachedLocation.tripMin);
-
-                if (walkRadius >= 0)
-                {
-                    //console.log(reachedLocation);
-                    /* console.log(reachedLocation.tripItems.map(function(item) {
-                        return item[0].toFixed(1) + ' min: ' + item[1];
-                    })); */
-                    addNearbyLocations(reachedLocation, walkRadius);
-                }
-            }
+            computeIsochrones(newLatLng);
         }
+    });
+    layers.push(marker);
 
-        var endTime = new Date().getTime();
-        console.log(`done (${numReachedLocations} reached locations, ${totalLocations} processed in ${endTime-startTime} ms)!`);
-        showReachableLocations(maxTripMin);
-    }
-
-    queue.push({tripMin: 0, lat: latlng.lat, lng: latlng.lng, routes:null, title: 'initial position', tripItems: [], walked: false});
-    processLocations();
+    isochroneWorker.postMessage({action:'computeIsochrones',
+        latlng: latlng,
+        routes: enabledRoutes,
+        maxTripMin: maxTripMin,
+        computeId: computeId});
 }
 
-
-mymap.on('click', function(e) {
+map.on('click', function(e) {
+    if (curComputeId)
+    {
+        return;
+    }
     resetMap();
     computeIsochrones(e.latlng);
 });
 
-var info = L.control();
+var info = L.control({position:'topleft'});
+
+var tripInfo = document.createElement('div');
+var routesContainer = document.createElement('div');
+
+var routeCheckboxes = [];
+
+function getEnabledRoutes()
+{
+    var routes = [];
+    for (var checkbox of routeCheckboxes)
+    {
+        if (checkbox.checked)
+        {
+            routes.push(checkbox.value);
+        }
+    }
+    return routes;
+}
+
+function recomputeIsochrones()
+{
+    var latlng = curLatLng;
+    if (latlng)
+    {
+        resetMap();
+        computeIsochrones(latlng);
+    }
+}
+
+loadJson('/routes').then(function(routes) {
+
+    var allContainer = document.createElement('div');
+    var label = document.createElement('label');
+    allContainer.appendChild(label);
+    var allCheckbox = document.createElement('input');
+    allCheckbox.type = 'checkbox';
+    label.appendChild(allCheckbox);
+    label.appendChild(document.createTextNode('(All)'));
+
+    allCheckbox.addEventListener('click', function(e) {
+        var checked = allCheckbox.checked;
+
+        for (checkbox of routeCheckboxes)
+        {
+            checkbox.checked = checked;
+        }
+
+        recomputeIsochrones();
+    });
+    routesContainer.appendChild(allContainer);
+
+    for (var route of routes) {
+        var routeContainer = document.createElement('div');
+        var label = document.createElement('label');
+        routeContainer.appendChild(label);
+        var routeCheckbox = document.createElement('input');
+        routeCheckbox.type = 'checkbox';
+        routeCheckbox.value = route.id;
+        routeCheckbox.checked = defaultDisabledRoutes.indexOf(route.id) == -1 ? 'checked' : '';
+
+        routeCheckbox.addEventListener('click', function(e) {
+            allCheckbox.checked = '';
+            recomputeIsochrones();
+        });
+        routeCheckboxes.push(routeCheckbox);
+
+        label.appendChild(routeCheckbox);
+
+        label.appendChild(document.createTextNode(' ' + route.id));
+        routesContainer.appendChild(routeContainer);
+    }
+}).catch(function(e) {
+    showError("Error loading routes: " + e);
+});
 
 info.onAdd = function (map) {
     this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
@@ -529,7 +463,7 @@ info.onAdd = function (map) {
     });
 
     var select = document.createElement('select');
-    for (var tripMin = 5; tripMin <= 60; tripMin += 5)
+    for (var tripMin = isochroneMinutes; tripMin <= 90; tripMin += isochroneMinutes)
     {
         var option = document.createElement('option');
         option.value = '' + tripMin;
@@ -544,68 +478,28 @@ info.onAdd = function (map) {
     select.style.display = 'block';
     select.style.marginBottom = '5px';
 
+    routesContainer.style.overflow = 'auto';
+    routesContainer.style.maxHeight = '150px';
 
+    this._div.appendChild(document.createTextNode('max trip time:'));
     this._div.appendChild(select);
 
+    this._div.appendChild(document.createTextNode('routes:'));
+    this._div.appendChild(routesContainer);
+
+    this._div.appendChild(tripInfo);
+
     var reset = document.createElement('button');
-    reset.innerHTML = "Reset";
+    reset.innerHTML = "Clear";
     reset.addEventListener('click', function(e) {
         resetMap();
     });
     this._div.appendChild(reset);
 
-
-    /*
-
-    var select = document.createElement('select');
-
-    var scriptIds = [
-        '',
-        'cfa-15',
-        'cfa-30',
-        'cfa-45',
-        'nobhill-15',
-        'nobhill-30',
-        'nobhill-45',
-        'nobhill-60',
-        'castro-30',
-        'zoo-30',
-        'sutrobaths-30',
-        'hunterspoint-30',
-        'pier39-30',
-        'citycollege-30',
-    ];
-    select.addEventListener('change', function() {
-        var scriptId = select.value;
-
-        circles.clear();
-
-        if (scriptId)
-        {
-            var script = document.createElement('script');
-            script.src = 'circles-' + scriptId + ".js?r=" + Math.random();
-            document.body.appendChild(script);
-        }
-    });
-
-    for (var scriptId of scriptIds)
-    {
-        var option = document.createElement('option');
-        option.value = scriptId;
-        option.appendChild(document.createTextNode(scriptId));
-        select.appendChild(option);
-    }
-
-    this._div.appendChild(select);
-
-    */
-
-    //this.update();
     return this._div;
 };
 
-info.addTo(mymap);
+info.addTo(map);
 </script>
-
 </body>
 </html>
