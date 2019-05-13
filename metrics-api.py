@@ -46,11 +46,7 @@ def route_config():
             'name': dir.name,
             'stops': dir.get_stop_ids()
         } for dir in route.get_direction_infos()],
-<<<<<<< HEAD
-        'stops': {stop.id: {'title': stop.title,'lat':stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
-=======
         'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
->>>>>>> 16e9c88501a71ea671a46cf168f805ea95ed5e78
     }
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
