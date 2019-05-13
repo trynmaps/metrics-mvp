@@ -9,6 +9,7 @@ from datetime import datetime
 import time
 import requests
 import math
+import re
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 
 """
@@ -225,11 +226,21 @@ def get_cached_json_file_from_s3(filename):
 
 @app.route('/trip-times', methods=['GET'])
 def trip_times():
-    return get_cached_json_file_from_s3('trip_times_t1_sf-muni.json')
+    date_str = request.args.get('date')
+    if date_str is None:
+        date_str = '2019-04-08'
+    if re.match('^[\w\-]+$', date_str) is None:
+        raise Exception(f"Invalid date: {date_str}")
+    return get_cached_json_file_from_s3(f'trip_times_t1_sf-muni_{date_str}.json')
 
 @app.route('/wait-times', methods=['GET'])
 def wait_times():
-    return get_cached_json_file_from_s3('wait_times_t1_sf-muni.json')
+    date_str = request.args.get('date')
+    if date_str is None:
+        date_str = '2019-04-08'
+    if re.match('^[\w\-]+$', date_str) is None:
+        raise Exception(f"Invalid date: {date_str}")
+    return get_cached_json_file_from_s3(f'wait_times_t1_sf-muni_{date_str}.json')
 
 @app.route('/locations', methods=['GET'])
 def locations():

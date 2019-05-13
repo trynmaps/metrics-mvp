@@ -64,22 +64,25 @@ const defaultDisabledRoutes = [
     'PH','C','PM',
     'K_OWL','L_OWL','M_OWL','N_OWL','T_OWL',
     '41','88','90','91','714','S',
-    'NX','1AX','1BX','7X','8AX','8BX','14X','30X','31AX','31BX','38AX','38BX','76X','81X','82X','83X'
+    'NX','1AX','1BX','7X','8AX','8BX','14X','30X','31AX','31BX','38AX','38BX','81X','82X','83X'
 ];
 
 var isochroneLayers = [];
 var layers = [];
 var tripLayers = [];
 var maxTripMin = 90;
+var curDateStr = '2019-05-08';
 var computedMaxTripMin;
 var curComputeId;
 var curLatLng;
+var curEndLatLng;
 var computeCache = {};
 
 function resetMap() {
     map.closePopup();
     curComputeId = null;
     curLatLng = null;
+    curEndLatLng = null;
 
     for (var isochroneLayer of isochroneLayers)
     {
@@ -159,6 +162,8 @@ var redIcon = new L.Icon({
 
 async function showTripInfo(endLatLng, reachableCircles)
 {
+    curEndLatLng = endLatLng;
+
     var allOptions = [];
     for (var circle of reachableCircles)
     {
@@ -306,6 +311,20 @@ function addReachableLocationsLayer(data)
     });
 
     isochroneLayers.push({tripMin: tripMin, layer: diffLayer});
+
+    // restore end latlng from previous view
+    if (curEndLatLng && !tripLayers.length)
+    {
+        for (var circle of reachableCircles)
+        {
+            var dist = map.distance(circle, curEndLatLng);
+            if (dist <= circle.radius)
+            {
+                showTripInfo(curEndLatLng, reachableCircles);
+                break;
+            }
+        }
+    }
 }
 
 function isInServiceArea(latlng)
@@ -322,7 +341,7 @@ function isInServiceArea(latlng)
     return false;
 }
 
-function computeIsochrones(latlng)
+function computeIsochrones(latlng, endLatLng)
 {
     if (!isInServiceArea(latlng))
     {
@@ -330,11 +349,12 @@ function computeIsochrones(latlng)
     }
 
     curLatLng = latlng;
+    curEndLatLng = endLatLng;
     computedMaxTripMin = maxTripMin;
 
     var enabledRoutes = getEnabledRoutes();
 
-    var computeId = curComputeId = latlng.lat + ',' + latlng.lng + ',' + maxTripMin + ',' + enabledRoutes.join(',');
+    var computeId = curComputeId = latlng.lat + ',' + latlng.lng + ',' + curDateStr + ',' + maxTripMin + ',' + enabledRoutes.join(',');
 
     var newLatLng;
     var marker = L.marker(latlng, {draggable: true}).addTo(map);
@@ -361,11 +381,14 @@ function computeIsochrones(latlng)
 
     computeCache[computeId] = {};
 
-    isochroneWorker.postMessage({action:'computeIsochrones',
+    isochroneWorker.postMessage({
+        action:'computeIsochrones',
         latlng: latlng,
         routes: enabledRoutes,
+        dateStr: curDateStr,
         maxTripMin: maxTripMin,
-        computeId: computeId});
+        computeId: computeId
+    });
 }
 
 map.on('click', function(e) {
@@ -400,12 +423,15 @@ function getEnabledRoutes()
 function recomputeIsochrones()
 {
     var latlng = curLatLng;
+    var endLatLng = curEndLatLng;
     if (latlng)
     {
         resetMap();
-        computeIsochrones(latlng);
+        computeIsochrones(latlng, endLatLng);
     }
 }
+
+//var defaultEnabledRoutes = ['25','38R'];
 
 loadJson('/routes').then(function(routes) {
 
@@ -436,6 +462,7 @@ loadJson('/routes').then(function(routes) {
         var routeCheckbox = document.createElement('input');
         routeCheckbox.type = 'checkbox';
         routeCheckbox.value = route.id;
+        //routeCheckbox.checked = defaultEnabledRoutes.indexOf(route.id) != -1 ? 'checked' : '';
         routeCheckbox.checked = defaultDisabledRoutes.indexOf(route.id) == -1 ? 'checked' : '';
 
         routeCheckbox.addEventListener('click', function(e) {
@@ -462,27 +489,46 @@ info.onAdd = function (map) {
         e.stopPropagation();
     });
 
-    var select = document.createElement('select');
+    var dateSelect = document.createElement('select');
+    for (var dateStr of ['2019-04-08','2019-05-08','2019-05-11'])
+    {
+        var option = document.createElement('option');
+        option.value = '' + dateStr;
+        option.appendChild(document.createTextNode(dateStr));
+        dateSelect.appendChild(option);
+    }
+    dateSelect.value = '' + curDateStr;
+    dateSelect.addEventListener('change', function() {
+        curDateStr = dateSelect.value;
+        recomputeIsochrones();
+    });
+    dateSelect.style.display = 'block';
+    dateSelect.style.marginBottom = '5px';
+
+    this._div.appendChild(document.createTextNode('date:'));
+    this._div.appendChild(dateSelect);
+
+    var tripMinSelect = document.createElement('select');
     for (var tripMin = isochroneMinutes; tripMin <= 90; tripMin += isochroneMinutes)
     {
         var option = document.createElement('option');
         option.value = '' + tripMin;
         option.appendChild(document.createTextNode(tripMin + ' minutes'));
-        select.appendChild(option);
+        tripMinSelect.appendChild(option);
     }
-    select.value = '' + maxTripMin;
+    tripMinSelect.value = '' + maxTripMin;
 
-    select.addEventListener('change', function() {
+    tripMinSelect.addEventListener('change', function() {
         setMaxTripMin(parseInt(select.value, 10));
     });
-    select.style.display = 'block';
-    select.style.marginBottom = '5px';
+    tripMinSelect.style.display = 'block';
+    tripMinSelect.style.marginBottom = '5px';
+
+    this._div.appendChild(document.createTextNode('max trip time:'));
+    this._div.appendChild(tripMinSelect);
 
     routesContainer.style.overflow = 'auto';
     routesContainer.style.maxHeight = '150px';
-
-    this._div.appendChild(document.createTextNode('max trip time:'));
-    this._div.appendChild(select);
 
     this._div.appendChild(document.createTextNode('routes:'));
     this._div.appendChild(routesContainer);

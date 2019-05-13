@@ -15,12 +15,13 @@ if __name__ == '__main__':
 
     routes = nextbus.get_route_list(agency_id)
 
-    d = date(2019,4,8)
+    d = date(2019,5,11)
     start_time_str = '07:00'
     end_time_str = '19:00'
 
     for route in routes:
         route_id = route.id
+
         print(route_id)
         route_config = nextbus.get_route_config(agency_id, route_id)
 
@@ -47,6 +48,9 @@ if __name__ == '__main__':
 
     data_str = json.dumps(all_wait_times)
 
-    cache_path = geo.get_wait_times_cache_path(agency_id)
-    with open(cache_path, "w") as f:
+    with open(f'data/wait_times_t1_sf-muni_{str(d)}.json', "w") as f:
         f.write(data_str)
+
+    #cache_path = geo.get_wait_times_cache_path(agency_id)
+    #with open(cache_path, "w") as f:
+    #    f.write(data_str)
