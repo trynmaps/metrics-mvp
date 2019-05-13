@@ -345,3 +345,11 @@ typings/
 .theia
 # test notebook
 /models/Untitled.ipynb
+
+# Eclipse
+.settings/**
+.jsdtscope
+.project
+
+# Mac
+.DS_Store

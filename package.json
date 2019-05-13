@@ -4,12 +4,13 @@
   "license": "MIT",
   "scripts": {
     "postinstall": "npm install --prefix frontend",
-    "start": "cd frontend && npm run start",
+    "start": "cd frontend && npm run start --no-audit",
     "lint:all": "cd frontend && npm run lint:all",
     "build": "cd frontend && npm run-script build"
   },
   "engines": {
     "node": ">=8.14.0",
+<<<<<<< HEAD
     "npm": ">=6.0.0"
   },
   "dependencies": {
@@ -17,5 +18,9 @@
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "react-leaflet": "^2.2.1"
+=======
+    "npm": ">=6.0.0",
+    "yarn": "NO LONGER USED - Please use npm"
+>>>>>>> 16e9c88501a71ea671a46cf168f805ea95ed5e78
   }
 }

@@ -28,7 +28,7 @@ export default (state = initialState, action) => {
       }
       return {...state, fetched:true, routes:routes.slice()};
     case "RECEIVED_ROUTES_ERROR":
-      break;
+      return state;
     default:
       return state;
   }

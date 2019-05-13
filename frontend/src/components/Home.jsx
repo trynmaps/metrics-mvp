@@ -21,7 +21,7 @@ class Home extends Component {
   }
 
   render() {
-    const { graphData, graphError, routes } = this.props;
+    const { graphData, graphError, graphParams, routes } = this.props;
     return (
       <div className={css`
         display: grid;
@@ -45,7 +45,7 @@ class Home extends Component {
         <MapStops />
         </div>
         </div>
-        <Info graphData={graphData} graphError={graphError} />
+        <Info graphData={graphData} graphError={graphError} graphParams={graphParams} routes={routes} />
       </div>
     );
   }
@@ -55,6 +55,7 @@ const mapStateToProps = state => ({
   graphData: state.fetchGraph.graphData,
   routes: state.routes.routes,
   graphError: state.fetchGraph.err,
+  graphParams: state.fetchGraph.graphParams,
 });
 
 const mapDispatchToProps = dispatch => ({
