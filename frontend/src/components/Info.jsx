@@ -3,6 +3,7 @@ import { css } from 'emotion';
 import { BarChart } from 'react-d3-components';
 import Card from 'react-bootstrap/Card';
 import * as d3 from "d3";
+import InfoPhaseOfDay from './InfoPhaseOfDay';
 
 class Info extends Component {
   constructor(props) {
@@ -210,6 +211,8 @@ class Info extends Component {
     const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
 
+    let tooltip = function(x) { return "hello." }
+    
     return (
       <div
         className={css`
@@ -246,7 +249,7 @@ class Info extends Component {
             </tr>
             </tbody></table>
             </Card.Body></Card>
-            
+            <InfoPhaseOfDay graphData={graphData} graphError={graphError} graphParams={graphParams} routes={routes} />            
             <p/>
 
             <h4>Headways</h4>
@@ -255,7 +258,7 @@ class Info extends Component {
               data={[{ values: headwayMin.histogram.map(bin => ({ x: `${bin.value}`, y: bin.count })) }]}
               width={Math.max(100, headwayMin.histogram.length * 70)}
               className={`css
-                color: 'red'
+                
               `}
               height={200}
               margin={
@@ -270,6 +273,8 @@ class Info extends Component {
               barPadding={0.3}
               style={{fill: 'red'}}
               yAxis={{innerTickSize: 10, label: "arrivals", tickArguments: [5]}}
+              
+              tooltipHtml={tooltip}
             /></div>
           ) : null }
         {waitTimes
