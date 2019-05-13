@@ -519,7 +519,7 @@ info.onAdd = function (map) {
     tripMinSelect.value = '' + maxTripMin;
 
     tripMinSelect.addEventListener('change', function() {
-        setMaxTripMin(parseInt(select.value, 10));
+        setMaxTripMin(parseInt(tripMinSelect.value, 10));
     });
     tripMinSelect.style.display = 'block';
     tripMinSelect.style.marginBottom = '5px';
