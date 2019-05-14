@@ -243,7 +243,7 @@ class Info extends Component {
               data={[{ values: headwayMin.histogram.map(bin => ({ x: `${bin.value}`, y: bin.count })) }]}
               width={Math.max(100, headwayMin.histogram.length * 70)}
               className={`css
-                
+                color: 'red'                
               `}
               height={200}
               margin={
