@@ -7,10 +7,13 @@ import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
 import {
+  fetchData,
   fetchGraphData,
+  fetchIntervalData,
   fetchRoutes,
   fetchRouteConfig,
   resetGraphData,
+  resetIntervalData,
 } from '../actions';
 
 class Home extends Component {
@@ -21,7 +24,7 @@ class Home extends Component {
   }
 
   render() {
-    const { graphData, graphError, graphParams, routes } = this.props;
+    const { graphData, graphError, graphParams, intervalData, intervalError, routes } = this.props;
     return (
       <div className={css`
         display: grid;
@@ -38,11 +41,19 @@ class Home extends Component {
         <Intro />
         <ControlPanel routes={routes}
           fetchRouteConfig={this.props.fetchRouteConfig}
+          fetchData={this.props.fetchData}          
           resetGraphData={this.props.resetGraphData}
-          fetchGraphData={this.props.fetchGraphData} />
+          fetchGraphData={this.props.fetchGraphData}
+          resetIntervalData={this.props.resetIntervalData}
+          fetchIntervalData={this.props.fetchIntervalData} />
         <div className="center metricsWidth">
         </div>
-        <Info graphData={graphData} graphError={graphError} graphParams={graphParams} routes={routes} />
+        <Info graphData={graphData}
+              graphError={graphError}
+              graphParams={graphParams}
+              routes={routes}
+              intervalData={intervalData}
+              intervalError={intervalError} />
       </div>
     );
   }
@@ -52,12 +63,17 @@ const mapStateToProps = state => ({
   graphData: state.fetchGraph.graphData,
   routes: state.routes.routes,
   graphError: state.fetchGraph.err,
+  intervalData: state.fetchGraph.intervalData,
+  intervalError: state.fetchGraph.intervalErr,
   graphParams: state.fetchGraph.graphParams,
 });
 
 const mapDispatchToProps = dispatch => ({
+  fetchData: (graphParams, intervalParams) => dispatch(fetchData(graphParams, intervalParams)),
   resetGraphData: params => dispatch(resetGraphData()),
   fetchGraphData: params => dispatch(fetchGraphData(params)),
+  resetIntervalData: params => dispatch(resetIntervalData()),
+  fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
   fetchRouteConfig: routeId => dispatch(fetchRouteConfig(routeId)),
 });

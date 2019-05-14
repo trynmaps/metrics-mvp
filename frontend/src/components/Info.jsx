@@ -3,26 +3,13 @@ import { css } from 'emotion';
 import { BarChart } from 'react-d3-components';
 import Card from 'react-bootstrap/Card';
 import * as d3 from "d3";
-import InfoPhaseOfDay from './InfoPhaseOfDay';
+import InfoIntervalsOfDay from './InfoIntervalsOfDay';
+import { getPercentileValue } from '../helpers/graphData'; 
 
 class Info extends Component {
   constructor(props) {
     super(props);
     this.state = 0;
-  }
-
-
-  /**
-   * Helper method to get a specific percentile out of histogram graph data
-   * where percentile is 0-100.
-   */
-  getPercentileValue(histogram, percentile) {
-    const bin = histogram.percentiles.find(x => x.percentile === percentile);
-    if (bin) {
-      return bin.value;
-    } else {
-      return 0;
-    }
   }
   
   computeGrades(headwayMin, waitTimes, tripTimes, speed) {
@@ -86,7 +73,7 @@ class Info extends Component {
     
     let travelVarianceTime = 0;
     if (tripTimes) {
-        travelVarianceTime = this.getPercentileValue(tripTimes, 90) - tripTimes.avg;
+        travelVarianceTime = getPercentileValue(tripTimes, 90) - tripTimes.avg;
     }
     
     const travelVarianceScoreScale = d3.scaleLinear()
@@ -201,7 +188,7 @@ class Info extends Component {
   }
   
   render() {
-    const { graphData, graphError, graphParams, routes } = this.props;
+    const { graphData, graphError, graphParams, intervalData, intervalError, routes } = this.props;
 
     const headwayMin = graphData ? graphData.headway_min : null;
     const waitTimes = graphData ? graphData.wait_times : null;
@@ -230,7 +217,7 @@ class Info extends Component {
             <tr><th>Metric</th><th>Value</th><th>Grade</th><th>Score</th></tr>
             <tr>
             <td>Average wait</td><td>{Math.round(waitTimes.avg)} minutes<br/>
-            90% of waits under { Math.round(this.getPercentileValue(waitTimes, 90)) } minutes
+            90% of waits under { Math.round(getPercentileValue(waitTimes, 90)) } minutes
             </td><td>{grades.averageWaitGrade}</td><td> {grades.averageWaitScore} </td>
             </tr>
             <tr>
@@ -243,13 +230,13 @@ class Info extends Component {
             </td><td>{grades.speedGrade}</td><td>{grades.speedScore}</td>
             </tr><tr>
             <td>Travel variability</td><td> 
-            90% of trips take { Math.round(this.getPercentileValue(tripTimes, 90)) } minutes
+            90% of trips take { Math.round(getPercentileValue(tripTimes, 90)) } minutes
             
             </td><td> {grades.travelVarianceGrade} </td><td> {grades.travelVarianceScore} </td>
             </tr>
             </tbody></table>
             </Card.Body></Card>
-            <InfoPhaseOfDay graphData={graphData} graphError={graphError} graphParams={graphParams} routes={routes} />            
+            <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />            
             <p/>
 
             <h4>Headways</h4>

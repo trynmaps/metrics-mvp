@@ -1,0 +1,272 @@
+import React, { Component } from 'react';
+import { XYPlot, HorizontalGridLines, XAxis, YAxis,
+    VerticalBarSeries, ChartLabel, Crosshair } from 'react-vis';
+import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
+import Form from 'react-bootstrap/Form';
+import Card from 'react-bootstrap/Card';
+import { getPercentileValue } from '../helpers/graphData'; 
+
+/**
+ * Bar chart of average and 90th percentile wait and time across the day.
+ */
+class InfoIntervalsOfDay extends Component {
+                 
+    static AVERAGE_TIME = "average_time";
+    static PLANNING_TIME = "planning_time";
+    
+  constructor(props) {
+    super(props);
+    
+    this.state = {
+      selectedOption: InfoIntervalsOfDay.AVERAGE_TIME, // radio button starts on average time
+      crosshairValues: [], // tooltip starts out empty
+    };
+  }
+
+  /**
+   * Event handler for radio buttons
+   * @param {changeEvent} The change event on the radio buttons.
+   * @private
+   */
+  handleOptionChange = changeEvent => {
+    this.setState({
+      selectedOption: changeEvent.target.value
+    });
+  };
+
+  /**
+   * Event handler for onMouseLeave.
+   * @private
+   */
+  _onMouseLeave = () => {
+    this.setState({crosshairValues: []});
+  };
+
+  /**
+   * Event handler for onNearestX.
+   * @param {Object} value Selected value.
+   * @param {index} index Index of the value in the data array.
+   * @private
+   */
+  _onNearestX = (value, {index}) => {
+    this.setState({crosshairValues: [ this.waitData[index], this.tripData[index]]});
+  };
+  
+  /**
+   * Returns a mapping function for creating a react-vis XYPlot data series out of interval data.
+   * Example of interval data is shown at end of this file.
+   * Mapping function is for either wait time or trip time, and for either average or 90th percentile time.
+   * @param {intervalField} One of wait_times or travel_times.
+   */
+  mapInterval(intervalField) {
+    return (interval, index) => {
+      return {
+        x: interval.start_time + " - " + interval.end_time,
+        y: this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME ?
+          interval[intervalField].avg :
+          getPercentileValue(interval[intervalField], 90)
+      }
+    }
+  }
+  
+  render() {
+    const { intervalData, intervalError } = this.props;
+
+    const intervals = intervalData ? intervalData.intervals : null; 
+    this.waitData = intervals ? intervals.map(this.mapInterval("wait_times")) : null;
+    this.tripData = intervals ? intervals.map(this.mapInterval("trip_times")) : null; 
+
+    const chartColors = ["#a4a6a9", "#aa82c5"]; // placeholder colors: gray and purple from nyc busstats    
+
+    const legendItems = [
+      { title: 'Travel time', color: chartColors[1], strokeWidth: 10 },  
+      { title: 'Wait time',   color: chartColors[0], strokeWidth: 10 }
+    ];
+      
+    return (
+      <div>
+        {intervals
+          ? (<div>
+            <Card>
+              <Card.Body>
+              <Card.Title>Performance by Time of Day</Card.Title>
+
+              <Form>
+              <div className="controls">
+                <Form.Check inline
+                  id="average_time"
+                  type="radio"
+                  label="Average"
+                  value={InfoIntervalsOfDay.AVERAGE_TIME}
+                  checked={this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME}
+                  onChange={this.handleOptionChange} 
+                  />
+                  
+                <Form.Check inline
+                  id="planning_time"
+                  type="radio"
+                  label="Planning"
+                  value={InfoIntervalsOfDay.PLANNING_TIME}
+                  checked={this.state.selectedOption === InfoIntervalsOfDay.PLANNING_TIME}
+                  onChange={this.handleOptionChange}
+                  /> 
+              </div>
+              </Form>
+
+            <XYPlot xType="ordinal" height={300} width={400} stackBy="y" onMouseLeave={this._onMouseLeave} >
+              <HorizontalGridLines />
+              <XAxis />
+              <YAxis hideLine />
+              
+              <VerticalBarSeries data={ this.waitData }
+                 color={chartColors[0]}
+                 onNearestX={this._onNearestX} />
+              <VerticalBarSeries data={ this.tripData }
+                 color={chartColors[1]} />
+                 
+              <ChartLabel 
+                text="minutes"
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end'
+                }}       
+              />       
+                 
+              { this.state.crosshairValues.length > 0 && (
+               <Crosshair values={this.state.crosshairValues}
+                 style={{line:{background: 'none'}}} >
+                      <div className= 'rv-crosshair__inner__content'>
+                        <p>Onboard time: { Math.round(this.state.crosshairValues[1].y)}</p>
+                        <p>Wait time: { Math.round(this.state.crosshairValues[0].y)}</p>
+                      </div>                 
+              </Crosshair>)}
+                 
+            </XYPlot>
+            <DiscreteColorLegend orientation="horizontal" width={300} items={legendItems}/>
+
+
+            </Card.Body></Card>
+            </div>
+          ) : null }
+        <code>
+          {intervalError || ''}
+        </code>
+      </div>
+    );
+  }
+}
+  
+  /*
+   * Interval data is mainly the array named intervals.  It contains objects that resemble the graphData
+   * object, for a given start_time and end_time.  Example is below.
+
+  {
+    "intervals": [
+        {
+            "start_time": "09:00",
+            "end_time": "10:00",
+            "headway_min": {
+                "count": 5,
+                "avg": 10.936666666666664,
+                "std": 5.4460729990619035,
+                "min": 3.3833333333333333,
+                "median": 11.45,
+                "max": 19.3,
+                "histogram": [
+                    {
+                        "value": "0-5",
+                        "count": 1,
+                        "bin_start": 0,
+                        "bin_end": 5
+                    } etc.
+  
+                ],
+                "percentiles": [
+                    {
+                        "percentile": 0,
+                        "value": 3.3833333333333333
+                    } etc.
+                ]
+            },
+            "wait_times": {
+                "first_bus": "09:03:25",
+                "last_bus": "09:58:06",
+                "count": 60,
+                "avg": 6.916666666666668,
+                "std": 5.050841514044961,
+                "min": 0.1,
+                "median": 6.033333333333333,
+                "max": 19.683333333333334,
+                "histogram": [
+                   etc.
+                ],
+                "percentiles": [
+                   etc.
+                ]
+            },
+            "trip_times": {
+                "start_stop": "3994",
+                "end_stop": "5417",
+                "count": 6,
+                "avg": 19.025000000000002,
+                "std": 2.3074506936668664,
+                "min": 17.1,
+                "median": 17.891666666666666,
+                "max": 23.383333333333333,
+                "histogram": [
+                    etc.
+                ],
+                "percentiles": [
+                    etc.
+                ]
+            }
+        },
+        {
+            "start_time": "10:00",
+            "end_time": "11:00",
+            "headway_min": {
+                etc.
+            },
+            "wait_times": {
+                etc.
+            },
+            "trip_times": {
+                etc.
+            }
+        },
+        {
+            "start_time": "11:00",
+            "end_time": "12:00",
+            etc.
+        }
+    ],
+    "params": {
+        "start_stop_id": "3994",
+        "end_stop_id": "5417",
+        "route_id": "J",
+        "direction_id": "J____I_F00",
+        "start_date": "2019-04-08",
+        "end_date": "2019-04-08",
+        "start_time": "09:00",
+        "end_time": "12:00"
+    },
+    "route_title": [
+        "J-Church"
+    ],
+    "start_stop_title": "Church St & 22nd St",
+    "end_stop_title": "Powell Station Inbound",
+    "directions": [
+        {
+            "id": "J____I_F00",
+            "title": "Inbound to Embarcadero Station"
+        }
+    ]
+  }
+
+*/
+  
+export default InfoIntervalsOfDay;

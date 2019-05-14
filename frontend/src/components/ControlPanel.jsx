@@ -41,7 +41,7 @@ class ControlPanel extends Component {
     this.props.resetGraphData();
     if (firstStopId != null && routeId != null) {
       const formattedDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-      const params = {
+      const graphParams = {
         route_id: routeId,
         direction_id: directionId,
         start_stop_id: firstStopId,
@@ -50,7 +50,10 @@ class ControlPanel extends Component {
         end_time: endTimeStr,
         date: formattedDate,
       };
-      this.props.fetchGraphData(params);
+      const intervalParams = Object.assign({}, graphParams);
+      delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
+      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors. 
+      this.props.fetchData(graphParams, intervalParams);
     }
   }
 
