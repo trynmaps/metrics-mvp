@@ -198,8 +198,6 @@ class Info extends Component {
     const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
 
-    let tooltip = function(x) { return "hello." }
-    
     return (
       <div
         className={css`
@@ -260,8 +258,6 @@ class Info extends Component {
               barPadding={0.3}
               style={{fill: 'red'}}
               yAxis={{innerTickSize: 10, label: "arrivals", tickArguments: [5]}}
-              
-              tooltipHtml={tooltip}
             /></div>
           ) : null }
         {waitTimes
