@@ -472,7 +472,7 @@ class ControlPanel extends Component {
  
  
     const bounds = (this.state.startMarkers.length > 1 || this.state.routeMarkers.length > 1) ?
-      latLngBounds(Array.concat(this.state.startMarkers, this.state.routeMarkers).map(marker =>
+      latLngBounds([...this.state.startMarkers, ...this.state.routeMarkers].map(marker =>
         [marker.stop.lat, marker.stop.lon])).pad(0.1) : null;
  
 
