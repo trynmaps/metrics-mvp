@@ -4,12 +4,13 @@
   "license": "MIT",
   "scripts": {
     "postinstall": "npm install --prefix frontend",
-    "start": "cd frontend && npm run start",
+    "start": "cd frontend && npm run start --no-audit",
     "lint:all": "cd frontend && npm run lint:all",
     "build": "cd frontend && npm run-script build"
   },
   "engines": {
     "node": ">=8.14.0",
-    "npm": ">=6.0.0"
+    "npm": ">=6.0.0",
+    "yarn": "NO LONGER USED - Please use npm"
   }
 }
