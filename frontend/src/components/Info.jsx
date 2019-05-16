@@ -5,6 +5,7 @@ import Card from 'react-bootstrap/Card';
 import * as d3 from "d3";
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import { getPercentileValue } from '../helpers/graphData'; 
+import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
 
 class Info extends Component {
   constructor(props) {
@@ -68,12 +69,12 @@ class Info extends Component {
     //
     // grade score for travel time variability
     //
-    // where variance is 90th percentile time minus average time
+    // where variance is planning percentile time minus average time
     //
     
     let travelVarianceTime = 0;
     if (tripTimes) {
-        travelVarianceTime = getPercentileValue(tripTimes, 90) - tripTimes.avg;
+        travelVarianceTime = getPercentileValue(tripTimes, PLANNING_PERCENTILE) - tripTimes.avg;
     }
     
     const travelVarianceScoreScale = d3.scaleLinear()
@@ -215,7 +216,7 @@ class Info extends Component {
             <tr><th>Metric</th><th>Value</th><th>Grade</th><th>Score</th></tr>
             <tr>
             <td>Average wait</td><td>{Math.round(waitTimes.avg)} minutes<br/>
-            90% of waits under { Math.round(getPercentileValue(waitTimes, 90)) } minutes
+            {PLANNING_PERCENTILE}% of waits under { Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE)) } minutes
             </td><td>{grades.averageWaitGrade}</td><td> {grades.averageWaitScore} </td>
             </tr>
             <tr>
@@ -228,7 +229,7 @@ class Info extends Component {
             </td><td>{grades.speedGrade}</td><td>{grades.speedScore}</td>
             </tr><tr>
             <td>Travel variability</td><td> 
-            90% of trips take { Math.round(getPercentileValue(tripTimes, 90)) } minutes
+            {PLANNING_PERCENTILE}% of trips take { Math.round(getPercentileValue(tripTimes, PLANNING_PERCENTILE)) } minutes
             
             </td><td> {grades.travelVarianceGrade} </td><td> {grades.travelVarianceScore} </td>
             </tr>

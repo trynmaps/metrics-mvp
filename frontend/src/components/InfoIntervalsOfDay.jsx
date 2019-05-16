@@ -4,10 +4,11 @@ import { XYPlot, HorizontalGridLines, XAxis, YAxis,
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
-import { getPercentileValue } from '../helpers/graphData'; 
+import { getPercentileValue } from '../helpers/graphData';
+import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
 
 /**
- * Bar chart of average and 90th percentile wait and time across the day.
+ * Bar chart of average and planning percentile wait and time across the day.
  */
 class InfoIntervalsOfDay extends Component {
                  
@@ -55,7 +56,7 @@ class InfoIntervalsOfDay extends Component {
   /**
    * Returns a mapping function for creating a react-vis XYPlot data series out of interval data.
    * Example of interval data is shown at end of this file.
-   * Mapping function is for either wait time or trip time, and for either average or 90th percentile time.
+   * Mapping function is for either wait time or trip time, and for either average or planning percentile time.
    * @param {intervalField} One of wait_times or travel_times.
    */
   mapInterval(intervalField) {
@@ -64,7 +65,7 @@ class InfoIntervalsOfDay extends Component {
         x: interval.start_time + " - " + interval.end_time,
         y: this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME ?
           interval[intervalField].avg :
-          getPercentileValue(interval[intervalField], 90)
+          getPercentileValue(interval[intervalField], PLANNING_PERCENTILE)
       }
     }
   }
@@ -76,11 +77,9 @@ class InfoIntervalsOfDay extends Component {
     this.waitData = intervals ? intervals.map(this.mapInterval("wait_times")) : null;
     this.tripData = intervals ? intervals.map(this.mapInterval("trip_times")) : null; 
 
-    const chartColors = ["#a4a6a9", "#aa82c5"]; // placeholder colors: gray and purple from nyc busstats    
-
     const legendItems = [
-      { title: 'Travel time', color: chartColors[1], strokeWidth: 10 },  
-      { title: 'Wait time',   color: chartColors[0], strokeWidth: 10 }
+      { title: 'Travel time', color: CHART_COLORS[1], strokeWidth: 10 },  
+      { title: 'Wait time',   color: CHART_COLORS[0], strokeWidth: 10 }
     ];
       
     return (
@@ -105,7 +104,7 @@ class InfoIntervalsOfDay extends Component {
                 <Form.Check inline
                   id="planning_time"
                   type="radio"
-                  label="Planning"
+                  label={'Planning (' + PLANNING_PERCENTILE + 'th percentile)'}
                   value={InfoIntervalsOfDay.PLANNING_TIME}
                   checked={this.state.selectedOption === InfoIntervalsOfDay.PLANNING_TIME}
                   onChange={this.handleOptionChange}
@@ -119,10 +118,10 @@ class InfoIntervalsOfDay extends Component {
               <YAxis hideLine />
               
               <VerticalBarSeries data={ this.waitData }
-                 color={chartColors[0]}
+                 color={CHART_COLORS[0]}
                  onNearestX={this._onNearestX} />
               <VerticalBarSeries data={ this.tripData }
-                 color={chartColors[1]} />
+                 color={CHART_COLORS[1]} />
                  
               <ChartLabel 
                 text="minutes"
