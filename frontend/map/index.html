@@ -18,6 +18,35 @@ body { padding:0; margin:0; }
     background-color:#fff;
     border-radius:5px;
 }
+
+.legend
+{
+    padding:2px 4px;
+    border:1px solid #ccc;
+    background-color:#fff;
+    border-radius:5px;
+}
+
+.legend-colors div
+{
+    opacity:0.4;
+    height:15px;
+    width:30px;
+    overflow:hidden;
+    display:inline-block;
+}
+.legend-times div:first-child
+{
+    padding-left:15px;
+}
+
+.legend-times div
+{
+    text-align:center;
+    width:30px;
+    display:inline-block;
+}
+
 </style>
 <body>
 <div id="mapid"></div>
@@ -59,6 +88,8 @@ const tripMinOptions = {
     55: {color:'#8b00bf'},
     60: {color:'#4900bf'},
 };
+
+const defaultLayerOptions = {color:'#666'};
 
 const defaultDisabledRoutes = [
     'PH','C','PM',
@@ -152,7 +183,7 @@ function showError(e) {
 }
 
 var redIcon = new L.Icon({
-  iconUrl: 'https://www.dropbox.com/s/2hgssjf8d2c02ky/marker-icon-2x-red.png?dl=1',
+  iconUrl: 'marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -294,7 +325,7 @@ function addReachableLocationsLayer(data)
     var reachableCircles = data.circles;
     var geoJson = data.geoJson;
 
-    var layerOptions = tripMinOptions['' + tripMin] || {color:'#666'};
+    var layerOptions = tripMinOptions['' + tripMin] || defaultLayerOptions;
 
     var diffLayer = L.geoJson(geoJson, Object.assign({bubblingMouseEvents: false, fillOpacity:0.4, stroke:false}, layerOptions));
 
@@ -399,6 +430,40 @@ map.on('click', function(e) {
     resetMap();
     computeIsochrones(e.latlng);
 });
+
+
+var legend = L.control({position:'bottomright'});
+legend.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'legend');
+
+    this._div.appendChild(document.createTextNode('trip times (minutes)'));
+
+    var colorsContainer = document.createElement('div');
+    colorsContainer.className = 'legend-colors';
+    this._div.appendChild(colorsContainer);
+
+    var timesContainer = document.createElement('div');
+    timesContainer.className = 'legend-times';
+    this._div.appendChild(timesContainer);
+
+    for (var endTime = isochroneMinutes; endTime <= 60; endTime += isochroneMinutes)
+    {
+        var colorContainer = document.createElement('div');
+        colorContainer.style.backgroundColor = tripMinOptions[endTime].color;
+        colorsContainer.appendChild(colorContainer);
+
+        var timeContainer = document.createElement('div');
+        timeContainer.innerHTML = '' + endTime;
+        timesContainer.appendChild(timeContainer);
+    }
+
+    var colorContainer = document.createElement('div');
+    colorContainer.style.backgroundColor = defaultLayerOptions.color;
+    colorsContainer.appendChild(colorContainer);
+
+    return this._div;
+};
+legend.addTo(map);
 
 var info = L.control({position:'topleft'});
 

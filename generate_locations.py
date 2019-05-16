@@ -1,4 +1,4 @@
-from models import metrics, eclipses, nextbus, util, arrival_history, geo
+from models import metrics, eclipses, nextbus, util, arrival_history
 import json
 import argparse
 from datetime import datetime, date
@@ -24,5 +24,5 @@ if __name__ == '__main__':
             'stops': [{'route_id': s.route.id, 'id': s.id} for s in location.stop_infos],
         })
 
-    with open(f'data/locations_t1_{agency_id}.json', 'w') as f:
+    with open(f'{util.get_data_dir()}/locations_t1_{agency_id}.json', 'w') as f:
         f.write(json.dumps(res))

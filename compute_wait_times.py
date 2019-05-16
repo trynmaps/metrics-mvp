@@ -1,4 +1,5 @@
-from models import metrics, nextbus, util, arrival_history, geo, wait_times
+from models import metrics, nextbus, util, arrival_history, wait_times
+import argparse
 import json
 import argparse
 from datetime import datetime, date
@@ -7,6 +8,10 @@ import pandas as pd
 import numpy as np
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Compute and cache wait times')
+    parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
+
+    args = parser.parse_args()
 
     agency_id = 'sf-muni'
 
@@ -15,7 +20,9 @@ if __name__ == '__main__':
 
     routes = nextbus.get_route_list(agency_id)
 
-    d = date(2019,5,11)
+    date_str = args.date
+    d = util.get_dates_in_range(date_str, date_str)[0]
+
     start_time_str = '07:00'
     end_time_str = '19:00'
 
@@ -48,9 +55,5 @@ if __name__ == '__main__':
 
     data_str = json.dumps(all_wait_times)
 
-    with open(f'data/wait_times_t1_sf-muni_{str(d)}.json', "w") as f:
+    with open(f'{util.get_data_dir()}/wait_times_t1_sf-muni_{str(d)}.json', "w") as f:
         f.write(data_str)
-
-    #cache_path = geo.get_wait_times_cache_path(agency_id)
-    #with open(cache_path, "w") as f:
-    #    f.write(data_str)
