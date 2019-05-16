@@ -2,7 +2,7 @@ import React, { Component, Fragment } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { css } from 'emotion';
-import { Link, NavLink } from 'redux-first-router-link';
+import { NavLink } from 'redux-first-router-link';
 
 import ControlPanel from './ControlPanel';
 import Info from './Info';
@@ -24,25 +24,37 @@ class Home extends Component {
   render() {
     const { graphData, graphError, graphParams, routes } = this.props;
     return (
-      <div>
-        <button><NavLink 
-        to={{ type: 'HOME' }}
-        activeStyle={{ fontWeight: "bold", color: 'purple' }}
-        exact={true}
-        strict={true}
-        >Home</NavLink></button>
-        <button><NavLink 
-        to={{ type: 'ABOUT' }}
-        activeStyle={{ fontWeight: "bold", color: 'purple' }}
-        exact={true}
-        strict={true}
-        >About</NavLink></button>
-        <button><NavLink 
-        to={{ type: 'LANDING' }}
-        activeStyle={{ fontWeight: "bold", color: 'purple' }}
-        exact={true}
-        strict={true}
-        >Landing</NavLink></button>
+      <Fragment>
+        <button>
+          <NavLink
+            to={{ type: 'HOME' }}
+            activeStyle={{ fontWeight: "bold", color: 'purple' }}
+            exact={true}
+            strict={true}
+          >
+            Home
+          </NavLink>
+        </button>
+        <button>
+          <NavLink
+            to={{ type: 'ABOUT' }}
+            activeStyle={{ fontWeight: "bold", color: 'purple' }}
+            exact={true}
+            strict={true}
+          >
+            About
+          </NavLink>
+        </button>
+        <button>
+          <NavLink
+            to={{ type: 'LANDING' }}
+            activeStyle={{ fontWeight: "bold", color: 'purple' }}
+            exact={true}
+            strict={true}
+          >
+            Landing
+          </NavLink>
+        </button>
         <div className={css`
           display: grid;
           grid-gap: 4px;
@@ -64,7 +76,7 @@ class Home extends Component {
           </div>
           <Info graphData={graphData} graphError={graphError} graphParams={graphParams} routes={routes} />
         </div>
-      </div>
+      </Fragment>
     );
   }
 }
