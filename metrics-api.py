@@ -11,6 +11,7 @@ import math
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 import constants
 import sys
+from errors import StopNotOnRouteError
 
 """
 This is the app's main file!
@@ -69,6 +70,21 @@ def metrics_page():
     }
     try:
         data = calc_metrics(calc_metrics_args)
+    except FileNotFoundError as ex:
+        return Response(json.dumps({
+            'params': calc_metrics_args,
+            'error': f"Arrival history not found for route {calc_metrics_args['route_id']} on {calc_metrics_args['date'] or calc_metrics_args['start_date_str']}",
+        }, indent=2), status=404, mimetype='application/json')
+    except IndexError as ex:
+        return Response(json.dumps({
+            'params': calc_metrics_args,
+            'error': f"No arrivals found for stop {calc_metrics_args['start_stop_id']} on route {calc_metrics_args['route_id']} in direction {calc_metrics_args['direction_id']} on {calc_metrics_args['date'] or calc_metrics_args['start_date_str']}",
+        }, indent = 2), status = 404, mimetype = 'application/json')
+    except StopNotOnRouteError as ex:
+        return Response(json.dumps({
+            'params': calc_metrics_args,
+            'error': f"Stop {calc_metrics_args['start_stop_id']} is not on route {calc_metrics_args['route_id']}",
+        }, indent=2), status=404, mimetype='application/json')
     except Exception as ex:
         return Response(json.dumps({
             'params for calc_metrics func': calc_metrics_args,
@@ -232,7 +248,7 @@ def calc_metrics(args):
     # 404 if the given stop isn't on the route
     # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
     if start_stop_info is None:
-        raise Exception(f"Stop {start_stop_id} is not on route {route_id}")
+        raise StopNotOnRouteError()
 
     if direction_id is not None:
         dir_info = route_config.get_direction_info(direction_id)
@@ -273,10 +289,11 @@ def calc_metrics(args):
 
             headway_min = df.headway_min[df.headway_min.notnull()] # remove NaN row (first bus of the day)
             headway_min_arr.append(df.headway_min)
-        except FileNotFoundError as ex:
-            raise Exception(f"Arrival history not found for route {route_id} on {d.isoformat()}")
-        except IndexError as ex:
-            raise Exception(f"No arrivals found for stop {start_stop_id} on route {route_id} in direction {direction_id} on {d.isoformat()}")
+        except FileNotFoundError:
+            # this is ugly, but it allows functions that call this to filter on this specific error.
+            raise FileNotFoundError
+        except IndexError:
+            raise IndexError
 
     headway_min = pd.concat(headway_min_arr)
     waits = pd.concat(waits)
