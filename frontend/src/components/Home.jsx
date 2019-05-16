@@ -45,9 +45,7 @@ class Home extends Component {
           fetchGraphData={this.props.fetchGraphData}
         />
         <div className="center metricsWidth">
-          <div className={css`
-          margin-top: 4rem`}
-          >
+          <div className="largeMarginTop">
             <MapStops />
           </div>
         </div>

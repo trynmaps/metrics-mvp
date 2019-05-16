@@ -4,26 +4,26 @@ import {
   Map, TileLayer, CircleMarker, Popup, Marker,
 } from 'react-leaflet';
 
+const INBOUND_COLOR = 'blue';
+const INBOUND_RADIUS = 15;
+const OUTBOUND_COLOR = 'red';
+const OUTBOUND_RADIUS = 15;
+const SF_COORDINATES = {lat : 37.7793, lng: -122.419};
+const ZOOM = 13;
+
 class MapStops extends Component {
-  constructor() {
-    super();
-    this.state = {
-      lat: 37.7793,
-      lng: -122.4193,
-      zoom: 13,
-    };
-  }
 
   handleRouteSelect = (route) => {
 
   }
 
   render() {
-    const position = [this.state.lat, this.state.lng];
+    const { position, zoom, inboundColor, inboundRadius, outboundColor, outboundRadius } = this.props;
+
     const mapClass = { width: '400px', height: '400px' };
     const { routeStops } = this.props;
     return (
-      <Map center={position} zoom={this.state.zoom} style={mapClass}>
+      <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="http://{s}.tile.osm.org/{z}/{x}/{y}.png"
@@ -33,8 +33,8 @@ class MapStops extends Component {
           return (
             <CircleMarker
               center={currentPosition}
-              color="blue"
-              radius={15}
+              color={inboundColor || INBOUND_COLOR}
+              radius={inboundRadius || INBOUND_RADIUS}
             />
           );
         }) : null
@@ -45,8 +45,8 @@ class MapStops extends Component {
             return (
               <CircleMarker
                 center={currentPosition}
-                color="red"
-                radius={15}
+                color={outboundColor || OUTBOUND_COLOR}
+                radius={outboundRadius || OUTBOUND_RADIUS}
               />
             );
           }) : null

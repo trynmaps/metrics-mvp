@@ -1,3 +1,3 @@
-.list-group-item:hover {
+.dropDownOverlay .list-group-item:hover {
 	z-index:1000;
 }
