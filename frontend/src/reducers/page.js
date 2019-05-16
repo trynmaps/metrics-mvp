@@ -3,6 +3,7 @@ import { NOT_FOUND } from 'redux-first-router';
 const components = {
   HOME: 'Home',
   ABOUT: 'About',
+  LANDING: 'Landing',
   [NOT_FOUND]: 'NotFound'
 };
 
