@@ -458,4 +458,5 @@ typings/
 /models/Untitled.ipynb
 
 #adding data folder
-data/
+data/*.json
+data/*.csv
