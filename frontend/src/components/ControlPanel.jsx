@@ -181,8 +181,12 @@ class ControlPanel extends Component {
     const timeRange = (startTimeStr || endTimeStr) ? (startTimeStr + '-' + endTimeStr) : '';
 
     const selectedRoute = this.getSelectedRouteInfo();
-    const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
-      ? (selectedRoute.directions.find(dir => dir.id === directionId), this.sendRouteStopsToMap()) : null;
+    let selectedDirection =null;
+    if (selectedRoute && selectedRoute.directions && directionId) {
+      selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
+      this.sendRouteStopsToMap();
+    }
+    
     debugger;
     return (
       <div className={css`

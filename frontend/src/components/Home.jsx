@@ -41,7 +41,8 @@ class Home extends Component {
           resetGraphData={this.props.resetGraphData}
           fetchGraphData={this.props.fetchGraphData} />
         <div className="center metricsWidth">
-        <div>
+        <div className={css`
+          margin-top: 4rem`}>
         <MapStops />
         </div>
         </div>
