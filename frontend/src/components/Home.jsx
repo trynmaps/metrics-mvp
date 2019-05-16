@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { css } from 'emotion';
-import MapStops from "./MapStops";
+import MapStops from './MapStops';
 import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
@@ -21,7 +21,9 @@ class Home extends Component {
   }
 
   render() {
-    const { graphData, graphError, graphParams, routes } = this.props;
+    const {
+      graphData, graphError, graphParams, routes,
+    } = this.props;
     return (
       <div className={css`
         display: grid;
@@ -36,15 +38,18 @@ class Home extends Component {
       }
       >
         <Intro />
-        <ControlPanel routes={routes}
+        <ControlPanel
+          routes={routes}
           fetchRouteConfig={this.props.fetchRouteConfig}
           resetGraphData={this.props.resetGraphData}
-          fetchGraphData={this.props.fetchGraphData} />
+          fetchGraphData={this.props.fetchGraphData}
+        />
         <div className="center metricsWidth">
-        <div className={css`
-          margin-top: 4rem`}>
-        <MapStops />
-        </div>
+          <div className={css`
+          margin-top: 4rem`}
+          >
+            <MapStops />
+          </div>
         </div>
         <Info graphData={graphData} graphError={graphError} graphParams={graphParams} routes={routes} />
       </div>

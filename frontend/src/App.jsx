@@ -10,7 +10,7 @@ const App = ({ page }) => {
   const components = {
     Home: <Home />,
     About: <About />,
-    NotFound: <NotFound />
+    NotFound: <NotFound />,
   };
   return (
     <Fragment>

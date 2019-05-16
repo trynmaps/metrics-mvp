@@ -5,7 +5,7 @@ import DatePicker from 'react-date-picker';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
-import {handleRouteSelect} from '../actions';
+import { handleRouteSelect } from '../actions';
 
 import DropdownControl from './DropdownControl';
 
@@ -37,7 +37,7 @@ class ControlPanel extends Component {
 
   updateGraphData = () => {
     const {
-      routeId, directionId, firstStopId, date, secondStopId, startTimeStr, endTimeStr
+      routeId, directionId, firstStopId, date, secondStopId, startTimeStr, endTimeStr,
     } = this.state;
 
     this.props.resetGraphData();
@@ -63,11 +63,11 @@ class ControlPanel extends Component {
 
   setDate = date => this.setState({ date }, this.updateGraphData)
 
-  setTimeRange = timeRange => {
+  setTimeRange = (timeRange) => {
     if (!timeRange) {
       this.setState({ startTimeStr: null, endTimeStr: null }, this.updateGraphData);
     } else {
-      var timeRangeParts = timeRange.split('-');
+      const timeRangeParts = timeRange.split('-');
       this.setState({ startTimeStr: timeRangeParts[0], endTimeStr: timeRangeParts[1] }, this.updateGraphData);
     }
   }
@@ -87,18 +87,18 @@ class ControlPanel extends Component {
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
     const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
     const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
-    
+
     let newSecondStopId = secondStopId;
-    
+
     // If the "to stop" is not set or is not valid for the current "from stop",
     // set a default "to stop" that is some number of stops down.  If there aren't
     // enough stops, use the end of the line.
-    
+
     const nStops = 5;
-    
+
     if (secondStopId == null || !secondStopList.includes(secondStopId)) {
-        newSecondStopId = secondStopList.length >= nStops ? secondStopList[nStops-1] :
-            secondStopList[secondStopList.length-1];
+      newSecondStopId = secondStopList.length >= nStops ? secondStopList[nStops - 1]
+        : secondStopList[secondStopList.length - 1];
     }
     this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList }, this.selectedStopChanged);
   }
@@ -108,13 +108,13 @@ class ControlPanel extends Component {
   }
 
   selectedRouteChanged = () => {
-    const {onRouteSelect} = this.props;
+    const { onRouteSelect } = this.props;
     const { routeId } = this.state;
     const selectedRoute = this.getSelectedRouteInfo();
     if (!selectedRoute) {
       return;
     }
-    //onRouteSelect(selectedRoute);
+    // onRouteSelect(selectedRoute);
     if (!selectedRoute.directions) {
       this.setDirectionId(null);
       this.props.fetchRouteConfig(routeId);
@@ -124,13 +124,11 @@ class ControlPanel extends Component {
     }
   }
 
-  getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
-    return selectedRoute.directions.find(dir => dir.id === directionId);
-  }
+  getStopsInfoInGivenDirection = (selectedRoute, directionId) => selectedRoute.directions.find(dir => dir.id === directionId)
+
   getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
-    const stopSids= selectedRoute.directions.find(dir => dir.name === name);
+    const stopSids = selectedRoute.directions.find(dir => dir.name === name);
     return stopSids.stops.map(stop => selectedRoute.stops[stop]);
-    
   }
 
   selectedDirectionChanged = () => {
@@ -158,14 +156,14 @@ class ControlPanel extends Component {
     const { routeId } = this.state;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
+
   sendRouteStopsToMap = () => {
-    const {directionId} = this.state;
-    const {onRouteSelect} = this.props;
+    const { directionId } = this.state;
+    const { onRouteSelect } = this.props;
     const selectedRoute = this.getSelectedRouteInfo();
-    debugger;
     onRouteSelect({
-      'Inbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
-      'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
+      Inbound: this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
+      Outbound: this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound'),
     });
   }
   // toggleTimekeeper(val) {
@@ -175,19 +173,18 @@ class ControlPanel extends Component {
   render() {
     const { routes } = this.props;
     const {
-      date, routeId, directionId, firstStopId, secondStopId, secondStopList, startTimeStr, endTimeStr
+      date, routeId, directionId, firstStopId, secondStopId, secondStopList, startTimeStr, endTimeStr,
     } = this.state;
 
-    const timeRange = (startTimeStr || endTimeStr) ? (startTimeStr + '-' + endTimeStr) : '';
+    const timeRange = (startTimeStr || endTimeStr) ? (`${startTimeStr}-${endTimeStr}`) : '';
 
     const selectedRoute = this.getSelectedRouteInfo();
-    let selectedDirection =null;
+    let selectedDirection = null;
     if (selectedRoute && selectedRoute.directions && directionId) {
       selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
       this.sendRouteStopsToMap();
     }
-    
-    debugger;
+
     return (
       <div className={css`
           color: #fff;
@@ -211,26 +208,26 @@ class ControlPanel extends Component {
            width: 100%
          `}
           />
-        <ListGroup.Item>
-          <DropdownControl
-            title="Time Range"
-            name="time_range"
-            variant="info"
-            value={timeRange}
-            onSelect={this.setTimeRange}
-            options={
+          <ListGroup.Item>
+            <DropdownControl
+              title="Time Range"
+              name="time_range"
+              variant="info"
+              value={timeRange}
+              onSelect={this.setTimeRange}
+              options={
                 [
-                    {label:'All Day', key:''},
-                    {label:'Daytime (7AM - 7PM)', key:'07:00-19:00'},
-                    {label:'Early Morning (3AM - 7AM)', key:'03:00-07:00'},
-                    {label:'AM Peak (7AM - 10AM)', key:'07:00-10:00'},
-                    {label:'Midday (10AM - 4PM)', key:'10:00-16:00'},
-                    {label:'PM Peak (4PM - 7PM)', key:'16:00-19:00'},
-                    {label:'Late Evening (7PM - 3AM)', key:'19:00-03:00+1'},
+                  { label: 'All Day', key: '' },
+                  { label: 'Daytime (7AM - 7PM)', key: '07:00-19:00' },
+                  { label: 'Early Morning (3AM - 7AM)', key: '03:00-07:00' },
+                  { label: 'AM Peak (7AM - 10AM)', key: '07:00-10:00' },
+                  { label: 'Midday (10AM - 4PM)', key: '10:00-16:00' },
+                  { label: 'PM Peak (4PM - 7PM)', key: '16:00-19:00' },
+                  { label: 'Late Evening (7PM - 3AM)', key: '19:00-03:00+1' },
                 ]
         }
-          />
-        </ListGroup.Item>
+            />
+          </ListGroup.Item>
           <ListGroup variant="flush">
             <ListGroup.Item>
               <DropdownControl
@@ -313,10 +310,7 @@ ControlPanel.propTypes = {
   fetchGraphData: PropTypes.func.isRequired,
 };
 
-const mapDispatchToProps = dispatch => {
-  debugger;
-  return ({
-    onRouteSelect: route => dispatch(handleRouteSelect(route))
-  })
-}
-export default connect(null,mapDispatchToProps)(ControlPanel);
+const mapDispatchToProps = dispatch => ({
+  onRouteSelect: route => dispatch(handleRouteSelect(route)),
+});
+export default connect(null, mapDispatchToProps)(ControlPanel);
