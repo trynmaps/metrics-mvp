@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Dropdown from 'react-bootstrap/Dropdown';
+import './DropDownControl.css';
 
 class DropdownControl extends Component {
   constructor(props) {
