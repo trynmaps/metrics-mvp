@@ -23,18 +23,20 @@ class DropdownControl extends Component {
     const shownValue = value == null ? title : (`${title}: ${selectedOption ? selectedOption.label : value}`);
 
     return (
-      <Dropdown>
-        <Dropdown.Toggle variant={variant} id={`${name}-dropdown`} className="btn-block">
-          {shownValue}
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          {
-            (options || []).map(option => (
-              <Dropdown.Item onSelect={this.handleSelectedValue} key={option.key} eventKey={option.key} href="#">{option.label}</Dropdown.Item>
-            ))
-          }
-        </Dropdown.Menu>
-      </Dropdown>
+      <div className="dropDownOverlay">
+        <Dropdown>
+          <Dropdown.Toggle variant={variant} id={`${name}-dropdown`} className="btn-block">
+            {shownValue}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            {
+              (options || []).map(option => (
+                <Dropdown.Item onSelect={this.handleSelectedValue} key={option.key} eventKey={option.key} href="#">{option.label}</Dropdown.Item>
+              ))
+            }
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
     );
   }
 }
