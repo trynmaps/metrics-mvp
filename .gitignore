@@ -456,3 +456,6 @@ typings/
 
 # test notebook
 /models/Untitled.ipynb
+
+#adding data folder
+data/
