@@ -157,6 +157,8 @@ class ControlPanel extends Component {
             secondStopList[secondStopList.length-1];
     }
     this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList }, this.selectedStopChanged);
+    this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList }, this.selectedStopChanged);    
+    
   }
 
   onSelectSecondStop = (stopId) => {
@@ -507,9 +509,6 @@ class ControlPanel extends Component {
       return <Fragment>{items}</Fragment>
     }
 
-
-
- 
  
     const FromButtons = () => {  
 
@@ -533,6 +532,7 @@ class ControlPanel extends Component {
     /*(this.state.startMarkers.length > 1 || this.state.routeMarkers.length > 1) ?
       latLngBounds([...this.state.startMarkers, ...this.state.routeMarkers].map(marker =>
         [marker.stop.lat, marker.stop.lon])).pad(0.1) : null;*/
+
  
 
 
