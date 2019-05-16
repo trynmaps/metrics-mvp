@@ -54,7 +54,7 @@ body { padding:0; margin:0; }
 
 var map = L.map('mapid').setView([37.772,-122.442], 13);
 
-loadJson('/config').then(function(config) {
+loadJson('/config?r='+Math.random()).then(function(config) {
     if (config.mapbox_access_token)
     {
         var tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
