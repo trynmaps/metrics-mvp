@@ -300,11 +300,7 @@ def calc_metrics(args):
     return data
 
 def add_intervals_to_data(intervals_arr, time_intervals, params):
-    # start_date = datetime.strptime(params['start_date_str'], '%Y-%m-%d').date()
-    # end_date = datetime.strptime(params['end_date_str'], '%Y-%m-%d').date()
     for time_interval in time_intervals:
-        # start_time = util.get_localized_datetime(start_date, time_interval['start_time'], constants.PACIFIC_TIMEZONE)
-        # end_time = util.get_localized_datetime(end_date, time_interval['end_time'], constants.PACIFIC_TIMEZONE)
         calc_metrics_args = {
             'start_stop_id': params['start_stop_id'],
             'end_stop_id': params['end_stop_id'],
@@ -319,6 +315,13 @@ def add_intervals_to_data(intervals_arr, time_intervals, params):
             curr_data = calc_metrics(calc_metrics_args)
         except BufferError:
             # no trains for the current time interval
+            intervals_arr.append({
+                'start_time': time_interval['start_time'],
+                'end_time': time_interval['end_time'],
+                'headway_min': None,
+                'wait_times': None,
+                'trip_times': None,
+            })
             continue
         except Exception as ex:
             raise(Exception(ex))
