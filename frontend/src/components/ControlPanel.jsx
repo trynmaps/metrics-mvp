@@ -9,7 +9,7 @@ import { latLngBounds } from 'leaflet';
 
 import DropdownControl from './DropdownControl';
 
-import { Map, TileLayer, Marker, Popup, CircleMarker, Tooltip } from 'react-leaflet'
+import { Map, TileLayer, Marker, Popup, CircleMarker, Tooltip, Polyline } from 'react-leaflet'
 
 // todo: figure out why sometimes the zoom gets reset (probably a race condition with setState, need callback)
 // todo: make start stops clickable (equivalent to the buttons)
@@ -40,7 +40,12 @@ class ControlPanel extends Component {
         lat: 37.7793, // city hall
         lng: -122.4193,
       },
+      latLngOriginal: {
+        lat: 37.7793, // city hall
+        lng: -122.4193,
+      },
       startMarkers: [],
+      hoverStartMarker: null,
       downstreamArray: [],
       routeMarkers: [],
     }
@@ -238,17 +243,18 @@ class ControlPanel extends Component {
          
          const secondStopInfo = stop.direction;//this.getStopsInfoInGivenDirection(selectedRoute, stop.direction);
          const secondStopListIndex = secondStopInfo.stops.indexOf(stop.stopID);
-         const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
+         const secondStopList = secondStopInfo.stops.slice(secondStopListIndex /* + 1  include starting stop */);
 
         
          const downstreamStops = secondStopList.map(stopID => selectedRoute.stops[stopID]);
-         downstreamArray.push(downstreamStops);
+         //downstreamArray.push(downstreamStops);
+         stop.downstreamStops = downstreamStops;
      }
     
     // to do: indicators for firstStop and secondStop 
      
      this.setState({ startMarkers: stops,
-                     downstreamArray: downstreamArray
+//                     downstreamArray: downstreamArray
       });
   }
   
@@ -264,6 +270,15 @@ class ControlPanel extends Component {
     
     for (let i = 0; i < routes.length; i++) { // optimize this on back end
       const route = routes[i];
+      
+      // no owls
+      
+      if ((route.title.indexOf("-Owl") > -1) ||
+          (route.title.indexOf(" Owl") > -1)
+          )
+       { continue; }
+      
+      
       if (route.directions) {
         for (let direction of route.directions) {
           const stopList = direction.stops;
@@ -417,13 +432,56 @@ class ControlPanel extends Component {
     
     const DownstreamMarkers = () => {  
 
-      const items = this.state.downstreamArray.map(routeMarkers =>
-        routeMarkers.map(routeMarker => {
-           const position = [ routeMarker.lat, routeMarker.lon ]; // just stops directly, was routeMarker.stop.lat
-           return <CircleMarker key={routeMarker.stopID} center={position} opacity="0.1">
-             </CircleMarker>
-           }
-        )
+      // for each start marker
+      
+      const items = this.state.startMarkers.map(startMarker => {
+        const routeMarkers = startMarker.downstreamStops;
+        
+        // make a set of circles for the downstream stops
+        
+        const circles = routeMarkers.map(routeMarker => {
+          const position = [ routeMarker.lat, routeMarker.lon ]; // just stops directly, was routeMarker.stop.lat
+          return <CircleMarker key={routeMarker.stopID} center={position}
+          stroke={false}
+          fillColor="red" radius="2"
+           
+          opacity="0.1">
+            </CircleMarker>
+          });
+        
+        // then make a polyline connecting the stops   
+           
+        const latLngs = routeMarkers.map(routeMarker => [ routeMarker.lat, routeMarker.lon ]);
+        
+        circles.push(<Polyline
+            positions = { latLngs }
+            color="red"
+            opacity= {0.1 /*this.state.hoverStartMarker === startMarker ? 1.0 : 0.1*/}
+            onMouseOver = { e => {
+                e.target.setStyle({opacity:1});
+                //e.target.openTooltip();
+                
+                //this.setState({hoverStartMarker:  startMarker });
+                return true;
+              }
+            }
+            onMouseOut = { e => {
+                this.setState({hoverStartMarker: null });
+                return true;                
+              }
+            }
+            >
+            
+            <Tooltip>
+              {startMarker.routeTitle} <br/> {startMarker.direction.title}
+            </Tooltip>
+            
+             </Polyline>);
+             
+          return circles;
+        }
+           
+           
       );
       return <Fragment>{items}</Fragment>
     }
@@ -471,9 +529,10 @@ class ControlPanel extends Component {
     }
  
  
-    const bounds = (this.state.startMarkers.length > 1 || this.state.routeMarkers.length > 1) ?
+    const bounds =  null
+    /*(this.state.startMarkers.length > 1 || this.state.routeMarkers.length > 1) ?
       latLngBounds([...this.state.startMarkers, ...this.state.routeMarkers].map(marker =>
-        [marker.stop.lat, marker.stop.lon])).pad(0.1) : null;
+        [marker.stop.lat, marker.stop.lon])).pad(0.1) : null;*/
  
 
 
@@ -616,7 +675,7 @@ class ControlPanel extends Component {
           height:"40vh"
         }}
         bounds={bounds}
-        center={this.state.latLng}
+        center={this.state.latLngOriginal}
         length={4}
         onClick={this.handleClick}
         onLocationfound={this.handleLocationFound}
