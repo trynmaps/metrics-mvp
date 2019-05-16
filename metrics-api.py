@@ -51,20 +51,20 @@ def route_config():
     }
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-def calc_metrics(request):
-    route_id = request['route_id']
+def calc_metrics(args):
+    route_id = args['route_id']
     if route_id is None:
         route_id = '12'
-    start_stop_id = request['start_stop_id']
+    start_stop_id = args['start_stop_id']
     if start_stop_id is None:
         start_stop_id = '3476'
-    end_stop_id = request['end_stop_id']
+    end_stop_id = args['end_stop_id']
 
-    direction_id = request['direction_id']
+    direction_id = args['direction_id']
 
-    start_date_str = request['start_date']
-    end_date_str = request['end_date']
-    date_str = request['date']
+    start_date_str = args['start_date']
+    end_date_str = args['end_date']
+    date_str = args['date']
     if date_str is not None:
         start_date_str = end_date_str = date_str
     else:
@@ -73,8 +73,8 @@ def calc_metrics(request):
         if end_date_str is None:
             end_date_str = start_date_str
 
-    start_time_str = request['start_time'] # e.g. "14:00" (24h time of day)
-    end_time_str = request['end_time'] # e.g. "18:00" (24h time of day)
+    start_time_str = args['start_time'] # e.g. "14:00" (24h time of day)
+    end_time_str = args['end_time'] # e.g. "18:00" (24h time of day)
 
     params = {
         'start_stop_id': start_stop_id,
@@ -169,29 +169,26 @@ def calc_metrics(request):
     }
     return data
 
-def create_calc_metrics_request(request, start_time=None, end_time=None):
-    return {
+@app.route('/metrics', methods=['GET'])
+def metrics_page():
+    metrics_start = time.time()
+
+    calc_metrics_args = {
         'start_stop_id': request.args.get('start_stop_id'),
         'end_stop_id': request.args.get('end_stop_id'),
         'route_id': request.args.get('route_id'),
         'direction_id': request.args.get('direction_id'),
         'start_date': request.args.get('start_date'),
         'end_date': request.args.get('end_date'),
-        'start_time': start_time.strftime('%H:%M') if start_time != None else request.args.get('start_time'),
-        'end_time': end_time.strftime('%H:%M') if end_time != None else request.args.get('end_time'),
         'date': request.args.get('date'),
+        'start_time': request.args.get('start_time'),
+        'end_time': request.args.get('end_time'),
     }
-
-@app.route('/metrics', methods=['GET'])
-def metrics_page():
-    metrics_start = time.time()
-
-    req = create_calc_metrics_request(request)
     try:
-        data = calc_metrics(req)
+        data = calc_metrics(calc_metrics_args)
     except Exception as ex:
         return Response(json.dumps({
-            'params': req,
+            'params for calc_metrics func': calc_metrics_args,
             'error': str(ex),
         }, indent=2), status=400, mimetype='application/json')
 
@@ -200,20 +197,32 @@ def metrics_page():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-def add_intervals_to_data(arr, time_intervals):
+def add_intervals_to_data(intervals_arr, time_intervals, params):
+    start_date = datetime.strptime(params['start_date_str'], '%Y-%M-%D')
+    end_date = datetime.strptime(params['end_date_str'], '%Y-%M-%D')
     for time_interval in time_intervals:
-        start_time = time_interval['start_time']
-        end_time = time_interval['end_time']
-        req = create_calc_metrics_request(request, start_time, end_time)
+        start_time = util.get_localized_datetime(start_date, time_interval['start_time'], constants.PACIFIC_TIMEZONE)
+        end_time = util.get_localized_datetime(end_date, time_interval['end_time'], constants.PACIFIC_TIMEZONE)
+        calc_metrics_args = {
+            'start_stop_id': params['start_stop_id'],
+            'end_stop_id': params['end_stop_id'],
+            'route_id': params['route_id'],
+            'direction_id': params['direction_id'],
+            'start_date': params['start_date_str'],
+            'end_date': params['end_date_str'],
+            'start_time': start_time,
+            'end_time': end_time,
+            'date': params['date'],
+        }
         try:
-            curr_data = calc_metrics(req)
+            curr_data = calc_metrics(calc_metrics_args)
         except BufferError:
             # no trains for the current time interval
             continue
         except Exception as ex:
             raise(Exception(ex))
 
-        arr.append({
+        intervals_arr.append({
             'start_time': start_time.strftime('%H:%M'),
             'end_time': end_time.strftime('%H:%M'),
             'headway_min': curr_data['headway_min'],
@@ -241,7 +250,7 @@ def metrics_by_interval():
         start_date_str = end_date_str = date_str
     else:
         if start_date_str is None:
-            start_date_str = '2019-02-01'
+            start_date_str = '2019-04-08'
         if end_date_str is None:
             end_date_str = start_date_str
 
@@ -253,8 +262,8 @@ def metrics_by_interval():
         'end_stop_id': end_stop_id,
         'route_id': route_id,
         'direction_id': direction_id,
-        'start_date': start_date_str,
-        'end_date': end_date_str,
+        'start_date_str': start_date_str,
+        'end_date_str': end_date_str,
         'start_time': start_time_str,
         'end_time': end_time_str,
     }
@@ -264,9 +273,9 @@ def metrics_by_interval():
     if start_time_str is not None and end_time_str is not None:
         # round start_time down and end_time up to allow for even intervals
         start_time = datetime.strptime(start_time_str, '%H:%M')
-        start_time.replace(microsecond=0, second=0, minute=0)
+        start_time = start_time.replace(microsecond=0, second=0, minute=0)
         end_time = datetime.strptime(end_time_str, '%H:%M')
-        end_time.replace(microsecond=0, second=0, minute=0) - timedelta(hours=1)
+        end_time = end_time.replace(microsecond=0, second=0, minute=0) - timedelta(hours=1)
 
         hourly_time_intervals = []
         while start_time.hour != end_time.hour:
@@ -276,7 +285,7 @@ def metrics_by_interval():
             hourly_time_intervals.append(curr_interval)
             start_time += timedelta(seconds=3600)
         try:
-            add_intervals_to_data(data['intervals'], hourly_time_intervals)
+            add_intervals_to_data(data['intervals'], hourly_time_intervals, params)
         except Exception as ex:
             return Response(json.dumps({
                 'params': params,
@@ -290,7 +299,7 @@ def metrics_by_interval():
                 'error': 'Need both a start and end time'
             }, indent=2), status=404, mimetype='application/json')
         try:
-            add_intervals_to_data(data['intervals'], constants.DEFAULT_TIME_INTERVALS)
+            add_intervals_to_data(data['intervals'], constants.DEFAULT_TIME_STR_INTERVALS, params)
         except Exception as ex:
             return Response(json.dumps({
                 'params': params,
