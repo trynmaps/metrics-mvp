@@ -456,3 +456,6 @@ typings/
 
 # test notebook
 /models/Untitled.ipynb
+
+# local cache
+data/*.json
