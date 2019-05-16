@@ -282,20 +282,23 @@ def calc_metrics(args):
     waits = pd.concat(waits)
     if end_stop_id and both_stops_same_dir:
         completed_trips = pd.concat(completed_trips)
-    if headway_min.empty:
-        # TODO: need a better error type than this
-        raise BufferError(f"No arrivals for stop {start_stop_id} on route {route_id}")
-
+    headway_min_hist = None
+    wait_times_hist = None
+    trip_times_hist = None
+    if not headway_min.empty:
+        headway_min_hist = metrics.get_headways_stats(headway_min)
+        wait_times_hist = metrics.get_wait_times_stats(waits, tz)
+        trip_times_hist = metrics.get_trip_times_stats(completed_trips, start_stop_id, end_stop_id) if end_stop_id and both_stops_same_dir else None
+        
     data = {
         'params': params,
         'route_title': route_config.title,
         'start_stop_title': start_stop_info.title if start_stop_info else None,
         'end_stop_title': end_stop_info.title if end_stop_info else None,
         'directions': directions,
-        'headway_min': metrics.get_headways_stats(headway_min),
-        'wait_times': metrics.get_wait_times_stats(waits, tz),
-        'trip_times': metrics.get_trip_times_stats(completed_trips, start_stop_id, end_stop_id)
-            if end_stop_id and both_stops_same_dir else None,
+        'headway_min': headway_min_hist,
+        'wait_times': wait_times_hist,
+        'trip_times': trip_times_hist,
     }
     return data
 
@@ -313,16 +316,7 @@ def add_intervals_to_data(intervals_arr, time_intervals, params):
         }
         try:
             curr_data = calc_metrics(calc_metrics_args)
-        except BufferError:
-            # no trains for the current time interval
-            intervals_arr.append({
-                'start_time': time_interval['start_time'],
-                'end_time': time_interval['end_time'],
-                'headway_min': None,
-                'wait_times': None,
-                'trip_times': None,
-            })
-            continue
+
         except Exception as ex:
             raise(Exception(ex))
 
