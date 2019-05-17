@@ -209,7 +209,7 @@ def metrics_by_interval():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-def calc_metrics(args, route_config):
+def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
     route_id = args['route_id']
     start_stop_id = args['start_stop_id']
     if start_stop_id is None:
@@ -324,7 +324,7 @@ def calc_metrics(args, route_config):
     }
     return data
 
-def create_intervals_list(time_intervals, params, route_config):
+def create_intervals_list(time_intervals: dict, params: dict, route_config: nextbus.RouteConfig) -> list:
     intervals_arr = []
     for time_interval in time_intervals:
         params['start_time_str'] = time_interval['start_time']
