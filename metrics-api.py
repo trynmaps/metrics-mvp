@@ -142,33 +142,43 @@ def metrics_by_interval():
         end_time = datetime.strptime(end_time_str, '%H:%M').replace(microsecond=0, second=0, minute=0) - timedelta(hours=1)
 
         hourly_time_intervals = []
-        while start_time.hour != end_time.hour:
+        while start_time.hour != end_time.hour + 1:
             curr_interval = {}
             curr_interval['start_time'] = start_time.strftime('%H:%M')
             curr_interval['end_time'] = (start_time + timedelta(seconds=3600)).strftime('%H:%M')
             hourly_time_intervals.append(curr_interval)
             start_time += timedelta(seconds=3600)
-        try:
-            add_intervals_to_data(data['intervals'], hourly_time_intervals, params)
-        except Exception as ex:
-            return Response(json.dumps({
-                'params': params,
-                'error': str(ex),
-            }, indent=2), status=400, mimetype='application/json')
-
+        
     else:
         if start_time_str or end_time_str:
             return Response(json.dumps({
                 'params': params,
                 'error': 'Need both a start and end time'
             }, indent=2), status=404, mimetype='application/json')
-        try:
-            add_intervals_to_data(data['intervals'], constants.DEFAULT_TIME_STR_INTERVALS, params)
-        except Exception as ex:
-            return Response(json.dumps({
-                'params': params,
-                'error': str(ex),
-            }, indent=2), status=400, mimetype='application/json')
+        
+        hourly_time_intervals = constants.DEFAULT_TIME_STR_INTERVALS
+    try:
+        add_intervals_to_data(data['intervals'], hourly_time_intervals, params)
+    except FileNotFoundError as ex:
+        return Response(json.dumps({
+            'params': params,
+            'error': f"Arrival history not found for route {params['route_id']} on {params['date'] or params['start_date_str']}",
+        }, indent=2), status=404, mimetype='application/json')
+    except IndexError as ex:
+        return Response(json.dumps({
+            'params': params,
+            'error': f"No arrivals found for stop {params['start_stop_id']} on route {params['route_id']} in direction {params['direction_id']} on {params['date'] or params['start_date_str']}",
+        }, indent = 2), status = 404, mimetype = 'application/json')
+    except StopNotOnRouteError as ex:
+        return Response(json.dumps({
+            'params': params,
+            'error': f"Stop {params['start_stop_id']} is not on route {params['route_id']}",
+        }, indent=2), status=404, mimetype='application/json')
+    except Exception as ex:
+        return Response(json.dumps({
+            'params for calc_metrics func': params,
+            'error': str(ex),
+        }, indent=2), status=400, mimetype='application/json')
 
 
     route_config = nextbus.get_route_config('sf-muni', route_id)
@@ -234,10 +244,7 @@ def calc_metrics(args):
         'end_time': end_time_str,
     }
 
-    try:
-        dates = util.get_dates_in_range(start_date_str, end_date_str)
-    except Exception as ex:
-        raise Exception(ex)
+    dates = util.get_dates_in_range(start_date_str, end_date_str)
 
     tz = pytz.timezone('US/Pacific')
 
@@ -331,11 +338,7 @@ def add_intervals_to_data(intervals_arr, time_intervals, params):
             'start_time_str': time_interval['start_time'],
             'end_time_str': time_interval['end_time'],
         }
-        try:
-            curr_data = calc_metrics(calc_metrics_args)
-
-        except Exception as ex:
-            raise(Exception(ex))
+        curr_data = calc_metrics(calc_metrics_args)
 
         intervals_arr.append({
             'start_time': time_interval['start_time'],
