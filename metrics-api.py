@@ -56,11 +56,10 @@ def route_config():
 @app.route('/metrics', methods=['GET'])
 def metrics_page():
     metrics_start = time.time()
-
     calc_metrics_args = {
         'start_stop_id': request.args.get('start_stop_id'),
         'end_stop_id': request.args.get('end_stop_id'),
-        'route_id': request.args.get('route_id'),
+        'route_id': request.args.get('route_id') or '12',
         'direction_id': request.args.get('direction_id'),
         'start_date_str': request.args.get('start_date'),
         'end_date_str': request.args.get('end_date'),
@@ -68,8 +67,9 @@ def metrics_page():
         'start_time_str': request.args.get('start_time'),
         'end_time_str': request.args.get('end_time'),
     }
+    route_config = nextbus.get_route_config('sf-muni', calc_metrics_args['route_id'])
     try:
-        data = calc_metrics(calc_metrics_args)
+        data = calc_metrics(calc_metrics_args, route_config)
     except FileNotFoundError as ex:
         return Response(json.dumps({
             'params': calc_metrics_args,
@@ -134,6 +134,8 @@ def metrics_by_interval():
         'end_time_str': end_time_str,
     }
 
+    route_config = nextbus.get_route_config('sf-muni', params['route_id'])
+
     data = {'intervals': []}
 
     if start_time_str is not None and end_time_str is not None:
@@ -158,7 +160,7 @@ def metrics_by_interval():
         
         hourly_time_intervals = constants.DEFAULT_TIME_STR_INTERVALS
     try:
-        add_intervals_to_data(data['intervals'], hourly_time_intervals, params)
+        add_intervals_to_data(data['intervals'], hourly_time_intervals, params, route_config)
     except FileNotFoundError as ex:
         return Response(json.dumps({
             'params': params,
@@ -180,8 +182,6 @@ def metrics_by_interval():
             'error': str(ex),
         }, indent=2), status=400, mimetype='application/json')
 
-
-    route_config = nextbus.get_route_config('sf-muni', route_id)
     start_stop_info = route_config.get_stop_info(start_stop_id)
     end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
 
@@ -208,10 +208,8 @@ def metrics_by_interval():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-def calc_metrics(args):
+def calc_metrics(args, route_config):
     route_id = args['route_id']
-    if route_id is None:
-        route_id = '12'
     start_stop_id = args['start_stop_id']
     if start_stop_id is None:
         start_stop_id = '3476'
@@ -248,7 +246,6 @@ def calc_metrics(args):
 
     tz = pytz.timezone('US/Pacific')
 
-    route_config = nextbus.get_route_config('sf-muni', route_id)
     start_stop_info = route_config.get_stop_info(start_stop_id)
     end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
 
@@ -326,7 +323,7 @@ def calc_metrics(args):
     }
     return data
 
-def add_intervals_to_data(intervals_arr, time_intervals, params):
+def add_intervals_to_data(intervals_arr, time_intervals, params, route_config):
     for time_interval in time_intervals:
         calc_metrics_args = {
             'start_stop_id': params['start_stop_id'],
@@ -338,7 +335,7 @@ def add_intervals_to_data(intervals_arr, time_intervals, params):
             'start_time_str': time_interval['start_time'],
             'end_time_str': time_interval['end_time'],
         }
-        curr_data = calc_metrics(calc_metrics_args)
+        curr_data = calc_metrics(calc_metrics_args, route_config)
 
         intervals_arr.append({
             'start_time': time_interval['start_time'],
