@@ -136,7 +136,7 @@ def metrics_by_interval():
 
     route_config = nextbus.get_route_config('sf-muni', params['route_id'])
 
-    data = {'intervals': []}
+    data = {}
 
     if start_time_str is not None and end_time_str is not None:
         # round start_time down and end_time up to allow for even intervals
@@ -160,7 +160,7 @@ def metrics_by_interval():
         
         hourly_time_intervals = constants.DEFAULT_TIME_STR_INTERVALS
     try:
-        add_intervals_to_data(data['intervals'], hourly_time_intervals, params, route_config)
+        data['intervals'] = create_intervals_list(hourly_time_intervals, params, route_config)
     except FileNotFoundError as ex:
         return Response(json.dumps({
             'params': params,
@@ -182,29 +182,30 @@ def metrics_by_interval():
             'error': str(ex),
         }, indent=2), status=400, mimetype='application/json')
 
-    start_stop_info = route_config.get_stop_info(start_stop_id)
-    end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
+    # TODO: do we need all this metadata?
+    # start_stop_info = route_config.get_stop_info(start_stop_id)
+    # end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
 
-    if direction_id is not None:
-        dir_info = route_config.get_direction_info(direction_id)
-    if dir_info is not None:
-        dir_infos = [dir_info]
-    else:
-        dir_infos = []
-    directions = [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos]
+    # if direction_id is not None:
+    #     dir_info = route_config.get_direction_info(direction_id)
+    # if dir_info is not None:
+    #     dir_infos = [dir_info]
+    # else:
+    #     dir_infos = []
+    # directions = [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos]
 
-    # 404 if the given stop isn't on the route
-    # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
-    if start_stop_info is None:
-        return Response(json.dumps({
-                'params': params,
-                'error': f"Stop {start_stop_id} is not on route {route_id}",
-            }, indent=2), status=404, mimetype='application/json')
+    # # 404 if the given stop isn't on the route
+    # # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
+    # if start_stop_info is None:
+    #     return Response(json.dumps({
+    #             'params': params,
+    #             'error': f"Stop {start_stop_id} is not on route {route_id}",
+    #         }, indent=2), status=404, mimetype='application/json')
     data['params'] = params
-    data['route_title'] = route_config.title,
-    data['start_stop_title'] = start_stop_info.title if start_stop_info else None
-    data['end_stop_title'] = end_stop_info.title if end_stop_info else None
-    data['directions'] = directions
+    # data['route_title'] = route_config.title,
+    # data['start_stop_title'] = start_stop_info.title if start_stop_info else None
+    # data['end_stop_title'] = end_stop_info.title if end_stop_info else None
+    # data['directions'] = directions
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
@@ -323,27 +324,21 @@ def calc_metrics(args, route_config):
     }
     return data
 
-def add_intervals_to_data(intervals_arr, time_intervals, params, route_config):
+def create_intervals_list(time_intervals, params, route_config):
+    intervals_arr = []
     for time_interval in time_intervals:
-        calc_metrics_args = {
-            'start_stop_id': params['start_stop_id'],
-            'end_stop_id': params['end_stop_id'],
-            'route_id': params['route_id'],
-            'direction_id': params['direction_id'],
-            'start_date_str': params['start_date_str'],
-            'end_date_str': params['end_date_str'],
-            'start_time_str': time_interval['start_time'],
-            'end_time_str': time_interval['end_time'],
-        }
-        curr_data = calc_metrics(calc_metrics_args, route_config)
+        params['start_time_str'] = time_interval['start_time']
+        params['end_time_str'] = time_interval['end_time']
+        curr_data = calc_metrics(params, route_config)
 
         intervals_arr.append({
-            'start_time': time_interval['start_time'],
-            'end_time': time_interval['end_time'],
+            'start_time': params['start_time_str'],
+            'end_time': params['end_time_str'],
             'headway_min': curr_data['headway_min'],
             'wait_times': curr_data['wait_times'],
             'trip_times': curr_data['trip_times'],
         })
+    return intervals_arr
 
 # Serve production build of React app
 # @app.route('/', defaults={'path': ''}, methods=['GET'])
