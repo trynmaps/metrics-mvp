@@ -1,15 +1,17 @@
-import React, { Component, createRef, Fragment, Link } from 'react';
+import React, { Component, createRef, Fragment } from 'react';
 import { css } from 'emotion';
 import DatePicker from 'react-date-picker';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
-import { latLngBounds } from 'leaflet';
+//import { latLngBounds } from 'leaflet';
+import * as d3 from "d3";
 
 import DropdownControl from './DropdownControl';
 
-import { Map, TileLayer, Marker, Popup, CircleMarker, Tooltip, Polyline } from 'react-leaflet'
+import { Map, TileLayer, Popup, CircleMarker, Tooltip, Polyline } from 'react-leaflet'
+import Control from 'react-leaflet-control'
 
 // todo: figure out why sometimes the zoom gets reset (probably a race condition with setState, need callback)
 // todo: make start stops clickable (equivalent to the buttons)
@@ -17,6 +19,11 @@ import { Map, TileLayer, Marker, Popup, CircleMarker, Tooltip, Polyline } from '
 // todo: nice if we can intelligently handle multiple routes at the same stop
 // todo: when pickers are used to change from stop, need to update map
 
+/**
+ * Note: leaflet seems slow when events on leaflet components change React state.  Also seems to regenerate
+ * leaflet objects so event handlers lose their context like event target.
+ * Currently trying to minimize state changes within leaflet.
+ */
 class ControlPanel extends Component {
   constructor(props) {
     super(props);
@@ -45,9 +52,8 @@ class ControlPanel extends Component {
         lng: -122.4193,
       },
       startMarkers: [],
-      hoverStartMarker: null,
-      downstreamArray: [],
       routeMarkers: [],
+      hoverMarker: null,
     }
     
     this.mapRef = createRef();
@@ -137,27 +143,46 @@ class ControlPanel extends Component {
       : this.setState({ secondStopId: firstStopId }, this.selectedStopChanged);
   }
 
-  onSelectFirstStop = (stopId) => {
-    const { directionId, secondStopId } = this.state;
+  onSelectFirstStop = (stopId, optionalSecondStopId) => {
+    const { directionId, secondStopId, startMarkers } = this.state;
     const selectedRoute = { ...this.getSelectedRouteInfo() };
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
     const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
     const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
     
     let newSecondStopId = secondStopId;
+    
+    // if and only if user clicked on a segment, we get both first and second stop ids
+    if (optionalSecondStopId) {
+       newSecondStopId = optionalSecondStopId;
+    } else {
 
-    // If the "to stop" is not set or is not valid for the current "from stop",
-    // set a default "to stop" that is some number of stops down.  If there aren't
-    // enough stops, use the end of the line.
-
-    const nStops = 5;
-
-    if (secondStopId == null || !secondStopList.includes(secondStopId)) {
+      // If the "to stop" is not set or is not valid for the current "from stop",
+      // set a default "to stop" that is some number of stops down.  If there aren't
+      // enough stops, use the end of the line.
+    
+      const nStops = 5;
+    
+      if (secondStopId == null || !secondStopList.includes(secondStopId)) {
         newSecondStopId = secondStopList.length >= nStops ? secondStopList[nStops-1] :
-            secondStopList[secondStopList.length-1];
+          secondStopList[secondStopList.length-1];
+      }
     }
-    this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList }, this.selectedStopChanged);
-    this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList }, this.selectedStopChanged);    
+    
+    // if a starting stop is selected, hide mapping of other routes
+    
+    let newStartMarkers = [];
+    if (startMarkers.length > 0) {
+      const theSelectedStartMarker = startMarkers.find(startMarker => startMarker.routeID === selectedRoute.id &&
+        startMarker.stopID === stopId);
+      newStartMarkers = [ theSelectedStartMarker ];
+    }
+    
+    this.setState({
+      firstStopId: stopId,
+      secondStopId: newSecondStopId,
+      secondStopList,
+      startMarkers: newStartMarkers }, this.selectedStopChanged);
     
   }
 
@@ -230,6 +255,8 @@ class ControlPanel extends Component {
     this.setState({
       hasLocation: true,
       latLng: e.latlng,
+      firstStopId: null,
+      secondStopId: null,
     }, this.findAndPlotStops);
     
   }   
@@ -239,7 +266,6 @@ class ControlPanel extends Component {
      
      // what if we also plot all the downstream stops
      
-     let downstreamArray = [];
      for (let stop of stops) {
          const selectedRoute = this.props.routes.find(route => route.id === stop.routeID);
          
@@ -248,15 +274,13 @@ class ControlPanel extends Component {
          const secondStopList = secondStopInfo.stops.slice(secondStopListIndex /* + 1  include starting stop */);
 
         
-         const downstreamStops = secondStopList.map(stopID => selectedRoute.stops[stopID]);
-         //downstreamArray.push(downstreamStops);
+         const downstreamStops = secondStopList.map(stopID => Object.assign(selectedRoute.stops[stopID], { stopID: stopID}));
          stop.downstreamStops = downstreamStops;
      }
     
     // to do: indicators for firstStop and secondStop 
      
      this.setState({ startMarkers: stops,
-//                     downstreamArray: downstreamArray
       });
   }
   
@@ -348,13 +372,12 @@ class ControlPanel extends Component {
     
     const stops = secondStopList.map(stopID => { return {
       stop: selectedRoute.stops[stopID],
-      stopID: stopID
+      stopID: stopID,
+      routeIndex: this.state.rout
       }
     });
      
     
-    // to do: indicators for firstStop and secondStop 
-     
     this.setState({ routeMarkers: stops });
   }
 
@@ -362,7 +385,17 @@ class ControlPanel extends Component {
 
 
 
+  fakeSpeedColor(x) {
+    return d3.interpolateRdGy(x);
+  }
+   
+  fakeSpeed(i) {
+    return Math.abs(i % 20 - 10)/10;
+  }    
 
+  fakeSpeedMax() {
+    return 15;
+  }
 
 
 
@@ -396,28 +429,22 @@ class ControlPanel extends Component {
 
 
 
-/*    const marker = this.state.hasLocation ? (
-      <Marker position={this.state.latLng} opacity="0.01">
-        <Popup>You are here</Popup>
-      </Marker>
-) : null;*/      
-
     // possible first stops near click or current location
     
     const StartMarkers = () => {  
 
-      const items = this.state.startMarkers.map(startMarker => {
+
+      const items = this.state.startMarkers.map((startMarker, index) => {
+      
         const position = [ startMarker.stop.lat, startMarker.stop.lon ];
-        return <CircleMarker key={startMarker.stopID} center={position}radius="8"
-            fillOpacity={this.state.firstStopId === startMarker.stopID ? 1.0 : 0.2}
+        const lineColor = routeColor(startMarker.routeIndex % 10); 
+        
+        return <CircleMarker key={ "startMarker-" + index } center={position}
+             radius="6" 
+             fillColor = {lineColor}
+             fillOpacity={this.state.firstStopId === startMarker.stopID ? 1.0 : 0.2}
              stroke={false}
-             onClick={ e => {
-               this.setState({routeId: startMarker.routeID,
-                 directionId: startMarker.direction.id});
-               this.onSelectFirstStop(startMarker.stopID);
-             }
-             
-             }>
+             >
           <Tooltip>
           {startMarker.routeTitle} <br/> {startMarker.direction.title}
           </Tooltip>
@@ -431,57 +458,152 @@ class ControlPanel extends Component {
       return <Fragment>{items}</Fragment>
     }
     
+    const routeColor = d3.scaleQuantize([0,9], d3.schemeCategory10);
     
-    const DownstreamMarkers = () => {  
+    const DownstreamLine = () => {  
 
       // for each start marker
       
       const items = this.state.startMarkers.map(startMarker => {
-        const routeMarkers = startMarker.downstreamStops;
+        const downstreamStops = startMarker.downstreamStops;
+        const lineColor = routeColor(startMarker.routeIndex % 10); 
         
-        // make a set of circles for the downstream stops
+        const polylines = [];
         
-        const circles = routeMarkers.map(routeMarker => {
-          const position = [ routeMarker.lat, routeMarker.lon ]; // just stops directly, was routeMarker.stop.lat
-          return <CircleMarker key={routeMarker.stopID} center={position}
-          stroke={false}
-          fillColor="red" radius="2"
-           
-          opacity="0.1">
-            </CircleMarker>
-          });
+        // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
+        // when selecting a line.  Once a line is selected, looks better to have a monolithic polyline.
+  
+  
+        // multi-polyline for line selection:
         
-        // then make a polyline connecting the stops   
-           
-        const latLngs = routeMarkers.map(routeMarker => [ routeMarker.lat, routeMarker.lon ]);
+        if (!firstStopId) {  
+               
+        for (let i=0; i < downstreamStops.length-1; i++) {
+          const latLngs = [[ downstreamStops[i].lat, downstreamStops[i].lon ],
+                           [ downstreamStops[i+1].lat, downstreamStops[i+1].lon ]];
         
-        circles.push(<Polyline
-            positions = { latLngs }
-            color="red"
-            opacity= {0.1 /*this.state.hoverStartMarker === startMarker ? 1.0 : 0.1*/}
-            onMouseOver = { e => {
-                e.target.setStyle({opacity:1});
-                //e.target.openTooltip();
-                
-                //this.setState({hoverStartMarker:  startMarker });
+          // base polyline is in line color
+          
+          polylines.push(
+            <Polyline
+              key={"poly-" + startMarker.routeID + "-" + downstreamStops[i].stopID} 
+              positions = { latLngs }
+              color = { /*firstStopId ? this.fakeSpeedColor(this.fakeSpeed(i)) :*/ lineColor } // sawtooth wave from 0-10 for fake speed
+              opacity = { firstStopId || this.state.hoverMarker === startMarker ? 0.5 : 0.5 } // if a first stop is selected use full opacity?
+              weight = { firstStopId ? 12 : 4 } // if a first stop is selected use extra weight
+              onMouseOver = { e => {
+
+                if (!firstStopId) { e.target.setStyle({opacity:1, weight:6}); }
+                                
+                /*this.setState({
+                  //hoverMarker: startMarker,
+                  infoValue: startMarker.routeTitle + " - " + startMarker.direction.title
+                });*/
+
                 return true;
+                }
+              }
+              onMouseOut = { e => {
+                  if (!firstStopId) { e.target.setStyle({opacity:0.5, weight:4}); }                
+                  //this.setState({infoValue: null});
+                  return true;                
+                } 
+              }
+
+              onClick={e => { // when this segment is clicked, plot only the stops for this route/dir by setting the first stop
+            
+                e.originalEvent.view.L.DomEvent.stopPropagation(e);          
+          
+                this.setRouteId(startMarker.routeID);
+                this.setDirectionId(startMarker.direction.id);
+                this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
               }
             }
-            onMouseOut = { e => {
-                this.setState({hoverStartMarker: null });
-                return true;                
-              }
+
+            
+            >
+            { firstStopId ? // if route was selected, show speed 
+              <Tooltip>
+                 { this.fakeSpeed(i) * this.fakeSpeedMax() } mph
+              </Tooltip>
+             :  // otherwise show route title
+              <Tooltip>
+                 {startMarker.routeTitle}<br/>{startMarker.direction.title}
+              </Tooltip>
             }
+            
+            </Polyline>);
+
+        } // end for
+        } else {
+        
+        // joined polyline as base
+        
+          let latLngs = [];
+          for (let i=0; i < downstreamStops.length; i++) {
+            latLngs.push([ downstreamStops[i].lat, downstreamStops[i].lon ]);
+          }
+        
+          // base polyline is in line color
+          
+          polylines.push(
+            <Polyline
+              key={"poly-" + startMarker.routeID } 
+              positions = { latLngs }
+              color = { /*firstStopId ? this.fakeSpeedColor(this.fakeSpeed(i)) :*/ /*lineColor*/ "white" } // sawtooth wave from 0-10 for fake speed
+              opacity = { firstStopId || this.state.hoverMarker === startMarker ? 1 : 1 } // if a first stop is selected use full opacity?
+              weight = { firstStopId ? 12 : 4 } // if a first stop is selected use extra weight
             >
             
-            <Tooltip>
-              {startMarker.routeTitle} <br/> {startMarker.direction.title}
-            </Tooltip>
-            
-             </Polyline>);
-             
-          return circles;
+            </Polyline>);
+
+              
         }
+        
+                 
+            
+        for (let i=0; i < downstreamStops.length-1; i++) {
+          const latLngs = [[ downstreamStops[i].lat, downstreamStops[i].lon ],
+                           [ downstreamStops[i+1].lat, downstreamStops[i+1].lon ]];
+            
+
+          // inner line for showing speed            
+            
+          if (firstStopId) {  
+          polylines.push(
+            <Polyline
+              key={"poly-speed-" + startMarker.routeID + "-" + downstreamStops[i].stopID} 
+              positions = { latLngs }
+              color = { this.fakeSpeedColor(this.fakeSpeed(i))  } // sawtooth wave from 0-10 for fake speed
+              opacity = { 1 }
+              weight = { 5 }
+
+
+              onClick={e => { // when this segment is clicked, plot only the stops for this route/dir by setting the first stop
+            
+                e.originalEvent.view.L.DomEvent.stopPropagation(e);          
+          
+                this.setRouteId(startMarker.routeID);
+                this.setDirectionId(startMarker.direction.id);
+                this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
+              }
+            }
+
+            
+            >
+            {
+              <Tooltip>
+                 { this.fakeSpeed(i) * this.fakeSpeedMax() } mph
+              </Tooltip>
+            
+            }
+            </Polyline>);
+
+            }          
+            
+        } // end for     
+        return polylines;
+      }
            
            
       );
@@ -490,27 +612,46 @@ class ControlPanel extends Component {
     
 
     // stops along the selected route from the first stop 
+    // represented by clickable outlines of circles
     
     const RouteMarkers = () => {  
 
+      if (!this.state.firstStopId) { return null; }
+
+      const selectedRoute = this.getSelectedRouteInfo();
+
+      const routeIndex = this.props.routes.indexOf(selectedRoute);
+      const lineColor = routeColor(routeIndex % 10); 
+
       const items = this.state.routeMarkers.map(routeMarker => {
         const position = [ routeMarker.stop.lat, routeMarker.stop.lon ];
-        return <CircleMarker key={routeMarker.stopID} center={position}
-          fillOpacity={this.state.secondStopId === routeMarker.stopID ? 1.0 : 0.2}
-          stroke={false}
-          fillColor="red" radius="8"
+        return <CircleMarker key={routeMarker.stopID + "R"} center={position}
+          stroke={ this.state.secondStopId === routeMarker.stopID ? true : false}
+          color={ "black"}
+          fillColor={ lineColor }
+          fillOpacity={this.state.secondStopId === routeMarker.stopID ? 1 : 0}
+          radius= { routeMarker === this.state.routeMarkers[this.state.routeMarkers.length-1] ? 4 : 4 } // last stop is bigger?
           onClick={e => {
               e.originalEvent.view.L.DomEvent.stopPropagation(e)          
               this.onSelectSecondStop(routeMarker.stopID);
             }
           }>
+          
+          { firstStopId ?  // show stop title if route is selected 
+          <Tooltip>
+          { routeMarker.stop.title
+          }
+          </Tooltip>          
+          : null }
         </CircleMarker>
       });
       return <Fragment>{items}</Fragment>
     }
 
  
-    const FromButtons = () => {  
+    const FromButtons = () => {
+    
+    return null; // don't need these?  
 
       const items = this.state.startMarkers.map(startMarker => {
         return <Button variant="secondary" key={startMarker.stopID}
@@ -525,6 +666,38 @@ class ControlPanel extends Component {
           </Button>
       });
       return <Fragment>{items}</Fragment>
+    }
+    
+    const FakeLegend = () => {
+    
+      let items = [];
+                
+      const fakeColorValues = [0, 0.25, 0.50, 0.75, 1.0];
+      
+      for (let fakeColorValue of fakeColorValues) {
+        items.push(
+        <div key={fakeColorValue}>
+          <i style={{
+            backgroundColor: this.fakeSpeedColor(fakeColorValue),
+            width: 18,
+            float: "left"
+            
+            }} >&nbsp;</i> &nbsp;
+          { Math.round(fakeColorValue * this.fakeSpeedMax(), 1) }
+        </div>
+        );
+      }
+      
+      return <Control position="topright">
+                  <div
+                    style={{
+                        backgroundColor: 'white',
+                        padding: '5px',
+                    }}
+                > Speed (mph)
+                { items }
+                </div>
+            </Control> 
     }
  
  
@@ -688,14 +861,16 @@ class ControlPanel extends Component {
           attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           //url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           url="http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png"
-          opacity={0.5}
+          opacity={0.3}
         /> {/* see http://maps.stamen.com for details */}
         {/*marker*/}
-        <StartMarkers/>
-        <DownstreamMarkers/>
+        <DownstreamLine/>
         <RouteMarkers/>
-        
-</Map>          
+        <StartMarkers/>
+        { this.state.firstStopId ? <FakeLegend/> : null }
+       
+
+      </Map>          
           
           <ListGroup variant="flush">
           <div className={css`max-height:300px; overflow:scroll;`}>

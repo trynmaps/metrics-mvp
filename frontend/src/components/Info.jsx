@@ -218,7 +218,7 @@ class Info extends Component {
         `
         }
       >
-        {headwayMin
+        {headwayMin && tripTimes
           ? (<div>
             <Card><Card.Body>
             <span className="h4">Overall Grade: </span><span className="h1">{grades.totalGrade}</span> ( {grades.totalScore} / {grades.highestPossibleScore} )
