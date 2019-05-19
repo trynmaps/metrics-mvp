@@ -7,7 +7,7 @@
    integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
    crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
-<script src="common.js?v7"></script>
+<script src="common.js?v9"></script>
 </head>
 <style type='text/css'>
 #mapid { height: 100%; }
@@ -555,14 +555,26 @@ function selectAllRoutes(checked)
 loadJson('/routes').then(function(routes) {
 
     for (var route of routes) {
+
+        var defaultEnabled = defaultDisabledRoutes.indexOf(route.id) == -1;
+        //var defaultEnabled = defaultEnabledRoutes.indexOf(route.id) != -1;
+        if (defaultEnabled)
+        {
+            // preload route data before user clicks
+            loadRoute(route.id)
+                .then(function(routeInfo) {})
+                .catch(function(e) {
+                    console.log("error preloading route config: " + e);
+                });
+        }
+
         var routeContainer = document.createElement('div');
         var label = document.createElement('label');
         routeContainer.appendChild(label);
         var routeCheckbox = document.createElement('input');
         routeCheckbox.type = 'checkbox';
         routeCheckbox.value = route.id;
-        //routeCheckbox.checked = defaultEnabledRoutes.indexOf(route.id) != -1 ? 'checked' : '';
-        routeCheckbox.checked = defaultDisabledRoutes.indexOf(route.id) == -1 ? 'checked' : '';
+        routeCheckbox.checked = defaultEnabled ? 'checked' : '';
 
         routeCheckbox.addEventListener('click', function(e) {
             recomputeIsochrones();

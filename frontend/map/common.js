@@ -29,7 +29,7 @@ function loadRoute(routeId)
     }
     else
     {
-        return loadJson("/route?route_id=" + routeId)
+        return loadJson("/route?x=2&route_id=" + routeId)
             .then(function(routeInfo) {
                 routesMap[routeId] = routeInfo;
                 return routeInfo;
