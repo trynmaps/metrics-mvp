@@ -2,6 +2,7 @@
 # Created by https://www.gitignore.io/api/node,macos,flask,python,eclipse,intellij
 # Edit at https://www.gitignore.io/?templates=node,macos,flask,python,eclipse,intellij
 
+# local cache
 data/*.json
 data/*.csv
 
@@ -78,10 +79,6 @@ local.properties
 instance/*
 !instance/.gitignore
 .webassets-cache
-
-# local cache
-data/*.json
-data/*.csv
 
 ### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files

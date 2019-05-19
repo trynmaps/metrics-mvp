@@ -241,7 +241,7 @@ def cached_wait_times():
         date_str = '2019-04-08'
     if re.match('^[\w\-]+$', date_str) is None:
         raise Exception(f"Invalid date: {date_str}")
-    return get_cached_json_file_from_s3(f'wait_times_t1_sf-muni_{date_str}.json')
+    return get_cached_json_file_from_s3(f'wait_times_t2_sf-muni_{date_str}.json')
 
 @app.route('/locations', methods=['GET'])
 def cached_locations():

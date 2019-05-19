@@ -38,9 +38,12 @@ if __name__ == '__main__':
             print(ex)
             continue
 
+        route_wait_times = {}
+        all_wait_times[route_id] = route_wait_times
+
         for dir_info in route_config.get_direction_infos():
             dir_wait_times = {}
-            all_wait_times[dir_info.id] = dir_wait_times
+            route_wait_times[dir_info.id] = dir_wait_times
 
             stop_ids = dir_info.get_stop_ids()
 
@@ -55,5 +58,5 @@ if __name__ == '__main__':
 
     data_str = json.dumps(all_wait_times)
 
-    with open(f'{util.get_data_dir()}/wait_times_t1_sf-muni_{str(d)}.json', "w") as f:
+    with open(f'{util.get_data_dir()}/wait_times_t2_sf-muni_{str(d)}.json', "w") as f:
         f.write(data_str)
