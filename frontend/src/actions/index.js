@@ -46,3 +46,118 @@ export function fetchRouteConfig(routeId) {
     });
   };
 }
+
+export function fetchAllRouteConfigs(routes) {
+    
+    
+    return function (dispatch) {
+        
+        for (let i = 0; i < routes.length; i++) { // optimize this on back end
+            const route = routes[i];
+            if (!route.directions) {
+              dispatch(fetchRouteConfig(route.id));
+            }
+        }
+        return Promise.resolve();
+    };
+  }
+
+export function fetchTazs() {
+  return function (dispatch) {
+    axios.get('/data/san_francisco_taz.json', {
+      xxxbaseURL: metricsBaseURL
+    }).then((response) => {
+      dispatch({ type: 'RECEIVED_TAZS', payload: response.data });
+    }).catch((err) => {
+      dispatch({ type: 'RECEIVED_TAZS_ERROR', payload: err });
+    });
+  };
+}
+
+export function fetchTrips() {
+    return function (dispatch) {
+      axios.get('/data/trips.txt', {
+        xxxbaseURL: metricsBaseURL
+      }).then((response) => {
+        dispatch({ type: 'RECEIVED_TRIPS', payload: response.data });
+      }).catch((err) => {
+        dispatch({ type: 'RECEIVED_TRIPS_ERROR', payload: err });
+      });
+    };
+  }
+
+export function fetchRouteCSVs() {
+    return function (dispatch) {
+      axios.get('/data/routes.txt', {
+        xxxbaseURL: metricsBaseURL
+      }).then((response) => {
+        dispatch({ type: 'RECEIVED_ROUTE_CSVS', payload: response.data });
+      }).catch((err) => {
+        dispatch({ type: 'RECEIVED_ROUTE_CSVS_ERROR', payload: err });
+      });
+    };
+  }
+
+
+export function fetchShapes() {
+    return function (dispatch) {
+      axios.get('/data/shapes.txt', {
+        xxxbaseURL: metricsBaseURL
+      }).then((response) => {
+        dispatch({ type: 'RECEIVED_SHAPES', payload: response.data });
+      }).catch((err) => {
+        dispatch({ type: 'RECEIVED_SHAPES_ERROR', payload: err });
+      });
+    };
+  }
+
+// these are by route id hash then direction id hash, then first stop hash, then second stop hash, in minutes
+export function fetchTripTimes() {
+    return function (dispatch) {
+      axios.get('data/trip_times_t1_sf-muni_2019-04-08.json', { // todo: figure out allowing cross origin request
+        xxxbaseURL: metricsBaseURL
+      }).then((response) => {
+        dispatch({ type: 'RECEIVED_TRIP_TIMES', payload: response.data });
+      }).catch((err) => {
+        dispatch({ type: 'RECEIVED_TRIP_TIMES_ERROR', payload: err });
+      });
+    };
+  }
+
+// these are by direction id hash and then stop id hash, in minutes
+export function fetchWaitTimes() {
+    return function (dispatch) {
+      axios.get('data/wait_times_t1_sf-muni_2019-04-08.json', { // todo: figure out allowing cross origin request
+        xxxbaseURL: metricsBaseURL
+      }).then((response) => {
+        dispatch({ type: 'RECEIVED_WAIT_TIMES', payload: response.data });
+      }).catch((err) => {
+        dispatch({ type: 'RECEIVED_WAIT_TIMES_ERROR', payload: err });
+      });
+    };
+  }
+
+
+
+export function fetchAllTheThings() {
+    return function (dispatch) {
+        
+            axios.get('/routes', {
+              baseURL: metricsBaseURL
+            }).then((response) => {
+              dispatch({ type: 'RECEIVED_ROUTES', payload: response.data });
+              dispatch(fetchAllRouteConfigs(response.data)).then(
+                      () => {
+                          dispatch(fetchTrips());
+                          dispatch(fetchRouteCSVs());
+                          dispatch(fetchShapes());
+                          dispatch(fetchTripTimes());
+                          dispatch(fetchWaitTimes());
+                      }
+                      );
+            }).catch((err) => {
+              dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });
+            });
+                  
+    };
+  }

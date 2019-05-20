@@ -211,14 +211,8 @@ class Info extends Component {
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
 
     return (
-      <div
-        className={css`
-         grid-column: col3-start ;
-         grid-row: row1-start / row2-end;
-        `
-        }
-      >
-        {headwayMin && tripTimes
+            <div>
+        { headwayMin && tripTimes
           ? (<div>
             <Card><Card.Body>
             <span className="h4">Overall Grade: </span><span className="h1">{grades.totalGrade}</span> ( {grades.totalScore} / {grades.highestPossibleScore} )
@@ -322,7 +316,8 @@ class Info extends Component {
         <code>
           {graphError || ''}
         </code>
-      </div>
+
+        </div>
     );
   }
 }
