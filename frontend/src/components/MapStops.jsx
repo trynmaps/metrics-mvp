@@ -5,9 +5,9 @@ import {
 } from 'react-leaflet';
 
 const INBOUND_COLOR = 'blue';
-const INBOUND_RADIUS = 15;
+const INBOUND_RADIUS = 4;
 const OUTBOUND_COLOR = 'red';
-const OUTBOUND_RADIUS = 15;
+const OUTBOUND_RADIUS = 4;
 const SF_COORDINATES = {lat : 37.7793, lng: -122.419};
 const ZOOM = 13;
 
@@ -20,7 +20,7 @@ class MapStops extends Component {
   render() {
     const { position, zoom, inboundColor, inboundRadius, outboundColor, outboundRadius } = this.props;
 
-    const mapClass = { width: '400px', height: '400px' };
+    const mapClass = { width: '500px', height: '500px' };
     const { routeStops } = this.props;
     return (
       <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}>
