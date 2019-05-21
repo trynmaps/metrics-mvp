@@ -7,6 +7,7 @@ import * as d3 from "d3";
 import { XYPlot, HorizontalGridLines, VerticalGridLines, XAxis, YAxis,
   LineSeries, ChartLabel, Crosshair } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
+import '../../node_modules/react-vis/dist/style.css';
   
 class RouteSummary extends Component {
   constructor(props) {
