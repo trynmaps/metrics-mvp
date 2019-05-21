@@ -56,16 +56,40 @@ def route_config():
 @app.route('/metrics', methods=['GET'])
 def metrics_page():
     metrics_start = time.time()
+    route_id = request.args.get('route_id')
+    if route_id is None:
+        route_id = '12'
+    start_stop_id = request.args.get('start_stop_id')
+    if start_stop_id is None:
+        start_stop_id = '3476'
+    end_stop_id = request.args.get('end_stop_id')
+
+    direction_id = request.args.get('direction_id')
+
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    date_str = request.args.get('date')
+
+    if date_str is not None:
+        start_date_str = end_date_str = date_str
+    else:
+        if start_date_str is None:
+            start_date_str = '2019-04-08'
+        if end_date_str is None:
+            end_date_str = start_date_str
+
+    start_time_str = request.args.get('start_time') # e.g. "14:00" (24h time of day)
+    end_time_str = request.args.get('end_time') # e.g. "18:00" (24h time of day)
     calc_metrics_args = {
-        'start_stop_id': request.args.get('start_stop_id'),
-        'end_stop_id': request.args.get('end_stop_id'),
-        'route_id': request.args.get('route_id') or '12',
-        'direction_id': request.args.get('direction_id'),
-        'start_date_str': request.args.get('start_date'),
-        'end_date_str': request.args.get('end_date'),
-        'date': request.args.get('date'),
-        'start_time_str': request.args.get('start_time'),
-        'end_time_str': request.args.get('end_time'),
+        'start_stop_id': start_stop_id,
+        'end_stop_id': end_stop_id,
+        'route_id': route_id,
+        'direction_id': direction_id,
+        'start_date_str': start_date_str,
+        'end_date_str': end_date_str,
+        'date': date_str,
+        'start_time_str': start_time_str,
+        'end_time_str': end_time_str,
     }
     route_config = nextbus.get_route_config('sf-muni', calc_metrics_args['route_id'])
     try:
@@ -134,6 +158,12 @@ def metrics_by_interval():
         'end_time_str': end_time_str,
     }
 
+    if direction_id is None:
+        return Response(json.dumps({
+            'params': params,
+            'error': 'direction_id not found ',
+        }, indent=2), status=400, mimetype='application/json')
+
     route_config = nextbus.get_route_config('sf-muni', params['route_id'])
 
     data = {}
@@ -178,57 +208,22 @@ def metrics_by_interval():
         }, indent=2), status=404, mimetype='application/json')
     except Exception as ex:
         return Response(json.dumps({
-            'params for calc_metrics func': params,
+            'params': params,
             'error': str(ex),
         }, indent=2), status=400, mimetype='application/json')
 
-    # TODO: do we need all this metadata?
-    # start_stop_info = route_config.get_stop_info(start_stop_id)
-    # end_stop_info = route_config.get_stop_info(end_stop_id) if end_stop_id else None
-
-    # if direction_id is not None:
-    #     dir_info = route_config.get_direction_info(direction_id)
-    # if dir_info is not None:
-    #     dir_infos = [dir_info]
-    # else:
-    #     dir_infos = []
-    # directions = [{'id': dir_info.id, 'title': dir_info.title} for dir_info in dir_infos]
-
-    # # 404 if the given stop isn't on the route
-    # # TODO: what should be done for the case where the start stop id is valid but the end stop id isn't?
-    # if start_stop_info is None:
-    #     return Response(json.dumps({
-    #             'params': params,
-    #             'error': f"Stop {start_stop_id} is not on route {route_id}",
-    #         }, indent=2), status=404, mimetype='application/json')
     data['params'] = params
-    # data['route_title'] = route_config.title,
-    # data['start_stop_title'] = start_stop_info.title if start_stop_info else None
-    # data['end_stop_title'] = end_stop_info.title if end_stop_info else None
-    # data['directions'] = directions
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
 def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
     route_id = args['route_id']
     start_stop_id = args['start_stop_id']
-    if start_stop_id is None:
-        start_stop_id = '3476'
     end_stop_id = args['end_stop_id']
-
     direction_id = args['direction_id']
-
     start_date_str = args['start_date_str']
     end_date_str = args['end_date_str']
     date_str = args.get('date')
-    if date_str is not None:
-        start_date_str = end_date_str = date_str
-    else:
-        if start_date_str is None:
-            start_date_str = '2019-02-01'
-        if end_date_str is None:
-            end_date_str = start_date_str
-
     start_time_str = args['start_time_str'] # e.g. "14:00" (24h time of day)
     end_time_str = args['end_time_str'] # e.g. "18:00" (24h time of day)
 
