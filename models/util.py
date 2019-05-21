@@ -44,3 +44,11 @@ def get_localized_datetime(d: date, time_str: str):
         return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"))
     except ValueError:
         return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M"))
+
+# get time string from the timestamps
+def get_time_isoformat(t: float):
+    second = "{:02d}".format(int(t) % 60)
+    minute = "{:02d}".format((int(t) // 60) % 60)
+    hour = "{:02d}".format((int(t) // 60 * 60) % 24)
+
+    return f"{hour}:{minute}:{second}"

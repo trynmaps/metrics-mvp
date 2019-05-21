@@ -3,9 +3,10 @@ from datetime import datetime, date
 import argparse
 
 import pandas as pd
+import numpy as np
 import partridge as ptg
 
-from models import metrics, timetable, arrival_history, nextbus
+from models import metrics, timetable, arrival_history, nextbus, util
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Get the timetable for stops on a given route")
@@ -13,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("--stops", required = True, help = "Comma-separated list of stops on the route (ex '3413,4416'")
     parser.add_argument("--date", required = True, help = "Date - YYYY-MM-DD")
     parser.add_argument("--comparison", help = "option to compare timetables to actual data - true or false")
-    parser.add_argument("--threshold", help = "threshold, in minutes for on-time adherence for comparison")
+    parser.add_argument("--thresholds", help = "comma-separated list of thresholds to define late/very late arrivals (ex '5,10')")
 
     args = parser.parse_args()
     route = args.route
@@ -27,11 +28,11 @@ if __name__ == "__main__":
     else:
         raise Exception("comparison must be true or false")
 
-    threshold = 5 if args.threshold is None else int(args.threshold)
+    thresholds = [5, 10] if args.thresholds is None else [int(x) for x in args.thresholds.split(',') if len(x) > 0]
 
-    inpath = "data"
+    inpath = util.get_data_dir()
     agency = "sf-muni"
-
+    
     start_time = datetime.now()
     print(f"Start: {start_time}")
 
@@ -49,67 +50,71 @@ if __name__ == "__main__":
                 
                 if comparison:
                     # get dummy data for now
-                    ah = arrival_history.get_by_date(agency, route, date(2019, 4, 8), version = "v3")
-
+                    ah = arrival_history.get_by_date(agency, route, date(2019, 4, 8))
                     df = ah.get_data_frame(stop_id = stop, direction_id = direction)
 
                     if len(df) > 0:
                         stops_df = metrics.compare_timetable_to_actual(tt, df, direction)
 
                         if len(stops_df) > 0:
-                            print("-----------")
-                            print("Comparison of timetable schedule and actual arrival data:")
-                            print(f"Actual Arrival | Closest Scheduled | {'Delta'.ljust(9)} | First Scheduled After Arrival | {'Delta'.ljust(9)}")
-                            for row in stops_df.itertuples():
-                                actual_arrival = row[1].time().isoformat()
-                                closest_scheduled = row[2].time().isoformat()
-                                closest_delta = f"{round(row[3], 1)} min"
-                                first_after = row[4].time().isoformat()
-                                first_after_delta = f"{round(row[5], 1)} min"
+                            stops_df = stops_df.rename({
+                                "actual_arrival_time": "Actual Arrival",
+                                "closest_scheduled_arrival": "Closest Scheduled",
+                                "closest_delta": "Delta (Closest Scheduled)",
+                                "first_scheduled_after_arrival": "First Scheduled After Arrival",
+                                "first_after_delta": "Delta (First Scheduled After)",
+                                "headway": "Actual Headway",
+                                "closest_scheduled_headway": "Closest Scheduled Headway",
+                                "closest_headway_delta": "Delta (Closest Headway)",
+                                "closest_first_after_headway": "First After Arrival Headway",
+                                "first_headway_delta": "Delta (First After Headway)"
+                            }, axis = "columns")
+                            
+                            times_df = stops_df[["Actual Arrival", "Closest Scheduled", "Delta (Closest Scheduled)", "First Scheduled After Arrival", "Delta (First Scheduled After)"]].copy(deep = True)
+                            times_df[["Actual Arrival", "Closest Scheduled", "First Scheduled After Arrival"]] = times_df[["Actual Arrival", "Closest Scheduled", "First Scheduled After Arrival"]].applymap(lambda x: x.time() if not pd.isna(x) else np.nan)
+                            times_df[["Delta (Closest Scheduled)", "Delta (First Scheduled After)"]] = times_df[["Delta (Closest Scheduled)", "Delta (First Scheduled After)"]].applymap(lambda x: f"{round(x, 1)} min")
 
-                                print(f"{actual_arrival.ljust(14)} | {closest_scheduled.ljust(17)} | {closest_delta.ljust(9)} | {first_after.ljust(29)} | {first_after_delta.ljust(9)}")
+                            headways_df = stops_df[["Actual Arrival", "Actual Headway", "Closest Scheduled Headway", "Delta (Closest Headway)", "First After Arrival Headway", "Delta (First After Headway)"]].copy(deep = True)
+                            headways_df["Actual Arrival"] = headways_df["Actual Arrival"].apply(lambda x: x.time() if not pd.isna(x) else np.nan)
+                            headways_df[["Actual Headway", "Closest Scheduled Headway", "Delta (Closest Headway)", "First After Arrival Headway", "Delta (First After Headway)"]] = headways_df[["Actual Headway", "Closest Scheduled Headway", "Delta (Closest Headway)", "First After Arrival Headway", "Delta (First After Headway)"]].applymap(lambda x: f"{round(x, 2) if not pd.isna(x) else np.nan} min")
 
-                            print("-----------")
-                            print(stops_df[["closest_delta", "first_after_delta"]].describe().applymap(lambda x: round(x, 2)).rename({
-                                "closest_delta" : "Delta (Closest Scheduled)", 
-                                "first_after_delta" : "Delta (First Scheduled After)"
+                            with pd.option_context("display.max_rows", None, "display.max_columns", None, 'display.expand_frame_repr', False):
+                                print("-----------")
+                                print("Comparison of timetable schedule and actual arrival data:")
+                                print(times_df.rename({
+                                    "Delta (Closest Scheduled)": "Delta",
+                                    "Delta (First Scheduled After)": "Delta"
                                 }, axis = "columns"))
-                            print("-----------")
 
-                            compared_metrics = metrics.compare_delta_metrics(stops_df["closest_delta"], threshold)
+                                print("-----------")
+                                print(stops_df[["Delta (Closest Scheduled)", "Delta (First Scheduled After)"]].describe().applymap(lambda x: round(x, 2)))
+                                print("-----------")
 
-                            print("Comparison between arrival time and closest scheduled time:")
-                            for k, v in compared_metrics.items():
-                                print(f"{k}: {round(v, 1)}%")
+                                compared_metrics = metrics.compare_delta_metrics(stops_df["Delta (Closest Scheduled)"], thresholds)
 
-                            print(f"First arrival: {stops_df['actual_arrival_time'].min().time().isoformat()}")
-                            print(f"Last arrival: {stops_df['actual_arrival_time'].max().time().isoformat()}")
-                            print("-----------")
+                                print("Comparison between arrival time and closest scheduled time:")
+                                for k, v in compared_metrics.items():
+                                    print(f"{k}: {round(v, 1)}%")
 
-                            print("Comparison between arrival headways and closest scheduled time headways:")
-                            print(f"Actual Arrival | Actual Headway | Closest Scheduled Headway | {'Delta'.ljust(9)} | First After Arrival Headway | {'Delta'.ljust(9)}")
-                            for row in stops_df.itertuples():
-                                actual_arrival = row[1].time().isoformat()
-                                actual_headway = f"{round(row[6], 1)} min"
-                                closest_scheduled_headway = f"{round(row[7], 1)} min"
-                                closest_headway_delta = f"{round(row[8], 1)} min"
-                                first_after_headway = f"{round(row[9], 1)} min"
-                                first_after_headway_delta = f"{round(row[10], 1)} min"
+                                print(f"First arrival: {stops_df['Actual Arrival'].min().time().isoformat()}")
+                                print(f"Last arrival: {stops_df['Actual Arrival'].max().time().isoformat()}")
+                                print("-----------")
 
-                                print(f"{actual_arrival.ljust(14)} | {actual_headway.ljust(14)} | {closest_scheduled_headway.ljust(25)} | {closest_headway_delta.ljust(9)} | {first_after_headway.ljust(28)} | {first_after_headway_delta.ljust(9)}")
-                            print("-----------")
+                                print("Comparison between arrival headways and closest scheduled time headways:")
 
-                            compared_headway_metrics = metrics.compare_delta_metrics(stops_df["closest_headway_delta"], threshold)
-
-                            print(stops_df[["headway", "closest_headway_delta", "first_headway_delta"]].describe().applymap(lambda x: round(x, 2)).rename({
-                                "headway" : "Actual Headway",
-                                "closest_headway_delta" : "Headway Delta (Closest Scheduled)", 
-                                "first_headway_delta" : "Headway Delta (First Scheduled After)"
+                                print(headways_df.rename({
+                                    "Delta (Closest Headway)": "Delta",
+                                    "Delta (First After Headway)": "Delta"
                                 }, axis = "columns"))
-                            print("-----------")
+                                print("-----------")
 
-                            for k, v in compared_headway_metrics.items():
-                                print(f"{k}: {round(v, 1)}%")
+                                compared_headway_metrics = metrics.compare_delta_metrics(stops_df["Delta (Closest Headway)"], thresholds)
+
+                                print(stops_df[["Actual Headway", "Delta (Closest Headway)", "Delta (First After Headway)"]].describe().applymap(lambda x: round(x, 2)))
+                                print("-----------")
+
+                                for k, v in compared_headway_metrics.items():
+                                    print(f"{k}: {round(v, 1)}%")
                     else:
                         print(f"Comparison failed - no arrival data was found for {stop}.")
 
