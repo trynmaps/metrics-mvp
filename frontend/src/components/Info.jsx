@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import { css } from 'emotion';
 import { BarChart } from 'react-d3-components';
 import Card from 'react-bootstrap/Card';
+import InfoIntervalsOfDay from './InfoIntervalsOfDay';
+import { getPercentileValue } from '../helpers/graphData'; 
+import { PLANNING_PERCENTILE } from '../UIConstants';
 import * as d3 from 'd3';
 
 class Info extends Component {
@@ -9,20 +12,7 @@ class Info extends Component {
     super(props);
     this.state = 0;
   }
-
-
-  /**
-   * Helper method to get a specific percentile out of histogram graph data
-   * where percentile is 0-100.
-   */
-  getPercentileValue(histogram, percentile) {
-    const bin = histogram.percentiles.find(x => x.percentile === percentile);
-    if (bin) {
-      return bin.value;
-    }
-    return 0;
-  }
-
+  
   computeGrades(headwayMin, waitTimes, tripTimes, speed) {
     //
     // grade and score for average wait
@@ -78,12 +68,12 @@ class Info extends Component {
     //
     // grade score for travel time variability
     //
-    // where variance is 90th percentile time minus average time
+    // where variance is planning percentile time minus average time
     //
 
     let travelVarianceTime = 0;
     if (tripTimes) {
-      travelVarianceTime = this.getPercentileValue(tripTimes, 90) - tripTimes.avg;
+      travelVarianceTime = getPercentileValue(tripTimes, PLANNING_PERCENTILE) - tripTimes.avg;
     }
 
     const travelVarianceScoreScale = d3.scaleLinear()
@@ -201,7 +191,7 @@ class Info extends Component {
 
   render() {
     const {
-      graphData, graphError, graphParams, routes,
+      graphData, graphError, graphParams, intervalData, intervalError, routes,
     } = this.props;
 
     const headwayMin = graphData ? graphData.headway_min : null;
@@ -253,9 +243,9 @@ class Info extends Component {
                           {' '}
 minutes
                           <br />
-            90% of waits under
+                          {PLANNING_PERCENTILE}% of waits under
                           {' '}
-                          { Math.round(this.getPercentileValue(waitTimes, 90)) }
+                          { Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE)) }
                           {' '}
 minutes
                         </td>
@@ -305,9 +295,9 @@ mph)
                       <tr>
                         <td>Travel variability</td>
                         <td>
-            90% of trips take
+            {PLANNING_PERCENTILE}% of trips take
                           {' '}
-                          { Math.round(this.getPercentileValue(tripTimes, 90)) }
+                          { Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE)) }
                           {' '}
 minutes
 
@@ -327,6 +317,8 @@ minutes
                   </table>
                 </Card.Body>
               </Card>
+
+              <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />            
 
               <p />
 

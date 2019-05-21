@@ -154,6 +154,7 @@ def metrics_by_interval():
         'direction_id': direction_id,
         'start_date_str': start_date_str,
         'end_date_str': end_date_str,
+        'date': date_str,
         'start_time_str': start_time_str,
         'end_time_str': end_time_str,
     }
