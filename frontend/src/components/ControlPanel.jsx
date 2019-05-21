@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { css } from 'emotion';
 import DatePicker from 'react-date-picker';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
+import {handleRouteSelect} from '../actions';
 
 import DropdownControl from './DropdownControl';
+import './ControlPanel.css';
 
 class ControlPanel extends Component {
   constructor(props) {
@@ -106,11 +109,13 @@ class ControlPanel extends Component {
   }
 
   selectedRouteChanged = () => {
+    const {onRouteSelect} = this.props;
     const { routeId } = this.state;
     const selectedRoute = this.getSelectedRouteInfo();
     if (!selectedRoute) {
       return;
     }
+    //onRouteSelect(selectedRoute);
     if (!selectedRoute.directions) {
       this.setDirectionId(null);
       this.props.fetchRouteConfig(routeId);
@@ -120,7 +125,14 @@ class ControlPanel extends Component {
     }
   }
 
-  getStopsInfoInGivenDirection = (selectedRoute, directionId) => selectedRoute.directions.find(dir => dir.id === directionId);
+  getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
+    return selectedRoute.directions.find(dir => dir.id === directionId);
+  }
+  getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
+    const stopSids= selectedRoute.directions.find(dir => dir.name === name);
+    return stopSids.stops.map(stop => selectedRoute.stops[stop]);
+    
+  }
 
   selectedDirectionChanged = () => {
     const { firstStopId, directionId } = this.state;
@@ -147,7 +159,15 @@ class ControlPanel extends Component {
     const { routeId } = this.state;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
-
+  sendRouteStopsToMap = () => {
+    const {directionId} = this.state;
+    const {onRouteSelect} = this.props;
+    const selectedRoute = this.getSelectedRouteInfo();
+    onRouteSelect({
+      'Inbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
+      'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
+    });
+  }
   // toggleTimekeeper(val) {
   //   // this.setState({ displayTimepicker: val });
   // }
@@ -161,8 +181,12 @@ class ControlPanel extends Component {
     const timeRange = (startTimeStr || endTimeStr) ? (startTimeStr + '-' + endTimeStr) : '';
 
     const selectedRoute = this.getSelectedRouteInfo();
-    const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
-      ? selectedRoute.directions.find(dir => dir.id === directionId) : null;
+    let selectedDirection =null;
+    if (selectedRoute && selectedRoute.directions && directionId) {
+      selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
+      this.sendRouteStopsToMap();
+    }
+    
     return (
       <div className={css`
           color: #fff;
@@ -207,20 +231,22 @@ class ControlPanel extends Component {
           />
         </ListGroup.Item>
           <ListGroup variant="flush">
-            <ListGroup.Item>
-              <DropdownControl
-                title="Route"
-                name="route"
-                variant="info"
-                value={routeId}
-                options={
-                  (routes || []).map(route => ({
-                    label: route.title, key: route.id,
-                  }))
-                }
-                onSelect={this.setRouteId}
-              />
-            </ListGroup.Item>
+            <div className="dropDownOverlay">
+              <ListGroup.Item>
+                <DropdownControl
+                  title="Route"
+                  name="route"
+                  variant="info"
+                  value={routeId}
+                  options={
+                    (routes || []).map(route => ({
+                      label: route.title, key: route.id,
+                    }))
+                  }
+                  onSelect={this.setRouteId}
+                />
+              </ListGroup.Item>
+            </div>
             { selectedRoute
               ? (
                 <ListGroup.Item>
@@ -241,40 +267,44 @@ class ControlPanel extends Component {
             }
             { (selectedDirection)
               ? (
-                <ListGroup.Item>
-                  <DropdownControl
-                    title="From Stop"
-                    name="stop"
-                    variant="info"
-                    value={firstStopId}
-                    onSelect={this.onSelectFirstStop}
-                    options={
-                  (selectedDirection.stops || []).map(firstStopId => ({
-                    label: (selectedRoute.stops[firstStopId] || { title: firstStopId }).title,
-                    key: firstStopId,
-                  }))
-                }
-                  />
-                </ListGroup.Item>
+                <div className="dropDownOverlay">
+                  <ListGroup.Item>
+                    <DropdownControl
+                      title="From Stop"
+                      name="stop"
+                      variant="info"
+                      value={firstStopId}
+                      onSelect={this.onSelectFirstStop}
+                      options={
+                    (selectedDirection.stops || []).map(firstStopId => ({
+                      label: (selectedRoute.stops[firstStopId] || { title: firstStopId }).title,
+                      key: firstStopId,
+                    }))
+                  }
+                    />
+                  </ListGroup.Item>
+                </div>
               ) : null
             }
             { (selectedDirection)
               ? (
-                <ListGroup.Item>
-                  <DropdownControl
-                    title="To Stop"
-                    name="stop"
-                    variant="info"
-                    value={secondStopId}
-                    onSelect={this.onSelectSecondStop}
-                    options={
-                  (secondStopList || []).map(secondStopId => ({
-                    label: (selectedRoute.stops[secondStopId] || { title: secondStopId }).title,
-                    key: secondStopId,
-                  }))
-                }
-                  />
-                </ListGroup.Item>
+                <div className="dropDownOverlay">
+                  <ListGroup.Item>
+                    <DropdownControl
+                      title="To Stop"
+                      name="stop"
+                      variant="info"
+                      value={secondStopId}
+                      onSelect={this.onSelectSecondStop}
+                      options={
+                    (secondStopList || []).map(secondStopId => ({
+                      label: (selectedRoute.stops[secondStopId] || { title: secondStopId }).title,
+                      key: secondStopId,
+                    }))
+                  }
+                    />
+                  </ListGroup.Item>
+                </div>
               ) : null
             }
           </ListGroup>
@@ -288,4 +318,9 @@ ControlPanel.propTypes = {
   fetchGraphData: PropTypes.func.isRequired,
 };
 
-export default ControlPanel;
+const mapDispatchToProps = dispatch => {
+  return ({
+    onRouteSelect: route => dispatch(handleRouteSelect(route))
+  })
+}
+export default connect(null,mapDispatchToProps)(ControlPanel);
