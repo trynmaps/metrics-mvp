@@ -223,7 +223,6 @@ def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
     direction_id = args['direction_id']
     start_date_str = args['start_date_str']
     end_date_str = args['end_date_str']
-    date_str = args.get('date')
     start_time_str = args['start_time_str'] # e.g. "14:00" (24h time of day)
     end_time_str = args['end_time_str'] # e.g. "18:00" (24h time of day)
 
