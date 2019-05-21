@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { css } from 'emotion';
 import { NavLink } from 'redux-first-router-link';
-
+import MapStops from "./MapStops";
 import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
@@ -76,8 +76,12 @@ class Home extends Component {
             resetGraphData={this.props.resetGraphData}
             fetchGraphData={this.props.fetchGraphData}
             resetIntervalData={this.props.resetIntervalData}
-            fetchIntervalData={this.props.fetchIntervalData} />
-          <div className="center metricsWidth">
+            fetchIntervalData={this.props.fetchIntervalData}
+            fetchData={this.props.fetchData} />
+          <div className="metricsWidth">
+            <div className="largeMarginTop">
+              <MapStops />
+            </div>
           </div>
           <Info
             graphData={graphData}

@@ -2,6 +2,9 @@
 # Created by https://www.gitignore.io/api/node,macos,flask,python,eclipse,intellij
 # Edit at https://www.gitignore.io/?templates=node,macos,flask,python,eclipse,intellij
 
+data/*.json
+data/*.csv
+
 ### Eclipse ###
 .metadata
 bin/
@@ -457,5 +460,7 @@ typings/
 # test notebook
 /models/Untitled.ipynb
 
-# local cache
+#adding data folder
 data/*.json
+data/*.csv
+
