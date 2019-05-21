@@ -31,6 +31,39 @@ If you need to install some new dependencies in the Docker images, you can rebui
 If you don't want to handle installing anything locally, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
 This will automatically install requirements on a cloud machine and get the app running for you instantly.
 
+### Option 3: Run it manually
+If you don't want to use the Cloud IDE and can't get Docker running, you can run the project manually.
+
+To set up, first do:
+
+```
+virtualenv venv
+```
+
+To run, do this in one terminal tab:
+
+```
+source venv/bin/activate
+pip3 install -r requirements.txt
+FLASK_DEBUG=1 FLASK_APP=metrics-api.py python3 -m flask run --host=0.0.0.0
+```
+
+In another terminal tab, do:
+
+```
+(cd frontend && npm install)
+CHOKIDAR_USEPOLLING=true NODE_ENV=development REACT_APP_METRICS_BASE_URL=http://localhost:5000 npm start
+```
+
+Then open `localhost:3000` in your browser to view the app! (Don't visit `0.0.0.0:5000` -- that won't work.)
+
+## Commands to know
+
+To rebuild the production files that are served on port 5000, run:
+```
+npm run build
+```
+
 ## Computing Arrival Times
 
 The API and command-line scripts generate statistics based on Muni arrival times that are precomputed from the raw GPS data.

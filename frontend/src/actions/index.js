@@ -8,7 +8,7 @@ export function fetchGraphData (params) {
       params: params,
       baseURL: metricsBaseURL
     }).then((response) => {
-      dispatch({ type: 'RECEIVED_GRAPH_DATA', payload: response.data });
+      dispatch({ type: 'RECEIVED_GRAPH_DATA', payload: response.data, graphParams: params });
     }).catch((err) => {
       const errStr = (err.response && err.response.data && err.response.data.error) ? err.response.data.error : err.message;
       dispatch({ type: 'RECEIVED_GRAPH_ERROR', payload: errStr });
@@ -44,5 +44,11 @@ export function fetchRouteConfig(routeId) {
     }).catch((err) => {
       dispatch({ type: 'RECEIVED_ROUTE_CONFIG_ERROR', payload: err });
     });
+  };
+}
+
+export function handleRouteSelect(route) {
+  return function (dispatch) {
+      dispatch({ type: 'RECEIVED_ROUTE_SELECTION', payload: route });
   };
 }

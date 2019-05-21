@@ -36,19 +36,26 @@ def render_dwell_time(seconds):
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
 
-def get_localized_datetime(d: date, time_str: str):
-    dt_str = f"{d.isoformat()} {time_str}"
-    pst = pytz.timezone('US/Pacific')
-
-    try:
-        return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S"))
-    except ValueError:
-        return pst.localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M"))
-
-# get time string from the timestamps
 def get_time_isoformat(t: float):
     second = "{:02d}".format(int(t) % 60)
     minute = "{:02d}".format((int(t) // 60) % 60)
     hour = "{:02d}".format((int(t) // 60 * 60) % 24)
 
     return f"{hour}:{minute}:{second}"
+
+def get_localized_datetime(d: date, time_str: str, tz: pytz.timezone):
+
+    time_str_parts = time_str.split('+') # + number of days
+
+    if len(time_str_parts[0].split(':')) == 2:
+        format = "%Y-%m-%d %H:%M"
+    else:
+        format = "%Y-%m-%d %H:%M:%S"
+
+    dt_str = f"{d.isoformat()} {time_str_parts[0]}"
+
+    dt = datetime.strptime(dt_str, format)
+    if len(time_str_parts) > 1:
+        dt = dt + timedelta(days=int(time_str_parts[1]))
+
+    return tz.localize(dt)
