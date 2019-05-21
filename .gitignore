@@ -463,4 +463,3 @@ typings/
 #adding data folder
 data/*.json
 data/*.csv
-

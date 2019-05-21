@@ -341,7 +341,6 @@ minutes
                 width={Math.max(100, headwayMin.histogram.length * 70)}
                 className={`css
                 color: 'red'
->>>>>>> master
               `}
                 height={200}
                 margin={
