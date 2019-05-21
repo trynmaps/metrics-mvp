@@ -4,7 +4,7 @@ import { BarChart } from 'react-d3-components';
 import Card from 'react-bootstrap/Card';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import { getPercentileValue } from '../helpers/graphData'; 
-import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
+import { PLANNING_PERCENTILE } from '../UIConstants';
 import * as d3 from 'd3';
 
 class Info extends Component {

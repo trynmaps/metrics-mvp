@@ -6,6 +6,7 @@ import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
 import { getPercentileValue } from '../helpers/graphData';
 import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
+import '../../node_modules/react-vis/dist/style.css'
 
 /**
  * Bar chart of average and planning percentile wait and time across the day.
@@ -57,15 +58,29 @@ class InfoIntervalsOfDay extends Component {
    * Returns a mapping function for creating a react-vis XYPlot data series out of interval data.
    * Example of interval data is shown at end of this file.
    * Mapping function is for either wait time or trip time, and for either average or planning percentile time.
+   * 
+   * It's possible that an interval will have null wait/travel times due to lack of data (no vehicles
+   * running in that interval), in which case we replace with zero values (best effort).
+   * 
    * @param {intervalField} One of wait_times or travel_times.
    */
   mapInterval(intervalField) {
     return (interval, index) => {
+      
+      let y = 0;
+      
+      if (interval[intervalField] != null) {
+
+        if (this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME) {
+          y = interval[intervalField].avg;
+        } else {
+          y = getPercentileValue(interval[intervalField], PLANNING_PERCENTILE);
+        }
+      }
+      
       return {
         x: interval.start_time + " - " + interval.end_time,
-        y: this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME ?
-          interval[intervalField].avg :
-          getPercentileValue(interval[intervalField], PLANNING_PERCENTILE)
+        y: y 
       }
     }
   }

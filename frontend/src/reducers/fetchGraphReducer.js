@@ -14,11 +14,11 @@ export default (state = initialState, action) => {
       return {...state, err: action.payload, graphData:null};
       
     case "RECEIVED_INTERVAL_DATA":
-        return {...state, fetched:true, err:null, intervalData:action.payload};
+        return {...state, fetched:true, intervalErr:null, intervalData:action.payload};
     case "RESET_INTERVAL_DATA":
-        return {...state, fetched:false, err:null, intervalData:null};
+        return {...state, fetched:false, intervalErr:null, intervalData:null};
     case "RECEIVED_INTERVAL_ERROR":
-        return {...state, err: action.payload, intervalData:null};
+        return {...state, intervalErr: action.payload, intervalData:null};
         
     default:
       break;
