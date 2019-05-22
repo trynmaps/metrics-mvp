@@ -133,7 +133,7 @@ export function fetchRouteCSVs() {
 
 export function fetchShapes() {
     return function (dispatch) {
-      axios.get('/data/shapes.txt', {
+      axios.get('frontend/public/data/shapes.txt', {
         baseURL: metricsBaseURL
       }).then((response) => {
         dispatch({ type: 'RECEIVED_SHAPES', payload: response.data });
