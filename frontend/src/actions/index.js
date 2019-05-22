@@ -2,6 +2,18 @@ import axios from 'axios';
 
 import { metricsBaseURL } from '../config';
 
+/**
+ * This is an action creator where the action calls two actions.
+ * Basically this a way of calling two APIs at once, where two APIs
+ * have no interactions with each other.
+ */
+export function fetchData (graphParams, intervalParams) {  
+  return function (dispatch) {
+      dispatch(fetchGraphData(graphParams));
+      dispatch(fetchIntervalData(intervalParams));
+  }
+}
+
 export function fetchGraphData (params) {
   return function (dispatch) {
     axios.get('/metrics', {
@@ -21,6 +33,26 @@ export function resetGraphData() {
     dispatch({ type: 'RESET_GRAPH_DATA', payload: null });
   };
 }
+
+export function fetchIntervalData (params) {
+    return function (dispatch) {
+      axios.get('/metrics_by_interval', {
+        params: params,
+        baseURL: metricsBaseURL
+      }).then((response) => {
+        dispatch({ type: 'RECEIVED_INTERVAL_DATA', payload: response.data, graphParams: params });
+      }).catch((err) => {
+        const errStr = (err.response && err.response.data && err.response.data.error) ? err.response.data.error : err.message;
+        dispatch({ type: 'RECEIVED_INTERVAL_ERROR', payload: errStr });
+      });
+    };
+  }
+
+  export function resetIntervalData() {
+    return function (dispatch) {
+      dispatch({ type: 'RESET_INTERVAL_DATA', payload: null });
+    };
+  }
 
 export function fetchRoutes() {
   return function (dispatch) {
@@ -161,3 +193,10 @@ export function fetchAllTheThings() {
                   
     };
   }
+
+export function handleRouteSelect(route) {
+  return function (dispatch) {
+      dispatch({ type: 'RECEIVED_ROUTE_SELECTION', payload: route });
+  };
+}
+

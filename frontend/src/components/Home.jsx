@@ -3,13 +3,15 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { css } from 'emotion';
 import { NavLink } from 'redux-first-router-link';
-
+import MapStops from "./MapStops";
 import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
 import RouteSummary from './RouteSummary';
 import {
+  fetchData,
   fetchGraphData,
+  fetchIntervalData,
   fetchRoutes,
   fetchRouteConfig,
   resetGraphData,
@@ -17,6 +19,7 @@ import {
   fetchTrips,
   fetchRouteCSVs,
   fetchAllTheThings,
+  resetIntervalData,
 } from '../actions';
 
 class Home extends Component {
@@ -33,7 +36,7 @@ class Home extends Component {
   }
 
   render() {
-    const { graphData, graphError, graphParams, routes, routeCSVs, trips, shapes, tripTimes, waitTimes } = this.props;
+    const { graphData, graphError, graphParams, intervalData, intervalError, routes, routeCSVs, trips, shapes, tripTimes, waitTimes } = this.props;
     return (
       <Fragment>
         <button>
@@ -83,19 +86,23 @@ class Home extends Component {
             fetchRouteConfig={this.props.fetchRouteConfig}
             resetGraphData={this.props.resetGraphData}
             fetchGraphData={this.props.fetchGraphData}
+            resetIntervalData={this.props.resetIntervalData}
+            fetchIntervalData={this.props.fetchIntervalData}
+            fetchData={this.props.fetchData}
             tripTimes={tripTimes}/>
-          <div className="center metricsWidth">
+          <div className="metricsWidth">
+            <div className="largeMarginTop">
+              <MapStops />
+            </div>
           </div>
-          <div
-          className={css`
-           grid-column: col3-start ;
-           grid-row: row1-start / row2-end;
-          `
-          }
-          >
-            <RouteSummary graphData={graphData} graphParams={graphParams} trips={trips} routeCSVs={routeCSVs} shapes={shapes} routes={routes} tripTimes={tripTimes} waitTimes={waitTimes} />
-            <Info graphData={graphData} graphError={graphError} graphParams={graphParams} routes={routes} />
-          </div>
+          <RouteSummary graphData={graphData} graphParams={graphParams} trips={trips} routeCSVs={routeCSVs} shapes={shapes} routes={routes} tripTimes={tripTimes} waitTimes={waitTimes} />
+          <Info
+            graphData={graphData}
+            graphError={graphError}
+            graphParams={graphParams}
+            routes={routes}
+            intervalData={intervalData}
+            intervalError={intervalError} />
         </div>
       </Fragment>
     );
@@ -106,6 +113,8 @@ const mapStateToProps = state => ({
   graphData: state.fetchGraph.graphData,
   routes: state.routes.routes,
   graphError: state.fetchGraph.err,
+  intervalData: state.fetchGraph.intervalData,
+  intervalError: state.fetchGraph.intervalErr,
   graphParams: state.fetchGraph.graphParams,
   tazs: state.tazs.tazs,
   trips: state.trips.trips,
@@ -116,8 +125,11 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
+  fetchData: (graphParams, intervalParams) => dispatch(fetchData(graphParams, intervalParams)),
   resetGraphData: params => dispatch(resetGraphData()),
   fetchGraphData: params => dispatch(fetchGraphData(params)),
+  resetIntervalData: params => dispatch(resetIntervalData()),
+  fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
   fetchRouteConfig: routeId => dispatch(fetchRouteConfig(routeId)),
   fetchTazs: () => dispatch(fetchTazs()),

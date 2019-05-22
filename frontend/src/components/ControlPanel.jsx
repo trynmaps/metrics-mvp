@@ -1,4 +1,5 @@
 import React, { Component, createRef, Fragment } from 'react';
+import { connect } from 'react-redux';
 import { css } from 'emotion';
 import DatePicker from 'react-date-picker';
 import Button from 'react-bootstrap/Button';
@@ -7,8 +8,10 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
 //import { latLngBounds } from 'leaflet';
 import * as d3 from "d3";
+import {handleRouteSelect} from '../actions';
 
 import DropdownControl from './DropdownControl';
+import './ControlPanel.css';
 
 import { Map, TileLayer, Popup, CircleMarker, Tooltip, Polyline } from 'react-leaflet'
 import Control from 'react-leaflet-control'
@@ -88,7 +91,7 @@ class ControlPanel extends Component {
     this.props.resetGraphData();
     if (firstStopId != null && routeId != null) {
       const formattedDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-      const params = {
+      const graphParams = {
         route_id: routeId,
         direction_id: directionId,
         start_stop_id: firstStopId,
@@ -97,7 +100,10 @@ class ControlPanel extends Component {
         end_time: endTimeStr,
         date: formattedDate,
       };
-      this.props.fetchGraphData(params);
+      const intervalParams = Object.assign({}, graphParams);
+      delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
+      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors. 
+      this.props.fetchData(graphParams, intervalParams);
     }
   }
 
@@ -169,11 +175,13 @@ class ControlPanel extends Component {
   }
 
   selectedRouteChanged = () => {
+    const {onRouteSelect} = this.props;
     const { routeId } = this.state;
     const selectedRoute = this.getSelectedRouteInfo();
     if (!selectedRoute) {
       return;
     }
+    //onRouteSelect(selectedRoute);
     if (!selectedRoute.directions) {
       this.setDirectionId(null);
       this.props.fetchRouteConfig(routeId);
@@ -184,7 +192,14 @@ class ControlPanel extends Component {
     }
   }
 
-  getStopsInfoInGivenDirection = (selectedRoute, directionId) => selectedRoute.directions.find(dir => dir.id === directionId);
+  getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
+    return selectedRoute.directions.find(dir => dir.id === directionId);
+  }
+  getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
+    const stopSids= selectedRoute.directions.find(dir => dir.name === name);
+    return stopSids.stops.map(stop => selectedRoute.stops[stop]);
+    
+  }
 
   selectedDirectionChanged = () => {
     const { firstStopId, directionId } = this.state;
@@ -513,6 +528,16 @@ class ControlPanel extends Component {
 
 
 
+  sendRouteStopsToMap = () => {
+    const {directionId} = this.state;
+    const {onRouteSelect} = this.props;
+    const selectedRoute = this.getSelectedRouteInfo();
+    onRouteSelect({
+      'Inbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
+      'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
+    });
+  }
+
   // toggleTimekeeper(val) {
   //   // this.setState({ displayTimepicker: val });
   // }
@@ -811,6 +836,12 @@ class ControlPanel extends Component {
 
 
 
+    let selectedDirection =null;
+    if (selectedRoute && selectedRoute.directions && directionId) {
+      selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
+      this.sendRouteStopsToMap();
+    }
+    
     return (
       <div className={css`
           color: #fff;
@@ -855,20 +886,22 @@ class ControlPanel extends Component {
           />
         </ListGroup.Item>
           <ListGroup variant="flush">
-            <ListGroup.Item>
-              <DropdownControl
-                title="Route"
-                name="route"
-                variant="info"
-                value={routeId}
-                options={
-                  (routes || []).map(route => ({
-                    label: route.title, key: route.id,
-                  }))
-                }
-                onSelect={this.setRouteId}
-              />
-            </ListGroup.Item>
+            <div className="dropDownOverlay">
+              <ListGroup.Item>
+                <DropdownControl
+                  title="Route"
+                  name="route"
+                  variant="info"
+                  value={routeId}
+                  options={
+                    (routes || []).map(route => ({
+                      label: route.title, key: route.id,
+                    }))
+                  }
+                  onSelect={this.setRouteId}
+                />
+              </ListGroup.Item>
+            </div>
             { selectedRoute
               ? (
                 <ListGroup.Item>
@@ -889,40 +922,44 @@ class ControlPanel extends Component {
             }
             { (selectedDirection)
               ? (
-                <ListGroup.Item>
-                  <DropdownControl
-                    title="From Stop"
-                    name="stop"
-                    variant="info"
-                    value={firstStopId}
-                    onSelect={(eventKey, name) => { return this.onSelectFirstStop(eventKey)}}
-                    options={
-                  (selectedDirection.stops || []).map(firstStopId => ({
-                    label: (selectedRoute.stops[firstStopId] || { title: firstStopId }).title,
-                    key: firstStopId,
-                  }))
-                }
-                  />
-                </ListGroup.Item>
+                <div className="dropDownOverlay">
+                  <ListGroup.Item>
+                    <DropdownControl
+                      title="From Stop"
+                      name="stop"
+                      variant="info"
+                      value={firstStopId}
+                      onSelect={(eventKey, name) => { return this.onSelectFirstStop(eventKey)}}
+                      options={
+                    (selectedDirection.stops || []).map(firstStopId => ({
+                      label: (selectedRoute.stops[firstStopId] || { title: firstStopId }).title,
+                      key: firstStopId,
+                    }))
+                  }
+                    />
+                  </ListGroup.Item>
+                </div>
               ) : null
             }
             { (selectedDirection)
               ? (
-                <ListGroup.Item>
-                  <DropdownControl
-                    title="To Stop"
-                    name="stop"
-                    variant="info"
-                    value={secondStopId}
-                    onSelect={(eventKey, name) => { return this.onSelectSecondStop(eventKey)}}
-                    options={
-                  (secondStopList || []).map(secondStopId => ({
-                    label: (selectedRoute.stops[secondStopId] || { title: secondStopId }).title,
-                    key: secondStopId,
-                  }))
-                }
-                  />
-                </ListGroup.Item>
+                <div className="dropDownOverlay">
+                  <ListGroup.Item>
+                    <DropdownControl
+                      title="To Stop"
+                      name="stop"
+                      variant="info"
+                      value={secondStopId}
+                      onSelect={(eventKey, name) => { return this.onSelectSecondStop(eventKey)}}
+                      options={
+                    (secondStopList || []).map(secondStopId => ({
+                      label: (selectedRoute.stops[secondStopId] || { title: secondStopId }).title,
+                      key: secondStopId,
+                    }))
+                  }
+                    />
+                  </ListGroup.Item>
+                </div>
               ) : null
             }
           </ListGroup>
@@ -980,4 +1017,9 @@ ControlPanel.propTypes = {
   fetchGraphData: PropTypes.func.isRequired,
 };
 
-export default ControlPanel;
+const mapDispatchToProps = dispatch => {
+  return ({
+    onRouteSelect: route => dispatch(handleRouteSelect(route))
+  })
+}
+export default connect(null,mapDispatchToProps)(ControlPanel);
