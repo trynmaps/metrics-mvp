@@ -133,7 +133,7 @@ class ControlPanel extends Component {
   }
 
   onSelectFirstStop = (stopId, optionalSecondStopId) => {
-    const { directionId, secondStopId, startMarkers } = this.state;
+    const { directionId, secondStopId } = this.state;
     const selectedRoute = { ...this.getSelectedRouteInfo() };
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
     const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
@@ -344,8 +344,6 @@ class ControlPanel extends Component {
   
   createStartMarkerForOneRoute(routeID, directionID, optionalStopID) {
     const { routes } = this.props;
-    const latLng = this.state.latLng;
-    const latLon = { lat: latLng.lat, lon: latLng.lng };
     let startMarkers = [];
     
 
@@ -401,22 +399,6 @@ class ControlPanel extends Component {
     }
     return nearest;
   }
-
-  /**
-   * This is approximate straight line distance between two lat/lon's,
-   * assuming a fixed distance per degree of longitude, and that the
-   * distance per degree of latitude varies by cosine of latitude.
-   *
-   * http://jonisalonen.com/2014/computing-distance-between-coordinates-can-be-simple-and-fast/
-   */
-  milesBetween(p1, p2) {
-
-    const degLength = 69.172; // miles per degree at equator
-    const deltaLat = p1.lat - p2.lat;
-    const deltaLon = (p1.lon - p2.lon) * Math.cos(p1.lat * 3.1415926 / 180);
-    return degLength * Math.sqrt(deltaLat * deltaLat + deltaLon * deltaLon);
-  }
-
 
   /**
    * updates state to get all downstream markers replotted after first stop is changed 
@@ -555,8 +537,8 @@ class ControlPanel extends Component {
     const timeRange = (startTimeStr || endTimeStr) ? (startTimeStr + '-' + endTimeStr) : '';
 
     const selectedRoute = this.getSelectedRouteInfo();
-    const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
-      ? selectedRoute.directions.find(dir => dir.id === directionId) : null;
+    // now defined further down const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
+    //  ? selectedRoute.directions.find(dir => dir.id === directionId) : null;
 
 
 
@@ -968,12 +950,12 @@ class ControlPanel extends Component {
 
 
 
-        <Card bg="light" style={{ color: 'black' }}>
+        <Card bg="light" style={{ color: 'black', width: '500px', height: '500px'}}>
           <Card.Header>Map <Button className="float-sm-right" onClick={this.handleGeoLocate}>Go to my location</Button></Card.Header>
           
       <Map
         style={{
-          height:"40vh"
+          height:"500px" // was 40vh
         }}
         bounds={bounds}
         center={this.state.latLngOriginal}

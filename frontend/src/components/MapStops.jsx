@@ -23,6 +23,7 @@ class MapStops extends Component {
     const mapClass = { width: '500px', height: '500px' };
     const { routeStops } = this.props;
     return (
+        <div>
       <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -54,6 +55,7 @@ class MapStops extends Component {
 
 
       </Map>
+          </div>
     );
   }
 }

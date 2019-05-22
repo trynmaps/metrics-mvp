@@ -1,6 +1,4 @@
 import React, { Component } from 'react';
-import { css } from 'emotion';
-import { BarChart } from 'react-d3-components';
 import { Card, Container, Row, Col } from 'react-bootstrap';
 import * as d3 from "d3";
 
@@ -107,7 +105,7 @@ class RouteSummary extends Component {
     const directionInfo = route.directions.find(direction => direction.id === directionID);
 
     const firstStop = directionInfo.stops[0];
-    const lastStop = directionInfo.stops[directionInfo.stops.length - 1];
+    // probably don't need this const lastStop = directionInfo.stops[directionInfo.stops.length - 1];
 
     const tripTimesForFirstStop = tripTimesForDir[firstStop];
     return {tripTimesForFirstStop, directionInfo};
@@ -168,7 +166,7 @@ class RouteSummary extends Component {
     let totalWait = 0;
     let totalStops = 0;
     for (let direction of route.directions) {
-      const result = this.getWaitTimeForDir(direction.id, waitTimes);
+      const result = this.getWaitTimeForDir(direction.id, waitTimes[route.id]);
       totalWait += result.wait;
       totalStops += result.stops;
     }
@@ -182,11 +180,11 @@ class RouteSummary extends Component {
   /**
    * Summarizes waits in one direction.
    */
-  getWaitTimeForDir(directionID, waitTimes) {
-    const waitTimeForDir = waitTimes[directionID];
+  getWaitTimeForDir(directionID, waitTimesForRoute) {
+    const waitTimeForDir = waitTimesForRoute[directionID];
 
     if (!waitTimeForDir) {
-      return {wait:0 ,stops: 0};
+      return {wait:0, stops: 0};
     }
     const totalWait = Object.values(waitTimeForDir).reduce((total, currentValue, currentIndex, arr) => {
       return total + currentValue;

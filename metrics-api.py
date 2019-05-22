@@ -7,10 +7,12 @@ import pandas as pd
 import pytz
 from datetime import datetime, timedelta
 import time
+import requests
 import math
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 import constants
 import sys
+import re
 from errors import StopNotOnRouteError
 
 """
@@ -120,6 +122,68 @@ def metrics_page():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
+
+
+
+
+
+##
+# stuff from Jesse's isochrone branch
+## 
+
+
+def get_cached_json_file_from_s3(filename):
+    cache_path = f'{util.get_data_dir()}/{filename}'
+    try:
+        with open(cache_path, 'r') as f:
+            json_data = f.read()
+    except FileNotFoundError:
+        s3_bucket = arrival_history.get_s3_bucket()
+        s3_path = filename
+
+        s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
+        r = requests.get(s3_url)
+
+        if r.status_code == 404:
+            raise FileNotFoundError(f"{s3_url} not found")
+        if r.status_code != 200:
+            raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
+
+        json_data = r.text
+
+        with open(cache_path, "w") as f:
+            f.write(json_data)
+
+    res = Response(json_data, mimetype='application/json')
+    res.headers['Cache-Control'] = 'max-age=3600'
+    return res
+
+@app.route('/trip-times', methods=['GET'])
+def cached_trip_times():
+    date_str = request.args.get('date')
+    if date_str is None:
+        date_str = '2019-04-08'
+    if re.match('^[\w\-]+$', date_str) is None:
+        raise Exception(f"Invalid date: {date_str}")
+    return get_cached_json_file_from_s3(f'trip_times_t1_sf-muni_{date_str}.json')
+
+@app.route('/wait-times', methods=['GET'])
+def cached_wait_times():
+    date_str = request.args.get('date')
+    if date_str is None:
+        date_str = '2019-04-08'
+    if re.match('^[\w\-]+$', date_str) is None:
+        raise Exception(f"Invalid date: {date_str}")
+    return get_cached_json_file_from_s3(f'wait_times_t2_sf-muni_{date_str}.json')
+
+
+
+
+
+
+ 
+ 
+ 
 @app.route('/metrics_by_interval', methods=['GET'])
 def metrics_by_interval():
     route_id = request.args.get('route_id')

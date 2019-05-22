@@ -108,7 +108,7 @@ export function fetchTazs() {
 
 export function fetchTrips() {
     return function (dispatch) {
-      axios.get('/data/trips.txt', {
+      axios.get('data/trips.txt', {
         xxxbaseURL: metricsBaseURL
       }).then((response) => {
         dispatch({ type: 'RECEIVED_TRIPS', payload: response.data });
@@ -146,8 +146,8 @@ export function fetchShapes() {
 // these are by route id hash then direction id hash, then first stop hash, then second stop hash, in minutes
 export function fetchTripTimes() {
     return function (dispatch) {
-      axios.get('data/trip_times_t1_sf-muni_2019-04-08.json', { // todo: figure out allowing cross origin request
-        xxxbaseURL: metricsBaseURL
+      axios.get('/trip-times', { // optional date_str argument omitted, defaults to 4/8
+        baseURL: metricsBaseURL
       }).then((response) => {
         dispatch({ type: 'RECEIVED_TRIP_TIMES', payload: response.data });
       }).catch((err) => {
@@ -159,8 +159,8 @@ export function fetchTripTimes() {
 // these are by direction id hash and then stop id hash, in minutes
 export function fetchWaitTimes() {
     return function (dispatch) {
-      axios.get('data/wait_times_t1_sf-muni_2019-04-08.json', { // todo: figure out allowing cross origin request
-        xxxbaseURL: metricsBaseURL
+      axios.get('/wait-times', { // optional date_str argument omitted, defaults to 4/8
+        baseURL: metricsBaseURL
       }).then((response) => {
         dispatch({ type: 'RECEIVED_WAIT_TIMES', payload: response.data });
       }).catch((err) => {
