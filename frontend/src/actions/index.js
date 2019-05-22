@@ -108,8 +108,8 @@ export function fetchTazs() {
 
 export function fetchTrips() {
     return function (dispatch) {
-      axios.get('data/trips.txt', {
-        xxxbaseURL: metricsBaseURL
+      axios.get('frontend/public/data/trips.txt', {
+        baseURL: metricsBaseURL
       }).then((response) => {
         dispatch({ type: 'RECEIVED_TRIPS', payload: response.data });
       }).catch((err) => {
@@ -120,8 +120,8 @@ export function fetchTrips() {
 
 export function fetchRouteCSVs() {
     return function (dispatch) {
-      axios.get('/data/routes.txt', {
-        xxxbaseURL: metricsBaseURL
+      axios.get('frontend/public/data/routes.txt', {
+        baseURL: metricsBaseURL
       }).then((response) => {
         dispatch({ type: 'RECEIVED_ROUTE_CSVS', payload: response.data });
       }).catch((err) => {
@@ -134,7 +134,7 @@ export function fetchRouteCSVs() {
 export function fetchShapes() {
     return function (dispatch) {
       axios.get('/data/shapes.txt', {
-        xxxbaseURL: metricsBaseURL
+        baseURL: metricsBaseURL
       }).then((response) => {
         dispatch({ type: 'RECEIVED_SHAPES', payload: response.data });
       }).catch((err) => {
