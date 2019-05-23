@@ -2,7 +2,7 @@ const WalkMetersPerMinute = 1.0 * 60;
 
 function loadJson(url) {
     return new Promise((resolve, reject) => {
-        var req = new XMLHttpRequest();
+        let req = new XMLHttpRequest();
         req.addEventListener("load", function() {
             try
             {
@@ -20,7 +20,7 @@ function loadJson(url) {
     });
 }
 
-var routesMap = {};
+let routesMap = {};
 function loadRoute(routeId)
 {
     if (routesMap[routeId])

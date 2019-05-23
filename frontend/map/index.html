@@ -7,7 +7,7 @@
    integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
    crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
-<script src="common.js?v9"></script>
+<script src="common.js?v10"></script>
 </head>
 <style type='text/css'>
 #mapid { height: 100%; }
@@ -67,12 +67,12 @@ body { padding:0; margin:0; }
 <div id="mapid"></div>
 <script>
 
-var map = L.map('mapid').setView([37.772,-122.442], 13);
+let map = L.map('mapid').setView([37.772,-122.442], 13);
 
 loadJson('/config?r='+Math.random()).then(function(config) {
     if (config.mapbox_access_token)
     {
-        var tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+        let tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
             maxZoom: 18,
             id: 'mapbox.streets',
@@ -84,7 +84,7 @@ loadJson('/config?r='+Math.random()).then(function(config) {
 });
 
 /*
-var imageUrl = 'https://www.dropbox.com/s/sgnbbgef9r8f25j/sfmta-webmap-august2017-j2kl-0.8-256.png?dl=1',
+let imageUrl = 'https://www.dropbox.com/s/sgnbbgef9r8f25j/sfmta-webmap-august2017-j2kl-0.8-256.png?dl=1',
     imageBounds = [[37.8363,-122.522], [37.7014,-122.3561]];
 L.imageOverlay(imageUrl, imageBounds, {
     opacity:1,
@@ -119,16 +119,16 @@ const defaultDisabledRoutes = [
     'NX','1AX','1BX','7X','8AX','8BX','14X','30X','31AX','31BX','38AX','38BX','81X','82X','83X'
 ];
 
-var isochroneLayers = [];
-var layers = [];
-var tripLayers = [];
-var maxTripMin = 90;
-var curDateStr = '2019-05-08';
-var computedMaxTripMin;
-var curComputeId;
-var curLatLng;
-var curEndLatLng;
-var computeCache = {};
+let isochroneLayers = [];
+let layers = [];
+let tripLayers = [];
+let maxTripMin = 90;
+let curDateStr = '2019-05-08';
+let computedMaxTripMin;
+let curComputeId;
+let curLatLng;
+let curEndLatLng;
+let computeCache = {};
 
 function resetMap() {
     map.closePopup();
@@ -136,11 +136,11 @@ function resetMap() {
     curLatLng = null;
     curEndLatLng = null;
 
-    for (var isochroneLayer of isochroneLayers)
+    for (let isochroneLayer of isochroneLayers)
     {
         isochroneLayer.layer.remove();
     }
-    for (var layer of layers)
+    for (let layer of layers)
     {
         layer.remove();
     }
@@ -151,7 +151,7 @@ function resetMap() {
 
 function clearTripLayers(clearTripInfo)
 {
-    for (var layer of tripLayers)
+    for (let layer of tripLayers)
     {
         layer.remove();
     }
@@ -165,9 +165,9 @@ function clearTripLayers(clearTripInfo)
 
 function getDirectionInfo(directionId, routeInfo)
 {
-    for (var dirInfo of routeInfo.directions)
+    for (let dirInfo of routeInfo.directions)
     {
-        if (dirInfo.id == directionId)
+        if (dirInfo.id === directionId)
         {
             return dirInfo;
         }
@@ -186,7 +186,7 @@ function setMaxTripMin(newMaxTripMin)
     }
     else
     {
-        for (var isochroneLayer of isochroneLayers)
+        for (let isochroneLayer of isochroneLayers)
         {
             if (isochroneLayer.tripMin <= maxTripMin)
             {
@@ -204,7 +204,7 @@ function showError(e) {
     alert(e);
 }
 
-var redIcon = new L.Icon({
+let redIcon = new L.Icon({
   iconUrl: 'marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -217,14 +217,14 @@ async function showTripInfo(endLatLng, reachableCircles)
 {
     curEndLatLng = endLatLng;
 
-    var allOptions = [];
-    for (var circle of reachableCircles)
+    let allOptions = [];
+    for (let circle of reachableCircles)
     {
-        var dist = map.distance(circle, endLatLng);
+        let dist = map.distance(circle, endLatLng);
         if (dist <= circle.radius)
         {
-            var walkMin = dist / WalkMetersPerMinute;
-            var tripMin = walkMin + circle.tripMin;
+            let walkMin = dist / WalkMetersPerMinute;
+            let tripMin = walkMin + circle.tripMin;
 
             allOptions.push({
                 tripMin: tripMin,
@@ -242,13 +242,13 @@ async function showTripInfo(endLatLng, reachableCircles)
             return o1.tripMin - o2.tripMin;
         });
 
-        var seenRoutes = {};
-        var numOptions = 0;
+        let seenRoutes = {};
+        let numOptions = 0;
 
-        var optionInfo = '';
-        for (var option of allOptions)
+        let optionInfo = '';
+        for (let option of allOptions)
         {
-            var circle = option.circle;
+            let circle = option.circle;
 
             if (seenRoutes[circle.routes])
             {
@@ -267,26 +267,26 @@ async function showTripInfo(endLatLng, reachableCircles)
                     {
                         await loadRoute(tripItem.route)
                             .then(function(routeInfo) {
-                                var dirInfo = getDirectionInfo(tripItem.direction, routeInfo);
-                                var fromStopIndex = dirInfo.stops.indexOf(tripItem.fromStop);
-                                var toStopIndex = dirInfo.stops.indexOf(tripItem.toStop);
-                                if (fromStopIndex != -1 && toStopIndex != -1)
+                                let dirInfo = getDirectionInfo(tripItem.direction, routeInfo);
+                                let fromStopIndex = dirInfo.stops.indexOf(tripItem.fromStop);
+                                let toStopIndex = dirInfo.stops.indexOf(tripItem.toStop);
+                                if (fromStopIndex !== -1 && toStopIndex !== -1)
                                 {
-                                    var stopPoints = [];
+                                    let stopPoints = [];
 
-                                    for (var i = fromStopIndex; i <= toStopIndex; i++)
+                                    for (let i = fromStopIndex; i <= toStopIndex; i++)
                                     {
-                                        var stopInfo = routeInfo.stops[dirInfo.stops[i]];
+                                        let stopInfo = routeInfo.stops[dirInfo.stops[i]];
                                         stopPoints.push(stopInfo);
                                     }
 
-                                    var polyLine = L.polyline(stopPoints).addTo(map);
+                                    let polyLine = L.polyline(stopPoints).addTo(map);
                                     polyLine.bindTooltip(routeInfo.id, {direction:'center', opacity:0.9, permanent:true});
 
                                     tripLayers.push(polyLine);
 
-                                    var fromStopInfo = routeInfo.stops[tripItem.fromStop];
-                                    var toStopInfo = routeInfo.stops[tripItem.toStop];
+                                    let fromStopInfo = routeInfo.stops[tripItem.fromStop];
+                                    let toStopInfo = routeInfo.stops[tripItem.toStop];
 
                                     tripLayers.push(L.circle(fromStopInfo, 40, {color:'#090', fillOpacity:0.8, stroke:false}).addTo(map));
                                     tripLayers.push(L.circle(toStopInfo, 40, {color:'#900', fillOpacity: 0.8, stroke:false}).addTo(map));
@@ -306,7 +306,7 @@ async function showTripInfo(endLatLng, reachableCircles)
             }
         }
 
-        var marker = L.marker(endLatLng, {icon:redIcon}).addTo(map);
+        let marker = L.marker(endLatLng, {icon:redIcon}).addTo(map);
 
         tripLayers.push(marker);
 
@@ -315,23 +315,23 @@ async function showTripInfo(endLatLng, reachableCircles)
 
 }
 
-var isochroneWorker = new Worker('isochrone-worker.js?v=' + Math.random());
+let isochroneWorker = new Worker('isochrone-worker.js?v=' + Math.random());
 
 isochroneWorker.onmessage = function(e) {
-    var data = e.data;
-    if (data.type == 'reachableLocations')
+    let data = e.data;
+    if (data.type === 'reachableLocations')
     {
-        var computeId = data.computeId;
+        let computeId = data.computeId;
         if (computeCache[computeId])
         {
             computeCache[computeId][data.tripMin] = data;
         }
-        if (computeId == curComputeId)
+        if (computeId === curComputeId)
         {
             addReachableLocationsLayer(data);
         }
     }
-    else if (data.type == 'error')
+    else if (data.type === 'error')
     {
         showError(data.error);
     }
@@ -343,18 +343,18 @@ isochroneWorker.onmessage = function(e) {
 
 function addReachableLocationsLayer(data)
 {
-    var tripMin = data.tripMin;
-    var reachableCircles = data.circles;
-    var geoJson = data.geoJson;
+    let tripMin = data.tripMin;
+    let reachableCircles = data.circles;
+    let geoJson = data.geoJson;
 
-    var layerOptions = tripMinOptions['' + tripMin] || defaultLayerOptions;
+    let layerOptions = tripMinOptions['' + tripMin] || defaultLayerOptions;
 
-    var diffLayer = L.geoJson(geoJson, Object.assign({bubblingMouseEvents: false, fillOpacity:0.4, stroke:false}, layerOptions));
+    let diffLayer = L.geoJson(geoJson, Object.assign({bubblingMouseEvents: false, fillOpacity:0.4, stroke:false}, layerOptions));
 
     diffLayer.addTo(map);
 
     diffLayer.on('click', function(e) {
-        var endLatLng = e.latlng;
+        let endLatLng = e.latlng;
 
         showTripInfo(endLatLng, reachableCircles);
     });
@@ -369,9 +369,9 @@ function addReachableLocationsLayer(data)
     // restore end latlng from previous view
     if (curEndLatLng && !tripLayers.length)
     {
-        for (var circle of reachableCircles)
+        for (let circle of reachableCircles)
         {
-            var dist = map.distance(circle, curEndLatLng);
+            let dist = map.distance(circle, curEndLatLng);
             if (dist <= circle.radius)
             {
                 showTripInfo(curEndLatLng, reachableCircles);
@@ -385,7 +385,7 @@ function isInServiceArea(latlng)
 {
     const point = turf.point([latlng.lng, latlng.lat]);
 
-    for (var feature of ServiceArea.features)
+    for (let feature of ServiceArea.features)
     {
         if (turf.booleanWithin(point, feature))
         {
@@ -406,12 +406,12 @@ function computeIsochrones(latlng, endLatLng)
     curEndLatLng = endLatLng;
     computedMaxTripMin = maxTripMin;
 
-    var enabledRoutes = getEnabledRoutes();
+    let enabledRoutes = getEnabledRoutes();
 
-    var computeId = curComputeId = latlng.lat + ',' + latlng.lng + ',' + curDateStr + ',' + maxTripMin + ',' + enabledRoutes.join(',');
+    let computeId = curComputeId = latlng.lat + ',' + latlng.lng + ',' + curDateStr + ',' + maxTripMin + ',' + enabledRoutes.join(',');
 
-    var newLatLng;
-    var marker = L.marker(latlng, {draggable: true}).addTo(map);
+    let newLatLng;
+    let marker = L.marker(latlng, {draggable: true}).addTo(map);
     marker.on('move', function(e) {
         newLatLng = e.latlng;
     });
@@ -426,9 +426,9 @@ function computeIsochrones(latlng, endLatLng)
 
     if (computeCache[computeId] && computeCache[computeId][maxTripMin])
     {
-        for (var tripMin = isochroneMinutes; tripMin <= maxTripMin; tripMin += isochroneMinutes)
+        for (let tripMin = isochroneMinutes; tripMin <= maxTripMin; tripMin += isochroneMinutes)
         {
-            var cachedLayer = computeCache[computeId][tripMin];
+            let cachedLayer = computeCache[computeId][tripMin];
             if (cachedLayer)
             {
                 addReachableLocationsLayer(cachedLayer);
@@ -439,8 +439,8 @@ function computeIsochrones(latlng, endLatLng)
 
     computeCache[computeId] = {};
 
-    var tripMins = [];
-    for (var m = isochroneMinutes; m <= maxTripMin && m <= maxColoredTripMin; m += isochroneMinutes)
+    let tripMins = [];
+    for (let m = isochroneMinutes; m <= maxTripMin && m <= maxColoredTripMin; m += isochroneMinutes)
     {
         tripMins.push(m);
     }
@@ -469,32 +469,32 @@ map.on('click', function(e) {
 });
 
 
-var legend = L.control({position:'bottomright'});
+let legend = L.control({position:'bottomright'});
 legend.onAdd = function (map) {
     this._div = L.DomUtil.create('div', 'legend');
 
     this._div.appendChild(document.createTextNode('trip times (minutes)'));
 
-    var colorsContainer = document.createElement('div');
+    let colorsContainer = document.createElement('div');
     colorsContainer.className = 'legend-colors';
     this._div.appendChild(colorsContainer);
 
-    var timesContainer = document.createElement('div');
+    let timesContainer = document.createElement('div');
     timesContainer.className = 'legend-times';
     this._div.appendChild(timesContainer);
 
-    for (var endTime = isochroneMinutes; endTime <= maxColoredTripMin; endTime += isochroneMinutes)
+    for (let endTime = isochroneMinutes; endTime <= maxColoredTripMin; endTime += isochroneMinutes)
     {
-        var colorContainer = document.createElement('div');
+        let colorContainer = document.createElement('div');
         colorContainer.style.backgroundColor = tripMinOptions[endTime].color;
         colorsContainer.appendChild(colorContainer);
 
-        var timeContainer = document.createElement('div');
+        let timeContainer = document.createElement('div');
         timeContainer.innerHTML = '' + endTime;
         timesContainer.appendChild(timeContainer);
     }
 
-    var colorContainer = document.createElement('div');
+    let colorContainer = document.createElement('div');
     colorContainer.style.backgroundColor = defaultLayerOptions.color;
     colorsContainer.appendChild(colorContainer);
 
@@ -502,9 +502,9 @@ legend.onAdd = function (map) {
 };
 legend.addTo(map);
 
-var tripInfoControl = L.control({position:'topright'});
+let tripInfoControl = L.control({position:'topright'});
 
-var tripInfo = document.createElement('div');
+let tripInfo = document.createElement('div');
 tripInfo.className = 'trip-info';
 
 tripInfoControl.onAdd = function(map) {
@@ -513,14 +513,14 @@ tripInfoControl.onAdd = function(map) {
 
 tripInfoControl.addTo(map);
 
-var routesContainer = document.createElement('div');
+let routesContainer = document.createElement('div');
 
-var routeCheckboxes = [];
+let routeCheckboxes = [];
 
 function getEnabledRoutes()
 {
-    var routes = [];
-    for (var checkbox of routeCheckboxes)
+    let routes = [];
+    for (let checkbox of routeCheckboxes)
     {
         if (checkbox.checked)
         {
@@ -532,8 +532,8 @@ function getEnabledRoutes()
 
 function recomputeIsochrones()
 {
-    var latlng = curLatLng;
-    var endLatLng = curEndLatLng;
+    let latlng = curLatLng;
+    let endLatLng = curEndLatLng;
     if (latlng)
     {
         resetMap();
@@ -541,7 +541,7 @@ function recomputeIsochrones()
     }
 }
 
-//var defaultEnabledRoutes = ['27','76X'];
+//let defaultEnabledRoutes = ['27','76X'];
 
 function selectAllRoutes(checked)
 {
@@ -554,10 +554,10 @@ function selectAllRoutes(checked)
 
 loadJson('/routes').then(function(routes) {
 
-    for (var route of routes) {
+    for (let route of routes) {
 
-        var defaultEnabled = defaultDisabledRoutes.indexOf(route.id) == -1;
-        //var defaultEnabled = defaultEnabledRoutes.indexOf(route.id) != -1;
+        let defaultEnabled = defaultDisabledRoutes.indexOf(route.id) === -1;
+        //let defaultEnabled = defaultEnabledRoutes.indexOf(route.id) !== -1;
         if (defaultEnabled)
         {
             // preload route data before user clicks
@@ -568,10 +568,10 @@ loadJson('/routes').then(function(routes) {
                 });
         }
 
-        var routeContainer = document.createElement('div');
-        var label = document.createElement('label');
+        let routeContainer = document.createElement('div');
+        let label = document.createElement('label');
         routeContainer.appendChild(label);
-        var routeCheckbox = document.createElement('input');
+        let routeCheckbox = document.createElement('input');
         routeCheckbox.type = 'checkbox';
         routeCheckbox.value = route.id;
         routeCheckbox.checked = defaultEnabled ? 'checked' : '';
@@ -590,7 +590,7 @@ loadJson('/routes').then(function(routes) {
     showError("Error loading routes: " + e);
 });
 
-var controls = L.control({position:'topleft'});
+let controls = L.control({position:'topleft'});
 
 controls.onAdd = function (map) {
     this._div = L.DomUtil.create('div', 'controls');
@@ -601,10 +601,10 @@ controls.onAdd = function (map) {
         e.stopPropagation();
     });
 
-    var dateSelect = document.createElement('select');
-    for (var dateStr of ['2019-04-08','2019-05-08','2019-05-11'])
+    let dateSelect = document.createElement('select');
+    for (let dateStr of ['2019-04-08','2019-05-08','2019-05-11'])
     {
-        var option = document.createElement('option');
+        let option = document.createElement('option');
         option.value = '' + dateStr;
         option.appendChild(document.createTextNode(dateStr));
         dateSelect.appendChild(option);
@@ -620,14 +620,20 @@ controls.onAdd = function (map) {
     this._div.appendChild(document.createTextNode('date:'));
     this._div.appendChild(dateSelect);
 
-    var tripMinSelect = document.createElement('select');
-    for (var tripMin = isochroneMinutes; tripMin <= 90; tripMin += isochroneMinutes)
-    {
-        var option = document.createElement('option');
+    let tripMinSelect = document.createElement('select');
+
+    function addTripMinOption(tripMin) {
+        let option = document.createElement('option');
         option.value = '' + tripMin;
         option.appendChild(document.createTextNode(tripMin + ' minutes'));
         tripMinSelect.appendChild(option);
     }
+
+    for (let tripMin = isochroneMinutes; tripMin <= maxColoredTripMin; tripMin += isochroneMinutes)
+    {
+        addTripMinOption(tripMin);
+    }
+    addTripMinOption(90);
     tripMinSelect.value = '' + maxTripMin;
 
     tripMinSelect.addEventListener('change', function() {
@@ -644,20 +650,20 @@ controls.onAdd = function (map) {
 
     this._div.appendChild(document.createTextNode('routes:'));
 
-    var allLink = document.createElement('a');
+    let allLink = document.createElement('a');
     allLink.href = 'javascript:void(0)';
     allLink.innerHTML = 'all';
     allLink.addEventListener('click', function() {
         selectAllRoutes(true);
     });
-    var noneLink = document.createElement('a');
+    let noneLink = document.createElement('a');
     noneLink.href = 'javascript:void(0)';
     noneLink.innerHTML = 'none';
     noneLink.addEventListener('click', function() {
         selectAllRoutes(false);
     });
 
-    var selectAll = document.createElement('div');
+    let selectAll = document.createElement('div');
     selectAll.className = 'select-all';
 
     selectAll.appendChild(allLink);
@@ -666,7 +672,7 @@ controls.onAdd = function (map) {
     this._div.appendChild(selectAll);
     this._div.appendChild(routesContainer);
 
-    var reset = document.createElement('button');
+    let reset = document.createElement('button');
     reset.innerHTML = "Clear";
     reset.addEventListener('click', function(e) {
         resetMap();

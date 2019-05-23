@@ -2,11 +2,11 @@ importScripts(
     "https://unpkg.com/kdbush@3.0.0/kdbush.min.js",
     'https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js',
     "https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js",
-    'common.js?v9'
+    'common.js?v10'
 );
 
-var locations;
-var index;
+let locations;
+let index;
 
 const deg2rad = x => x * Math.PI / 180;
 const EarthRadius = 6371000;
@@ -14,9 +14,9 @@ const MaxWalkRadius = 1800;
 const FirstStopMinWaitMinutes = 1.0;
 const FirstStopWaitTimeToWalkTimeRatio = 0.25;
 
-var curComputeId = null;
-var tripTimesCache = {};
-var waitTimesCache = {};
+let curComputeId = null;
+let tripTimesCache = {};
+let waitTimesCache = {};
 
 function sendError(err) {
     postMessage({type: 'error', error: err});
@@ -24,12 +24,12 @@ function sendError(err) {
 
 function findStopDirectionAndIndex(stopId, routeInfo)
 {
-    for (var dirInfo of routeInfo.directions)
+    for (let dirInfo of routeInfo.directions)
     {
-        var numStops = dirInfo.stops.length;
-        for (var i = 0; i < numStops; i++)
+        let numStops = dirInfo.stops.length;
+        for (let i = 0; i < numStops; i++)
         {
-            if (dirInfo.stops[i] == stopId)
+            if (dirInfo.stops[i] === stopId)
             {
                 return {index:i, direction: dirInfo};
             }
@@ -57,7 +57,7 @@ function distance(latlon1, latlon2)
 
 async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr)
 {
-    var tripTimes = tripTimesCache[dateStr];
+    let tripTimes = tripTimesCache[dateStr];
 
     if (!tripTimes)
     {
@@ -67,12 +67,12 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr)
         });
     }
 
-    var routeTripTimes = tripTimes[routeId];
+    let routeTripTimes = tripTimes[routeId];
     if (!routeTripTimes)
     {
         return null;
     }
-    var directionTripTimes = routeTripTimes[directionId];
+    let directionTripTimes = routeTripTimes[directionId];
     if (!directionTripTimes)
     {
         return null;
@@ -82,7 +82,7 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr)
 
 async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr)
 {
-    var waitTimes = waitTimesCache[dateStr];
+    let waitTimes = waitTimesCache[dateStr];
 
     if (!waitTimes)
     {
@@ -92,13 +92,13 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr)
         });
     }
 
-    var routeWaitTimes = waitTimes[routeId];
+    let routeWaitTimes = waitTimes[routeId];
     if (!routeWaitTimes)
     {
         return null;
     }
 
-    var directionWaitTimes = routeWaitTimes[directionId];
+    let directionWaitTimes = routeWaitTimes[directionId];
     if (!directionWaitTimes)
     {
         return null;
@@ -110,8 +110,8 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
 {
     curComputeId = computeId;
 
-    var enabledRoutesMap = {};
-    for (var routeId of enabledRoutes)
+    let enabledRoutesMap = {};
+    for (let routeId of enabledRoutes)
     {
         enabledRoutesMap[routeId] = true;
     }
@@ -121,43 +121,43 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
     // to search the KDBush index for stop locations within the bounding box.
     // For longitude, this is only approximate since a delta of 1 degree longitude is not a fixed distance,
     // but it does not vary much over the size of a city (up to 0.2% within SF depending on latitude)
-    var degLatDist = distance(latlng, [latlng.lat-0.1, latlng.lng])*10;
-    var degLonDist = distance(latlng, [latlng.lat, latlng.lng-0.1])*10;
+    let degLatDist = distance(latlng, [latlng.lat-0.1, latlng.lng])*10;
+    let degLonDist = distance(latlng, [latlng.lat, latlng.lng-0.1])*10;
 
-    var queue = new TinyQueue([], function(a, b) {
+    let queue = new TinyQueue([], function(a, b) {
         return a.tripMin - b.tripMin;
     });
 
-    var drawableLocations = [];
-    var numReachedLocations = 0;
-    var totalLocations = 0;
-    var startTime = new Date().getTime();
-    var maxTripMin = tripMins[tripMins.length - 1];
-    var displayedTripMins = new TinyQueue(tripMins);
+    let drawableLocations = [];
+    let numReachedLocations = 0;
+    let totalLocations = 0;
+    let startTime = new Date().getTime();
+    let maxTripMin = tripMins[tripMins.length - 1];
+    let displayedTripMins = new TinyQueue(tripMins);
 
-    var reachedIds = {}; // map of location id => true (set when location dequeued)
-    var bestTripMins = {}; // map of location id => best trip min enqueued so far (set when location enqueued)
+    let reachedIds = {}; // map of location id => true (set when location dequeued)
+    let bestTripMins = {}; // map of location id => best trip min enqueued so far (set when location enqueued)
 
     function addNearbyLocations(reachedLocation, radius)
     {
-        var latRadius = radius/degLatDist;
-        var lonRadius = radius/degLonDist;
-        var results = index.range(reachedLocation.lat-latRadius, reachedLocation.lng-lonRadius, reachedLocation.lat+latRadius, reachedLocation.lng+lonRadius).map(id => locations[id]);
+        let latRadius = radius/degLatDist;
+        let lonRadius = radius/degLonDist;
+        let results = index.range(reachedLocation.lat-latRadius, reachedLocation.lng-lonRadius, reachedLocation.lat+latRadius, reachedLocation.lng+lonRadius).map(id => locations[id]);
 
         for (loc of results)
         {
-            var locId = loc.id;
+            let locId = loc.id;
             if (reachedIds[locId])
             {
                 continue;
             }
 
-            var latlon = loc.lat_lon;
-            var dist = distance(latlon, reachedLocation);
+            let latlon = loc.lat_lon;
+            let dist = distance(latlon, reachedLocation);
             if (dist <= radius)
             {
-                var walkMin = dist / WalkMetersPerMinute;
-                var nextTripMin = reachedLocation.tripMin + walkMin;
+                let walkMin = dist / WalkMetersPerMinute;
+                let nextTripMin = reachedLocation.tripMin + walkMin;
 
                 if (bestTripMins[locId] < nextTripMin)
                 {
@@ -165,7 +165,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
                 }
                 bestTripMins[locId] = nextTripMin;
 
-                var nextTripItems = reachedLocation.tripItems.slice();
+                let nextTripItems = reachedLocation.tripItems.slice();
 
                 nextTripItems.push({t: walkMin, desc:`walk to ${loc.title}`});
 
@@ -187,16 +187,16 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
 
     async function addReachableStopsAfterStop(stopId, routeInfo, reachedLocation)
     {
-        var res = findStopDirectionAndIndex(stopId, routeInfo);
+        let res = findStopDirectionAndIndex(stopId, routeInfo);
         if (res)
         {
-            var { direction, index } = res;
+            let { direction, index } = res;
 
-            var tripMin = reachedLocation.tripMin;
+            let tripMin = reachedLocation.tripMin;
 
-            var stopInfo = routeInfo.stops[stopId];
+            let stopInfo = routeInfo.stops[stopId];
 
-            var waitMin = await getWaitTimeAtStop(routeInfo.id, direction.id, stopId, dateStr);
+            let waitMin = await getWaitTimeAtStop(routeInfo.id, direction.id, stopId, dateStr);
             if (!waitMin)
             {
                 return;
@@ -213,42 +213,42 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
                 );
             }
 
-            var departureMin = tripMin + waitMin;
+            let departureMin = tripMin + waitMin;
 
-            var tripTimes = await getTripTimesFromStop(routeInfo.id, direction.id, stopId, dateStr);
+            let tripTimes = await getTripTimesFromStop(routeInfo.id, direction.id, stopId, dateStr);
             if (!tripTimes)
             {
                 return;
             }
 
-            var waitItem = {
+            let waitItem = {
                 t:waitMin,
                 desc:`wait for ${routeInfo.id}`
             };
 
-            for (var i = index + 1; i < direction.stops.length; i++)
+            for (let i = index + 1; i < direction.stops.length; i++)
             {
-                var nextStopId = direction.stops[i];
-                var nextStopInfo = routeInfo.stops[nextStopId];
+                let nextStopId = direction.stops[i];
+                let nextStopInfo = routeInfo.stops[nextStopId];
 
-                var busMin = tripTimes[nextStopId];
+                let busMin = tripTimes[nextStopId];
                 if (!busMin || busMin <= 0)
                 {
                     continue;
                 }
 
-                var nextTripMin = departureMin + busMin;
+                let nextTripMin = departureMin + busMin;
 
                 if (nextTripMin <= maxTripMin)
                 {
-                    var nextLocId = nextStopInfo.location_id;
+                    let nextLocId = nextStopInfo.location_id;
                     if (bestTripMins[nextLocId] < nextTripMin)
                     {
                         continue;
                     }
                     bestTripMins[nextLocId] = nextTripMin;
 
-                    var nextTripItems = reachedLocation.tripItems.slice();
+                    let nextTripItems = reachedLocation.tripItems.slice();
 
                     nextTripItems.push(waitItem);
                     nextTripItems.push({
@@ -260,7 +260,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
                         toStop: nextStopId
                     });
 
-                    var nextRoutes = reachedLocation.routes ? `${reachedLocation.routes}/${routeInfo.id}` : routeInfo.id;
+                    let nextRoutes = reachedLocation.routes ? `${reachedLocation.routes}/${routeInfo.id}` : routeInfo.id;
 
                     //console.log(`will reach ${nextStopInfo.location_id} ${nextStopId} (${nextStopInfo.title}) in ${nextTripMin.toFixed(1)} min`);
                     queue.push({
@@ -277,19 +277,19 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
         }
     }
 
-    var lastUnion = null;
+    let lastUnion = null;
 
     function showReachableLocations(tripMin)
     {
-       while (displayedTripMins.length && tripMin >= displayedTripMins.peek() && computeId == curComputeId)
+       while (displayedTripMins.length && tripMin >= displayedTripMins.peek() && computeId === curComputeId)
        {
-            var displayedTripMin = displayedTripMins.pop();
-            var reachableCircles = [];
-            var turfCircles = [];
+            let displayedTripMin = displayedTripMins.pop();
+            let reachableCircles = [];
+            let turfCircles = [];
 
-            for (var reachedLocation of drawableLocations)
+            for (let reachedLocation of drawableLocations)
             {
-                var walkRadius = Math.min(WalkMetersPerMinute * (displayedTripMin - reachedLocation.tripMin), MaxWalkRadius);
+                let walkRadius = Math.min(WalkMetersPerMinute * (displayedTripMin - reachedLocation.tripMin), MaxWalkRadius);
                 if (walkRadius > 0)
                 {
                     turfCircles.push(
@@ -299,9 +299,9 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
                 }
             }
 
-            var union = turf.union.apply(turf, turfCircles);
+            let union = turf.union.apply(turf, turfCircles);
 
-            var unionDiff = lastUnion ? turf.difference(union, lastUnion) : union;
+            let unionDiff = lastUnion ? turf.difference(union, lastUnion) : union;
 
             lastUnion = union;
 
@@ -335,10 +335,10 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
         // As the algorithm progresses, it compute isochrones whenever it reaches a time specified in
         // the tripMins array, and sends the isochrones to the UI for rendering.
 
-        var numProcessed = 0;
+        let numProcessed = 0;
         while (true)
         {
-            if (computeId != curComputeId)
+            if (computeId !== curComputeId)
             {
                 console.log("compute id changed!");
                 return;
@@ -357,9 +357,9 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
 
             totalLocations++;
 
-            var reachedLocation = queue.pop();
+            let reachedLocation = queue.pop();
 
-            var locId = reachedLocation.id;
+            let locId = reachedLocation.id;
             if (reachedIds[locId])
             {
                 continue;
@@ -372,8 +372,8 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
 
             if (reachedLocation.walked)
             {
-                var promises = reachedLocation.loc.stops.map(function(stop) {
-                    var routeId = stop.route_id;
+                let promises = reachedLocation.loc.stops.map(function(stop) {
+                    let routeId = stop.route_id;
                     if (!enabledRoutesMap[routeId])
                     {
                         return null;
@@ -396,11 +396,11 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
             {
                 drawableLocations.push(reachedLocation);
 
-                var tripMin = reachedLocation.tripMin;
+                let tripMin = reachedLocation.tripMin;
 
                 showReachableLocations(tripMin);
 
-                var walkRadius = Math.min(WalkMetersPerMinute * (maxTripMin - reachedLocation.tripMin), MaxWalkRadius);
+                let walkRadius = Math.min(WalkMetersPerMinute * (maxTripMin - reachedLocation.tripMin), MaxWalkRadius);
 
                 if (walkRadius >= 0)
                 {
@@ -412,7 +412,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
 
         showReachableLocations(maxTripMin);
 
-        var endTime = new Date().getTime();
+        let endTime = new Date().getTime();
         console.log(`${computeId} done (${numReachedLocations} reached locations, ${totalLocations} processed in ${endTime-startTime} ms)!`);
     }
 
@@ -440,9 +440,9 @@ async function init()
 
     onmessage = function(e) {
 
-        var data = e.data;
+        let data = e.data;
 
-        if (data && data.action == 'computeIsochrones')
+        if (data && data.action === 'computeIsochrones')
         {
             computeIsochrones(data.latlng, data.tripMins, data.routes, data.dateStr, data.computeId);
         }
