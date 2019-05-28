@@ -47,14 +47,9 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
 
         target_dist = 25
 
-        prev_time_values = np.roll(time_values, 1)
-        prev_time_values[0] = np.nan
-
-        prev_lat_values = np.roll(lat_values, 1)
-        prev_lat_values[0] = np.nan
-
-        prev_lon_values = np.roll(lon_values, 1)
-        prev_lon_values[0] = np.nan
+        prev_time_values = np.r_[np.nan, time_values[:-1]]
+        prev_lat_values = np.r_[np.nan, lat_values[:-1]]
+        prev_lon_values = np.r_[np.nan, lon_values[:-1]]
 
         dt_values = time_values - prev_time_values
         lat_diff_values = lat_values - prev_lat_values
@@ -421,14 +416,11 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id, stop_did, stop_
     if num_rows == 0:
         return make_arrivals_frame([])
 
-    prev_row_index_values = np.roll(row_index_values, 1)
-    prev_row_index_values[0] = -2
+    prev_row_index_values = np.r_[-999999, row_index_values[:-1]]
 
     eclipse_start_values = (row_index_values - prev_row_index_values) > 1
     eclipse_start_indexes = np.nonzero(eclipse_start_values)[0]
-
-    eclipse_end_indexes = np.roll(eclipse_start_indexes, -1)
-    eclipse_end_indexes[-1] = num_rows
+    eclipse_end_indexes = np.r_[eclipse_start_indexes[1:], num_rows]
 
     all_distance_values = eclipses[dist_column].values
     all_time_values = eclipses['TIME'].values
@@ -513,19 +505,11 @@ def clean_bus_arrivals(vid: str, possible_arrivals: pd.DataFrame, bus: pd.DataFr
         if num_arrivals < 2:
             return make_arrivals_frame([])
 
-        prev2_stop_index_values = np.roll(stop_index_values, 2)
-        prev2_stop_index_values[0] = 999999
-        prev2_stop_index_values[1] = 999999
-
-        prev_stop_index_values = np.roll(stop_index_values, 1)
-        prev_stop_index_values[0] = 999999
-
-        next_stop_index_values = np.roll(stop_index_values, -1)
-        next_stop_index_values[-1] = -1
-
-        next2_stop_index_values = np.roll(stop_index_values, -2)
-        next2_stop_index_values[-1] = -1
-        next2_stop_index_values[-2] = -1
+        padded_stop_index_values = np.r_[999999, 999999, stop_index_values, -999999, -999999]
+        prev2_stop_index_values = padded_stop_index_values[:-4]
+        prev_stop_index_values = padded_stop_index_values[1:-3]
+        next_stop_index_values = padded_stop_index_values[3:-1]
+        next2_stop_index_values = padded_stop_index_values[4:]
 
         return dir_arrivals[np.logical_or(
             np.logical_and(
@@ -551,8 +535,7 @@ def clean_bus_arrivals(vid: str, possible_arrivals: pd.DataFrame, bus: pd.DataFr
         if num_arrivals < 1:
             return make_arrivals_frame([])
 
-        prev_stop_index_values = np.roll(stop_index_values, 1)
-        prev_stop_index_values[0] = 999999
+        prev_stop_index_values = np.r_[999999, stop_index_values[:-1]]
 
         stop_index_diff_values = stop_index_values - prev_stop_index_values
 
@@ -562,8 +545,7 @@ def clean_bus_arrivals(vid: str, possible_arrivals: pd.DataFrame, bus: pd.DataFr
             return dir_arrivals
 
         # only fix gaps of 1 or 2 stops, with less than a few minutes gap
-        prev_departure_time_values = np.roll(dir_arrivals['DEPARTURE_TIME'].values, 1)
-        prev_departure_time_values[0] = 0
+        prev_departure_time_values = np.r_[0, dir_arrivals['DEPARTURE_TIME'].values[:-1]]
         time_values = dir_arrivals['TIME'].values
         gap_time_values = time_values - prev_departure_time_values
 
