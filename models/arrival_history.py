@@ -146,13 +146,9 @@ def compute_from_state(agency, route_id, start_time, end_time, route_state, d: d
 
     route_config = nextbus.get_route_config(agency, route_id)
 
-    buses = eclipses.produce_buses(route_state)
+    arrivals = eclipses.find_arrivals(route_state, route_config, d, tz)
 
-    if not buses.empty:
-        arrivals = eclipses.find_arrivals(buses, route_config, d, tz)
-        stops_data = make_stops_data(arrivals)
-    else:
-        stops_data = {}
+    stops_data = make_stops_data(arrivals)
 
     return ArrivalHistory(agency, route_id, stops_data=stops_data, start_time=start_time, end_time=end_time)
 

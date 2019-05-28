@@ -7,7 +7,6 @@ import pytz
 import time
 import boto3
 import gzip
-#import cProfile, pstats
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache arrival history')
@@ -68,18 +67,10 @@ if __name__ == '__main__':
 
             t1 = time.time()
 
-            #pr = cProfile.Profile()
-            #pr.enable()
-
             history = arrival_history.compute_from_state(agency, route_id, start_time, end_time, route_state, d, tz)
-
-            #pr.disable()
 
             print(f'{route_id}: {round(time.time()-t1,1)} saving arrival history')
 
             arrival_history.save_for_date(history, d, args.s3)
 
             print(f'{route_id}: {round(time.time()-t1,1)} done')
-
-            #ps = pstats.Stats(pr).sort_stats('cumulative')
-            #ps.print_stats()
