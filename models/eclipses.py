@@ -484,20 +484,6 @@ def filter_arrivals_by_actual_direction(dir_arrivals: pd.DataFrame) -> pd.DataFr
     # not the actual direction the bus is going :(
     # note: assumes route has at least 4 stops
 
-    # this is a faster way of doing the following in pandas but without
-    # the overhead of creating several Pandas series
-    '''
-     stop_index = dir_arrivals['STOP_INDEX']
-     prev2_stop_index = stop_index.shift(2)
-     prev_stop_index = stop_index.shift(1)
-     next_stop_index = stop_index.shift(-1)
-     next2_stop_index = stop_index.shift(-2)
-     return dir_arrivals[
-         ((stop_index - prev_stop_index > 0) & (prev_stop_index - prev2_stop_index > 0)) |
-        ((next_stop_index - stop_index > 0) & (next2_stop_index - next_stop_index > 0))
-    ]
-    '''
-
     stop_index_values = dir_arrivals['STOP_INDEX'].values
 
     num_arrivals = len(stop_index_values)
