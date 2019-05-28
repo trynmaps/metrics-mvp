@@ -361,8 +361,10 @@ def find_arrivals(route_state, route_config, d: date, tz) -> pd.DataFrame:
     else:
         print(f'{route_id}: {round(time.time() - t0, 1)} cleaning arrivals')
         arrivals = pd.concat([
-            clean_bus_arrivals(vid, possible_bus_arrivals, buses_map[vid], route_config)
-                for vid, possible_bus_arrivals in possible_arrivals.groupby('VID')
+            add_missing_stops(vid, stop_did,
+                filter_arrivals_by_actual_direction(dir_arrivals),
+                buses_map[vid], route_config)
+                for (vid, stop_did), dir_arrivals in possible_arrivals.groupby(['VID', 'STOP_DID'])
         ])
         arrivals = arrivals.sort_values('TIME')
 
@@ -475,153 +477,146 @@ def make_arrivals_frame(rows):
         # 'LAT','LON'
     ])
 
-def clean_bus_arrivals(vid: str, possible_arrivals: pd.DataFrame, bus: pd.DataFrame, route_config) -> pd.DataFrame:
-    if possible_arrivals.empty:
-        return possible_arrivals
-
+def filter_arrivals_by_actual_direction(dir_arrivals: pd.DataFrame) -> pd.DataFrame:
     # only include arrivals for stops where STOP_INDEX is increasing over time
     # in relation to the previous or next 2 stops visited in the same direction.
     # this is needed because the direction reported on Nextbus is sometimes
     # not the actual direction the bus is going :(
     # note: assumes route has at least 4 stops
-    def filter_arrivals_by_actual_direction(dir_arrivals: pd.DataFrame) -> pd.DataFrame:
-        # this is a faster way of doing the following in pandas but without
-        # the overhead of creating several Pandas series
-        '''
-         stop_index = dir_arrivals['STOP_INDEX']
-         prev2_stop_index = stop_index.shift(2)
-         prev_stop_index = stop_index.shift(1)
-         next_stop_index = stop_index.shift(-1)
-         next2_stop_index = stop_index.shift(-2)
-         return dir_arrivals[
-             ((stop_index - prev_stop_index > 0) & (prev_stop_index - prev2_stop_index > 0)) |
-            ((next_stop_index - stop_index > 0) & (next2_stop_index - next_stop_index > 0))
-        ]
-        '''
 
-        stop_index_values = dir_arrivals['STOP_INDEX'].values
+    # this is a faster way of doing the following in pandas but without
+    # the overhead of creating several Pandas series
+    '''
+     stop_index = dir_arrivals['STOP_INDEX']
+     prev2_stop_index = stop_index.shift(2)
+     prev_stop_index = stop_index.shift(1)
+     next_stop_index = stop_index.shift(-1)
+     next2_stop_index = stop_index.shift(-2)
+     return dir_arrivals[
+         ((stop_index - prev_stop_index > 0) & (prev_stop_index - prev2_stop_index > 0)) |
+        ((next_stop_index - stop_index > 0) & (next2_stop_index - next_stop_index > 0))
+    ]
+    '''
 
-        num_arrivals = len(stop_index_values)
-        if num_arrivals < 2:
-            return make_arrivals_frame([])
+    stop_index_values = dir_arrivals['STOP_INDEX'].values
 
-        padded_stop_index_values = np.r_[999999, 999999, stop_index_values, -999999, -999999]
-        prev2_stop_index_values = padded_stop_index_values[:-4]
-        prev_stop_index_values = padded_stop_index_values[1:-3]
-        next_stop_index_values = padded_stop_index_values[3:-1]
-        next2_stop_index_values = padded_stop_index_values[4:]
+    num_arrivals = len(stop_index_values)
+    if num_arrivals < 2:
+        return make_arrivals_frame([])
 
-        return dir_arrivals[np.logical_or(
-            np.logical_and(
-                (stop_index_values - prev_stop_index_values) > 0,
-                (prev_stop_index_values - prev2_stop_index_values) > 0,
-            ),
-            np.logical_and(
-                (next_stop_index_values - stop_index_values) > 0,
-                (next2_stop_index_values - next_stop_index_values) > 0
-            )
-        )]
+    padded_stop_index_values = np.r_[999999, 999999, stop_index_values, -999999, -999999]
+    prev2_stop_index_values = padded_stop_index_values[:-4]
+    prev_stop_index_values = padded_stop_index_values[1:-3]
+    next_stop_index_values = padded_stop_index_values[3:-1]
+    next2_stop_index_values = padded_stop_index_values[4:]
+
+    return dir_arrivals[np.logical_or(
+        np.logical_and(
+            (stop_index_values - prev_stop_index_values) > 0,
+            (prev_stop_index_values - prev2_stop_index_values) > 0,
+        ),
+        np.logical_and(
+            (next_stop_index_values - stop_index_values) > 0,
+            (next2_stop_index_values - next_stop_index_values) > 0
+        )
+    )]
+
+def add_missing_stops(vid: str, stop_did: str, dir_arrivals: pd.DataFrame, bus: pd.DataFrame, route_config) -> pd.DataFrame:
 
     # If there is a small gap in STOP_INDEX, try looking for the missing stops
     # between the last departure time and the next arrival time. Maybe the radius
     # was too small or we never saw it closer to that stop than the prev/next stop.
-    def add_missing_stops(did: str, dir_arrivals: pd.DataFrame) -> pd.DataFrame:
-        stop_index = dir_arrivals['STOP_INDEX']
 
-        stop_index_values = stop_index.values
+    stop_index = dir_arrivals['STOP_INDEX']
 
-        num_arrivals = len(stop_index_values)
+    stop_index_values = stop_index.values
 
-        if num_arrivals < 1:
-            return make_arrivals_frame([])
+    num_arrivals = len(stop_index_values)
 
-        prev_stop_index_values = np.r_[999999, stop_index_values[:-1]]
+    if num_arrivals < 1:
+        return make_arrivals_frame([])
 
-        stop_index_diff_values = stop_index_values - prev_stop_index_values
+    prev_stop_index_values = np.r_[999999, stop_index_values[:-1]]
 
-        gaps_values = stop_index_diff_values > 1
+    stop_index_diff_values = stop_index_values - prev_stop_index_values
 
-        if not np.any(gaps_values):
-            return dir_arrivals
+    gaps_values = stop_index_diff_values > 1
 
-        # only fix gaps of 1 or 2 stops, with less than a few minutes gap
-        prev_departure_time_values = np.r_[0, dir_arrivals['DEPARTURE_TIME'].values[:-1]]
-        time_values = dir_arrivals['TIME'].values
-        gap_time_values = time_values - prev_departure_time_values
+    if not np.any(gaps_values):
+        return dir_arrivals
 
-        fixable_gaps_values = np.logical_and(
-            np.logical_and(
-                gaps_values,
-                stop_index_diff_values < 4
-            ),
-            np.logical_and(
-                gap_time_values < 360,
-                gap_time_values > 0
-            )
+    # only fix gaps of 1 or 2 stops, with less than a few minutes gap
+    prev_departure_time_values = np.r_[0, dir_arrivals['DEPARTURE_TIME'].values[:-1]]
+    time_values = dir_arrivals['TIME'].values
+    gap_time_values = time_values - prev_departure_time_values
+
+    fixable_gaps_values = np.logical_and(
+        np.logical_and(
+            gaps_values,
+            stop_index_diff_values < 4
+        ),
+        np.logical_and(
+            gap_time_values < 360,
+            gap_time_values > 0
         )
+    )
 
-        if not np.any(fixable_gaps_values):
-            return dir_arrivals
+    if not np.any(fixable_gaps_values):
+        return dir_arrivals
 
-        dir_info = route_config.get_direction_info(did)
-        dir_stops = dir_info.get_stop_ids()
+    dir_info = route_config.get_direction_info(stop_did)
+    dir_stops = dir_info.get_stop_ids()
 
-        all_arrivals = [dir_arrivals]
+    all_arrivals = [dir_arrivals]
 
-        fixable_gap_indexes = np.nonzero(fixable_gaps_values)[0]
+    fixable_gap_indexes = np.nonzero(fixable_gaps_values)[0]
 
-        all_time_values = bus['TIME'].values
-        num_all_time_values = len(all_time_values)
+    all_time_values = bus['TIME'].values
+    num_all_time_values = len(all_time_values)
 
-        for i in fixable_gap_indexes:
-            next_arrival_time = time_values[i]
-            prev_departure_time = prev_departure_time_values[i]
+    for i in fixable_gap_indexes:
+        next_arrival_time = time_values[i]
+        prev_departure_time = prev_departure_time_values[i]
 
-            def find_gap_bus():
-                return bus[np.logical_and(
-                    (all_time_values < next_arrival_time),
-                    (all_time_values > prev_departure_time)
-                )]
+        def find_gap_bus():
+            return bus[np.logical_and(
+                (all_time_values < next_arrival_time),
+                (all_time_values > prev_departure_time)
+            )]
 
-            gap_bus = find_gap_bus()
+        gap_bus = find_gap_bus()
 
-            # get observations for this bus in times where we would expect to see it at the missing stops
-            if gap_bus.empty:
+        # get observations for this bus in times where we would expect to see it at the missing stops
+        if gap_bus.empty:
+            continue
+
+        prev_stop_index = prev_stop_index_values[i]
+        next_stop_index = stop_index_values[i]
+
+        for gap_stop_index in range(prev_stop_index + 1, next_stop_index):
+            gap_stop_id = dir_stops[gap_stop_index]
+
+            # detect possible arrival with larger radius without requiring it to be closer to this stop than prev/next stop
+
+            def find_gap_arrival():
+                return get_possible_arrivals_for_stop(gap_bus, gap_stop_id,
+                    stop_did=stop_did,
+                    stop_index=gap_stop_index,
+                    radius=300)
+
+            gap_arrival = find_gap_arrival()
+
+            if gap_arrival.empty:
                 continue
 
-            prev_stop_index = prev_stop_index_values[i]
-            next_stop_index = stop_index_values[i]
+            if len(gap_arrival['TIME'].values) > 1:
+                print(f" found multiple arrivals in gap at stop {gap_stop_id}, skipping")
+                continue
 
-            for gap_stop_index in range(prev_stop_index + 1, next_stop_index):
-                gap_stop_id = dir_stops[gap_stop_index]
+            # uncomment to print debugging information about filled gaps
+            #gap_stop_info = route_config.get_stop_info(gap_stop_id)
+            #print(f'vid={vid} {stop_did}[{gap_stop_index}] (gap {next_stop_index-prev_stop_index} stops, {round((next_arrival_time-prev_departure_time)/60,1)} min) {gap_stop_id} @ {gap_arrival["TIME"].values[0]} {round(gap_arrival["DIST"].values[0])} m ({gap_stop_info.title})')
 
-                # detect possible arrival with larger radius without requiring it to be closer to this stop than prev/next stop
+            all_arrivals.append(gap_arrival)
 
-                def find_gap_arrival():
-                    return get_possible_arrivals_for_stop(gap_bus, gap_stop_id,
-                        stop_did=did,
-                        stop_index=gap_stop_index,
-                        radius=300)
-
-                gap_arrival = find_gap_arrival()
-
-                if gap_arrival.empty:
-                    continue
-
-                if len(gap_arrival['TIME'].values) > 1:
-                    print(f" found multiple arrivals in gap at stop {gap_stop_id}, skipping")
-                    continue
-
-                # uncomment to print debugging information about filled gaps
-                #gap_stop_info = route_config.get_stop_info(gap_stop_id)
-                #print(f'vid={vid} {did}[{gap_stop_index}] (gap {next_stop_index-prev_stop_index} stops, {round((next_arrival_time-prev_departure_time)/60,1)} min) {gap_stop_id} @ {gap_arrival["TIME"].values[0]} {round(gap_arrival["DIST"].values[0])} m ({gap_stop_info.title})')
-
-                all_arrivals.append(gap_arrival)
-
-        return pd.concat(all_arrivals)
-
-    return pd.concat([
-        #filter_arrivals_by_actual_direction(dir_arrivals)
-        add_missing_stops(did, filter_arrivals_by_actual_direction(dir_arrivals))
-        for did, dir_arrivals in possible_arrivals.groupby(possible_arrivals['STOP_DID'])
-    ])
+    return pd.concat(all_arrivals)
