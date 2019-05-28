@@ -73,4 +73,4 @@ if __name__ == '__main__':
 
             arrival_history.save_for_date(history, d, args.s3)
 
-            print(f'{route_id}: {round(time.time()-t1,1)} done')
+            print(f'{route_id}: {round(time.time()-t1,2)} done')
