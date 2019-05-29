@@ -290,13 +290,12 @@ class ControlPanel extends Component {
          
          const secondStopInfo = stop.direction;//this.getStopsInfoInGivenDirection(selectedRoute, stop.direction);
          const secondStopListIndex = secondStopInfo.stops.indexOf(stop.stopID);
-         console.log("adding downstream from position " + secondStopListIndex);
+
          const secondStopList = secondStopInfo.stops.slice(secondStopListIndex /* + 1  include starting stop */);
         
          const downstreamStops = secondStopList.map(stopID => Object.assign(selectedRoute.stops[stopID], { stopID: stopID}));
          if (! downstreamStops || !downstreamStops.length){ debugger; }
          stop.downstreamStops = downstreamStops;
-         console.log("downstream length is " + downstreamStops.length);
          
   }
   
@@ -508,6 +507,51 @@ class ControlPanel extends Component {
     return distance/time * 60; // mph 
   }
 
+  getAllWaits() {
+    const allWaits = 
+    
+    [{"routeID":"38BX","wait":169.84285714285716},{"routeID":"38AX","wait":159.70769230769233},
+      {"routeID":"1BX","wait":130.49655172413796},{"routeID":"41","wait":110.75636363636364},
+      {"routeID":"7X","wait":106.77532467532468},{"routeID":"1AX","wait":102.53235294117647},
+      {"routeID":"31BX","wait":97.9939393939394},{"routeID":"8AX","wait":81.05306122448978},
+      {"routeID":"82X","wait":77.36500000000002},{"routeID":"30X","wait":72.21538461538461},
+      {"routeID":"31AX","wait":48.3780487804878},{"routeID":"14X","wait":45.76607142857143},
+      {"routeID":"S","wait":42.98648648648649},{"routeID":"81X","wait":34.93750000000001},
+      {"routeID":"56","wait":26.305769230769233},{"routeID":"36","wait":23.021428571428572},
+      {"routeID":"23","wait":21.24701492537313},{"routeID":"25","wait":20.81190476190476},
+      {"routeID":"67","wait":19.99772727272727},{"routeID":"39","wait":18.764102564102565},
+      {"routeID":"18","wait":15.71111111111111},{"routeID":"12","wait":15.61954022988506},
+      {"routeID":"52","wait":15.015492957746478},{"routeID":"C","wait":14.902702702702705},
+      {"routeID":"PM","wait":14.210869565217392},{"routeID":"8BX","wait":13.026881720430108},
+      {"routeID":"PH","wait":12.933333333333332},{"routeID":"54","wait":12.680722891566266},
+      {"routeID":"8","wait":12.673636363636362},{"routeID":"35","wait":12.5109375},
+      {"routeID":"31","wait":12.00990990990991},{"routeID":"3","wait":11.955172413793104},
+      {"routeID":"37","wait":11.766315789473683},{"routeID":"88","wait":11.75263157894737},
+      {"routeID":"48","wait":11.725000000000001},{"routeID":"M","wait":11.183636363636365},
+      {"routeID":"57","wait":11.163529411764706},{"routeID":"19","wait":11.15373134328358},
+      {"routeID":"66","wait":10.487499999999999},{"routeID":"9R","wait":10.371264367816094},
+      {"routeID":"10","wait":9.95},{"routeID":"33","wait":9.621839080459772},
+      {"routeID":"5","wait":9.588750000000001},{"routeID":"2","wait":9.172},
+      {"routeID":"38","wait":8.974850299401195},{"routeID":"27","wait":8.712631578947367},
+      {"routeID":"9","wait":8.483185840707964},{"routeID":"KT","wait":8.379761904761907},
+      {"routeID":"6","wait":8.184210526315788},{"routeID":"55","wait":7.946428571428571},
+      {"routeID":"24","wait":7.747899159663866},{"routeID":"J","wait":7.675000000000001},
+      {"routeID":"29","wait":7.4916201117318435},{"routeID":"21","wait":7.115789473684211},
+      {"routeID":"7","wait":7.017757009345793},{"routeID":"28R","wait":7.000000000000001},
+      {"routeID":"43","wait":6.9662857142857115},{"routeID":"30","wait":6.941176470588235},
+      {"routeID":"44","wait":6.82734375},{"routeID":"28","wait":6.578481012658228},
+      {"routeID":"45","wait":6.361016949152543},{"routeID":"L","wait":6.295833333333333},
+      {"routeID":"22","wait":6.107608695652175},{"routeID":"F","wait":6.010000000000001},
+      {"routeID":"NX","wait":5.9375},{"routeID":"N","wait":5.803030303030303},
+      {"routeID":"5R","wait":5.579365079365079},{"routeID":"47","wait":5.460344827586206},
+      {"routeID":"14","wait":5.4173913043478255},{"routeID":"49","wait":5.0628205128205135},
+      {"routeID":"14R","wait":4.806521739130435},{"routeID":"1","wait":3.921875},
+      {"routeID":"38R","wait":3.68125}];
+    
+    return allWaits;
+  }
+
+
 
 
   sendRouteStopsToMap = () => {
@@ -579,6 +623,9 @@ class ControlPanel extends Component {
     
     const routeColor = d3.scaleQuantize([0,9], d3.schemeCategory10);
     
+    
+    const allWaits = this.getAllWaits();
+    
     const DownstreamLine = () => {  
 
       // for each start marker
@@ -596,23 +643,35 @@ class ControlPanel extends Component {
         // multi-polyline for line selection:
         
         if (!firstStopId) {  
+
+
+          // this polyline is in line color
+          
+          // get wait rank
+          const waitIndex = allWaits.findIndex(wait => wait.routeID === startMarker.routeID);
+          
+          // scale to 0, 1, or 2
+          const waitScaled = Math.trunc(waitIndex/allWaits.length * 3);
+ 
+          const computedWeight = waitScaled * 2 + 2;
+
                
         for (let i=0; i < downstreamStops.length-1; i++) {
           const latLngs = [[ downstreamStops[i].lat, downstreamStops[i].lon ],
                            [ downstreamStops[i+1].lat, downstreamStops[i+1].lon ]];
         
-          // this polyline is in line color
           
+
           polylines.push(
             <Polyline
               key={"poly-" + startMarker.routeID + "-" + downstreamStops[i].stopID} 
               positions = { latLngs }
               color = { lineColor }
               opacity = { 0.5 }
-              weight = { 4 }
+              weight = { computedWeight }
               onMouseOver = { e => {
 
-                if (!firstStopId) { e.target.setStyle({opacity:1, weight:8}); }
+                if (!firstStopId) { e.target.setStyle({opacity:1, weight: computedWeight+4}); }
                                 
                 /*this.setState({
                   //hoverMarker: startMarker,
@@ -623,7 +682,7 @@ class ControlPanel extends Component {
                 }
               }
               onMouseOut = { e => {
-                  if (!firstStopId) { e.target.setStyle({opacity:0.5, weight:4}); }                
+                  if (!firstStopId) { e.target.setStyle({opacity:0.5, weight:computedWeight}); }                
                   //this.setState({infoValue: null});
                   return true;                
                 } 
