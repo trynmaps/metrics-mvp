@@ -141,16 +141,9 @@ class ArrivalHistory:
             'stops': self.stops_data,
         }
 
-def compute_from_state(agency, route_id, start_time, end_time, route_state, d: date, tz) -> ArrivalHistory:
-    # note: arrivals module uses timestamps in seconds, but tryn-api uses ms
-
-    route_config = nextbus.get_route_config(agency, route_id)
-
-    arrivals = eclipses.find_arrivals(route_state, route_config, d, tz)
-
-    stops_data = make_stops_data(arrivals)
-
-    return ArrivalHistory(agency, route_id, stops_data=stops_data, start_time=start_time, end_time=end_time)
+def from_data_frame(agency, route_id, arrivals_df: pd.DataFrame, start_time, end_time) -> ArrivalHistory:
+    # note: arrival_history module uses timestamps in seconds, but tryn-api uses ms
+    return ArrivalHistory(agency, route_id, stops_data=make_stops_data(arrivals_df), start_time=start_time, end_time=end_time)
 
 def make_stops_data(arrivals: pd.DataFrame):
     stops_data = {}
@@ -161,7 +154,7 @@ def make_stops_data(arrivals: pd.DataFrame):
         for stop_id, stop_arrivals in arrivals.groupby(arrivals['SID']):
             stop_directions_data = {}
 
-            for stop_direction_id, stop_direction_arrivals in stop_arrivals.groupby(stop_arrivals['STOP_DID']):
+            for stop_direction_id, stop_direction_arrivals in stop_arrivals.groupby(stop_arrivals['DID']):
                 arrivals_data = []
 
                 for row in stop_direction_arrivals.itertuples():

@@ -1,4 +1,4 @@
-from models import arrival_history, util, trynapi, nextbus
+from models import arrival_history, util, trynapi, nextbus, eclipses
 import json
 import math
 import argparse
@@ -65,9 +65,13 @@ if __name__ == '__main__':
                 print(f'no state for route {route_id}')
                 continue
 
+            route_config = nextbus.get_route_config(agency, route_id)
+
             t1 = time.time()
 
-            history = arrival_history.compute_from_state(agency, route_id, start_time, end_time, route_state, d, tz)
+            arrivals_df = eclipses.find_arrivals(route_state, route_config, d, tz)
+
+            history = arrival_history.from_data_frame(agency, route_id, arrivals_df, start_time, end_time)
 
             print(f'{route_id}: {round(time.time()-t1,1)} saving arrival history')
 

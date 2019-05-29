@@ -1,15 +1,8 @@
-import json
 import time
-import requests
 from datetime import datetime, date, timedelta, timezone
-from geopy.distance import distance
 import pytz
 import pandas as pd
 import numpy as np
-import math
-
-from typing import List, Union
-
 from . import nextbus, util
 
 def produce_buses(route_state: dict) -> pd.DataFrame:
@@ -101,8 +94,8 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
         # adding a separator row at the end of each vehicle's observations allows simplifying
         # get_possible_arrivals_for_stop() (and making it slightly faster).
         # this row will always be filtered out by find_arrivals
-        # so the row index will always have a gap in it even if two vehicles adjacent in the buses
-        # both happen to be near the same stop
+        # so the row index will always have a gap in it even if two vehicles
+        # adjacent in the buses frame both happen to be near the same stop
         new_rows.append((
             vid,
             '',
@@ -119,7 +112,6 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
     resampled_bus['TIME'] = resampled_bus['TIME'].astype(np.int64)
 
     return resampled_bus
-
 
 # haversine formula for calcuating distance between two coordinates in lat lon
 # from bird eye view; seems to be +- 8 meters difference from geopy distance
@@ -201,14 +193,13 @@ invalid_direction_times_map = {
     },
 }
 
-def get_invalid_direction_times(route_config, direction_id):
-
+def get_invalid_direction_times(route_config: nextbus.RouteConfig, direction_id: str):
     try:
         return invalid_direction_times_map[route_config.agency_id][route_config.id][direction_id]
     except KeyError:
         return []
 
-def find_arrivals(route_state, route_config, d: date, tz) -> pd.DataFrame:
+def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date, tz: pytz.timezone) -> pd.DataFrame:
 
     route_id = route_config.id
 
@@ -327,24 +318,24 @@ def find_arrivals(route_state, route_config, d: date, tz) -> pd.DataFrame:
         #dirs_text = [f'{d}[{i}]' for d, i in zip(stop_direction_ids, stop_indexes)]
         #print(f"{route_id}: {round(time.time() - t0, 1)} computing arrivals at stop {stop_id} {','.join(dirs_text)}  radius {radius} m  {'(terminal)' if is_terminal else ''}")
 
-        use_reported_did = (len(stop_direction_ids) > 1)
+        use_reported_direction = (len(stop_direction_ids) > 1)
 
         possible_arrivals = get_possible_arrivals_for_stop(valid_buses, stop_id,
-            stop_did=stop_direction_ids[0],
+            direction_id=stop_direction_ids[0],
             stop_index=stop_indexes[0],
             adjacent_stop_ids=adjacent_stop_ids,
             radius=radius,
             is_terminal=is_terminal,
-            use_reported_did=use_reported_did
+            use_reported_direction=use_reported_direction
         )
 
-        if use_reported_did:
+        if use_reported_direction:
             # if the stop has multiple directions, assume that the bus is going the direction
             # it said it was going on Nextbus, if valid. if the bus is not reporting a valid direction
             # for this stop, just use the first one
-            did_conditions = [possible_arrivals['STOP_DID'] == did for did in stop_direction_ids]
-            possible_arrivals['STOP_DID'] = np.select(did_conditions, stop_direction_ids, default = stop_direction_ids[0])
-            possible_arrivals['STOP_INDEX'] = np.select(did_conditions, stop_indexes, default = stop_indexes[0])
+            direction_conditions = [possible_arrivals['DID'] == did for did in stop_direction_ids]
+            possible_arrivals['DID'] = np.select(direction_conditions, stop_direction_ids, default = stop_direction_ids[0])
+            possible_arrivals['STOP_INDEX'] = np.select(direction_conditions, stop_indexes, default = stop_indexes[0])
 
         possible_arrivals_arr.append(possible_arrivals)
 
@@ -352,19 +343,34 @@ def find_arrivals(route_state, route_config, d: date, tz) -> pd.DataFrame:
         return pd.concat(possible_arrivals_arr, ignore_index=True)
 
     possible_arrivals = concat_possible_arrivals()
-    possible_arrivals = possible_arrivals.sort_values('TIME')
-
-    buses_map = {vid: bus for vid, bus in buses.groupby('VID')}
 
     if possible_arrivals.empty:
         arrivals = possible_arrivals
     else:
         print(f'{route_id}: {round(time.time() - t0, 1)} cleaning arrivals')
+
+        def make_buses_map():
+            return {vid: bus for vid, bus in buses.groupby('VID')}
+            '''
+            vid_values = buses['VID'].values
+            prev_vid_values = np.hstack(('', vid_values[:-1]))
+            start_values = vid_values != prev_vid_values
+            start_indexes = np.nonzero(start_values)[0]
+            end_indexes = np.r_[start_indexes[1:], len(vid_values)]
+
+            return {
+                vid_values[start_index]: buses.iloc[start_index:end_index]
+                    for start_index, end_index in zip(start_indexes, end_indexes)
+            }
+            '''
+
+        buses_map = make_buses_map()
+
+        possible_arrivals = possible_arrivals.sort_values('TIME')
+
         arrivals = pd.concat([
-            add_missing_stops(vid, stop_did,
-                filter_arrivals_by_actual_direction(dir_arrivals),
-                buses_map[vid], route_config)
-                for (vid, stop_did), dir_arrivals in possible_arrivals.groupby(['VID', 'STOP_DID'])
+            get_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, buses_map[vehicle_id], route_config)
+                for (vehicle_id, direction_id), dir_arrivals in possible_arrivals.groupby(['VID', 'DID'])
         ])
         arrivals = arrivals.sort_values('TIME')
 
@@ -372,12 +378,19 @@ def find_arrivals(route_state, route_config, d: date, tz) -> pd.DataFrame:
 
     return arrivals
 
-def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id, stop_did, stop_index,
-    adjacent_stop_ids=[], radius=200, use_reported_did=False, is_terminal=False) -> pd.DataFrame:
+def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id: str,
+    direction_id=None,            # if use_reported_direction is False, the DID field will have this value
+    use_reported_direction=False, # if use_reported_direction is True, the DID field will have the reported value from the buses frame
+    stop_index=-1,                # STOP_INDEX field will be set to this value
+    adjacent_stop_ids=[],
+    radius=200,
+    is_terminal=False
+) -> pd.DataFrame:
 
     # the "possible" arrivals include times when the bus passes stops in the opposite direction,
     # which will be filtered out later. this ignores the stated direction of the bus according
-    # to the Nextbus API, because sometimes the bus is not actually going in that direction.
+    # to the Nextbus API (when use_reported_direction is False), because sometimes the bus is not actually
+    # going in that direction.
 
     # only keep positions within a maximum radius of the given stop.
     # somewhat generous since we only get GPS coordinates every minute.
@@ -406,7 +419,7 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id, stop_did, stop_
         eclipses = filter_by_adjacent_stop_distance(adjacent_stop_id)
 
     # allow grouping rows by each time a bus leaves vicinity of stop.
-    # if any rows were dropped by distance filter,
+    # if any rows were dropped by the filters above,
     # newly adjacent rows would have indexes that differ by more than 1.
     # note: rows must initially be ordered by bus, then by time,
     # and have consecutive index values. there must also be a row
@@ -427,7 +440,7 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id, stop_did, stop_
     all_distance_values = eclipses[dist_column].values
     all_time_values = eclipses['TIME'].values
     all_vid_values = eclipses['VID'].values
-    if use_reported_did:
+    if use_reported_direction:
         all_did_values = eclipses['DID'].values
 
     def calc_nadir(eclipse_start_index, eclipse_end_index) -> tuple:
@@ -461,7 +474,7 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id, stop_did, stop_
             time_values[at_stop_indexes[-1]], # departure time
             min_dist,
             stop_id,
-            all_did_values[eclipse_start_index] if use_reported_did else stop_did,
+            all_did_values[eclipse_start_index] if use_reported_direction else direction_id,
             stop_index
         )
 
@@ -470,14 +483,24 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id, stop_did, stop_
         for eclipse_start_index, eclipse_end_index in zip(eclipse_start_indexes, eclipse_end_indexes)
     ])
 
-def make_arrivals_frame(rows):
+def make_arrivals_frame(rows: list) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=[
         'VID','TIME','DEPARTURE_TIME','DIST',
-        'SID','STOP_DID','STOP_INDEX',
-        # 'LAT','LON'
+        'SID','DID','STOP_INDEX',
     ])
 
-def filter_arrivals_by_actual_direction(dir_arrivals: pd.DataFrame) -> pd.DataFrame:
+def get_arrivals_for_vehicle_direction(
+    dir_arrivals: pd.DataFrame,
+    vehicle_id: str,
+    direction_id: str,
+    bus: pd.DataFrame,
+    route_config: nextbus.RouteConfig
+) -> pd.DataFrame:
+    dir_arrivals = get_arrivals_with_ascending_stop_index(dir_arrivals)
+    dir_arrivals = add_missing_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, bus, route_config)
+    return dir_arrivals
+
+def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame) -> pd.DataFrame:
     # only include arrivals for stops where STOP_INDEX is increasing over time
     # in relation to the previous or next 2 stops visited in the same direction.
     # this is needed because the direction reported on Nextbus is sometimes
@@ -507,7 +530,13 @@ def filter_arrivals_by_actual_direction(dir_arrivals: pd.DataFrame) -> pd.DataFr
         )
     )]
 
-def add_missing_stops(vid: str, stop_did: str, dir_arrivals: pd.DataFrame, bus: pd.DataFrame, route_config) -> pd.DataFrame:
+def add_missing_arrivals_for_vehicle_direction(
+    dir_arrivals: pd.DataFrame,
+    vehicle_id: str,
+    direction_id: str,
+    bus: pd.DataFrame,
+    route_config: nextbus.RouteConfig
+) -> pd.DataFrame:
 
     # If there is a small gap in STOP_INDEX, try looking for the missing stops
     # between the last departure time and the next arrival time. Maybe the radius
@@ -550,7 +579,7 @@ def add_missing_stops(vid: str, stop_did: str, dir_arrivals: pd.DataFrame, bus: 
     if not np.any(fixable_gaps_values):
         return dir_arrivals
 
-    dir_info = route_config.get_direction_info(stop_did)
+    dir_info = route_config.get_direction_info(direction_id)
     dir_stops = dir_info.get_stop_ids()
 
     all_arrivals = [dir_arrivals]
@@ -564,6 +593,7 @@ def add_missing_stops(vid: str, stop_did: str, dir_arrivals: pd.DataFrame, bus: 
         next_arrival_time = time_values[i]
         prev_departure_time = prev_departure_time_values[i]
 
+        # get observations for this bus in times where we would expect to see it at the missing stops
         def find_gap_bus():
             return bus[np.logical_and(
                 (all_time_values < next_arrival_time),
@@ -572,7 +602,6 @@ def add_missing_stops(vid: str, stop_did: str, dir_arrivals: pd.DataFrame, bus: 
 
         gap_bus = find_gap_bus()
 
-        # get observations for this bus in times where we would expect to see it at the missing stops
         if gap_bus.empty:
             continue
 
@@ -583,12 +612,12 @@ def add_missing_stops(vid: str, stop_did: str, dir_arrivals: pd.DataFrame, bus: 
             gap_stop_id = dir_stops[gap_stop_index]
 
             # detect possible arrival with larger radius without requiring it to be closer to this stop than prev/next stop
-
             def find_gap_arrival():
                 return get_possible_arrivals_for_stop(gap_bus, gap_stop_id,
-                    stop_did=stop_did,
+                    direction_id=direction_id,
                     stop_index=gap_stop_index,
-                    radius=300)
+                    radius=300
+                )
 
             gap_arrival = find_gap_arrival()
 
@@ -601,7 +630,7 @@ def add_missing_stops(vid: str, stop_did: str, dir_arrivals: pd.DataFrame, bus: 
 
             # uncomment to print debugging information about filled gaps
             #gap_stop_info = route_config.get_stop_info(gap_stop_id)
-            #print(f'vid={vid} {stop_did}[{gap_stop_index}] (gap {next_stop_index-prev_stop_index} stops, {round((next_arrival_time-prev_departure_time)/60,1)} min) {gap_stop_id} @ {gap_arrival["TIME"].values[0]} {round(gap_arrival["DIST"].values[0])} m ({gap_stop_info.title})')
+            #print(f'vid={vehicle_id} {direction_id}[{gap_stop_index}] (gap {next_stop_index-prev_stop_index} stops, {round((next_arrival_time-prev_departure_time)/60,1)} min) {gap_stop_id} @ {gap_arrival["TIME"].values[0]} {round(gap_arrival["DIST"].values[0])} m ({gap_stop_info.title})')
 
             all_arrivals.append(gap_arrival)
 
