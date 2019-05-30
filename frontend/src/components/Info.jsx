@@ -1,16 +1,21 @@
 import React, { Component } from 'react';
 import { css } from 'emotion';
-import { BarChart } from 'react-d3-components';
 import Card from 'react-bootstrap/Card';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
-import { getPercentileValue } from '../helpers/graphData'; 
+import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData'; 
 import { PLANNING_PERCENTILE } from '../UIConstants';
 import * as d3 from 'd3';
+import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
+  ChartLabel, Crosshair } from 'react-vis';
+
 
 class Info extends Component {
   constructor(props) {
     super(props);
-    this.state = 0;
+    this.state = {
+        crosshairValues: { }, // tooltip starts out empty
+    };
+
   }
   
   computeGrades(headwayMin, waitTimes, tripTimes, speed) {
@@ -188,6 +193,34 @@ class Info extends Component {
 
     return miles;
   }
+  
+  
+  /**
+   * Event handler for onMouseLeave.
+   * @private
+   */
+  _onMouseLeave = () => {
+    this.setState({crosshairValues: {}});
+  };
+
+  /**
+   * Event handler for onNearestX.
+   * @param {Object} value Selected value.
+   * @param {index} index Index of the value in the data array.
+   * @private
+   */
+  _onNearestXHeadway = (value, {index}) => {
+    this.setState({crosshairValues: { headway: [this.headwayData[index]]}});
+  };
+
+  _onNearestXWaitTimes = (value, {index}) => {
+    this.setState({crosshairValues: { wait: [this.waitData[index]]}});
+  };
+
+  _onNearestXTripTimes = (value, {index}) => {
+    this.setState({crosshairValues: { trip: [this.tripData[index]]}});
+  };
+
 
   render() {
     const {
@@ -197,11 +230,15 @@ class Info extends Component {
     const headwayMin = graphData ? graphData.headway_min : null;
     const waitTimes = graphData ? graphData.wait_times : null;
     const tripTimes = graphData ? graphData.trip_times : null;
-
+    
+    this.headwayData = graphData ? headwayMin.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
+    this.waitData = graphData ? waitTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: (100 * bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) : null;
+    this.tripData = graphData ? tripTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
+    
     const distance = this.computeDistance(graphParams, routes);
     const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
-
+    
     return (
       <div
         className={css`
@@ -336,26 +373,43 @@ minutes, max headway
                 {' '}
 minutes
               </p>
-              <BarChart
-                data={[{ values: headwayMin.histogram.map(bin => ({ x: `${bin.value}`, y: bin.count })) }]}
-                width={Math.max(100, headwayMin.histogram.length * 70)}
-                className={`css
-                color: 'red'
-              `}
-                height={200}
-                margin={
-                  {
-                    top: 10,
-                    bottom: 30,
-                    left: 50,
-                    right: 10,
-                  }
-                }
-                xAxis={{ label: 'minutes' }}
-                barPadding={0.3}
-                style={{ fill: 'red' }}
-                yAxis={{ innerTickSize: 10, label: 'arrivals', tickArguments: [5] }}
-              />
+              <XYPlot xDomain={[0, Math.max(60, Math.round(headwayMin.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
+
+                <HorizontalGridLines />
+                <XAxis />
+                <YAxis hideLine />
+
+                <VerticalRectSeries data={ this.headwayData } onNearestX={this._onNearestXHeadway} stroke="white" style={{strokeWidth: 2}}/>
+                
+                <ChartLabel 
+                text="arrivals"
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end'
+                }}       
+                />       
+  
+                <ChartLabel 
+                text="minutes"
+                className="alt-x-label"
+                includeMargin={false}
+                xPercent={0.90}
+                yPercent={0.94}
+                />       
+
+                { this.state.crosshairValues.headway && (
+                    <Crosshair values={this.state.crosshairValues.headway}
+                      style={{line:{background: 'none'}}} >
+                           <div className= 'rv-crosshair__inner__content'>
+                             Arrivals: { Math.round(this.state.crosshairValues.headway[0].y)}
+                           </div>                 
+                   </Crosshair>)}
+
+              </XYPlot>
             </div>
           ) : null }
         {waitTimes
@@ -371,28 +425,43 @@ minutes, max wait time
                 {' '}
 minutes
               </p>
-              <BarChart
-                data={[{ values: waitTimes.histogram.map(bin => ({ x: `${bin.value}`, y: (bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) }]}
-                width={Math.max(100, waitTimes.histogram.length * 70)}
-                className={`css
-                color: 'red'
-              `}
-                height={200}
-                margin={
-                  {
-                    top: 10,
-                    bottom: 30,
-                    left: 50,
-                    right: 10,
-                  }
-                }
-                xAxis={{ label: 'minutes' }}
-                barPadding={0.3}
-                style={{ fill: 'red' }}
-                yAxis={{
-                  innerTickSize: 10, label: 'chance', tickArguments: [5], tickFormat: d3.format('.0%'),
-                }}
-              />
+              <XYPlot xDomain={[0, Math.max(60, Math.round(waitTimes.max))+5]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
+
+                <HorizontalGridLines />
+                <XAxis />
+                <YAxis hideLine tickFormat={v => `${v}%`} />
+
+                <VerticalRectSeries data={ this.waitData } onNearestX={this._onNearestXWaitTimes} stroke="white" style={{strokeWidth: 2}}/>
+
+                <ChartLabel 
+                text="chance"
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end'
+                }}       
+                />       
+  
+                <ChartLabel 
+                text="minutes"
+                className="alt-x-label"
+                includeMargin={false}
+                xPercent={0.90}
+                yPercent={0.94}
+                />       
+
+                { this.state.crosshairValues.wait && (
+                    <Crosshair values={this.state.crosshairValues.wait}
+                      style={{line:{background: 'none'}}} >
+                           <div className= 'rv-crosshair__inner__content'>
+                             Chance: { Math.round(this.state.crosshairValues.wait[0].y)}%
+                           </div>                 
+                   </Crosshair>)}
+
+              </XYPlot>
             </div>
           ) : null }
         {tripTimes
@@ -412,23 +481,43 @@ minutes, max
                 {' '}
 minutes
               </p>
-              <BarChart
-                data={[{ values: tripTimes.histogram.map(bin => ({ x: `${bin.value}`, y: bin.count })) }]}
-                width={Math.max(100, tripTimes.histogram.length * 70)}
-                height={200}
-                margin={
-                  {
-                    top: 10,
-                    bottom: 30,
-                    left: 50,
-                    right: 10,
-                  }
-                }
-                xAxis={{ label: 'minutes' }}
-                barPadding={0.3}
-                style={{ fill: 'red' }}
-                yAxis={{ innerTickSize: 10, label: 'trips', tickArguments: [5] }}
-              />
+              <XYPlot xDomain={[0, Math.max(60, Math.round(tripTimes.max))+5]} xxxType="ordinal" height={200} width={400} onMouseLeave={this._onMouseLeave}>
+
+              <HorizontalGridLines />
+              <XAxis />
+              <YAxis hideLine />
+
+              <VerticalRectSeries data={ this.tripData } onNearestX={this._onNearestXTripTimes} stroke="white" style={{strokeWidth: 2}}/>
+
+                <ChartLabel 
+                text="trips"
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end'
+                }}       
+                />       
+  
+                <ChartLabel 
+                text="minutes"
+                className="alt-x-label"
+                includeMargin={false}
+                xPercent={0.90}
+                yPercent={0.94}
+                />       
+
+                { this.state.crosshairValues.trip && (
+                  <Crosshair values={this.state.crosshairValues.trip}
+                    style={{line:{background: 'none'}}} >
+                         <div className= 'rv-crosshair__inner__content'>
+                           Trips: { Math.round(this.state.crosshairValues.trip[0].y)}
+                         </div>                 
+                 </Crosshair>)}
+
+              </XYPlot>
             </div>
           ) : null }
         <code>
