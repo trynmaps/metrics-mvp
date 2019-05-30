@@ -425,7 +425,7 @@ minutes, max wait time
                 {' '}
 minutes
               </p>
-              <XYPlot xDomain={[0, Math.max(60, Math.round(waitTimes.max))+5]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
+              <XYPlot xDomain={[0, Math.max(60, Math.round(waitTimes.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
 
                 <HorizontalGridLines />
                 <XAxis />
@@ -481,7 +481,7 @@ minutes, max
                 {' '}
 minutes
               </p>
-              <XYPlot xDomain={[0, Math.max(60, Math.round(tripTimes.max))+5]} xxxType="ordinal" height={200} width={400} onMouseLeave={this._onMouseLeave}>
+              <XYPlot xDomain={[0, Math.max(60, Math.round(tripTimes.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
 
               <HorizontalGridLines />
               <XAxis />
