@@ -185,7 +185,7 @@ class GtfsScraper:
 
     def save_date_ranges(self, outpath, s3 = False):
         df = self.get_date_ranges()
-        filepath = f"{outpath}/date_ranges.csv"
+        filepath = f"{util.get_data_dir()}/{outpath}/date_ranges.csv"
 
         if s3:
             s3_path = f"date_ranges.csv"
