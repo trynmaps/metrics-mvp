@@ -36,6 +36,13 @@ def render_dwell_time(seconds):
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
 
+def get_time_isoformat(t: float):
+    second = "{:02d}".format(int(t) % 60)
+    minute = "{:02d}".format((int(t) // 60) % 60)
+    hour = "{:02d}".format((int(t) // 60 * 60) % 24)
+
+    return f"{hour}:{minute}:{second}"
+
 def get_localized_datetime(d: date, time_str: str, tz: pytz.timezone):
 
     time_str_parts = time_str.split('+') # + number of days
