@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import {
-  Map, TileLayer, CircleMarker, Popup, Marker,
+  Map, TileLayer, CircleMarker, Popup, Marker, Polyline
 } from 'react-leaflet';
 
 const INBOUND_COLOR = 'blue';
@@ -13,45 +13,39 @@ const ZOOM = 13;
 
 class MapStops extends Component {
 
-  handleRouteSelect = (route) => {
-
+  populateRouteDirection = (routeDirection, color, radius) => {
+    let route = null;
+        const { routeStops } = this.props;
+    if (routeStops && routeStops[routeDirection]) {
+      route = routeStops[routeDirection].map((stop) => {
+          const currentPosition = [stop.lat, stop.lon];
+              return (
+                <CircleMarker
+                  center={currentPosition}
+                  color={color}
+                  radius={radius}
+                />
+              );
+            });
+        route.push(<Polyline color={color} positions={routeStops[routeDirection]} />);
+      }
+      return route;
   }
 
   render() {
     const { position, zoom, inboundColor, inboundRadius, outboundColor, outboundRadius } = this.props;
 
     const mapClass = { width: '500px', height: '500px' };
-    const { routeStops } = this.props;
+    const inboundRoute = this.populateRouteDirection('Inbound', inboundColor ? inboundColor : INBOUND_COLOR, inboundRadius ? inboundRadius : INBOUND_RADIUS);
+    const outboundRoute = this.populateRouteDirection('Outbound', outboundColor ? outboundColor : OUTBOUND_COLOR, outboundRadius ? outboundRadius : OUTBOUND_RADIUS);
     return (
       <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="http://{s}.tile.osm.org/{z}/{x}/{y}.png"
         />
-        {routeStops ? routeStops.Inbound.map((stop) => {
-          const currentPosition = [stop.lat, stop.lon];
-          return (
-            <CircleMarker
-              center={currentPosition}
-              color={inboundColor || INBOUND_COLOR}
-              radius={inboundRadius || INBOUND_RADIUS}
-            />
-          );
-        }) : null
-        }
-        {
-          routeStops ? routeStops.Outbound.map((stop) => {
-            const currentPosition = [stop.lat, stop.lon];
-            return (
-              <CircleMarker
-                center={currentPosition}
-                color={outboundColor || OUTBOUND_COLOR}
-                radius={outboundRadius || OUTBOUND_RADIUS}
-              />
-            );
-          }) : null
-        }
-
+        { inboundRoute }
+        { outboundRoute }
 
       </Map>
     );
