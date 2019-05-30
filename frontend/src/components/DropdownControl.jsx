@@ -14,14 +14,16 @@ class DropdownControl extends Component {
   }
 
   render() {
-    const { options, title, name, variant, value } = this.props;
+    const {
+      options, title, name, variant, value,
+    } = this.props;
 
     const selectedOption = (options || []).find(option => (option.key === value));
-    const shownValue = value == null ? title : (title + ": " + (selectedOption ? selectedOption.label : value));
+    const shownValue = value == null ? title : (`${title}: ${selectedOption ? selectedOption.label : value}`);
 
     return (
       <Dropdown>
-        <Dropdown.Toggle variant={variant} id={name + "-dropdown"}>
+        <Dropdown.Toggle variant={variant} id={`${name}-dropdown`} className="btn-block">
           {shownValue}
         </Dropdown.Toggle>
         <Dropdown.Menu>

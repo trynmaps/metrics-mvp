@@ -39,6 +39,11 @@ class ArrivalHistory:
         stops = self.stops_data
         data = []
 
+        d = datetime.fromtimestamp(self.start_time, tz).date()
+
+        start_dt = util.get_localized_datetime(d, start_time_str, tz) if start_time_str is not None else None
+        end_dt = util.get_localized_datetime(d, end_time_str, tz) if end_time_str is not None else None
+
         has_dist = has_departure_time = self.version and self.version[1] >= '3'
 
         columns = ("VID", "TIME", "DEPARTURE_TIME", "SID", "DID", "DIST")
@@ -64,12 +69,11 @@ class ArrivalHistory:
                     values = (v, timestamp, departure_time, s, did, dist)
                     if tz:
                         dt = datetime.fromtimestamp(timestamp, tz)
-                        time_str = dt.strftime('%H:%M:%S')
-                        if start_time_str is not None and time_str < start_time_str:
+                        if start_dt is not None and dt < start_dt:
                             continue
-                        if end_time_str is not None and time_str >= end_time_str:
+                        if end_dt is not None and dt >= end_dt:
                             break # arrivals for each stop+direction are in timestamp order, so can stop here
-                        values = values + (dt, dt.strftime('%Y-%m-%d'), time_str)
+                        values = values + (dt, dt.strftime('%Y-%m-%d'), dt.strftime('%H:%M:%S'))
 
                     data.append(values)
 
@@ -123,7 +127,7 @@ class ArrivalHistory:
             start_time = data['start_time'],
             end_time = data['end_time'],
             stops_data = data['stops'],
-            version = data['version'] if 'version' in data else 'v2'
+            version = data['version'] if 'version' in data else 'v2',
         )
 
     def get_data(self):

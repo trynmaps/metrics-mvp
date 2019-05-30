@@ -25,7 +25,7 @@ def get_histogram(df: pd.Series):
 
     histogram, bin_edges = np.histogram(df, bins)
 
-    return [{"value": f"{bin}-{bin + bin_size}", "count": int(count)}
+    return [{"value": f"{bin}-{bin + bin_size}", "count": int(count), "bin_start": bin, "bin_end": bin + bin_size}
       for bin, count in zip(bins, histogram)]
 
 def get_percentiles(df: pd.Series):
