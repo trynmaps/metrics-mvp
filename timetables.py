@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser.add_argument("--date", required = True, help = "Date - YYYY-MM-DD")
     parser.add_argument("--comparison", dest = "comparison", action = "store_true", help = "option to compare timetables to actual data - true or false")
     parser.add_argument("--thresholds", help = "comma-separated list of thresholds to define late/very late arrivals (ex '5,10')")
+    # add version param for later
     parser.set_defaults(comparison = False)
     parser.set_defaults(thresholds = '5,10')
 
@@ -23,6 +24,7 @@ if __name__ == "__main__":
     stops = [stop for stop in args.stops.split(",") if len(stop) > 0]
     d = date.fromisoformat(args.date)
     comparison = args.comparison
+    ver = "v1"
 
     thresholds = [int(x) for x in args.thresholds.split(',') if len(x) > 0]
 
@@ -31,7 +33,7 @@ if __name__ == "__main__":
     start_time = datetime.now()
     print(f"Start: {start_time}")
 
-    tt = timetable.get_timetable_from_csv(agency, route, d)
+    tt = timetable.get_timetable_from_csv(agency, route, d, ver)
     rc = nextbus.get_route_config(agency, route)
 
     for stop in stops:

@@ -136,7 +136,7 @@ def compare_timetable_to_actual(tt: timetable.Timetable, df: pd.DataFrame, direc
     #use dummy data for now
     delta = tt.date - date(2019, 4, 8)
     stops_df["headway"] = compute_headway_minutes(stops_df)
-    stops_df["TIME"] = stops_df["TIME"].apply(lambda x: datetime.fromtimestamp(x, tz = timezone(timedelta(hours = -7))) + delta)
+    stops_df["DATE_TIME"] = stops_df["TIME"].apply(lambda x: datetime.fromtimestamp(x, tz = pytz.timezone('America/Los_Angeles')))
 
     def get_closest_nonnegative_timetable_time(dt: datetime):
         deltas = dt - timetable["arrival_time"]
@@ -154,11 +154,11 @@ def compare_timetable_to_actual(tt: timetable.Timetable, df: pd.DataFrame, direc
             "closest_first_after_headway": timetable[timetable["arrival_time"] == s.first_scheduled_after_arrival].arrival_headway.values[0] if not pd.isna(s.first_scheduled_after_arrival) else np.nan
         })
 
-    stops_df["closest_scheduled_arrival"] = stops_df["TIME"].apply(get_closest_timetable_time)
-    stops_df["first_scheduled_after_arrival"] = stops_df["TIME"].apply(get_closest_nonnegative_timetable_time)
+    stops_df["closest_scheduled_arrival"] = stops_df["DATE_TIME"].apply(get_closest_timetable_time)
+    stops_df["first_scheduled_after_arrival"] = stops_df["DATE_TIME"].apply(get_closest_nonnegative_timetable_time)
 
-    stops_df["closest_delta"] = stops_df["TIME"] - stops_df["closest_scheduled_arrival"]
-    stops_df["first_after_delta"] = stops_df["TIME"] - stops_df["first_scheduled_after_arrival"]
+    stops_df["closest_delta"] = stops_df["DATE_TIME"] - stops_df["closest_scheduled_arrival"]
+    stops_df["first_after_delta"] = stops_df["DATE_TIME"] - stops_df["first_scheduled_after_arrival"]
     stops_df[["closest_delta", "first_after_delta"]] = stops_df[["closest_delta", "first_after_delta"]].applymap(lambda x: x.total_seconds()/60 if isinstance(x, timedelta) else np.nan)
 
     stops_df[["closest_scheduled_headway", "closest_first_after_headway"]] = stops_df.apply(get_corresponding_scheduled_headway, axis = "columns")
@@ -167,7 +167,7 @@ def compare_timetable_to_actual(tt: timetable.Timetable, df: pd.DataFrame, direc
     stops_df["closest_headway_delta"] = stops_df["headway"] - stops_df["closest_scheduled_headway"]
     stops_df["first_headway_delta"] = stops_df["headway"] - stops_df["closest_first_after_headway"]
 
-    stops_df = stops_df.rename(mapper = {"TIME": "actual_arrival_time"}, axis = "columns")
+    stops_df = stops_df.rename(mapper = {"DATE_TIME": "actual_arrival_time"}, axis = "columns")
     
     return stops_df[["actual_arrival_time", "closest_scheduled_arrival", "closest_delta", "first_scheduled_after_arrival", "first_after_delta", "headway", "closest_scheduled_headway", "closest_headway_delta",  "closest_first_after_headway", "first_headway_delta"]]
 
@@ -176,12 +176,14 @@ def percent_within_abs_threshold(s: pd.Series, threshold: float):
     return len(s[abs(s) <= threshold])/len(s) * 100
 
 def compare_delta_metrics(s: pd.Series, thresholds: list):
+    no_nan = s.dropna()
+
     return {
-        f"on-time rate (at most {thresholds[0]} minutes late)": len(s[(s <= thresholds[0]) & (s >= 0)])/len(s) * 100,
-        "early rate": len(s[s < 0])/len(s) * 100,
-        f"gap percentage (more than {thresholds[0]} minutes late)": len(s[s > thresholds[0]])/len(s) * 100,
-        f"late percentage (between {thresholds[0]} and {thresholds[1]} minutes late)": len(s[(s > thresholds[0]) & (s < thresholds[1])]/len(s) * 100),
-        f"very late percentage (more than {thresholds[1]} minutes late)": len(s[s > thresholds[1]]/len(s) * 100)
+        f"on-time rate (at most {thresholds[0]} minutes late)": len(no_nan[(no_nan <= thresholds[0]) & (no_nan >= 0)])/len(no_nan) * 100,
+        "early rate": len(no_nan[no_nan < 0])/len(no_nan) * 100,
+        f"gap percentage (more than {thresholds[0]} minutes late)": len(no_nan[no_nan > thresholds[0]])/len(no_nan) * 100,
+        f"late percentage (between {thresholds[0]} and {thresholds[1]} minutes late)": len(no_nan[(no_nan > thresholds[0]) & (no_nan <= thresholds[1])])/len(no_nan) * 100,
+        f"very late percentage (more than {thresholds[1]} minutes late)": len(no_nan[no_nan > thresholds[1]])/len(no_nan) * 100
     }
 """
 josh's comments

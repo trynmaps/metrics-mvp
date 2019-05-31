@@ -2,11 +2,13 @@ from datetime import date, time, datetime, timedelta
 import pytz
 import os
 import requests
+import gzip
+from io import StringIO
 
 import pandas as pd
 import numpy as np
 
-from . import nextbus, arrival_history
+from . import nextbus, arrival_history, util
 
 class Timetable:
     def __init__(self, agency, route_id, timetable, date):
@@ -21,8 +23,10 @@ class Timetable:
         else:
             direction_name = "inbound" if "i" in direction.lower() else "outbound"
             df = self.timetable.loc[(self.timetable.nextbus_id.apply(lambda x: x == stop_id)) & (self.timetable.direction.apply(lambda x: x == direction_name)), ["arrival_time", "departure_time"]].copy(deep = True)
-
+        
+        midnight = datetime.combine(self.date, time(), tzinfo = pytz.timezone('America/Los_Angeles'))
         df.index = range(len(df))
+        df[["arrival_time", "departure_time"]] = df[["arrival_time", "departure_time"]].applymap(lambda x: midnight + timedelta(seconds = x))
         df["arrival_headway"] = df.arrival_time - df.arrival_time.shift(1)
         df["departure_headway"] = df.departure_time - df.departure_time.shift(1)
 
@@ -49,55 +53,45 @@ class Timetable:
         else:
             print(f"No timetable found for {stop_id} on route {self.route_id} on {self.date} going {self.get_stop_direction(stop_id)}.")
 
-def get_s3_bucket():
-    return "opentransit-muni-schedules"
+def get_s3_bucket(agency: str):
+    return f"opentransit-{agency}-schedules"
 
-def csv_string_to_df(s: str):
-    # remove empty rows
-    elements = [list(map(lambda x: x.strip(), x.split(","))) for x in s.split("\n") if len(x) > 0]
-    return pd.DataFrame(elements[1:], columns = elements[0])
+def read_file(agency: str, local_path: str, s3_path: str, filename: str):
+    path = util.get_data_dir()
 
-def get_timetable_from_csv(path: str, agency: str, route_id: str, d: date):
-    date_period = get_date_period(path, d)
-    delta = datetime.combine(d, time(), tzinfo = pytz.timezone('US/Pacific')) - date_period[0]
-    date_range_str = f"{date_period[0].date().isoformat()}_to_{date_period[-1].date().isoformat()}"
-    filename = f"route_{route_id}_{date_range_str}_timetable.csv"
-    
     # checks for a local file; if it doesn't exist, pull it from the s3 bucket and cache it locally
     try:
-        with open(f"{path}/{filename}", "r") as f:
-            data = f.read() 
-    except FileNotFoundError as err:
-        s3_bucket = get_s3_bucket()
-        data = requests.get(f"http://{s3_bucket}.s3.amazonaws.com/{date_range_str}/{filename}").text
-
-        with open(f"{path}/{filename}", "w") as f:
-            f.write(data)
-
-    timetable = csv_string_to_df(data)
-    timetable[["arrival_time", "departure_time"]] = timetable[["arrival_time", "departure_time"]].applymap(lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S%z") + delta)
-
-    return Timetable(agency, route_id, timetable, d)
-
-def get_date_ranges(path: str):
-    filename = "date_ranges.csv"
-    
-    # checks for a local file; if it doesn't exist, pull it from the s3 bucket and cache it locally
-    try:
-        with open(f"{path}/{filename}", "r") as f:
+        with open(f"{path}/{local_path}/{filename}", "r") as f:
             data = f.read()
     except FileNotFoundError as err:
-        s3_bucket = get_s3_bucket()
-        data = requests.get(f"http://{s3_bucket}.s3.amazonaws.com/{filename}").text
+        s3_bucket = get_s3_bucket(agency)
+        data = requests.get(f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}{filename}").text
 
-        with open(f"{path}/{filename}", "w") as f:
+        with open(f"{path}/{local_path}/{filename}", "w") as f:
             f.write(data)
 
-    return csv_string_to_df(data)
+    return pd.read_csv(StringIO(data), dtype = {'stop_id': str, 'nextbus_id': str})
 
-def get_date_period(path: str, d: date):
+def get_timetable_from_csv(agency: str, route_id: str, d: date, ver: str):
+    date_period = get_date_period(agency, d, ver)
+    date_range_str = f"{date_period[0].date().isoformat()}_to_{date_period[-1].date().isoformat()}"
+    local_path = f"{get_s3_bucket(agency)}/{date_range_str}"
+    s3_path = f"{date_range_str}/"
+    filename = f"{agency}_route_{route_id}_{date_range_str}_timetable_{ver}.csv"
+    
+    timetable = read_file(agency, local_path, s3_path, filename)
+    return Timetable(agency, route_id, timetable, d)
+
+def get_date_ranges(agency: str, ver: str):
+    local_path = f"{get_s3_bucket(agency)}/"
+    s3_path = ""
+    filename = f"date_ranges_{ver}.csv"
+
+    return read_file(agency, local_path, s3_path, filename)
+
+def get_date_period(agency: str, d: date, ver: str):
     try:
-        date_ranges = get_date_ranges(path)
+        date_ranges = get_date_ranges(agency, ver)
     except Exception as err:
         print(f"Error attempting to fetch date ranges for {d.isoformat()}: {err}")
 
@@ -108,13 +102,9 @@ def get_date_period(path: str, d: date):
     # return the exception if it exists
     if len(period[period.type == "exception"]) > 0:
         date_range = period[period.type == "exception"].date_range.squeeze()
-
-        return list(map(lambda x: datetime.combine(x, time(), tzinfo = pytz.timezone('US/Pacific')), [date_range[0], date_range[-1]]))
     elif len(period) > 0:
         date_range = period.date_range.iloc[0]
-
-        return list(map(lambda x: datetime.combine(x, time(), tzinfo = pytz.timezone('US/Pacific')), [date_range[0], date_range[-1]]))
     else:
         raise Exception(f"No timetable data for {d.isoformat()}")
 
-
+    return [date_range[0], date_range[-1]]
