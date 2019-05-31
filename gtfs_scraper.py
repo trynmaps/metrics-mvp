@@ -10,20 +10,21 @@ from models import gtfs, util
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Get timetables from GTFS data")
     parser.add_argument("--inpath", required = True, help = "Path to directory containing GTFS data")
-    parser.add_argument("--outpath", help = "Destination directory for timetable CSVs")
-    parser.add_argument("--s3", help = "Option to upload files to the s3 bucket. true/false")
+    parser.add_argument("--s3", dest = "s3", action = "store_true", help = "Option to upload files to the s3 bucket")
+    parser.add_argument("--agency", help = "Agency name - default is 'sf-muni'")
+    parser.add_argument("--version", help = "Version number for timetable")
+    parser.set_defaults(s3 = False)
+    parser.set_defaults(agency = "sf-muni")
+    parser.set_defaults(version = "v1")
     
     args = parser.parse_args()
     inpath = args.inpath
-    outpath = util.get_data_dir() if args.outpath is None else args.outpath
+    outpath = util.get_data_dir()
     s3 = args.s3
+    agency = args.agency
+    version = args.version
 
-    if s3 and s3.lower() == "true":
-        s3 = True
-    else:
-        s3 = False
-
-    gtfs_scraper = gtfs.GtfsScraper(inpath)
+    gtfs_scraper = gtfs.GtfsScraper(inpath, agency, version)
 
     start_time = datetime.now()
     print(f"Begin scraping GTFS data: {start_time}")

@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import partridge as ptg
 import boto3
+import gzip
 
 from . import nextbus, util, timetable
 
@@ -14,8 +15,10 @@ class NoRouteError(Exception):
     pass
 
 class GtfsScraper:
-    def __init__(self, inpath):
+    def __init__(self, inpath, agency, version):
         self.inpath = inpath
+        self.agency = agency
+        self.version = version
         self.feed = ptg.load_geo_feed(self.inpath, {})
 
     def get_gtfs_route_id(self, route):
@@ -31,7 +34,7 @@ class GtfsScraper:
 
     def get_gtfs_route_ids(self):
         routes = self.feed.routes        
-        nextbus_route_ids = [route.id for route in nextbus.get_route_list("sf-muni")]
+        nextbus_route_ids = [route.id for route in nextbus.get_route_list(self.agency)]
         # convert nextbus naming convention for OWL routes to gtfs naming convention
         # example - T_OWL in nextbus is T-OWL in gtfs
         gtfs_route_ids = [
@@ -64,12 +67,6 @@ class GtfsScraper:
             # remove service_ids that have been removed that day (exception_type == 2)
             service_ids = service_ids[~(service_ids.isin(removed_services))]
 
-        # trip_view = {
-        #     "trips.txt": {
-        #         "route_id": self.get_gtfs_route_id(route_id),
-        #         "service_id": list(service_ids)
-        #     }
-        # }
         trips_df = self.feed.trips
         trips = trips_df[(trips_df.route_id == self.get_gtfs_route_id(route_id)) & 
                           (trips_df.service_id.apply(lambda x: x in service_ids.values))]
@@ -98,13 +95,6 @@ class GtfsScraper:
 
         if len(stop_times) > 0:
             # account for discrepancies in gtfs/nextbus naming
-            # excluded_stops = self.get_excluded_stops(route_id, stop_times, route_config, direction, d)
-
-            # for gtfs_id, nextbus_id in excluded_stops["matches"].items():
-            #     stop_times.loc[stop_times.stop_id == gtfs_id, ["stop_id"]] = nextbus_id
-
-            # convert arrival and departure times
-            stop_times[["arrival_time", "departure_time"]] = stop_times[["arrival_time", "departure_time"]].applymap(lambda x: util.get_localized_datetime(get_date(x), util.get_time_isoformat(x)))
             stop_times["direction"] = direction 
 
             # get nextbus stop_ids
@@ -166,26 +156,24 @@ class GtfsScraper:
         return date_ranges.append(exceptions)
 
     def upload_to_s3(self, s3_path: str, df: pd.DataFrame):
-        # only upload the file if it's not already there
         client = boto3.client('s3')
-        s3_bucket = timetable.get_s3_bucket()
+        s3_bucket = timetable.get_s3_bucket(self.agency)
         search = client.list_objects(Bucket = s3_bucket, Prefix = s3_path)
 
-        if 'Contents' not in search.keys():
-            s3 = boto3.resource('s3')
-            object = s3.Object(s3_bucket, s3_path)
-            object.put(
-                Body = bytes(df.to_csv(), 'utf-8'),
-                ACL = 'public-read'
-            )
-            
-            print(f"{datetime.now().time().isoformat()}: Uploaded {s3_path} to s3 bucket.")
-        else:
-            print(f"{datetime.now().time().isoformat()}: {s3_path} is already in the s3 bucket.")
+        s3 = boto3.resource('s3')
+        object = s3.Object(s3_bucket, s3_path)
+        object.put(
+            Body = gzip.compress(bytes(df.to_csv(), 'utf-8')),
+            ContentEncoding = 'gzip',
+            ContentType = 'text/csv',
+            ACL = 'public-read'
+        )
+        
+        print(f"{datetime.now().time().isoformat()}: Uploaded {s3_path} to s3 bucket.")
 
     def save_date_ranges(self, outpath, s3 = False):
         df = self.get_date_ranges()
-        filepath = f"{util.get_data_dir()}/{outpath}/date_ranges.csv"
+        filepath = f"{outpath}/date_ranges.csv"
 
         if s3:
             s3_path = f"date_ranges.csv"
@@ -208,10 +196,10 @@ class GtfsScraper:
         for nextbus_route_id, gtfs_route_id in routes.items():
             try:
                 date_range_string = f"{start_date.isoformat()}_to_{end_date.isoformat()}"
-                subdirectory = f"{timetable.get_s3_bucket()}/{date_range_string}"
+                subdirectory = f"{timetable.get_s3_bucket(self.agency)}/{date_range_string}"
                 Path(f"{outpath}/{subdirectory}").mkdir(parents = True, exist_ok = True)
 
-                filename = f"route_{nextbus_route_id}_{date_range_string}_timetable.csv"
+                filename = f"{self.agency}_route_{nextbus_route_id}_{date_range_string}_timetable_{self.version}.csv"
                 filepath = f"{subdirectory}/{filename}"
                 csv_path = f"{outpath}/{filepath}"
                 local_file_exists = Path(csv_path).is_file()
@@ -220,7 +208,7 @@ class GtfsScraper:
                 if local_file_exists:
                     print(f"{datetime.now().time().isoformat()}: The file {filepath} already exists, skipping.")
                 else:
-                    rc = nextbus.get_route_config("sf-muni", nextbus_route_id)
+                    rc = nextbus.get_route_config(self.agency nextbus_route_id)
                     for direction in ["inbound", "outbound"]:
                         stops.append(self.get_stop_times(nextbus_route_id, start_date, rc, direction))
                     

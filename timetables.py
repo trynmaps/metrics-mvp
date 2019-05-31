@@ -13,37 +13,32 @@ if __name__ == "__main__":
     parser.add_argument("--route", required = True, help = "Route id")
     parser.add_argument("--stops", required = True, help = "Comma-separated list of stops on the route (ex '3413,4416'")
     parser.add_argument("--date", required = True, help = "Date - YYYY-MM-DD")
-    parser.add_argument("--comparison", help = "option to compare timetables to actual data - true or false")
+    parser.add_argument("--comparison", dest = "comparison", action = "store_true", help = "option to compare timetables to actual data - true or false")
     parser.add_argument("--thresholds", help = "comma-separated list of thresholds to define late/very late arrivals (ex '5,10')")
+    parser.set_defaults(comparison = False)
+    parser.set_defaults(thresholds = '5,10')
 
     args = parser.parse_args()
     route = args.route
     stops = [stop for stop in args.stops.split(",") if len(stop) > 0]
     d = date.fromisoformat(args.date)
+    comparison = args.comparison
 
-    if args.comparison is None or args.comparison.lower() == 'false':
-        comparison = False
-    elif args.comparison.lower() == 'true':
-        comparison = True
-    else:
-        raise Exception("comparison must be true or false")
+    thresholds = [int(x) for x in args.thresholds.split(',') if len(x) > 0]
 
-    thresholds = [5, 10] if args.thresholds is None else [int(x) for x in args.thresholds.split(',') if len(x) > 0]
-
-    inpath = util.get_data_dir()
     agency = "sf-muni"
     
     start_time = datetime.now()
     print(f"Start: {start_time}")
 
-    tt = timetable.get_timetable_from_csv(inpath, agency, route, d)
+    tt = timetable.get_timetable_from_csv(agency, route, d)
     rc = nextbus.get_route_config(agency, route)
 
     for stop in stops:
         # get direction
         nextbus_dir = rc.get_directions_for_stop(stop)
         if len(nextbus_dir) == 0:
-            raise Exception(f"Stop {stop} has no directions.")
+            print(f"Stop {stop} has no directions.")
         else:
             for direction in nextbus_dir:
                 tt.pretty_print(stop, direction)
