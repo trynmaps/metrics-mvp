@@ -11,6 +11,7 @@ import math
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 import constants
 import sys
+import backend_util
 from errors import StopNotOnRouteError
 
 """
@@ -53,10 +54,33 @@ def route_config():
     }
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
+@app.route('/metrics/wait_times', methods = ['GET'])
+def wait_times_page():
+    resp = backend_util.fetch_data()
+
+    return resp
+
+@app.route('/metrics/headways', methods = ['GET'])
+def headways_page():
+    resp = backend_util.fetch_data()
+
+    return resp
+
+@app.route('/metrics/trip_times', methods = ['GET'])
+def trip_times_page():
+    resp = backend_util.fetch_data()
+
+    return resp
+
+@app.route('/metrics/timetables', methods = ['GET'])
+def timetables_page():
+    resp = backend_util.fetch_data()
+
+    return resp
+
 @app.route('/metrics', methods=['GET'])
 def metrics_page():
-    metrics_start = time.time()
-    data = backend_util.fetch_data()
+    resp = backend_util.fetch_data()
     # route_id = request.args.get('route_id')
     # if route_id is None:
     #     route_id = '12'
@@ -116,10 +140,7 @@ def metrics_page():
     #         'error': str(ex),
     #     }, indent=2), status=400, mimetype='application/json')
 
-    metrics_end = time.time()
-    data['processing_time'] = (metrics_end - metrics_start)
-
-    return Response(json.dumps(data, indent=2), mimetype='application/json')
+    return resp
 
 @app.route('/metrics_by_interval', methods=['GET'])
 def metrics_by_interval():

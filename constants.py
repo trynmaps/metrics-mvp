@@ -25,3 +25,12 @@ DEFAULT_TIME_STR_INTERVALS = [
 ]
 
 PACIFIC_TIMEZONE = timezone('US/Pacific')
+
+AGENCY = 'sf-muni'
+
+# test values
+TEST_ROUTE = '10'
+TEST_STOP = '3413'
+TEST_END_STOP = '6931'
+TEST_DATE_STR = '2019-04-08'
+TEST_DIRECTION = '10___I_G00'
