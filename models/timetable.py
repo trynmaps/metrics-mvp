@@ -8,7 +8,7 @@ from io import StringIO
 import pandas as pd
 import numpy as np
 
-from . import nextbus, arrival_history, util
+from . import nextbus, arrival_history, util, gtfs
 
 class Timetable:
     def __init__(self, agency, route_id, timetable, date):
@@ -53,9 +53,6 @@ class Timetable:
         else:
             print(f"No timetable found for {stop_id} on route {self.route_id} on {self.date} going {self.get_stop_direction(stop_id)}.")
 
-def get_s3_bucket(agency: str):
-    return f"opentransit-{agency}-schedules"
-
 def read_file(agency: str, local_path: str, s3_path: str, filename: str):
     path = util.get_data_dir()
 
@@ -64,7 +61,7 @@ def read_file(agency: str, local_path: str, s3_path: str, filename: str):
         with open(f"{path}/{local_path}/{filename}", "r") as f:
             data = f.read()
     except FileNotFoundError as err:
-        s3_bucket = get_s3_bucket(agency)
+        s3_bucket = gtfs.get_s3_bucket(agency)
         data = requests.get(f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}{filename}").text
 
         with open(f"{path}/{local_path}/{filename}", "w") as f:
@@ -75,7 +72,7 @@ def read_file(agency: str, local_path: str, s3_path: str, filename: str):
 def get_timetable_from_csv(agency: str, route_id: str, d: date, ver: str):
     date_period = get_date_period(agency, d, ver)
     date_range_str = f"{date_period[0].date().isoformat()}_to_{date_period[-1].date().isoformat()}"
-    local_path = f"{get_s3_bucket(agency)}/{date_range_str}"
+    local_path = f"{gtfs.get_s3_bucket(agency)}/{date_range_str}"
     s3_path = f"{date_range_str}/"
     filename = f"{agency}_route_{route_id}_{date_range_str}_timetable_{ver}.csv"
     
@@ -83,7 +80,7 @@ def get_timetable_from_csv(agency: str, route_id: str, d: date, ver: str):
     return Timetable(agency, route_id, timetable, d)
 
 def get_date_ranges(agency: str, ver: str):
-    local_path = f"{get_s3_bucket(agency)}/"
+    local_path = f"{gtfs.get_s3_bucket(agency)}/"
     s3_path = ""
     filename = f"date_ranges_{ver}.csv"
 

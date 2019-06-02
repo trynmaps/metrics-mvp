@@ -9,7 +9,7 @@ import partridge as ptg
 import boto3
 import gzip
 
-from . import nextbus, util, timetable
+from . import nextbus, util
 
 class NoRouteError(Exception):
     pass
@@ -157,7 +157,7 @@ class GtfsScraper:
 
     def upload_to_s3(self, s3_path: str, df: pd.DataFrame):
         client = boto3.client('s3')
-        s3_bucket = timetable.get_s3_bucket(self.agency)
+        s3_bucket = get_s3_bucket(self.agency)
         search = client.list_objects(Bucket = s3_bucket, Prefix = s3_path)
 
         s3 = boto3.resource('s3')
@@ -171,9 +171,9 @@ class GtfsScraper:
         
         print(f"{datetime.now().time().isoformat()}: Uploaded {s3_path} to s3 bucket.")
 
-    def save_date_ranges(self, outpath, s3 = False):
+    def save_date_ranges(self, s3 = False):
         df = self.get_date_ranges()
-        filepath = f"{outpath}/date_ranges.csv"
+        filepath = f"{get_schedule_dir(self.agency)}/date_ranges.csv"
 
         if s3:
             s3_path = f"date_ranges.csv"
@@ -196,19 +196,18 @@ class GtfsScraper:
         for nextbus_route_id, gtfs_route_id in routes.items():
             try:
                 date_range_string = f"{start_date.isoformat()}_to_{end_date.isoformat()}"
-                subdirectory = f"{timetable.get_s3_bucket(self.agency)}/{date_range_string}"
-                Path(f"{outpath}/{subdirectory}").mkdir(parents = True, exist_ok = True)
+                local_path = f"{get_schedule_dir(self.agency)}/{date_range_string}"
+                Path(local_path).mkdir(parents = True, exist_ok = True)
 
                 filename = f"{self.agency}_route_{nextbus_route_id}_{date_range_string}_timetable_{self.version}.csv"
-                filepath = f"{subdirectory}/{filename}"
-                csv_path = f"{outpath}/{filepath}"
+                csv_path = f"{local_path}/{filename}"
                 local_file_exists = Path(csv_path).is_file()
                 stops = []
 
                 if local_file_exists:
-                    print(f"{datetime.now().time().isoformat()}: The file {filepath} already exists, skipping.")
+                    print(f"{datetime.now().time().isoformat()}: The file {filename} already exists, skipping.")
                 else:
-                    rc = nextbus.get_route_config(self.agency nextbus_route_id)
+                    rc = nextbus.get_route_config(self.agency, nextbus_route_id)
                     for direction in ["inbound", "outbound"]:
                         stops.append(self.get_stop_times(nextbus_route_id, start_date, rc, direction))
                     
@@ -260,4 +259,9 @@ def get_nextbus_stop_id(gtfs_stop_id: str, direction_id: int, routeconfig: nextb
         # TODO: deal with stops w/o direction (on nextbus)
         return np.nan
 
+def get_s3_bucket(agency: str):
+    return f"opentransit-{agency}-schedules"
+
+def get_schedule_dir(agency: str):
+    return f"{util.get_data_dir()}/{get_s3_bucket(agency)}"
     

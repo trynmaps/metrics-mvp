@@ -36,6 +36,12 @@ def render_dwell_time(seconds):
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
 
+def get_schedule_s3_bucket(agency: str):
+    return f"opentransit-{agency}-schedules"
+
+def get_schedule_dir(agency: str):
+    return f"{get_data_dir()}/{get_schedule_s3_bucket(agency)}"
+
 def get_localized_datetime(d: date, time_str: str, tz: pytz.timezone):
 
     time_str_parts = time_str.split('+') # + number of days

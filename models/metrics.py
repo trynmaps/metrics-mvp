@@ -134,7 +134,6 @@ def compare_timetable_to_actual(tt: timetable.Timetable, df: pd.DataFrame, direc
     timetable = tt.get_data_frame(stop_id, direction)
 
     #use dummy data for now
-    delta = tt.date - date(2019, 4, 8)
     stops_df["headway"] = compute_headway_minutes(stops_df)
     stops_df["DATE_TIME"] = stops_df["TIME"].apply(lambda x: datetime.fromtimestamp(x, tz = pytz.timezone('America/Los_Angeles')))
 

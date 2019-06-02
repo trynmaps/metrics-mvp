@@ -46,8 +46,7 @@ if __name__ == "__main__":
                 tt.pretty_print(stop, direction)
                 
                 if comparison:
-                    # get dummy data for now
-                    ah = arrival_history.get_by_date(agency, route, date(2019, 4, 8))
+                    ah = arrival_history.get_by_date(agency, route, d)
                     df = ah.get_data_frame(stop_id = stop, direction_id = direction)
 
                     if len(df) > 0:
