@@ -6,7 +6,7 @@ import numpy as np
 
 from models import metrics, util, nextbus
 from constants import AGENCY, PACIFIC_TIMEZONE
-from backend_fetch import fetch_wait_times, fetch_headways, fetch_trip_times
+from backend_data import fetch_wait_times, fetch_headways, fetch_trip_times
 
 # package up stats
 def fetch_wait_times_stats(params: dict, rc: nextbus.RouteConfig):

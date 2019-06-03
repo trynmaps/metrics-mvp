@@ -11,7 +11,7 @@ import math
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 import constants
 import sys
-import backend_util
+import backend_fetch
 from errors import StopNotOnRouteError
 
 """
@@ -56,91 +56,93 @@ def route_config():
 
 @app.route('/metrics/wait_times', methods = ['GET'])
 def wait_times_page():
-    resp = backend_util.fetch_data()
+    resp = backend_fetch.fetch_data()
 
     return resp
 
 @app.route('/metrics/headways', methods = ['GET'])
 def headways_page():
-    resp = backend_util.fetch_data()
+    resp = backend_fetch.fetch_data()
 
     return resp
 
 @app.route('/metrics/trip_times', methods = ['GET'])
 def trip_times_page():
-    resp = backend_util.fetch_data()
+    resp = backend_fetch.fetch_data()
 
     return resp
 
-@app.route('/metrics/timetables', methods = ['GET'])
-def timetables_page():
-    resp = backend_util.fetch_data()
+# @app.route('/metrics/timetables', methods = ['GET'])
+# def timetables_page():
+#     resp = backend_util.fetch_data()
 
-    return resp
+#     return resp
 
 @app.route('/metrics', methods=['GET'])
 def metrics_page():
-    resp = backend_util.fetch_data()
-    # route_id = request.args.get('route_id')
-    # if route_id is None:
-    #     route_id = '12'
-    # start_stop_id = request.args.get('start_stop_id')
-    # if start_stop_id is None:
-    #     start_stop_id = '3476'
-    # end_stop_id = request.args.get('end_stop_id')
+    #resp = backend_util.fetch_data()
+    route_id = request.args.get('route_id')
+    if route_id is None:
+        route_id = '12'
+    start_stop_id = request.args.get('start_stop_id')
+    if start_stop_id is None:
+        start_stop_id = '3476'
+    end_stop_id = request.args.get('end_stop_id')
 
-    # direction_id = request.args.get('direction_id')
+    direction_id = request.args.get('direction_id')
 
-    # start_date_str = request.args.get('start_date')
-    # end_date_str = request.args.get('end_date')
-    # date_str = request.args.get('date')
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    date_str = request.args.get('date')
 
-    # if date_str is not None:
-    #     start_date_str = end_date_str = date_str
-    # else:
-    #     if start_date_str is None:
-    #         start_date_str = '2019-04-08'
-    #     if end_date_str is None:
-    #         end_date_str = start_date_str
+    if date_str is not None:
+        start_date_str = end_date_str = date_str
+    else:
+        if start_date_str is None:
+            start_date_str = '2019-04-08'
+        if end_date_str is None:
+            end_date_str = start_date_str
 
-    # start_time_str = request.args.get('start_time') # e.g. "14:00" (24h time of day)
-    # end_time_str = request.args.get('end_time') # e.g. "18:00" (24h time of day)
-    # calc_metrics_args = {
-    #     'start_stop_id': start_stop_id,
-    #     'end_stop_id': end_stop_id,
-    #     'route_id': route_id,
-    #     'direction_id': direction_id,
-    #     'start_date_str': start_date_str,
-    #     'end_date_str': end_date_str,
-    #     'date': date_str,
-    #     'start_time_str': start_time_str,
-    #     'end_time_str': end_time_str,
-    # }
-    # route_config = nextbus.get_route_config('sf-muni', calc_metrics_args['route_id'])
-    # try:
-    #     data = calc_metrics(calc_metrics_args, route_config)
-    # except FileNotFoundError as ex:
-    #     return Response(json.dumps({
-    #         'params': calc_metrics_args,
-    #         'error': f"Arrival history not found for route {calc_metrics_args['route_id']} on {calc_metrics_args['date'] or calc_metrics_args['start_date_str']}",
-    #     }, indent=2), status=404, mimetype='application/json')
-    # except IndexError as ex:
-    #     return Response(json.dumps({
-    #         'params': calc_metrics_args,
-    #         'error': f"No arrivals found for stop {calc_metrics_args['start_stop_id']} on route {calc_metrics_args['route_id']} in direction {calc_metrics_args['direction_id']} on {calc_metrics_args['date'] or calc_metrics_args['start_date_str']}",
-    #     }, indent = 2), status = 404, mimetype = 'application/json')
-    # except StopNotOnRouteError as ex:
-    #     return Response(json.dumps({
-    #         'params': calc_metrics_args,
-    #         'error': f"Stop {calc_metrics_args['start_stop_id']} is not on route {calc_metrics_args['route_id']}",
-    #     }, indent=2), status=404, mimetype='application/json')
-    # except Exception as ex:
-    #     return Response(json.dumps({
-    #         'params for calc_metrics func': calc_metrics_args,
-    #         'error': str(ex),
-    #     }, indent=2), status=400, mimetype='application/json')
+    start_time_str = request.args.get('start_time') # e.g. "14:00" (24h time of day)
+    end_time_str = request.args.get('end_time') # e.g. "18:00" (24h time of day)
+    calc_metrics_args = {
+        'start_stop_id': start_stop_id,
+        'end_stop_id': end_stop_id,
+        'route_id': route_id,
+        'direction_id': direction_id,
+        'start_date_str': start_date_str,
+        'end_date_str': end_date_str,
+        'date': date_str,
+        'start_time_str': start_time_str,
+        'end_time_str': end_time_str,
+    }
+    route_config = nextbus.get_route_config('sf-muni', calc_metrics_args['route_id'])
+    try:
+        data = calc_metrics(calc_metrics_args, route_config)
+    except FileNotFoundError as ex:
+        return Response(json.dumps({
+            'params': calc_metrics_args,
+            'error': f"Arrival history not found for route {calc_metrics_args['route_id']} on {calc_metrics_args['date'] or calc_metrics_args['start_date_str']}",
+        }, indent=2), status=404, mimetype='application/json')
+    except IndexError as ex:
+        return Response(json.dumps({
+            'params': calc_metrics_args,
+            'error': f"No arrivals found for stop {calc_metrics_args['start_stop_id']} on route {calc_metrics_args['route_id']} in direction {calc_metrics_args['direction_id']} on {calc_metrics_args['date'] or calc_metrics_args['start_date_str']}",
+        }, indent = 2), status = 404, mimetype = 'application/json')
+    except StopNotOnRouteError as ex:
+        return Response(json.dumps({
+            'params': calc_metrics_args,
+            'error': f"Stop {calc_metrics_args['start_stop_id']} is not on route {calc_metrics_args['route_id']}",
+        }, indent=2), status=404, mimetype='application/json')
+    except Exception as ex:
+        return Response(json.dumps({
+            'params for calc_metrics func': calc_metrics_args,
+            'error': str(ex),
+        }, indent=2), status=400, mimetype='application/json')
 
-    return resp
+    return Response(json.dumps(data, indent = 2), mimetype = 'application/json')
+
+    # return resp
 
 @app.route('/metrics_by_interval', methods=['GET'])
 def metrics_by_interval():
