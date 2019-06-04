@@ -3,7 +3,7 @@ import { css } from 'emotion';
 import Card from 'react-bootstrap/Card';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData'; 
-import { PLANNING_PERCENTILE } from '../UIConstants';
+import { PLANNING_PERCENTILE, CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 import * as d3 from 'd3';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
   ChartLabel, Crosshair } from 'react-vis';
@@ -379,7 +379,7 @@ minutes
                 <XAxis />
                 <YAxis hideLine />
 
-                <VerticalRectSeries data={ this.headwayData } onNearestX={this._onNearestXHeadway} stroke="white" style={{strokeWidth: 2}}/>
+                <VerticalRectSeries data={ this.headwayData } onNearestX={this._onNearestXHeadway} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
                 
                 <ChartLabel 
                 text="arrivals"
@@ -403,7 +403,7 @@ minutes
 
                 { this.state.crosshairValues.headway && (
                     <Crosshair values={this.state.crosshairValues.headway}
-                      style={{line:{background: 'none'}}} >
+                      style={REACT_VIS_CROSSHAIR_NO_LINE} >
                            <div className= 'rv-crosshair__inner__content'>
                              Arrivals: { Math.round(this.state.crosshairValues.headway[0].y)}
                            </div>                 
@@ -431,7 +431,7 @@ minutes
                 <XAxis />
                 <YAxis hideLine tickFormat={v => `${v}%`} />
 
-                <VerticalRectSeries data={ this.waitData } onNearestX={this._onNearestXWaitTimes} stroke="white" style={{strokeWidth: 2}}/>
+                <VerticalRectSeries data={ this.waitData } onNearestX={this._onNearestXWaitTimes} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
 
                 <ChartLabel 
                 text="chance"
@@ -455,7 +455,7 @@ minutes
 
                 { this.state.crosshairValues.wait && (
                     <Crosshair values={this.state.crosshairValues.wait}
-                      style={{line:{background: 'none'}}} >
+                      style={REACT_VIS_CROSSHAIR_NO_LINE} >
                            <div className= 'rv-crosshair__inner__content'>
                              Chance: { Math.round(this.state.crosshairValues.wait[0].y)}%
                            </div>                 
@@ -487,7 +487,7 @@ minutes
               <XAxis />
               <YAxis hideLine />
 
-              <VerticalRectSeries data={ this.tripData } onNearestX={this._onNearestXTripTimes} stroke="white" style={{strokeWidth: 2}}/>
+              <VerticalRectSeries data={ this.tripData } onNearestX={this._onNearestXTripTimes} stroke="white" fill={CHART_COLORS[1]} style={{strokeWidth: 2}}/>
 
                 <ChartLabel 
                 text="trips"
@@ -511,7 +511,7 @@ minutes
 
                 { this.state.crosshairValues.trip && (
                   <Crosshair values={this.state.crosshairValues.trip}
-                    style={{line:{background: 'none'}}} >
+                    style={REACT_VIS_CROSSHAIR_NO_LINE} >
                          <div className= 'rv-crosshair__inner__content'>
                            Trips: { Math.round(this.state.crosshairValues.trip[0].y)}
                          </div>                 
