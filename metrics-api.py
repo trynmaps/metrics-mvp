@@ -11,7 +11,7 @@ import math
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus
 import constants
 import sys
-from errors import StopNotOnRouteError
+from errors import StopNotOnRouteError, FirstBusOfDayError
 
 """
 This is the app's main file!
@@ -279,6 +279,8 @@ def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
 
             # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
             df['headway_min'] = metrics.compute_headway_minutes(df)
+            if len(df['headway_min'].isnull()) == 1 and df['headway_min'].isnull()[0]:
+                raise FirstBusOfDayError
 
             # temporarily skip calculation of wait times until data is shown in front end
             waits.append(wait_times.get_waits(df, start_stop_info, d, tz, route_id, start_time_str, end_time_str))
@@ -294,6 +296,18 @@ def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
             raise FileNotFoundError
         except IndexError:
             raise IndexError
+        except FirstBusOfDayError:
+                data = {
+                    'params': params,
+                    'route_title': route_config.title,
+                    'start_stop_title': start_stop_info.title if start_stop_info else None,
+                    'end_stop_title': end_stop_info.title if end_stop_info else None,
+                    'directions': directions,
+                    'headway_min': None,
+                    'wait_times': None,
+                    'trip_times': None,
+                }
+                return data
 
     headway_min = pd.concat(headway_min_arr)
     waits = pd.concat(waits)
