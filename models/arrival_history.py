@@ -7,6 +7,7 @@ import pandas as pd
 from . import nextbus, eclipses, util
 import pytz
 import boto3
+from pathlib import Path
 import gzip
 import numpy as np
 
@@ -140,20 +141,9 @@ class ArrivalHistory:
             'stops': self.stops_data,
         }
 
-def compute_from_state(agency, route_id, start_time, end_time, route_state) -> ArrivalHistory:
-    # note: arrivals module uses timestamps in seconds, but tryn-api uses ms
-
-    route_config = nextbus.get_route_config(agency, route_id)
-
-    buses = eclipses.produce_buses(route_state)
-
-    if not buses.empty:
-        arrivals = eclipses.find_arrivals(buses, route_config)
-        stops_data = make_stops_data(arrivals)
-    else:
-        stops_data = {}
-
-    return ArrivalHistory(agency, route_id, stops_data=stops_data, start_time=start_time, end_time=end_time)
+def from_data_frame(agency, route_id, arrivals_df: pd.DataFrame, start_time, end_time) -> ArrivalHistory:
+    # note: arrival_history module uses timestamps in seconds, but tryn-api uses ms
+    return ArrivalHistory(agency, route_id, stops_data=make_stops_data(arrivals_df), start_time=start_time, end_time=end_time)
 
 def make_stops_data(arrivals: pd.DataFrame):
     stops_data = {}
@@ -164,7 +154,7 @@ def make_stops_data(arrivals: pd.DataFrame):
         for stop_id, stop_arrivals in arrivals.groupby(arrivals['SID']):
             stop_directions_data = {}
 
-            for stop_direction_id, stop_direction_arrivals in stop_arrivals.groupby(stop_arrivals['STOP_DID']):
+            for stop_direction_id, stop_direction_arrivals in stop_arrivals.groupby(stop_arrivals['DID']):
                 arrivals_data = []
 
                 for row in stop_direction_arrivals.itertuples():
@@ -194,7 +184,7 @@ def get_cache_path(agency: str, route_id: str, d: date, version = DefaultVersion
     if re.match('^[\w\-]+$', version) is None:
         raise Exception(f"Invalid version: {version}")
 
-    return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency}_{date_str}_{route_id}.json")
+    return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency}/{date_str}/arrivals_{version}_{agency}_{date_str}_{route_id}.json")
 
 def get_s3_bucket() -> str:
     return 'opentransit-stop-arrivals'
@@ -231,6 +221,10 @@ def get_by_date(agency: str, route_id: str, d: date, version = DefaultVersion) -
 
     data = json.loads(r.text)
 
+    cache_dir = Path(cache_path).parent
+    if not cache_dir.exists():
+        cache_dir.mkdir(parents = True, exist_ok = True)
+
     with open(cache_path, "w") as f:
         f.write(r.text)
 
@@ -244,6 +238,11 @@ def save_for_date(history: ArrivalHistory, d: date, s3=False):
     route_id = history.route_id
 
     cache_path = get_cache_path(agency, route_id, d, version)
+
+    cache_dir = Path(cache_path).parent
+    if not cache_dir.exists():
+        cache_dir.mkdir(parents = True, exist_ok = True)
+
     with open(cache_path, "w") as f:
         f.write(data_str)
 

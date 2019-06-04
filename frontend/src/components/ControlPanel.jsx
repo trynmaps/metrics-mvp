@@ -19,7 +19,7 @@ class ControlPanel extends Component {
       secondStopList: [],
       firstStopId: null,
       secondStopId: null,
-      date: new Date('2019-04-08T03:50'),
+      date: new Date('2019-05-24T03:50'),
       startTimeStr: null,
       endTimeStr: null,
     };
@@ -55,7 +55,7 @@ class ControlPanel extends Component {
       };
       const intervalParams = Object.assign({}, graphParams);
       delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors. 
+      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
       this.props.fetchData(graphParams, intervalParams);
     }
   }
@@ -91,15 +91,15 @@ class ControlPanel extends Component {
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
     const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
     const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
-    
+
     let newSecondStopId = secondStopId;
-    
+
     // If the "to stop" is not set or is not valid for the current "from stop",
     // set a default "to stop" that is some number of stops down.  If there aren't
     // enough stops, use the end of the line.
-    
+
     const nStops = 5;
-    
+
     if (secondStopId == null || !secondStopList.includes(secondStopId)) {
         newSecondStopId = secondStopList.length >= nStops ? secondStopList[nStops-1] :
             secondStopList[secondStopList.length-1];
@@ -134,7 +134,7 @@ class ControlPanel extends Component {
   getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
     const stopSids= selectedRoute.directions.find(dir => dir.name === name);
     return stopSids.stops.map(stop => selectedRoute.stops[stop]);
-    
+
   }
 
   selectedDirectionChanged = () => {
@@ -189,7 +189,7 @@ class ControlPanel extends Component {
       selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
       this.sendRouteStopsToMap();
     }
-    
+
     return (
       <div className={css`
           color: #fff;
