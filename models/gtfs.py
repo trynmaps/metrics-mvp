@@ -156,12 +156,10 @@ class GtfsScraper:
         return date_ranges.append(exceptions)
 
     def upload_to_s3(self, s3_path: str, df: pd.DataFrame):
-        client = boto3.client('s3')
-        s3_bucket = get_s3_bucket(self.agency)
-        search = client.list_objects(Bucket = s3_bucket, Prefix = s3_path)
-
+        s3_bucket = get_s3_bucket()
         s3 = boto3.resource('s3')
         object = s3.Object(s3_bucket, s3_path)
+        
         object.put(
             Body = gzip.compress(bytes(df.to_csv(), 'utf-8')),
             ContentEncoding = 'gzip',
@@ -259,9 +257,9 @@ def get_nextbus_stop_id(gtfs_stop_id: str, direction_id: int, routeconfig: nextb
         # TODO: deal with stops w/o direction (on nextbus)
         return np.nan
 
-def get_s3_bucket(agency: str):
-    return f"opentransit-{agency}-schedules"
+def get_s3_bucket():
+    return f"opentransit-sf-muni-schedules"
 
-def get_schedule_dir(agency: str):
-    return f"{util.get_data_dir()}/{get_s3_bucket(agency)}"
+def get_schedule_dir():
+    return f"{util.get_data_dir()}/{get_s3_bucket()}"
     

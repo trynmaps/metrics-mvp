@@ -53,45 +53,39 @@ class Timetable:
         else:
             print(f"No timetable found for {stop_id} on route {self.route_id} on {self.date} going {self.get_stop_direction(stop_id)}.")
 
-def read_file(agency: str, local_path: str, s3_path: str, filename: str):
-    path = util.get_data_dir()
-
+def read_file(local_path: str, s3_path: str, filename: str):
     # checks for a local file; if it doesn't exist, pull it from the s3 bucket and cache it locally
     try:
-        with open(f"{path}/{local_path}/{filename}", "r") as f:
+        with open(f"{gtfs.get_schedule_dir()}/{filename}", "r") as f:
             data = f.read()
     except FileNotFoundError as err:
-        s3_bucket = gtfs.get_s3_bucket(agency)
+        s3_bucket = gtfs.get_s3_bucket()
         data = requests.get(f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}{filename}").text
 
-        with open(f"{path}/{local_path}/{filename}", "w") as f:
+        with open(f"{gtfs.get_schedule_dir()}/{filename}", "w") as f:
             f.write(data)
 
     return pd.read_csv(StringIO(data), dtype = {'stop_id': str, 'nextbus_id': str})
 
 def get_timetable_from_csv(agency: str, route_id: str, d: date, ver: str):
-    date_period = get_date_period(agency, d, ver)
+    date_period = get_date_period(d, ver)
     date_range_str = f"{date_period[0].date().isoformat()}_to_{date_period[-1].date().isoformat()}"
-    local_path = f"{gtfs.get_s3_bucket(agency)}/{date_range_str}"
+    local_path = f"{gtfs.get_s3_bucket()}/{date_range_str}"
     s3_path = f"{date_range_str}/"
     filename = f"{agency}_route_{route_id}_{date_range_str}_timetable_{ver}.csv"
     
-    timetable = read_file(agency, local_path, s3_path, filename)
+    timetable = read_file(local_path, s3_path, filename)
     return Timetable(agency, route_id, timetable, d)
 
-def get_date_ranges(agency: str, ver: str):
-    local_path = f"{gtfs.get_s3_bucket(agency)}/"
+def get_date_ranges(ver: str):
+    local_path = f"{gtfs.get_s3_bucket()}"
     s3_path = ""
     filename = f"date_ranges_{ver}.csv"
 
-    return read_file(agency, local_path, s3_path, filename)
+    return read_file(local_path, s3_path, filename)
 
-def get_date_period(agency: str, d: date, ver: str):
-    try:
-        date_ranges = get_date_ranges(agency, ver)
-    except Exception as err:
-        print(f"Error attempting to fetch date ranges for {d.isoformat()}: {err}")
-
+def get_date_period(d: date, ver: str):
+    date_ranges = get_date_ranges(ver)
     date_ranges["date_range"] = date_ranges.apply(lambda x: pd.date_range(start = x.start_date, end = x.end_date), axis = "columns")
 
     period = date_ranges[date_ranges.date_range.apply(lambda x: d in x)]

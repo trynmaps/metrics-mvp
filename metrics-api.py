@@ -181,7 +181,7 @@ def metrics_by_interval():
             curr_interval['end_time'] = (start_time + timedelta(seconds=3600)).strftime('%H:%M')
             hourly_time_intervals.append(curr_interval)
             start_time += timedelta(seconds=3600)
-        
+
     else:
         if start_time_str or end_time_str:
             return Response(json.dumps({
@@ -275,7 +275,7 @@ def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
         try:
             history = arrival_history.get_by_date('sf-muni', route_id, d)
             
-            df = history.get_data_frame(start_stop_id, tz=tz, direction_id=direction_id, start_time_str=start_time_str, end_time_str=end_time_str)
+            df = history.get_data_frame(start_stop_id, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
 
             # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
             df['headway_min'] = metrics.compute_headway_minutes(df)
@@ -302,9 +302,11 @@ def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
     headway_min_hist = None
     wait_times_hist = None
     trip_times_hist = None
-    if not headway_min.empty:
+    if len(headway_min.dropna()) > 0:
         headway_min_hist = metrics.get_headways_stats(headway_min)
+    if len(waits.dropna()) > 0:
         wait_times_hist = metrics.get_wait_times_stats(waits, tz)
+    if end_stop_id and both_stops_same_dir and len(completed_trips.dropna()) > 0:
         trip_times_hist = metrics.get_trip_times_stats(completed_trips, start_stop_id, end_stop_id) if end_stop_id and both_stops_same_dir else None
         
     data = {
