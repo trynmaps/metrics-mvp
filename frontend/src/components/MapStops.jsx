@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import {
   Map, TileLayer, CircleMarker, Popup, Marker, Polyline
 } from 'react-leaflet';
-
+import { updateGraphData } from '../actions'
 const INBOUND_COLOR = 'blue';
 const INBOUND_RADIUS = 4;
 const OUTBOUND_COLOR = 'red';
@@ -13,6 +13,12 @@ const ZOOM = 13;
 
 class MapStops extends Component {
 
+  constructor() {
+    this.state= {
+      firstStopSid:null,
+      secondStopSid:null
+    }
+  }
   populateRouteDirection = (routeDirection, color, radius) => {
     let route = null;
         const { routeStops } = this.props;
@@ -24,7 +30,12 @@ class MapStops extends Component {
                   center={currentPosition}
                   color={color}
                   radius={radius}
-                />
+                  onClick={() => this.handleStopSelect(stop)}
+                  onMouseOver={(e) => e.target.openPopup()}
+                  onMouseOut={(e) => e.target.closePopup()}
+                >
+                  <Popup>{stop.title}</Popup>
+                </CircleMarker>
               );
             });
         route.push(<Polyline color={color} positions={routeStops[routeDirection]} />);
@@ -32,6 +43,23 @@ class MapStops extends Component {
       return route;
   }
 
+  handleStopSelect = (stop) => {
+    const {firstStopSid, secondStopSid} = this.state;
+    if(!firstStopSid && !secondStopSid) {
+      this.setState({firstStopSid, stop.sid},this.updateGraphData());
+    }
+    else if(!secondStopSid) {
+      this.setState({secondStopSid, stop.sid},this.updateGraphData());
+    }
+    else{
+       this.setState({firstStopSid, stop.sid, secondStopSid: null},this.updateGraphData());
+    }
+  }
+  updateGraphData = () => {
+    const {firstStopSid, secondStopSid} = this.state;
+    const {updateGraphDataHandler} = this.props;
+    updateGraphDataHandler({firstStopSid:firstStopSid, secondStopSid: secondStopSid});
+  }
   render() {
     const { position, zoom, inboundColor, inboundRadius, outboundColor, outboundRadius } = this.props;
 
@@ -51,7 +79,10 @@ class MapStops extends Component {
     );
   }
 }
-const mapStateToProps = state => ({
-  routeStops: state.routes.routeStops,
+const mapDispatchToProps = dispatch => ({
+  updateGraphData: (stopData) => dispatch(updateGraphData(stopData)),
 });
-export default connect(mapStateToProps, null)(MapStops);
+const mapStateToProps = state => ({
+  routeStops: state.routes.routeStops
+});
+export default connect(mapStateToProps, mapDispatchToProps)(MapStops);

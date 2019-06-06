@@ -133,7 +133,12 @@ class ControlPanel extends Component {
   }
   getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
     const stopSids= selectedRoute.directions.find(dir => dir.name === name);
-    return stopSids.stops.map(stop => selectedRoute.stops[stop]);
+    return stopSids.stops.map(stop => {
+      debugger;
+      let currentStopInfo = {...selectedRoute.stops[stop]};
+      currentStopInfo.sid = stop;
+      return currentStopInfo;
+    });
     
   }
 

@@ -19,7 +19,8 @@ export default (state = initialState, action) => {
         return {...state, fetched:false, intervalErr:null, intervalData:null};
     case "RECEIVED_INTERVAL_ERROR":
         return {...state, intervalErr: action.payload, intervalData:null};
-        
+    case "RECEIVED_STOP_DATA":
+        return {...state, fetched: true, graphData: action.payload}   
     default:
       break;
   }

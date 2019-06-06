@@ -84,3 +84,9 @@ export function handleRouteSelect(route) {
       dispatch({ type: 'RECEIVED_ROUTE_SELECTION', payload: route });
   };
 }
+
+export function updateGraphData(stopData) {
+  return function (dispatch) {
+      dispatch({ type: 'RECEIVED_STOP_DATA', payload: stopData });
+  };
+}
