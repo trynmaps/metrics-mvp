@@ -46,13 +46,13 @@ class MapStops extends Component {
   handleStopSelect = (stop) => {
     const {firstStopSid, secondStopSid} = this.state;
     if(!firstStopSid && !secondStopSid) {
-      this.setState({firstStopSid, stop.sid},this.updateGraphData());
+      this.setState({firstStopSid: stop.sid},this.updateGraphData());
     }
     else if(!secondStopSid) {
-      this.setState({secondStopSid, stop.sid},this.updateGraphData());
+      this.setState({secondStopSid: stop.sid},this.updateGraphData());
     }
     else{
-       this.setState({firstStopSid, stop.sid, secondStopSid: null},this.updateGraphData());
+       this.setState({firstStopSid: stop.sid, secondStopSid: null},this.updateGraphData());
     }
   }
   updateGraphData = () => {
