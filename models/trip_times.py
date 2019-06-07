@@ -23,6 +23,6 @@ def get_trip_times(df: pd.DataFrame, history: arrival_history.ArrivalHistory, tz
 
     s1_df['dest_arrival_time'] = s1_df.apply(find_dest_arrival_time, axis=1)
     s1_df['trip_min'] = (s1_df.dest_arrival_time - s1_df.DEPARTURE_TIME)/60
-    s1_df['dest_arrival_time_str'] = s1_df['dest_arrival_time'].apply(lambda timestamp: datetime.fromtimestamp(timestamp, tz).time() if not np.isnan(timestamp) else None)
+    s1_df['dest_arrival_time_str'] = s1_df['dest_arrival_time'].apply(lambda timestamp: datetime.fromtimestamp(timestamp, tz).time() if timestamp is not None else None)
 
     return s1_df
