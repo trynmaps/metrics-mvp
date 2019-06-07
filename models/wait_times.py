@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from . import util
+import sys
 
 def get_stats(time_values, start_time=None, end_time=None):
     return WaitTimeStats(time_values, start_time, end_time)
@@ -236,10 +237,14 @@ class WaitTimeStats:
         # the last returned point should be (max wait time, 1.0)
         if points[-1][1] != 1 or points[0][1] != 0:
             # should never get here unless the code is broken
-            print(points)
-            print(interval_headways)
-            print(sorted_wait_time_values)
-            print(end_wait_time)
+            print('Invalid cumulative distribution:', file=sys.stderr)
+            print(points, file=sys.stderr)
+            print('Interval headways:', file=sys.stderr)
+            print(interval_headways, file=sys.stderr)
+            print('Sorted wait time values:', file=sys.stderr)
+            print(sorted_wait_time_values, file=sys.stderr)
+            print(f'End elapsed time: {end_elapsed_time}', file=sys.stderr)
+            print(f'End wait time: {end_wait_time}', file=sys.stderr)
             raise AssertionError('Invalid cumulative distribution')
 
         self.cdf_points = points

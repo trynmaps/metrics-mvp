@@ -96,7 +96,9 @@ class RouteMetrics:
 
             df = self.get_data_frame(d, stop_id=stop_id, direction_id=direction_id)
 
-            wait_stats = wait_times.get_stats(df['TIME'].values, start_time, end_time)
+            departure_time_values = np.sort(df['DEPARTURE_TIME'].values)
+
+            wait_stats = wait_times.get_stats(departure_time_values, start_time, end_time)
 
             percentile_values = wait_stats.get_percentiles(percentiles)
             if percentile_values is not None:
@@ -192,9 +194,9 @@ class RouteMetrics:
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
 
-            time_values = df['TIME'].values
+            departure_time_values = np.sort(df['DEPARTURE_TIME'].values)
 
-            headway_min = compute_headway_minutes(time_values, start_time, end_time)
+            headway_min = compute_headway_minutes(departure_time_values, start_time, end_time)
 
             headway_min_arr.append(headway_min)
 
