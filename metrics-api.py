@@ -51,9 +51,33 @@ def route_config():
     }
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
+@app.route('/metrics/wait_times', methods = ['GET'])
+def wait_times_page():
+    resp = backend_fetch.fetch_data()
+
+    return resp
+
+@app.route('/metrics/headways', methods = ['GET'])
+def headways_page():
+    resp = backend_fetch.fetch_data()
+
+    return resp
+
+@app.route('/metrics/trip_times', methods = ['GET'])
+def trip_times_page():
+    resp = backend_fetch.fetch_data()
+
+    return resp
+
+# @app.route('/metrics/timetables', methods = ['GET'])
+# def timetables_page():
+#     resp = backend_util.fetch_data()
+
+#     return resp
+
 @app.route('/metrics', methods=['GET'])
 def metrics_page():
-    metrics_start = time.time()
+    #resp = backend_util.fetch_data()
     route_id = request.args.get('route_id')
     if route_id is None:
         route_id = '12'
@@ -140,10 +164,9 @@ def metrics_page():
     except errors.ValidationError as ex:
         return make_error_response(params, str(ex), 400)
 
-    metrics_end = time.time()
-    data['processing_time'] = (metrics_end - metrics_start)
+    return Response(json.dumps(data, indent = 2), mimetype = 'application/json')
 
-    return Response(json.dumps(data, indent=2), mimetype='application/json')
+    # return resp
 
 def make_error_response(params, error, status):
     data = {
