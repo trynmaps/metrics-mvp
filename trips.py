@@ -102,7 +102,10 @@ if __name__ == '__main__':
             print(f"no arrival times found for stop {s1} on {date_str}")
         else:
             for index, row in s1_df.iterrows():
-                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={row.dest_arrival_time_str} ({row.dest_arrival_time}) vid:{row.VID} trip_minutes:{round(row.trip_min, 1)}")
+                dest_arrival_time = row.dest_arrival_time
+                dest_arrival_time_str = datetime.fromtimestamp(dest_arrival_time, tz).time() if dest_arrival_time is not None and not np.isnan(dest_arrival_time) else None
+
+                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID} trip_minutes:{round(row.trip_min, 1)}")
 
             completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 
