@@ -122,16 +122,6 @@ def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> s
 def get_state_raw(agency, start_time_ms, end_time_ms, route_ids):
     tryn_agency = 'muni' if agency == 'sf-muni' else agency
 
-    # hack to avoid error when run against version of trynapi that does not provide secsSinceReport.
-    # remove once default trynapi is upgraded to return secsSinceReport
-    trynapi_version = os.environ.get('TRYNAPI_VERSION')
-    if trynapi_version is None:
-        trynapi_version = 1
-    else:
-        trynapi_version = int(trynapi_version)
-
-    secs_since_report_field = 'secsSinceReport' if trynapi_version > 1 else ''
-
     params = f'trynState(agency: {json.dumps(tryn_agency)}, startTime: {json.dumps(str(int(start_time_ms)))}, endTime: {json.dumps(str(int(end_time_ms)))}, routes: {json.dumps(route_ids)})'
 
     query = f"""{{
@@ -142,7 +132,7 @@ def get_state_raw(agency, start_time_ms, end_time_ms, route_ids):
           rid
           routeStates {{
             vtime
-            vehicles {{ vid lat lon did {secs_since_report_field} }}
+            vehicles {{ vid lat lon did secsSinceReport }}
           }}
         }}
       }}
