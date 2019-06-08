@@ -48,7 +48,7 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
         lat_diff_values = lat_values - prev_lat_values
         lon_diff_values = lon_values - prev_lon_values
 
-        moved_dist_values = haver_distance(prev_lat_values, prev_lon_values, lat_values, lon_values)
+        moved_dist_values = util.haver_distance(prev_lat_values, prev_lon_values, lat_values, lon_values)
         num_samples_values = np.floor(moved_dist_values / target_dist) # may be 0
         num_samples_values[0] = 0
 
@@ -112,25 +112,6 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
     resampled_bus['TIME'] = resampled_bus['TIME'].astype(np.int64)
 
     return resampled_bus
-
-<<<<<<< HEAD
-def find_arrivals(buses: pd.DataFrame, route_config) -> pd.DataFrame:
-=======
-# haversine formula for calcuating distance between two coordinates in lat lon
-# from bird eye view; seems to be +- 8 meters difference from geopy distance
-def haver_distance(latstop,lonstop,latbus,lonbus):
-
-    latstop,lonstop,latbus,lonbus = map(np.deg2rad,[latstop,lonstop,latbus,lonbus])
-    eradius = 6371000
-
-    latdiff = (latbus-latstop)
-    londiff = (lonbus-lonstop)
-
-    a = np.sin(latdiff/2)**2 + np.cos(latstop)*np.cos(latbus)*np.sin(londiff/2)**2
-    c = 2*np.arctan2(np.sqrt(a),np.sqrt(1-a))
-
-    distance = eradius*c
-    return distance
 
 PM = [('12:00', None)]
 AM = [(None, '12:00')]
@@ -216,7 +197,6 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
         return make_arrivals_frame([])
 
     print(f'{route_id}: {round(time.time() - t0, 1)} resampling {len(buses["TIME"].values)} GPS observations')
->>>>>>> master
 
     buses = pd.concat([
         resample_bus(bus)
@@ -252,7 +232,7 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
             stop_direction_ids = route_config.get_directions_for_stop(stop_id)
             if len(stop_direction_ids) > 0:
                 # calculate distances fast with haversine function
-                buses[f'DIST_{stop_id}'] = haver_distance(stop_info.lat, stop_info.lon, lat_values, lon_values)
+                buses[f'DIST_{stop_id}'] = util.haver_distance(stop_info.lat, stop_info.lon, lat_values, lon_values)
 
     compute_distances_to_all_stops()
 
@@ -316,7 +296,7 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
 
                 # set radius to be no larger than the distance to the previous/next stop.
                 # this helps avoid odd results near the terminals of certain routes
-                distance_to_adjacent_stop = haver_distance(stop_info.lat, stop_info.lon, adjacent_stop_info.lat, adjacent_stop_info.lon)
+                distance_to_adjacent_stop = util.haver_distance(stop_info.lat, stop_info.lon, adjacent_stop_info.lat, adjacent_stop_info.lon)
                 radius = min(radius, round(distance_to_adjacent_stop))
 
         #dirs_text = [f'{d}[{i}]' for d, i in zip(stop_direction_ids, stop_indexes)]
@@ -393,18 +373,8 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id: str,
 
     # the "possible" arrivals include times when the bus passes stops in the opposite direction,
     # which will be filtered out later. this ignores the stated direction of the bus according
-<<<<<<< HEAD
-    # to the Nextbus API, because sometimes the bus is not actually going in that direction.
-
-    # calculate distances fast with haversine function
-    eclipses['DIST'] = util.haver_distance(stop_info.lat, stop_info.lon, eclipses['LAT'], eclipses['LON'])
-
-    #if stop_info.id == '4015':
-    #    print(eclipses) #[(eclipses['TIME'] > 1542124300) & (eclipses['TIME'] < 1542125252)])
-=======
     # to the Nextbus API (when use_reported_direction is False), because sometimes the bus is not actually
     # going in that direction.
->>>>>>> master
 
     # only keep positions within a maximum radius of the given stop.
     # somewhat generous since we only get GPS coordinates every minute.
