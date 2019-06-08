@@ -86,7 +86,7 @@ if __name__ == '__main__':
                 dwell_time_str = ', '.join([util.render_dwell_time(q) for q in dwell_time_quantiles])
                 min_dist_str = ', '.join([render_distance(min_dist) for min_dist in min_dist_quantiles])
 
-                print(f"{'%3d' % num_arrivals} arrivals ({dwell_time_str}) ({min_dist_str}) \u0394 {render_distance(delta_dist)} @ {stop_info.id} - {stop_info.title}")
+                print(f"{'%3d' % num_arrivals} arrivals ({dwell_time_str}) ({min_dist_str}) \u0394 {render_distance(delta_dist)} @ {stop_info.id} [{dir_index}] - {stop_info.title}")
                 stop_rows.append((route_id, dir_info.id, stop_id, dir_index, stop_info.lat, stop_info.lon, delta_dist, num_arrivals))
                 prev_stop_info = stop_info
 
