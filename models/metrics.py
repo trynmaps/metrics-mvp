@@ -165,19 +165,26 @@ class RouteMetrics:
 
         for d in rng.dates:
             history = self.get_arrival_history(d)
-            df = self.get_data_frame(d, stop_id=start_stop_id, direction_id=direction_id)
+            s1_df = self.get_data_frame(d, stop_id=start_stop_id, direction_id=direction_id)
+            s2_df = self.get_data_frame(d, stop_id=end_stop_id, direction_id=direction_id)
 
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
 
             if start_time is not None:
-                df = df[df['TIME'] >= start_time]
+                s1_df = s1_df[s1_df['DEPARTURE_TIME'] >= start_time]
 
             if end_time is not None:
-                df = df[df['TIME'] < end_time]
+                s1_df = s1_df[s1_df['DEPARTURE_TIME'] < end_time]
 
-            trips = trip_times.get_trip_times(df, history, rng.tz, start_stop_id, end_stop_id)
-            completed_trips_arr.append(trips.trip_min[trips.trip_min.notnull()].values)
+            completed_trip_times = trip_times.get_completed_trip_times(
+                s1_df['TRIP'].values,
+                s1_df['DEPARTURE_TIME'].values,
+                s2_df['TRIP'].values,
+                s2_df['TIME'].values
+            )
+
+            completed_trips_arr.append(completed_trip_times)
 
         completed_trips = np.concatenate(completed_trips_arr)
 
