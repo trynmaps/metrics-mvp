@@ -348,9 +348,9 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
     else:
         print(f'{route_id}: {round(time.time() - t0, 1)} cleaning arrivals')
 
-        arrivals = clean_arrivals(possible_arrivals, buses, route_config)
+        arrivals, num_trips = clean_arrivals(possible_arrivals, buses, route_config)
 
-    print(f"{route_id}: {round(time.time() - t0, 1)} found {len(arrivals['TIME'].values)} arrivals")
+    print(f"{route_id}: {round(time.time() - t0, 1)} found {len(arrivals['TIME'].values)} arrivals in {num_trips} trips")
 
     return arrivals
 
@@ -464,7 +464,7 @@ def make_arrivals_frame(rows: list) -> pd.DataFrame:
         'SID','DID','STOP_INDEX','TRIP'
     ])
 
-def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_config: nextbus.RouteConfig) -> pd.DataFrame:
+def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_config: nextbus.RouteConfig) -> tuple:
     def make_buses_map():
         return {vid: bus for vid, bus in buses.groupby('VID')}
         '''
@@ -520,7 +520,8 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         get_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, buses_map[vehicle_id], route_config)
             for (vehicle_id, direction_id), dir_arrivals in possible_arrivals.groupby(['VID', 'DID'])
     ])
-    return arrivals.sort_values('TIME')
+
+    return arrivals.sort_values('TIME'), start_trip
 
 
 def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame) -> pd.DataFrame:
@@ -660,10 +661,14 @@ def add_missing_arrivals_for_vehicle_direction(
 
             # uncomment to print debugging information about filled gaps
             #gap_stop_info = route_config.get_stop_info(gap_stop_id)
-            #print(f'vid={vehicle_id} {direction_id}[{gap_stop_index}] (gap {next_stop_index-prev_stop_index} stops, {round((next_arrival_time-prev_departure_time)/60,1)} min) {gap_stop_id} @ {gap_arrival["TIME"].values[0]} {round(gap_arrival["DIST"].values[0])} m ({gap_stop_info.title})')
+            #dt = datetime.fromtimestamp(gap_arrival["TIME"].values[0], pytz.timezone('US/Pacific'))
+            #print(f'vid={vehicle_id} {direction_id}[{gap_stop_index}] (gap {next_stop_index-prev_stop_index} stops, {round((next_arrival_time-prev_departure_time)/60,1)} min) {gap_stop_id} @ {gap_arrival["TIME"].values[0]} {dt.time()} {round(gap_arrival["DIST"].values[0])} m ({gap_stop_info.title})')
 
             prev_gap_arrival_time = gap_arrival_times[0]
 
             all_arrivals.append(gap_arrival)
 
-    return pd.concat(all_arrivals)
+    if len(all_arrivals) == 1:
+        return dir_arrivals
+
+    return pd.concat(all_arrivals).sort_values('TIME', axis=0)
