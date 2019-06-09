@@ -91,22 +91,6 @@ class ArrivalHistory:
 
         return closest_time
 
-    def find_next_arrival_time(self, stop_id, vehicle_id, after_time, before_time = None):
-        '''
-        Get the next timestamp when vehicle_id arrives at stop_id
-        after the timestamp after_time and optionally before the timestamp before_time.
-        '''
-        if stop_id in self.stops_data:
-            for direction_id, arrivals in self.stops_data[stop_id]['arrivals'].items():
-                for arrival in arrivals:
-                    arrival_time = arrival['t']
-                    # todo: not necessarily the next arrival time if the stop has multiple directions
-                    if arrival_time > after_time and \
-                        (before_time is None or arrival_time < before_time) and \
-                        (vehicle_id == arrival['v'] or vehicle_id is None):
-                        return arrival_time
-        return None
-
     @classmethod
     def from_data(cls, data):
         return cls(
