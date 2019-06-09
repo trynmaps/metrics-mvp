@@ -28,11 +28,10 @@ def produce_buses(route_state: dict) -> pd.DataFrame:
 
 def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
 
-    orig_time_values = bus['TIME'].values
-    orig_prev_time_values = np.r_[0, orig_time_values[:-1]]
+    time_diffs = np.diff(bus['TIME'].values, prepend=0)
 
     # remove duplicates (positions are observed every 15 seconds, but usually only update every minute or so)
-    bus = bus[(orig_time_values - orig_prev_time_values) > 2]
+    bus = bus[time_diffs > 2]
 
     new_rows = []
 
@@ -408,9 +407,7 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id: str,
     if num_rows == 0:
         return make_arrivals_frame([])
 
-    prev_row_index_values = np.r_[-999999, row_index_values[:-1]]
-
-    eclipse_start_values = (row_index_values - prev_row_index_values) > 1
+    eclipse_start_values = np.diff(row_index_values, prepend=-999999) > 1
     eclipse_start_indexes = np.nonzero(eclipse_start_values)[0]
     eclipse_end_indexes = np.r_[eclipse_start_indexes[1:], num_rows]
 
@@ -496,9 +493,7 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         if len(stop_index_values) == 0:
             return dir_arrivals
 
-        prev_stop_index_values = np.r_[stop_index_values[0], stop_index_values[:-1]]
-
-        new_trip = (stop_index_values - prev_stop_index_values) < 0
+        new_trip = np.diff(stop_index_values, prepend=stop_index_values[0]) < 0
         trip_id = np.cumsum(new_trip) + start_trip
 
         dir_arrivals = dir_arrivals.copy()

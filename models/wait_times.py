@@ -122,8 +122,7 @@ class WaitTimeStats:
 
         if end_arrival_index > start_arrival_index:
             self.interval_time_values = interval_time_values = time_values[start_arrival_index:end_arrival_index]
-            prev_time_values = np.r_[interval_start, interval_time_values[:-1]]
-            self.interval_headways = interval_time_values - prev_time_values
+            self.interval_headways = np.diff(interval_time_values, prepend=interval_start)
 
             # end elapsed_time is the number of seconds between when the last bus arrives within this interval and the end of the interval
             self.end_elapsed_time = interval_end - self.interval_time_values[-1]
