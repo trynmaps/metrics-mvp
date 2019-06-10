@@ -64,8 +64,8 @@ if __name__ == '__main__':
             base_history = arrival_history.get_by_date(agency, route_id, d, base_version)
             other_history = arrival_history.get_by_date(agency, route_id, d, other_version)
 
-            base_df = base_history.get_data_frame(stop_id=stop_id, tz=tz).sort_values('TIME', axis=0)
-            other_df = base_history.get_data_frame(stop_id=stop_id, tz=tz).sort_values('TIME', axis=0)
+            base_df = base_history.get_data_frame(stop_id=stop_id).sort_values('TIME', axis=0)
+            other_df = base_history.get_data_frame(stop_id=stop_id).sort_values('TIME', axis=0)
 
             def find_other_arrival_time(row):
                 other_time = other_history.find_closest_arrival_time(row.SID, row.VID, row.TIME)
@@ -82,6 +82,8 @@ if __name__ == '__main__':
 
     df = pd.concat(base_df_arr)
 
+    df['DATE_TIME'] = df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
+
     bad_df = df[(df.abs_time_diff_min.isnull()) | (df.abs_time_diff_min >= diff_min)]
     for row in bad_df.itertuples():
         other_time = int(row.other_time) if not np.isnan(row.other_time) else None
@@ -90,7 +92,7 @@ if __name__ == '__main__':
         route_config = route_configs[row.ROUTE]
         stop_info = route_config.get_stop_info(row.SID)
 
-        print(f"{base_version}={row.DATE_STR} {row.TIME_STR} ({row.TIME}) {other_version}={other_time_str} ({other_time})  diff: {round(row.time_diff_min,1)} min  v:{row.VID} s:{stop_info.title if stop_info else '?'} ({row.SID}) ({row.DID})")
+        print(f"{base_version}={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {other_version}={other_time_str} ({other_time})  diff: {round(row.time_diff_min,1)} min  v:{row.VID} s:{stop_info.title if stop_info else '?'} ({row.SID}) ({row.DID})")
 
     abs_time_diff_min = df.abs_time_diff_min[df.abs_time_diff_min.notnull()]
 

@@ -50,7 +50,10 @@ if __name__ == '__main__':
 
         df = pd.concat([
             arrival_history.get_by_date(agency_id, route_id, d, version) \
-                .get_data_frame(start_time_str = start_time_str, end_time_str = end_time_str, tz = tz)
+                .get_data_frame(
+                    start_time = util.get_timestamp_or_none(d, start_time_str, tz),
+                    end_time = util.get_timestamp_or_none(d, end_time_str, tz)
+                )
                 for d in dates
         ])
 

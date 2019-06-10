@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from models import nextbus, arrival_history, util, metrics
 import pytz
 import time
-import numpy
+import numpy as np
 import pandas as pd
 
 if __name__ == '__main__':
@@ -90,7 +90,10 @@ if __name__ == '__main__':
 
             t2 = time.time()*1000
 
-            route_df = history.get_data_frame(stop_id, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
+            route_df = history.get_data_frame(stop_id,
+                start_time=util.get_timestamp_or_none(d, start_time_str, tz),
+                end_time=util.get_timestamp_or_none(d, end_time_str, tz)
+            )
 
             t3 = time.time()*1000
 
@@ -111,7 +114,8 @@ if __name__ == '__main__':
 
         t4 = time.time()*1000
 
-        df['headway_min'] = metrics.compute_headway_minutes(df)
+        df['headway_min'] = np.r_[np.nan, metrics.compute_headway_minutes(df['TIME'].values)]
+        df['DATE_TIME'] = df.TIME.apply(lambda t: datetime.fromtimestamp(t, tz))
 
         t5 = time.time()*1000
 
@@ -121,7 +125,7 @@ if __name__ == '__main__':
             dist_str = f'{row.DIST}'.rjust(3)
             dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
             headway_str = f'{round(row.headway_min, 1)}'.rjust(4)
-            print(f"{row.DATE_STR} {row.TIME_STR} ({row.TIME}) {dwell_time} vid:{row.VID}  {dist_str}m  {headway_str} min   ({row.ROUTE} - {dir_info.title})")
+            print(f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  {dist_str}m  {headway_str} min   ({row.ROUTE} - {dir_info.title})")
 
         t6 = time.time()*1000
 
@@ -148,10 +152,10 @@ if __name__ == '__main__':
     print(f'** headway stats **')
     print(f'count              = {len((headways))}')
     if len(headways) > 0:
-        print(f'average headway    = {round(numpy.average(headways),1)} min')
-        print(f'standard deviation = {round(numpy.std(headways),1)} min')
-        print(f'shortest headway   = {round(numpy.min(headways),1)} min')
-        print(f'10% headway        = {round(numpy.quantile(headways,0.1),1)} min')
-        print(f'median headway     = {round(numpy.median(headways),1)} min')
-        print(f'90% headway        = {round(numpy.quantile(headways,0.9),1)} min')
-        print(f'longest headway    = {round(numpy.max(headways),1)} min')
+        print(f'average headway    = {round(np.average(headways),1)} min')
+        print(f'standard deviation = {round(np.std(headways),1)} min')
+        print(f'shortest headway   = {round(np.min(headways),1)} min')
+        print(f'10% headway        = {round(np.quantile(headways,0.1),1)} min')
+        print(f'median headway     = {round(np.median(headways),1)} min')
+        print(f'90% headway        = {round(np.quantile(headways,0.9),1)} min')
+        print(f'longest headway    = {round(np.max(headways),1)} min')
