@@ -164,9 +164,62 @@ def metrics_page():
     except errors.ValidationError as ex:
         return make_error_response(params, str(ex), 400)
 
+    metrics_end = time.time()
+    data['processing_time'] = (metrics_end - metrics_start)
+
+        start_stop_info = route_config.get_stop_info(start_stop_id)
+        if start_stop_info is None:
+            raise errors.ValidationError(f"Stop {start_stop_id} is not on route {route_id}")
+
+        data['start_stop_title'] = start_stop_info.title
+
+        if end_stop_id:
+            end_stop_info = route_config.get_stop_info(end_stop_id)
+            if end_stop_info is None:
+                raise errors.ValidationError(f"Stop {end_stop_id} is not on route {route_id}")
+            data['end_stop_title'] = end_stop_info.title
+
+        rng = metrics.Range(
+            util.get_dates_in_range(start_date_str, end_date_str),
+            start_time_str,
+            end_time_str,
+            pytz.timezone('US/Pacific')
+        )
+
+        route_metrics = metrics.RouteMetrics('sf-muni', route_id)
+
+        keys = ['count','avg','min','median','max','percentiles','histogram']
+
+        data['wait_times'] = route_metrics.get_wait_time_stats(
+            direction_id, start_stop_id,
+            rng, keys
+        )
+
+        data['trip_times'] = route_metrics.get_trip_time_stats(
+            direction_id, start_stop_id, end_stop_id,
+            rng, keys
+        )
+
+        data['headway_min'] = route_metrics.get_headway_min_stats(
+            direction_id, start_stop_id,
+            rng, keys
+        )
+
+    except errors.ArrivalHistoryNotFoundError as ex:
+        return make_error_response(params, str(ex), 404)
+    except errors.ValidationError as ex:
+        return make_error_response(params, str(ex), 400)
+
     return Response(json.dumps(data, indent = 2), mimetype = 'application/json')
 
     # return resp
+
+def make_error_response(params, error, status):
+    data = {
+        'params': params,
+        'error': error,
+    }
+    return Response(json.dumps(data, indent=2), status=status, mimetype='application/json')
 
 def make_error_response(params, error, status):
     data = {
