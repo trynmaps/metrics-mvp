@@ -79,7 +79,7 @@ To get arrival times for one or more routes/days that haven't been precomputed y
 to generate the JSON files locally (if using Docker, run this command from a shell within the Docker container
 `docker exec -it metrics-flask bash`), e.g:
 ```
-python compute_arrivals.py --date=2019-03-01 --route 1 2 47 38 38X
+python compute_arrivals.py --date=2019-06-06 --route 1 2 47 38 38X
 ```
 
 The JSON files with computed arrivals will be stored in your local `data/` directory.
