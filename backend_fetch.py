@@ -1,57 +1,44 @@
-from flask import request, Response
-from datetime import datetime, date, time, timedelta
-import pytz
+from flask import Response
+from datetime import datetime, timedelta
 import json
 
-import pandas as pd
-import numpy as np
-
-from constants import AGENCY, PACIFIC_TIMEZONE, DEFAULT_TIME_STR_INTERVALS
-from models import metrics, arrival_history, nextbus, util, wait_times, trip_times
-from backend_util import get_params, validate_params, process_params
-from backend_stats import fetch_timetables_stats, fetch_headways_stats, fetch_trip_times_stats, fetch_wait_times_stats
+from models import metrics, arrival_history, nextbus, util, wait_times, trip_times, constants, errors
+from backend_util import get_params, validate_params, process_params, make_error_response
 
 def fetch_data():
-    start_time = datetime.now()
-    params = get_params()
-    params_validation = validate_params(params, True)
-
-    if params_validation is not None:
-        data = {
-            'params': params,
-            'missing_values': params_validation['missing_params'],
-            'invalid_values': params_validation['invalid_params']
-        }
-
-        end_time = datetime.now()
-        data['processing_time'] = (end_time - start_time)/timedelta(seconds = 1)
-
-        return Response(json.dumps(data, indent = 2), status = 400, mimetype = 'application/json')
-    else:
+    metrics_start = datetime.now()
+    params = get_params(False)
+    
+    try:
+        validate_params(params)
+    
         processed_params = process_params(params)
-        data = {
-            **{
-                'params': processed_params,
-            },
-            **fetch_intervals(processed_params)
-        }
 
-        return Response(json.dumps(data, indent = 2), mimetype = 'application/json')
+        try:
+            data = {
+                **{
+                    'params': processed_params,
+                },
+                **fetch_intervals(processed_params)
+            }
+            metrics_end = datetime.now()
+            data['processing_time'] = (metrics_end - metrics_start).total_seconds()
 
-def get_intervals(start_time_str: str, end_time_str: str, interval: str):
-    if interval == False:
-        # if interval is False, then the entire time range is treated as one interval
-        return [{
-            'start_time': start_time_str,
-            'end_time': end_time_str
-        }]
+            return Response(json.dumps(data, indent = 2), mimetype = 'application/json')
+        except errors.ArrivalHistoryNotFoundError as ex:
+            return make_error_response(params, str(ex), 404)
+    except errors.ValidationError as ex:
+        return make_error_response(params, str(ex), 400)
+
+def get_intervals(start_time_str: str, end_time_str: str, use_intervals: bool, interval_length: int):
+    if not use_intervals:
+        # if not using intervals, treat the entire time range as one interval
+        return [(start_time_str, end_time_str)]
     else:
-        # if interval is True, then use default intervals
-        # else, interval is an int n, so the interval length is n hours
-        if isinstance(interval, bool):
-            time_intervals = DEFAULT_TIME_STR_INTERVALS
-        else:
-            interval_length = timedelta(seconds = 3600 * interval)
+        # if interval_length is an int n > 0, so the interval length is n hours
+        # otherwise, use default intervals
+        if isinstance(interval_length, int) and interval_length > 0:
+            interval_timedelta = timedelta(seconds = 3600 * interval_length)
 
             # round down start and end time to allow for even intervals
             start_time = datetime.strptime(start_time_str, '%H:%M').replace(microsecond=0, second=0, minute=0)
@@ -62,66 +49,72 @@ def get_intervals(start_time_str: str, end_time_str: str, interval: str):
             while start_time.hour < end_time.hour:
                 interval_start = start_time
                 # if the next interval would go beyond the given time range, just cut it off
-                interval_end = start_time + interval_length
+                interval_end = start_time + interval_timedelta
                 if interval_end > end_time:
                     interval_end = end_time
 
-                time_intervals.append({
-                    'start_time': interval_start.strftime('%H:%M'),
-                    'end_time': interval_end.strftime('%H:%M')
-                })
+                time_intervals.append((interval_start.strftime('%H:%M'), interval_end.strftime('%H:%M')))
                 
-                start_time += interval_length
+                start_time += interval_timedelta
+        else:
+            time_intervals = constants.DEFAULT_TIME_STR_INTERVALS
 
         return time_intervals
 
 def fetch_intervals(params: dict):
     all_interval_data = []
-    rc = nextbus.get_route_config(AGENCY, params['route_id'])
-    time_intervals = get_intervals(params['start_time_str'], params['end_time_str'], params['interval'])
+    rc = nextbus.get_route_config(constants.AGENCY, params['route_id'])
+    time_intervals = get_intervals(params['start_time_str'], params['end_time_str'], params['use_intervals'], params['interval_length'])
+    date_range = util.get_dates_in_range(params['start_date_str'], params['end_date_str'])
     data = {
-        'route_title': rc.title
+        'params': params,
+        'route_title': rc.title,
+        'start_time_title': rc.get_stop_info(params['start_stop_id']).title,
+        'end_stop_title': rc.get_stop_info(params['end_stop_id']).title if params['end_stop_id'] else None,
+        'directions': rc.get_directions_for_stop(params['start_stop_id'])
     }
 
-    # add different information for stops depending on whether one or two stops were passed in
-    if 'stop_id' in params.keys():
-        data['stop_title'] = rc.get_stop_info(params['stop_id']).title
-        data['directions'] = rc.get_directions_for_stop(params['stop_id'])
-    else:
-        data['start_stop_title'] = rc.get_stop_info(params['start_stop_id']).title
-        data['end_stop_title'] = rc.get_stop_info(params['end_stop_id']).title
-        data['directions'] = rc.get_directions_for_stop(params['start_stop_id'])
-
     for interval in time_intervals:
-        # only need to pass some params to get stats
-        params_subset = {
-            'start_time_str': interval['start_time'],
-            'end_time_str': interval['end_time'],
-            'start_date_str': params['start_date_str'],
-            'end_date_str': params['end_date_str'],
-            'route_id': params['route_id'],
-            'direction_id': params['direction_id']
-        }
         interval_data = {
-            'start_time': params_subset['start_time_str'],
-            'end_time': params_subset['end_time_str']
+            'start_time': interval[0],
+            'end_time': interval[1]
         }
 
-        if 'metrics/wait_times' in request.path:
-            params_subset['stop_id'] = params['stop_id']
-            interval_data['wait_times'] = fetch_wait_times_stats(params_subset, rc)
-        elif 'metrics/headways' in request.path:
-            params_subset['stop_id'] = params['stop_id']
-            interval_data['headways'] = fetch_headways_stats(params_subset, rc)
-        elif 'metrics/trip_times' in request.path:
-            params_subset['start_stop_id'] = params['start_stop_id']
-            params_subset['end_stop_id'] = params['end_stop_id']
-            interval_data['trip_times'] = fetch_trip_times_stats(params_subset, rc)
-        else: # test /metrics endpoint
-            params_subset['stop_id'] = params['stop_id']
-            interval_data['wait_times'] = fetch_wait_times_stats(params_subset, rc)
+        rng = metrics.Range(
+            date_range,
+            interval[0],
+            interval[1],
+            constants.PACIFIC_TIMEZONE
+        )
+
+        route_metrics = metrics.RouteMetrics(constants.AGENCY, params['route_id'])
+
+        # TODO: stats as params
+        interval_data['wait_times'] = route_metrics.get_wait_time_stats(
+            params['direction_id'], params['start_stop_id'],
+            rng, params['keys']
+        )
+
+        interval_data['trip_times'] = route_metrics.get_trip_time_stats(
+            params['direction_id'], params['start_stop_id'], params['end_stop_id'],
+            rng, params['keys']
+        )
+
+        interval_data['headway_min'] = route_metrics.get_headway_min_stats(
+            params['direction_id'], params['start_stop_id'],
+            rng, params['keys']
+        )
 
         all_interval_data.append(interval_data)
-            
-    data['intervals'] = all_interval_data
+    
+    if len(all_interval_data) > 1:
+        data['intervals'] = all_interval_data
+    else:
+        data = {
+            **data,
+            'wait_times': interval_data['wait_times'],
+            'trip_times': interval_data['trip_times'],
+            'headway_min': interval_data['headway_min']
+        }
+
     return data
