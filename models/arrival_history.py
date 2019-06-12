@@ -5,8 +5,8 @@ import json
 import requests
 import pandas as pd
 from . import nextbus, eclipses, util
-import pytz
 import boto3
+from pathlib import Path
 import gzip
 import numpy as np
 
@@ -22,33 +22,22 @@ class ArrivalHistory:
         self.version = version
 
     def get_data_frame(self, stop_id = None, vehicle_id = None, direction_id = None,
-            start_time_str = None, end_time_str = None,
-            tz = None) -> pd.DataFrame:
+            start_time = None, end_time = None) -> pd.DataFrame:
         '''
         Returns a data frame for a subset of this arrival history, after filtering by the provided parameters:
             stop_id
             vehicle_id
             direction_id
-            start_time_str ("00:00" to "24:00")
-            end_time_str ("00:00" to "24:00")
+            start_time (unix timestamp)
+            end_time (unix timestamp)
 
-        Local times are computed relative to the provided timezone tz.
-        If tz is None, the columns DATE_TIME, DATE_STR, and TIME_STR will not be added,
-        and local time filters will be ignored.
         '''
         stops = self.stops_data
         data = []
 
-        d = datetime.fromtimestamp(self.start_time, tz).date()
-
-        start_dt = util.get_localized_datetime(d, start_time_str, tz) if start_time_str is not None else None
-        end_dt = util.get_localized_datetime(d, end_time_str, tz) if end_time_str is not None else None
-
         has_dist = has_departure_time = self.version and self.version[1] >= '3'
 
         columns = ("VID", "TIME", "DEPARTURE_TIME", "SID", "DID", "DIST")
-        if tz:
-            columns = columns + ("DATE_TIME", "DATE_STR", "TIME_STR")
 
         def add_stop(s):
             stop_info = stops[s]
@@ -63,19 +52,15 @@ class ArrivalHistory:
 
                     timestamp = arrival['t']
 
+                    if start_time is not None and timestamp < start_time:
+                        continue
+                    if end_time is not None and timestamp >= end_time:
+                        break # arrivals for each stop+direction are in timestamp order, so can stop here
+
                     departure_time = arrival['e'] if has_departure_time else timestamp
                     dist = arrival['d'] if has_dist else np.nan
 
-                    values = (v, timestamp, departure_time, s, did, dist)
-                    if tz:
-                        dt = datetime.fromtimestamp(timestamp, tz)
-                        if start_dt is not None and dt < start_dt:
-                            continue
-                        if end_dt is not None and dt >= end_dt:
-                            break # arrivals for each stop+direction are in timestamp order, so can stop here
-                        values = values + (dt, dt.strftime('%Y-%m-%d'), dt.strftime('%H:%M:%S'))
-
-                    data.append(values)
+                    data.append((v, timestamp, departure_time, s, did, dist))
 
         if stop_id is not None:
             if stop_id in stops:
@@ -140,20 +125,9 @@ class ArrivalHistory:
             'stops': self.stops_data,
         }
 
-def compute_from_state(agency, route_id, start_time, end_time, route_state) -> ArrivalHistory:
-    # note: arrivals module uses timestamps in seconds, but tryn-api uses ms
-
-    route_config = nextbus.get_route_config(agency, route_id)
-
-    buses = eclipses.produce_buses(route_state)
-
-    if not buses.empty:
-        arrivals = eclipses.find_arrivals(buses, route_config)
-        stops_data = make_stops_data(arrivals)
-    else:
-        stops_data = {}
-
-    return ArrivalHistory(agency, route_id, stops_data=stops_data, start_time=start_time, end_time=end_time)
+def from_data_frame(agency, route_id, arrivals_df: pd.DataFrame, start_time, end_time) -> ArrivalHistory:
+    # note: arrival_history module uses timestamps in seconds, but tryn-api uses ms
+    return ArrivalHistory(agency, route_id, stops_data=make_stops_data(arrivals_df), start_time=start_time, end_time=end_time)
 
 def make_stops_data(arrivals: pd.DataFrame):
     stops_data = {}
@@ -164,7 +138,7 @@ def make_stops_data(arrivals: pd.DataFrame):
         for stop_id, stop_arrivals in arrivals.groupby(arrivals['SID']):
             stop_directions_data = {}
 
-            for stop_direction_id, stop_direction_arrivals in stop_arrivals.groupby(stop_arrivals['STOP_DID']):
+            for stop_direction_id, stop_direction_arrivals in stop_arrivals.groupby(stop_arrivals['DID']):
                 arrivals_data = []
 
                 for row in stop_direction_arrivals.itertuples():
@@ -194,7 +168,7 @@ def get_cache_path(agency: str, route_id: str, d: date, version = DefaultVersion
     if re.match('^[\w\-]+$', version) is None:
         raise Exception(f"Invalid version: {version}")
 
-    return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency}_{date_str}_{route_id}.json")
+    return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency}/{date_str}/arrivals_{version}_{agency}_{date_str}_{route_id}.json")
 
 def get_s3_bucket() -> str:
     return 'opentransit-stop-arrivals'
@@ -231,6 +205,10 @@ def get_by_date(agency: str, route_id: str, d: date, version = DefaultVersion) -
 
     data = json.loads(r.text)
 
+    cache_dir = Path(cache_path).parent
+    if not cache_dir.exists():
+        cache_dir.mkdir(parents = True, exist_ok = True)
+
     with open(cache_path, "w") as f:
         f.write(r.text)
 
@@ -244,6 +222,11 @@ def save_for_date(history: ArrivalHistory, d: date, s3=False):
     route_id = history.route_id
 
     cache_path = get_cache_path(agency, route_id, d, version)
+
+    cache_dir = Path(cache_path).parent
+    if not cache_dir.exists():
+        cache_dir.mkdir(parents = True, exist_ok = True)
+
     with open(cache_path, "w") as f:
         f.write(data_str)
 

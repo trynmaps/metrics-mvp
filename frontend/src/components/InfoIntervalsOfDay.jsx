@@ -5,7 +5,7 @@ import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
 import { getPercentileValue } from '../helpers/graphData';
-import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
+import { CHART_COLORS, PLANNING_PERCENTILE, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 import '../../node_modules/react-vis/dist/style.css'
 
 /**
@@ -152,7 +152,7 @@ class InfoIntervalsOfDay extends Component {
                  
               { this.state.crosshairValues.length > 0 && (
                <Crosshair values={this.state.crosshairValues}
-                 style={{line:{background: 'none'}}} >
+                 style={REACT_VIS_CROSSHAIR_NO_LINE} >
                       <div className= 'rv-crosshair__inner__content'>
                         <p>Onboard time: { Math.round(this.state.crosshairValues[1].y)}</p>
                         <p>Wait time: { Math.round(this.state.crosshairValues[0].y)}</p>

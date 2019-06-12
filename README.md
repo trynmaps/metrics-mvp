@@ -115,7 +115,7 @@ python vehicle.py --date=2019-04-08 --route=1 --vid=5792
 
 Show summary statistics of waiting times at a particular stop:
 ```
-python waits.py --date=2019-02-01 --route=12 --stop=3476
+python waits.py --date=2019-04-08 --route=12 --stop=3476
 ```
 
 Show scheduled timetable for a particular stop:

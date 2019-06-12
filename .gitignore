@@ -4,6 +4,8 @@
 
 data/*.json
 data/*.csv
+data/arrivals_*
+data/state_*
 
 ### Eclipse ###
 .metadata
