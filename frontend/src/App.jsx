@@ -6,12 +6,14 @@ import Home from './components/Home';
 import About from './components/About';
 import Landing from './components/Landing';
 import NotFound from './components/NotFound';
+import Dashboard from './screens/Dashboard';
 
 const App = ({ page }) => {
   const components = {
     Home: <Home />,
     About: <About />,
     Landing: <Landing />,
+    Dashboard: <Dashboard />,
     NotFound: <NotFound />
   };
   return (

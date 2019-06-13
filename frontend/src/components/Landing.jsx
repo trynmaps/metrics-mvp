@@ -4,7 +4,7 @@ import { NavLink } from 'redux-first-router-link';
 const Landing = () => (
   <Fragment>
     <button>
-      <NavLink 
+      <NavLink
         to={{ type: 'HOME' }}
         activeStyle={{ fontWeight: "bold", color: 'purple' }}
         exact={true}
@@ -14,7 +14,7 @@ const Landing = () => (
       </NavLink>
     </button>
     <button>
-      <NavLink 
+      <NavLink
         to={{ type: 'ABOUT' }}
         activeStyle={{ fontWeight: "bold", color: 'purple' }}
         exact={true}
@@ -24,7 +24,7 @@ const Landing = () => (
       </NavLink>
     </button>
     <button>
-      <NavLink 
+      <NavLink
         to={{ type: 'LANDING' }}
         activeStyle={{ fontWeight: "bold", color: 'purple' }}
         exact={true}
@@ -33,6 +33,7 @@ const Landing = () => (
         Landing
       </NavLink>
     </button>
+
     <h3>Landing Page</h3>
   </Fragment>
 );

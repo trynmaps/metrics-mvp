@@ -58,6 +58,16 @@ class Home extends Component {
             Landing
           </NavLink>
         </button>
+        <button>
+          <NavLink
+            to={{ type: 'DASHBOARD' }}
+            activeStyle={{ fontWeight: "bold", color: 'purple' }}
+            exact={true}
+            strict={true}
+          >
+            Dashboard
+            </NavLink>
+        </button>
         <div className={css`
           display: grid;
           grid-gap: 4px;
