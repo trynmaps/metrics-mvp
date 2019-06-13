@@ -2,7 +2,7 @@ importScripts(
     "https://unpkg.com/kdbush@3.0.0/kdbush.min.js",
     'https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js',
     "https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js",
-    'common.js?v10'
+    'common.js?v11'
 );
 
 let locations;
@@ -55,17 +55,22 @@ function distance(latlon1, latlon2)
     return EarthRadius * c;
 }
 
+function getTimePath(timeStr)
+{
+    return timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_').replace(/\+/g,'%2B')) : '';
+}
+
 async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, timeStr, stat)
 {
     let tripTimes = tripTimesCache[dateStr + timeStr + stat];
 
     if (!tripTimes)
     {
-        var timePath = timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_')) : '';
+        var timePath = getTimePath(timeStr);
 
         let s3Url = 'https://opentransit-stats.s3.amazonaws.com/trip_times/i1/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
-            '/trip_times_i1_sf-muni_'+dateStr+'_'+stat+timePath+'.json.gz';
+            '/trip_times_i1_sf-muni_'+dateStr+'_'+stat+timePath+'.json.gz?v2';
 
         tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
             sendError("error loading trip times: " + e);
@@ -92,11 +97,11 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
 
     if (!waitTimes)
     {
-        var timePath = timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_')) : '';
+        var timePath = getTimePath(timeStr);
 
         let s3Url = 'https://opentransit-stats.s3.amazonaws.com/wait_times/w1/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
-            '/wait_times_w1_sf-muni_'+dateStr+'_median'+timePath+'.json.gz';
+            '/wait_times_w1_sf-muni_'+dateStr+'_median'+timePath+'.json.gz?v2';
 
         console.log(s3Url);
 

@@ -14,7 +14,7 @@ function loadJson(url) {
             }
             resolve(res);
         });
-        req.onerror = () => reject(xhr.statusText);
+        req.onerror = () => reject(req.statusText);
         req.open("GET", url);
         req.send();
     });
