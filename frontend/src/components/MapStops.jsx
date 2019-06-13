@@ -14,6 +14,7 @@ const ZOOM = 13;
 class MapStops extends Component {
 
   constructor() {
+    super();
     this.state= {
       firstStopSid:null,
       secondStopSid:null
