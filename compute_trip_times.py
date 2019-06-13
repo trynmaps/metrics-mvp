@@ -205,6 +205,7 @@ if __name__ == '__main__':
                 object = s3.Object(s3_bucket, s3_path)
                 object.put(
                     Body=gzip.compress(bytes(data_str, 'utf-8')),
+                    CacheControl='max-age=86400',
                     ContentType='application/json',
                     ContentEncoding='gzip',
                     ACL='public-read'
