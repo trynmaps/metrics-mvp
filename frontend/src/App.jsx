@@ -12,13 +12,9 @@ const App = ({ page }) => {
     Home: <Home />,
     About: <About />,
     Landing: <Landing />,
-    NotFound: <NotFound />
+    NotFound: <NotFound />,
   };
-  return (
-    <Fragment>
-      {components[page]}
-    </Fragment>
-  );
+  return <Fragment>{components[page]}</Fragment>;
 };
 
 const mapStateToProps = ({ page }) => ({ page });
