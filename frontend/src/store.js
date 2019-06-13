@@ -12,13 +12,13 @@ const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
   : compose;
 
 export default function configureStore(preloadedState) {
-  const { reducer, middleware, enhancer } = connectRoutes(routesMap)
+  const { reducer, middleware, enhancer } = connectRoutes(routesMap);
 
-  const rootReducer = combineReducers({ ...reducers, location: reducer })
-  const middlewares = applyMiddleware(thunk, middleware)
-  const enhancers = composeEnhancers(enhancer, middlewares)
+  const rootReducer = combineReducers({ ...reducers, location: reducer });
+  const middlewares = applyMiddleware(thunk, middleware);
+  const enhancers = composeEnhancers(enhancer, middlewares);
 
-  const store = createStore(rootReducer, preloadedState, enhancers)
+  const store = createStore(rootReducer, preloadedState, enhancers);
 
-  return { store }
+  return { store };
 }
