@@ -188,14 +188,14 @@ def metrics_by_interval():
             curr_interval['end_time'] = (start_time + timedelta(seconds=3600)).strftime('%H:%M')
             hourly_time_intervals.append(curr_interval)
             start_time += timedelta(seconds=3600)
-        
+
     else:
         if start_time_str or end_time_str:
             return Response(json.dumps({
                 'params': params,
                 'error': 'Need both a start and end time'
             }, indent=2), status=404, mimetype='application/json')
-        
+
         hourly_time_intervals = constants.DEFAULT_TIME_STR_INTERVALS
     try:
         data['intervals'] = create_intervals_list(hourly_time_intervals, params, route_config)
@@ -281,7 +281,7 @@ def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
     for d in dates:
         try:
             history = arrival_history.get_by_date('sf-muni', route_id, d)
-            
+
             df = history.get_data_frame(start_stop_id, tz=tz, direction_id=direction_id, start_time_str=start_time_str, end_time_str=end_time_str)
 
             # get all headways for the selected stop (arrival time minus previous arrival time), computed separately for each day
@@ -313,7 +313,7 @@ def calc_metrics(args: dict, route_config: nextbus.RouteConfig) -> dict:
         headway_min_hist = metrics.get_headways_stats(headway_min)
         wait_times_hist = metrics.get_wait_times_stats(waits, tz)
         trip_times_hist = metrics.get_trip_times_stats(completed_trips, start_stop_id, end_stop_id) if end_stop_id and both_stops_same_dir else None
-        
+
     data = {
         'params': params,
         'route_title': route_config.title,
@@ -368,24 +368,6 @@ def get_cached_json_file_from_s3(filename):
     res = Response(json_data, mimetype='application/json')
     res.headers['Cache-Control'] = 'max-age=3600'
     return res
-
-@app.route('/trip-times', methods=['GET'])
-def cached_trip_times():
-    date_str = request.args.get('date')
-    if date_str is None:
-        date_str = '2019-04-08'
-    if re.match('^[\w\-]+$', date_str) is None:
-        raise Exception(f"Invalid date: {date_str}")
-    return get_cached_json_file_from_s3(f'trip_times_t1_sf-muni_{date_str}.json')
-
-@app.route('/wait-times', methods=['GET'])
-def cached_wait_times():
-    date_str = request.args.get('date')
-    if date_str is None:
-        date_str = '2019-04-08'
-    if re.match('^[\w\-]+$', date_str) is None:
-        raise Exception(f"Invalid date: {date_str}")
-    return get_cached_json_file_from_s3(f'wait_times_t2_sf-muni_{date_str}.json')
 
 @app.route('/locations', methods=['GET'])
 def cached_locations():

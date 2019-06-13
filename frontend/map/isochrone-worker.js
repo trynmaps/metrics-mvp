@@ -55,19 +55,25 @@ function distance(latlon1, latlon2)
     return EarthRadius * c;
 }
 
-async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr)
+async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, timeStr, stat)
 {
-    let tripTimes = tripTimesCache[dateStr];
+    let tripTimes = tripTimesCache[dateStr + timeStr + stat];
 
     if (!tripTimes)
     {
-        tripTimes = tripTimesCache[dateStr] = await loadJson('/trip-times?v=2&date=' + dateStr).catch(function(e) {
+        var timePath = timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_')) : '';
+
+        let s3Url = 'https://opentransit-stats.s3.amazonaws.com/trip_times/i1/sf-muni/'+
+            dateStr.replace(/\-/g, '/')+
+            '/trip_times_i1_sf-muni_'+dateStr+'_'+stat+timePath+'.json.gz';
+
+        tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
             sendError("error loading trip times: " + e);
             throw e;
         });
     }
 
-    let routeTripTimes = tripTimes[routeId];
+    let routeTripTimes = tripTimes.routes[routeId];
     if (!routeTripTimes)
     {
         return null;
@@ -80,19 +86,27 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr)
     return directionTripTimes[startStopId];
 }
 
-async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr)
+async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr, stat)
 {
-    let waitTimes = waitTimesCache[dateStr];
+    let waitTimes = waitTimesCache[dateStr + timeStr + stat];
 
     if (!waitTimes)
     {
-        waitTimes = waitTimesCache[dateStr] = await loadJson('/wait-times?v=4&date=' + dateStr).catch(function(e) {
+        var timePath = timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_')) : '';
+
+        let s3Url = 'https://opentransit-stats.s3.amazonaws.com/wait_times/w1/sf-muni/'+
+            dateStr.replace(/\-/g, '/')+
+            '/wait_times_w1_sf-muni_'+dateStr+'_median'+timePath+'.json.gz';
+
+        console.log(s3Url);
+
+        waitTimes = waitTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
             sendError("error loading wait times: " + e);
             throw e;
         });
     }
 
-    let routeWaitTimes = waitTimes[routeId];
+    let routeWaitTimes = waitTimes.routes[routeId];
     if (!routeWaitTimes)
     {
         return null;
@@ -106,7 +120,7 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr)
     return directionWaitTimes[stopId];
 }
 
-function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
+function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, stat, computeId)
 {
     curComputeId = computeId;
 
@@ -196,13 +210,13 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
 
             let stopInfo = routeInfo.stops[stopId];
 
-            let waitMin = await getWaitTimeAtStop(routeInfo.id, direction.id, stopId, dateStr);
+            let waitMin = await getWaitTimeAtStop(routeInfo.id, direction.id, stopId, dateStr, timeStr, stat);
             if (!waitMin)
             {
                 return;
             }
 
-            if (!reachedLocation.routes)
+            /* if (!reachedLocation.routes)
             {
                 // assume that person checks predictions before leaving, so if the first stop is close to their initial
                 // location, they don't have to wait the average wait time.
@@ -211,11 +225,11 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, computeId)
                 waitMin = Math.min(waitMin,
                     Math.max(FirstStopMinWaitMinutes, tripMin * FirstStopWaitTimeToWalkTimeRatio)
                 );
-            }
+            } */
 
             let departureMin = tripMin + waitMin;
 
-            let tripTimes = await getTripTimesFromStop(routeInfo.id, direction.id, stopId, dateStr);
+            let tripTimes = await getTripTimesFromStop(routeInfo.id, direction.id, stopId, dateStr, timeStr, stat);
             if (!tripTimes)
             {
                 return;
@@ -444,7 +458,7 @@ async function init()
 
         if (data && data.action === 'computeIsochrones')
         {
-            computeIsochrones(data.latlng, data.tripMins, data.routes, data.dateStr, data.computeId);
+            computeIsochrones(data.latlng, data.tripMins, data.routes, data.dateStr, data.timeStr, data.stat, data.computeId);
         }
         else
         {
