@@ -8,9 +8,9 @@ class About extends Component {
         <button>
           <NavLink
             to={{ type: 'HOME' }}
-            activeStyle={{ fontWeight: "bold", color: 'purple' }}
-            exact={true}
-            strict={true}
+            activeStyle={{ fontWeight: 'bold', color: 'purple' }}
+            exact
+            strict
           >
             Home
           </NavLink>
@@ -18,9 +18,9 @@ class About extends Component {
         <button>
           <NavLink
             to={{ type: 'ABOUT' }}
-            activeStyle={{ fontWeight: "bold", color: 'purple' }}
-            exact={true}
-            strict={true}
+            activeStyle={{ fontWeight: 'bold', color: 'purple' }}
+            exact
+            strict
           >
             About
           </NavLink>
@@ -28,9 +28,9 @@ class About extends Component {
         <button>
           <NavLink
             to={{ type: 'LANDING' }}
-            activeStyle={{ fontWeight: "bold", color: 'purple' }}
-            exact={true}
-            strict={true}
+            activeStyle={{ fontWeight: 'bold', color: 'purple' }}
+            exact
+            strict
           >
             Landing
           </NavLink>
