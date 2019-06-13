@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from 'react';
+import React, { Fragment } from 'react';
 import { NavLink } from 'redux-first-router-link';
 
 export default function About() {
