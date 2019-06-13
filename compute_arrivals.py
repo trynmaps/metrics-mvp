@@ -8,6 +8,8 @@ import time
 import boto3
 import gzip
 
+OWL_LINES = ['90', '91', 'K_OWL', 'L_OWL', 'M_OWL', 'N_OWL', 'T_OWL']
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache arrival history')
     parser.add_argument('--route', nargs='*')
@@ -24,6 +26,9 @@ if __name__ == '__main__':
 
     if route_ids is None:
         route_ids = [route.id for route in nextbus.get_route_list(agency)]
+
+    standard_routes = [x for x in route_ids if x not in set(OWL_LINES)]
+    owl_routes = [x for x in route_ids if x in set(OWL_LINES)]
 
     date_str = args.date
 
@@ -47,11 +52,20 @@ if __name__ == '__main__':
         start_time = int(start_dt.timestamp())
         end_time = int(end_dt.timestamp())
 
-        print(f"time = [{start_dt}, {end_dt})")
+        owl_start_dt = tz.localize(datetime(d.year,d.month, d.day)) # owl routes run from 1AM to 5AM so they are associated with the same day
+        owl_end_dt = owl_start_dt + incr
+
+        owl_start_time = int(owl_start_dt.timestamp())
+        owl_end_time = int(owl_end_dt.timestamp())
+
+        print(f"standard time = [{start_dt}, {end_dt}); owl time = [{owl_start_dt}, {owl_end_dt})")
 
         t1 = time.time()
 
-        state = trynapi.get_state(agency, d, start_time, end_time, route_ids)
+        if owl_routes:
+            owl_state = trynapi.get_state(agency, d, owl_start_time, owl_end_time, owl_routes)
+        if standard_routes:
+            state = trynapi.get_state(agency, d, start_time, end_time, standard_routes)
 
         print(f'retrieved state in {round(time.time()-t1,1)} sec')
 
@@ -59,7 +73,10 @@ if __name__ == '__main__':
             if continue_index is not None and i < continue_index:
                 continue
 
-            route_state = state.get_for_route(route_id)
+            if route_id in owl_routes:
+                route_state = owl_state.get_for_route(route_id)
+            else:
+                route_state = state.get_for_route(route_id)
 
             if route_state is None:
                 print(f'no state for route {route_id}')
@@ -71,7 +88,10 @@ if __name__ == '__main__':
 
             arrivals_df = eclipses.find_arrivals(route_state, route_config, d, tz)
 
-            history = arrival_history.from_data_frame(agency, route_id, arrivals_df, start_time, end_time)
+            if route_id in owl_routes:
+                history = arrival_history.from_data_frame(agency, route_id, arrivals_df, owl_start_time, owl_end_time)
+            else:
+                history = arrival_history.from_data_frame(agency, route_id, arrivals_df, start_time, end_time)
 
             print(f'{route_id}: {round(time.time()-t1,1)} saving arrival history')
 
