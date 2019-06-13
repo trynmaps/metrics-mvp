@@ -1,11 +1,13 @@
 import numpy as np
 import sortednp as snp
+from datetime import date
+import re
+from . import util
 
 def get_completed_trip_times(
     s1_trip_values, s1_departure_time_values,
     s2_trip_values, s2_arrival_time_values,
     assume_sorted=False):
-
     # Returns an array of trip times in minutes from stop s1 to stop s2
     # for trip IDs contained in both s1_trip_values and s2_trip_values.
     #
@@ -60,3 +62,38 @@ def get_matching_trips_and_arrival_times(
 def sort_parallel(arr, arr2):
     sort_order = np.argsort(arr)
     return arr[sort_order], arr2[sort_order]
+
+DefaultVersion = 'i1'
+
+def get_s3_bucket() -> str:
+    return 'opentransit-stats'
+
+def get_time_range_path(start_time_str, end_time_str):
+    if start_time_str is None and end_time_str is None:
+        return ''
+    else:
+        return f'_{start_time_str.replace(":","")}_{end_time_str.replace(":","")}'
+
+def get_s3_path(agency_id: str, d: date, stat_id: str, start_time_str, end_time_str, version = DefaultVersion) -> str:
+    time_range_path = get_time_range_path(start_time_str, end_time_str)
+    date_str = str(d)
+    date_path = d.strftime("%Y/%m/%d")
+    return f"trip_times/{version}/{agency_id}/{date_path}/trip_times_{version}_{agency_id}_{date_str}_{stat_id}{time_range_path}.json.gz"
+
+def get_cache_path(agency_id: str, d: date, stat_id: str, start_time_str, end_time_str, version = DefaultVersion) -> str:
+    time_range_path = get_time_range_path(start_time_str, end_time_str)
+
+    date_str = str(d)
+    if re.match('^[\w\-]+$', agency_id) is None:
+        raise Exception(f"Invalid agency: {agency_id}")
+
+    if re.match('^[\w\-]+$', date_str) is None:
+        raise Exception(f"Invalid date: {date_str}")
+
+    if re.match('^[\w\-]+$', version) is None:
+        raise Exception(f"Invalid version: {version}")
+
+    if re.match('^[\w\-\+]*$', time_range_path) is None:
+        raise Exception(f"Invalid time range: {time_range_path}")
+
+    return f'{util.get_data_dir()}/trip_times_{version}_{agency_id}/{date_str}/trip_times_{version}_{agency_id}_{date_str}_{stat_id}{time_range_path}.json'

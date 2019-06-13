@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 from . import util
+from datetime import date
 import sys
+import re
 
 def get_stats(time_values, start_time=None, end_time=None):
     return WaitTimeStats(time_values, start_time, end_time)
@@ -328,3 +330,39 @@ class WaitTimeStats:
         waits = next_arrival_times - sample_time_values
 
         return waits[np.logical_not(np.isnan(waits))] / 60
+
+
+DefaultVersion = 'w1'
+
+def get_s3_bucket() -> str:
+    return 'opentransit-stats'
+
+def get_time_range_path(start_time_str, end_time_str):
+    if start_time_str is None and end_time_str is None:
+        return ''
+    else:
+        return f'_{start_time_str.replace(":","")}_{end_time_str.replace(":","")}'
+
+def get_s3_path(agency_id: str, d: date, stat_id: str, start_time_str, end_time_str, version = DefaultVersion) -> str:
+    time_range_path = get_time_range_path(start_time_str, end_time_str)
+    date_str = str(d)
+    date_path = d.strftime("%Y/%m/%d")
+    return f"wait_times/{version}/{agency_id}/{date_path}/wait_times_{version}_{agency_id}_{date_str}_{stat_id}{time_range_path}.json.gz"
+
+def get_cache_path(agency_id: str, d: date, stat_id: str, start_time_str, end_time_str, version = DefaultVersion) -> str:
+    time_range_path = get_time_range_path(start_time_str, end_time_str)
+
+    date_str = str(d)
+    if re.match('^[\w\-]+$', agency_id) is None:
+        raise Exception(f"Invalid agency: {agency_id}")
+
+    if re.match('^[\w\-]+$', date_str) is None:
+        raise Exception(f"Invalid date: {date_str}")
+
+    if re.match('^[\w\-]+$', version) is None:
+        raise Exception(f"Invalid version: {version}")
+
+    if re.match('^[\w\-\+]*$', time_range_path) is None:
+        raise Exception(f"Invalid time range: {time_range_path}")
+
+    return f'{util.get_data_dir()}/wait_times_{version}_{agency_id}/{date_str}/wait_times_{version}_{agency_id}_{date_str}_{stat_id}{time_range_path}.json'
