@@ -6,6 +6,7 @@ import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
 import {handleRouteSelect} from '../actions';
+import MapStops from "./MapStops";
 
 import DropdownControl from './DropdownControl';
 import './ControlPanel.css';
@@ -19,7 +20,7 @@ class ControlPanel extends Component {
       secondStopList: [],
       firstStopId: null,
       secondStopId: null,
-      date: new Date('2019-04-08T03:50'),
+      date: new Date('2019-05-24T03:50'),
       startTimeStr: null,
       endTimeStr: null,
     };
@@ -40,8 +41,9 @@ class ControlPanel extends Component {
     const {
       routeId, directionId, firstStopId, date, secondStopId, startTimeStr, endTimeStr
     } = this.state;
-
+    debugger;
     this.props.resetGraphData();
+    debugger;
     if (firstStopId != null && routeId != null) {
       const formattedDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
       const graphParams = {
@@ -55,7 +57,7 @@ class ControlPanel extends Component {
       };
       const intervalParams = Object.assign({}, graphParams);
       delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors. 
+      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
       this.props.fetchData(graphParams, intervalParams);
     }
   }
@@ -85,26 +87,31 @@ class ControlPanel extends Component {
       : this.setState({ secondStopId: firstStopId }, this.selectedStopChanged);
   }
 
-  onSelectFirstStop = (stopId) => {
+  onSelectFirstStop = (stopId, routeDirection) => {
     const { directionId, secondStopId } = this.state;
+    let directionIdtoUse = directionId;
+    debugger;
+    if(routeDirection) {
+      directionIdtoUse = this.findDirectionId(routeDirection);
+    } 
     const selectedRoute = { ...this.getSelectedRouteInfo() };
-    const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
+    const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionIdtoUse);
     const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
     const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
-    
+
     let newSecondStopId = secondStopId;
-    
+
     // If the "to stop" is not set or is not valid for the current "from stop",
     // set a default "to stop" that is some number of stops down.  If there aren't
     // enough stops, use the end of the line.
-    
+
     const nStops = 5;
-    
+
     if (secondStopId == null || !secondStopList.includes(secondStopId)) {
         newSecondStopId = secondStopList.length >= nStops ? secondStopList[nStops-1] :
             secondStopList[secondStopList.length-1];
     }
-    this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList }, this.selectedStopChanged);
+    this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList, directionId: directionIdtoUse }, this.selectedStopChanged);
   }
 
   onSelectSecondStop = (stopId) => {
@@ -133,8 +140,12 @@ class ControlPanel extends Component {
   }
   getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
     const stopSids= selectedRoute.directions.find(dir => dir.name === name);
-    return stopSids.stops.map(stop => selectedRoute.stops[stop]);
-    
+    return stopSids.stops.map(stop => {
+      let currentStopInfo = {...selectedRoute.stops[stop]};
+      currentStopInfo.sid = stop;
+      return currentStopInfo;
+    });
+
   }
 
   selectedDirectionChanged = () => {
@@ -171,10 +182,25 @@ class ControlPanel extends Component {
       'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
     });
   }
+  updateMapStopSelectionHandler = (stops) => {
+    const {firstStopId, secondStopId, routeDirection} = stops;
+    if(!secondStopId){
+      this.onSelectFirstStop(firstStopId, routeDirection);
+    }
+    else{
+      this.setState({ firstStopId: firstStopId, secondStopId: secondStopId }, () => this.updateGraphData());
+    }
+  }
   // toggleTimekeeper(val) {
   //   // this.setState({ displayTimepicker: val });
   // }
-
+  findDirectionId = directionName => {
+    const currentDirection = this.getSelectedRouteInfo().directions.find(direction =>{
+      debugger;
+      return direction.name === directionName;
+    });
+    return currentDirection ? currentDirection.id : null;
+  }
   render() {
     const { routes } = this.props;
     const {
@@ -189,7 +215,7 @@ class ControlPanel extends Component {
       selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
       this.sendRouteStopsToMap();
     }
-    
+
     return (
       <div className={css`
           color: #fff;
@@ -312,6 +338,7 @@ class ControlPanel extends Component {
             }
           </ListGroup>
         </Card>
+        <MapStops updateStopSelection={this.updateMapStopSelectionHandler}/>
       </div>
     );
   }

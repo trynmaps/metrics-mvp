@@ -5,9 +5,9 @@ import {
 } from 'react-leaflet';
 import { updateGraphData } from '../actions'
 const INBOUND_COLOR = 'blue';
-const INBOUND_RADIUS = 4;
+const INBOUND_RADIUS = 15;
 const OUTBOUND_COLOR = 'red';
-const OUTBOUND_RADIUS = 4;
+const OUTBOUND_RADIUS = 15;
 const SF_COORDINATES = {lat : 37.7793, lng: -122.419};
 const ZOOM = 13;
 
@@ -16,8 +16,9 @@ class MapStops extends Component {
   constructor() {
     super();
     this.state= {
-      firstStopSid:null,
-      secondStopSid:null
+      firstStopId:null,
+      secondStopId:null,
+      routeDirection: null
     }
   }
   populateRouteDirection = (routeDirection, color, radius) => {
@@ -31,7 +32,7 @@ class MapStops extends Component {
                   center={currentPosition}
                   color={color}
                   radius={radius}
-                  onClick={() => this.handleStopSelect(stop)}
+                  onClick={() => this.handleStopSelect(stop,routeDirection)}
                   onMouseOver={(e) => e.target.openPopup()}
                   onMouseOut={(e) => e.target.closePopup()}
                 >
@@ -44,22 +45,28 @@ class MapStops extends Component {
       return route;
   }
 
-  handleStopSelect = (stop) => {
-    const {firstStopSid, secondStopSid} = this.state;
-    if(!firstStopSid && !secondStopSid) {
-      this.setState({firstStopSid: stop.sid},this.updateGraphData());
+  handleStopSelect = (stop,newRouteDirection) => {
+    debugger;
+    const {firstStopId, secondStopId, routeDirection} = this.state;
+    if(!firstStopId && !secondStopId) {
+      this.setState({firstStopId: stop.sid,routeDirection:newRouteDirection}, () => this.afterStopSelect());
     }
-    else if(!secondStopSid) {
-      this.setState({secondStopSid: stop.sid},this.updateGraphData());
+    else if(!secondStopId) {
+      if(routeDirection !== newRouteDirection) {
+        this.setState({firstStopId: stop.sid, secondStopId: null, routeDirection: newRouteDirection}, () => this.afterStopSelect());
+      }
+      else {
+        this.setState({secondStopId: stop.sid, routeDirection: newRouteDirection}, () => this.afterStopSelect());
+      }
     }
     else{
-       this.setState({firstStopSid: stop.sid, secondStopSid: null},this.updateGraphData());
+       this.setState({firstStopId: stop.sid, secondStopId: null, routeDirection: newRouteDirection}, () => this.afterStopSelect());
     }
   }
-  updateGraphData = () => {
-    const {firstStopSid, secondStopSid} = this.state;
-    const {updateGraphDataHandler} = this.props;
-    updateGraphDataHandler({firstStopSid:firstStopSid, secondStopSid: secondStopSid});
+  afterStopSelect = () => {
+    const {firstStopId, secondStopId, routeDirection} = this.state;
+    const {updateStopSelection} = this.props;
+    updateStopSelection({firstStopId:firstStopId, secondStopId: secondStopId, routeDirection: routeDirection});
   }
   render() {
     const { position, zoom, inboundColor, inboundRadius, outboundColor, outboundRadius } = this.props;

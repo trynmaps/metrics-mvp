@@ -29,7 +29,8 @@ class RouteInfo:
         self.title = data['title']
 
 class RouteConfig:
-    def __init__(self, data):
+    def __init__(self, agency_id, data):
+        self.agency_id = agency_id
         self.data = data
         self.id = data['tag']
         self.title = data['title']
@@ -141,7 +142,7 @@ def get_route_config(agency_id, route_id) -> RouteConfig:
             with open(cache_path, mode='r', encoding='utf-8') as f:
                 data_str = f.read()
                 try:
-                    return RouteConfig(json.loads(data_str)['route'])
+                    return RouteConfig(agency_id, json.loads(data_str)['route'])
                 except Exception as err:
                     print(err)
     except FileNotFoundError as err:
@@ -160,4 +161,4 @@ def get_route_config(agency_id, route_id) -> RouteConfig:
     with open(cache_path, mode='w', encoding='utf-8') as f:
         f.write(response.text)
 
-    return RouteConfig(data['route'])
+    return RouteConfig(agency_id, data['route'])

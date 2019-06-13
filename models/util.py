@@ -2,13 +2,14 @@ from datetime import datetime, date, timedelta
 import os
 import pytz
 
+def parse_date(date_str):
+    (y,m,d) = date_str.split('-')
+    return date(int(y),int(m),int(d))
+
 # todo: allow specifying day(s) of week
 def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
-    (start_year,start_month,start_day) = start_date_str.split('-')
-    start_date = date(int(start_year),int(start_month), int(start_day))
-
-    (end_year,end_month,end_day) = end_date_str.split('-')
-    end_date = date(int(end_year),int(end_month), int(end_day))
+    start_date = parse_date(start_date_str)
+    end_date = parse_date(end_date_str)
 
     delta = end_date - start_date
     if delta.days < 0:
@@ -35,6 +36,9 @@ def render_dwell_time(seconds):
 
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
+
+def get_timestamp_or_none(d: date, time_str: str, tz: pytz.timezone):
+    return int(get_localized_datetime(d, time_str, tz).timestamp()) if time_str is not None else None
 
 def get_localized_datetime(d: date, time_str: str, tz: pytz.timezone):
 

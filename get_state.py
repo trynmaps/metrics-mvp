@@ -1,4 +1,4 @@
-from models import trynapi, util
+from models import trynapi, util, nextbus
 import json
 import argparse
 import re
@@ -8,34 +8,40 @@ from datetime import datetime
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Download raw state data from tryn-api')
-    parser.add_argument('--route', nargs='+', required=True)
-    parser.add_argument('--start', required=True, help='unix timestamp (seconds)')
-    parser.add_argument('--end', required=True, help='unix timestamp (seconds)')
+    parser.add_argument('--route', nargs='*')
+    parser.add_argument('--date', required=True, help='date')
+    parser.add_argument('--start-time', required=False, help='start time (hh:mm)')
+    parser.add_argument('--end-time', required=False, help='end time (hh:mm)')
 
     args = parser.parse_args()
 
     route_ids = args.route
-    start_time = int(args.start)
-    end_time = int(args.end)
+
+    agency_id = 'sf-muni'
+
+    if route_ids is None:
+        route_ids = [route.id for route in nextbus.get_route_list(agency_id)]
+
+    date_str = args.date
+
+    d = util.parse_date(date_str)
+
+    start_time_str = args.start_time
+    if start_time_str is None:
+        start_time_str = '03:00'
+
+    end_time_str = args.end_time
+    if end_time_str is None:
+        end_time_str = '03:00+1'
 
     tz = pytz.timezone('US/Pacific')
-    local_start = datetime.fromtimestamp(start_time, tz)
-    local_end = datetime.fromtimestamp(end_time, tz)
+    local_start = util.get_localized_datetime(d, start_time_str, tz)
+    local_end = util.get_localized_datetime(d, end_time_str, tz)
 
-    agency = 'sf-muni'
+    print(f"route_ids = {route_ids}")
+    print(f"start = {local_start}")
+    print(f"end = {local_end}")
 
-    if re.match('^[\w\-]+$', agency) is None:
-        raise Exception(f"Invalid agency: {agency}")
+    state = trynapi.get_state(agency_id, d, local_start.timestamp(), local_end.timestamp(), route_ids)
 
-    for route_id in route_ids:
-        if re.match('^[\w\-]+$', route_id) is None:
-            raise Exception(f"Invalid route id: {route_id}")
-
-    local_path = os.path.join(util.get_data_dir(), f"state_{agency}_{'+'.join(route_ids)}_{start_time}_{end_time}.json")
-
-    print(f"route = {route_ids}")
-    print(f"start = {local_start} ({start_time})")
-    print(f"end = {local_end} ({end_time})")
-
-    agency = 'sf-muni'
-    trynapi.get_state(agency, start_time, end_time, route_ids, cache=True)
+    
