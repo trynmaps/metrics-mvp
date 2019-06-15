@@ -493,7 +493,9 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         if len(stop_index_values) == 0:
             return dir_arrivals
 
-        new_trip = np.diff(stop_index_values, prepend=stop_index_values[0]) < 0
+        stop_index_diff = np.diff(stop_index_values, prepend=-999999)
+
+        new_trip = stop_index_diff <= 0
         trip_id = np.cumsum(new_trip) + start_trip
 
         dir_arrivals = dir_arrivals.copy()
@@ -512,6 +514,7 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
     ) -> pd.DataFrame:
         dir_arrivals = get_arrivals_with_ascending_stop_index(dir_arrivals)
         dir_arrivals = add_missing_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, bus, route_config)
+        dir_arrivals = filter_duplicates(dir_arrivals)
         dir_arrivals = set_trip(dir_arrivals)
 
         return dir_arrivals
@@ -523,13 +526,60 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
     return arrivals.sort_values('TIME'), start_trip
 
+def filter_duplicates(dir_arrivals):
+    # If there are two consecutive arrivals for the same vehicle at the same stop,
+    # remove whichever arrival has the larger distance.
+
+    stop_index_values = dir_arrivals['STOP_INDEX'].values
+    if len(stop_index_values) == 0:
+        return dir_arrivals
+
+    stop_index_diff = np.diff(stop_index_values, prepend=-999999)
+
+    prev_is_duplicate = stop_index_diff == 0
+
+    if not np.any(prev_is_duplicate):
+        return dir_arrivals
+
+    dist_values = dir_arrivals['DIST'].values
+
+    worse_than_prev = np.diff(dist_values, prepend=-1) > 0
+
+    worse_than_next = np.logical_not(np.r_[worse_than_prev[1:], True])
+    next_is_duplicate = np.r_[prev_is_duplicate[1:], False]
+
+    # create a boolean array with the indexes of the arrivals to remove:
+    # where the previous arrival has the same STOP_INDEX and where this arrival has a larger distance than the previous one,
+    # or where the next arrival has the same STOP_INDEX and where this arrival has a larger distance than the next one
+
+    worse_duplicates = np.logical_or(
+        np.logical_and(
+            prev_is_duplicate,
+            worse_than_prev
+        ),
+        np.logical_and(
+            next_is_duplicate,
+            worse_than_next
+        )
+    )
+
+    #dir_arrivals['prev_duplicate_stop'] = prev_duplicate_stop
+    #dir_arrivals['worse_than_prev'] = worse_than_prev
+    #dir_arrivals['next_duplicate_stop'] = next_duplicate_stop
+    #dir_arrivals['worse_than_next'] = worse_than_next
+    #print(dir_arrivals[np.logical_or(prev_is_duplicate, next_is_duplicate)])
+    #print(dir_arrivals[worse_duplicates])
+
+    return dir_arrivals[np.logical_not(worse_duplicates)]
+
 
 def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame) -> pd.DataFrame:
     # only include arrivals for stops where STOP_INDEX is increasing over time
-    # in relation to the previous or next 2 stops visited in the same direction.
+    # for 3 stops visited consecutively in the same direction (either looking back at previous 2 stops,
+    # looking ahead at next 2 stops, or looking at previous and next stop).
     # this is needed because the direction reported on Nextbus is sometimes
     # not the actual direction the bus is going :(
-    # note: assumes route has at least 4 stops
+    # note: assumes route has at least 3 stops
 
     stop_index_values = dir_arrivals['STOP_INDEX'].values
 
@@ -538,19 +588,35 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame) -> pd.Dat
         return make_arrivals_frame([])
 
     padded_stop_index_values = np.r_[999999, 999999, stop_index_values, -999999, -999999]
-    prev2_stop_index_values = padded_stop_index_values[:-4]
-    prev_stop_index_values = padded_stop_index_values[1:-3]
-    next_stop_index_values = padded_stop_index_values[3:-1]
-    next2_stop_index_values = padded_stop_index_values[4:]
+
+    padded_stop_index_ascending = np.diff(padded_stop_index_values) > 0
+
+    # previous stop index > previous previous stop index
+    stop_index_prev2_ascending = padded_stop_index_ascending[:-3]
+
+    # current stop index > previous stop index
+    stop_index_prev_ascending = padded_stop_index_ascending[1:-2]
+
+    # next stop index > current stop index
+    stop_index_next_ascending = padded_stop_index_ascending[2:-1]
+
+    # next next stop index > next stop index
+    stop_index_next2_ascending = padded_stop_index_ascending[3:]
 
     return dir_arrivals[np.logical_or(
-        np.logical_and(
-            (stop_index_values - prev_stop_index_values) > 0,
-            (prev_stop_index_values - prev2_stop_index_values) > 0,
+        np.logical_or(
+            np.logical_and(
+                stop_index_prev_ascending,
+                stop_index_prev2_ascending,
+            ),
+            np.logical_and(
+                stop_index_next_ascending,
+                stop_index_next2_ascending
+            )
         ),
         np.logical_and(
-            (next_stop_index_values - stop_index_values) > 0,
-            (next2_stop_index_values - next_stop_index_values) > 0
+            stop_index_prev_ascending,
+            stop_index_next_ascending,
         )
     )]
 
