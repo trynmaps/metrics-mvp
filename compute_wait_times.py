@@ -111,6 +111,7 @@ if __name__ == '__main__':
 
         for stat_id, stat in stat_groups.items():
             data_str = json.dumps({
+                'version': wait_times.DefaultVersion,
                 'start_time': start_time,
                 'end_time': end_time,
                 'stat': stat,
