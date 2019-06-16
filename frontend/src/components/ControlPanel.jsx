@@ -75,15 +75,12 @@ class ControlPanel extends Component {
   componentDidUpdate() {
     const selectedRoute = this.getSelectedRouteInfo();
     if (selectedRoute) {
-      
-      const { routes } = this.props;
-      if (routes) {
-      
-        if (!selectedRoute.directions) {
-          //original: this.props.fetchRouteConfig(this.state.routeId); // now fetching all configs
-        } else if (!this.state.directionId && selectedRoute.directions.length > 0) {
-          this.setState({ directionId: selectedRoute.directions[0].id }, this.selectedDirectionChanged);
-        }
+      if (!selectedRoute.directions) {
+        console.log("Shouldn't happen.");
+        debugger;
+        // xxx this.props.fetchRouteConfig(this.state.routeId);
+      } else if (!this.state.directionId && selectedRoute.directions.length > 0) {
+        this.setState({ directionId: selectedRoute.directions[0].id });
       }
       
     }
@@ -190,7 +187,9 @@ class ControlPanel extends Component {
     //onRouteSelect(selectedRoute);
     if (!selectedRoute.directions) {
       this.setDirectionId(null);
-      this.props.fetchRouteConfig(routeId);
+      console.log("also shouldn't happen");
+      debugger;
+      //xxx this.props.fetchRouteConfig(routeId);
     } else {
       const directionId = selectedRoute.directions.length > 0 ? selectedRoute.directions[0].id : null;
       this.setDirectionId(directionId);

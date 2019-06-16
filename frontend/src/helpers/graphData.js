@@ -6,8 +6,11 @@
  * Helper method to get a specific percentile out of histogram graph data
  * where percentile is 0-100.
  */
-export function getPercentileValue(histogram, percentile) {
-  const bin = histogram.percentiles.find(x => x.percentile === percentile);
+export function getPercentileValue(graphData, percentile) {
+  if (!graphData.percentiles) {
+    return null;
+  }
+  const bin = graphData.percentiles.find(x => x.percentile === percentile);
   if (bin) {
     return bin.value;
   } else {

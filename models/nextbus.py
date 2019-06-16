@@ -89,10 +89,10 @@ def get_route_list(agency_id):
     if re.match('^[\w\-]+$', agency_id) is None:
         raise Exception(f"Invalid agency id: {agency_id}")
 
-    cache_path = os.path.join(util.get_data_dir(), f"routes_{agency_id}.json")
+    cache_path = os.path.join(util.get_data_dir(), f"routeConfigs_{agency_id}.json")
 
     def route_list_from_data(data):
-        return [RouteInfo(route) for route in data['route']]
+        return [RouteConfig(agency_id, route) for route in data['route']]
 
     try:
         mtime = os.stat(cache_path).st_mtime
@@ -107,7 +107,7 @@ def get_route_list(agency_id):
     except FileNotFoundError as err:
         pass
 
-    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeList&a={agency_id}&t=0&terse")
+    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeConfig&a={agency_id}&t=0&terse")
 
     data = response.json()
 
@@ -122,6 +122,11 @@ def get_route_list(agency_id):
 
     return route_list_from_data(data)
 
+# TODO: if we stay with fetching all the route configs at once, then
+# this method can be refactored with get_route_list since they are now
+# mostly identical.  That is, get_route_config can call get_route_list,
+# then return only the requested RouteConfig.
+
 def get_route_config(agency_id, route_id) -> RouteConfig:
 
     if re.match('^[\w\-]+$', agency_id) is None:
@@ -131,7 +136,7 @@ def get_route_config(agency_id, route_id) -> RouteConfig:
         raise Exception(f"Invalid route id: {route_id}")
 
     # cache route config locally to reduce number of requests to nextbus API and improve performance
-    cache_path = os.path.join(util.get_data_dir(), f"route_{agency_id}_{route_id}.json")
+    cache_path = os.path.join(util.get_data_dir(), f"routeConfigs_{agency_id}.json")
 
     try:
         mtime = os.stat(cache_path).st_mtime
@@ -142,13 +147,16 @@ def get_route_config(agency_id, route_id) -> RouteConfig:
             with open(cache_path, mode='r', encoding='utf-8') as f:
                 data_str = f.read()
                 try:
-                    return RouteConfig(agency_id, json.loads(data_str)['route'])
+                    jsonData = json.loads(data_str)['route']
+                    for jsonRoute in jsonData:
+                        if route_id == jsonRoute['tag']:
+                            return RouteConfig(agency_id, jsonRoute)
                 except Exception as err:
                     print(err)
     except FileNotFoundError as err:
         pass
 
-    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeConfig&a={agency_id}&r={route_id}&t=0&terse")
+    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeConfig&a={agency_id}&t=0&terse")
 
     data = response.json()
 
@@ -161,4 +169,6 @@ def get_route_config(agency_id, route_id) -> RouteConfig:
     with open(cache_path, mode='w', encoding='utf-8') as f:
         f.write(response.text)
 
-    return RouteConfig(agency_id, data['route'])
+    for jsonRoute in data['route']:
+        if route_id == jsonRoute['tag']:
+            return RouteConfig(agency_id, jsonRoute)

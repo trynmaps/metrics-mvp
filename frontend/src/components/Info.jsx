@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { css } from 'emotion';
 import Card from 'react-bootstrap/Card';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
-import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData'; 
+import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData';
 import { PLANNING_PERCENTILE, CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 import * as d3 from 'd3';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
@@ -17,7 +17,7 @@ class Info extends Component {
     };
 
   }
-  
+
   computeGrades(headwayMin, waitTimes, tripTimes, speed) {
     //
     // grade and score for average wait
@@ -45,7 +45,7 @@ class Info extends Component {
     };
 
     let longWaitProbability = 0;
-    if (headwayMin) {
+    if (waitTimes && waitTimes.histogram) {
       longWaitProbability = waitTimes.histogram.reduce(reducer, 0);
       longWaitProbability /= waitTimes.count;
     }
@@ -193,8 +193,8 @@ class Info extends Component {
 
     return miles;
   }
-  
-  
+
+
   /**
    * Event handler for onMouseLeave.
    * @private
@@ -230,15 +230,15 @@ class Info extends Component {
     const headwayMin = graphData ? graphData.headway_min : null;
     const waitTimes = graphData ? graphData.wait_times : null;
     const tripTimes = graphData ? graphData.trip_times : null;
-    
-    this.headwayData = graphData && headwayMin ? headwayMin.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
-    this.waitData = graphData && waitTimes ? waitTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: (100 * bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) : null;
-    this.tripData = graphData && tripTimes ? tripTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
-    
+
+    this.headwayData = headwayMin && headwayMin.histogram ? headwayMin.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
+    this.waitData = waitTimes && waitTimes.histogram ? waitTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: (100 * bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) : null;
+    this.tripData = tripTimes && tripTimes.histogram ? tripTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
+
     const distance = this.computeDistance(graphParams, routes);
     const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
-    
+
     return (
       <div
         className={css`
@@ -355,7 +355,7 @@ minutes
                 </Card.Body>
               </Card>
 
-              <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />            
+              <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />
 
               <p />
 
@@ -380,8 +380,8 @@ minutes
                 <YAxis hideLine />
 
                 <VerticalRectSeries data={ this.headwayData } onNearestX={this._onNearestXHeadway} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
-                
-                <ChartLabel 
+
+                <ChartLabel
                 text="arrivals"
                 className="alt-y-label"
                 includeMargin={false}
@@ -390,23 +390,23 @@ minutes
                 style={{
                   transform: 'rotate(-90)',
                   textAnchor: 'end'
-                }}       
-                />       
-  
-                <ChartLabel 
+                }}
+                />
+
+                <ChartLabel
                 text="minutes"
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.90}
                 yPercent={0.94}
-                />       
+                />
 
                 { this.state.crosshairValues.headway && (
                     <Crosshair values={this.state.crosshairValues.headway}
                       style={REACT_VIS_CROSSHAIR_NO_LINE} >
                            <div className= 'rv-crosshair__inner__content'>
                              Arrivals: { Math.round(this.state.crosshairValues.headway[0].y)}
-                           </div>                 
+                           </div>
                    </Crosshair>)}
 
               </XYPlot>
@@ -433,7 +433,7 @@ minutes
 
                 <VerticalRectSeries data={ this.waitData } onNearestX={this._onNearestXWaitTimes} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
 
-                <ChartLabel 
+                <ChartLabel
                 text="chance"
                 className="alt-y-label"
                 includeMargin={false}
@@ -442,23 +442,23 @@ minutes
                 style={{
                   transform: 'rotate(-90)',
                   textAnchor: 'end'
-                }}       
-                />       
-  
-                <ChartLabel 
+                }}
+                />
+
+                <ChartLabel
                 text="minutes"
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.90}
                 yPercent={0.94}
-                />       
+                />
 
                 { this.state.crosshairValues.wait && (
                     <Crosshair values={this.state.crosshairValues.wait}
                       style={REACT_VIS_CROSSHAIR_NO_LINE} >
                            <div className= 'rv-crosshair__inner__content'>
                              Chance: { Math.round(this.state.crosshairValues.wait[0].y)}%
-                           </div>                 
+                           </div>
                    </Crosshair>)}
 
               </XYPlot>
@@ -489,7 +489,7 @@ minutes
 
               <VerticalRectSeries data={ this.tripData } onNearestX={this._onNearestXTripTimes} stroke="white" fill={CHART_COLORS[1]} style={{strokeWidth: 2}}/>
 
-                <ChartLabel 
+                <ChartLabel
                 text="trips"
                 className="alt-y-label"
                 includeMargin={false}
@@ -498,23 +498,23 @@ minutes
                 style={{
                   transform: 'rotate(-90)',
                   textAnchor: 'end'
-                }}       
-                />       
-  
-                <ChartLabel 
+                }}
+                />
+
+                <ChartLabel
                 text="minutes"
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.90}
                 yPercent={0.94}
-                />       
+                />
 
                 { this.state.crosshairValues.trip && (
                   <Crosshair values={this.state.crosshairValues.trip}
                     style={REACT_VIS_CROSSHAIR_NO_LINE} >
                          <div className= 'rv-crosshair__inner__content'>
                            Trips: { Math.round(this.state.crosshairValues.trip[0].y)}
-                         </div>                 
+                         </div>
                  </Crosshair>)}
 
               </XYPlot>

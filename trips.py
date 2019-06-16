@@ -4,7 +4,7 @@ import sys
 from datetime import datetime, timedelta
 from models import nextbus, arrival_history, util, metrics, trip_times
 import pytz
-import numpy
+import numpy as np
 import pandas as pd
 
 if __name__ == '__main__':
@@ -87,16 +87,25 @@ if __name__ == '__main__':
 
     for d in dates:
         history = arrival_history.get_by_date(agency, route_id, d, version)
-        df = history.get_data_frame(s1, tz = tz, start_time_str = start_time_str, end_time_str = end_time_str)
+
+        start_time = util.get_timestamp_or_none(d, start_time_str, tz)
+        end_time = util.get_timestamp_or_none(d, end_time_str, tz)
+
+        df = history.get_data_frame(s1, start_time = start_time, end_time = end_time)
         date_str = str(d)
 
         s1_df = trip_times.get_trip_times(df, history, tz, s1, s2)
-        
+
+        s1_df['DATE_TIME'] = df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
+
         if s1_df.empty:
             print(f"no arrival times found for stop {s1} on {date_str}")
         else:
             for index, row in s1_df.iterrows():
-                print(f"s1_t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) s2_t={row.dest_arrival_time_str} ({row.dest_arrival_time}) vid:{row.VID} trip_minutes:{round(row.trip_min, 1)}")
+                dest_arrival_time = row.dest_arrival_time
+                dest_arrival_time_str = datetime.fromtimestamp(dest_arrival_time, tz).time() if dest_arrival_time is not None and not np.isnan(dest_arrival_time) else None
+
+                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID} trip_minutes:{round(row.trip_min, 1)}")
 
             completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 
@@ -104,10 +113,10 @@ if __name__ == '__main__':
 
     print(f'completed trips     = {len((trips))}')
     if len(trips) > 0:
-        print(f'average trip time   = {round(numpy.average(trips),1)} min')
-        print(f'standard deviation  = {round(numpy.std(trips),1)} min')
-        print(f'shortest trip time  = {round(numpy.min(trips),1)} min')
-        print(f'10% trip time       = {round(numpy.quantile(trips,0.1),1)} min')
-        print(f'median trip time    = {round(numpy.median(trips),1)} min')
-        print(f'90% trip time       = {round(numpy.quantile(trips,0.9),1)} min')
-        print(f'longest trip time   = {round(numpy.max(trips),1)} min')
+        print(f'average trip time   = {round(np.average(trips),1)} min')
+        print(f'standard deviation  = {round(np.std(trips),1)} min')
+        print(f'shortest trip time  = {round(np.min(trips),1)} min')
+        print(f'10% trip time       = {round(np.quantile(trips,0.1),1)} min')
+        print(f'median trip time    = {round(np.median(trips),1)} min')
+        print(f'90% trip time       = {round(np.quantile(trips,0.9),1)} min')
+        print(f'longest trip time   = {round(np.max(trips),1)} min')
