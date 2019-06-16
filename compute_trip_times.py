@@ -175,7 +175,7 @@ if __name__ == '__main__':
                 'end_time': end_time,
                 'stat': stat,
                 'routes': all_trip_times[interval_index][stat_id]
-            })
+            }, separators=(',', ':'))
 
             cache_path = trip_times.get_cache_path(agency_id, d, stat_id, start_time_str, end_time_str)
 
