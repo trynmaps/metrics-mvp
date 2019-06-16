@@ -3,10 +3,11 @@ import { Card, Container, Row, Col } from 'react-bootstrap';
 import * as d3 from "d3";
 
 import { XYPlot, HorizontalGridLines, VerticalGridLines,
-  XAxis, YAxis, VerticalBarSeries,
-  LineSeries, ChartLabel, Crosshair } from 'react-vis';
+  XAxis, YAxis,
+  LineSeries, CustomSVGSeries, ChartLabel, Crosshair } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import '../../node_modules/react-vis/dist/style.css';
+import { filterRoutes, filterDirections, ignoreFirstStop, ignoreLastStop } from '../helpers/graphData'
   
 class RouteSummary extends Component {
   constructor(props) {
@@ -36,8 +37,11 @@ class RouteSummary extends Component {
     
     // some terminals in our config don't match up with current gtfs data
     
+    // TODO: move this to heuristics function.
+    
     const remappingOfTerminal = {
-        "17ST AND NOE": "Castro" // in trips.txt for 14358, which is not in routes.txt.  14359 is the F
+        "17ST AND NOE": "Castro", // F outbound:  in trips.txt for 14358, which is not in routes.txt.  14359 is the F.  As of 6/11 this is no longer in route config, is Castro now.
+        "Cow Palace": "Bayshore Boulevard" // 9 outbound: during the day, terminal is bayshore.  See sfmta route description for morning, evening, weekend terminals.          
     }
     
     if (remappingOfTerminal[terminal]) {
@@ -122,15 +126,22 @@ class RouteSummary extends Component {
     const route = this.props.routes.find(route => route.id === routeID);
     const directionInfo = route.directions.find(direction => direction.id === directionID);
 
-    const firstStop = directionInfo.stops[0];
-    // probably don't need this const lastStop = directionInfo.stops[directionInfo.stops.length - 1];
+    const ignoreFirst = ignoreFirstStop(routeID, directionID);
+    let firstStop = null;
+    
+    if (Number.isInteger(ignoreFirst)) {
+      firstStop = ignoreFirst;
+    } else {
+      firstStop = directionInfo.stops[ ignoreFirst ? 1 : 0];
+    }
 
     let tripTimesForFirstStop = tripTimesForDir[firstStop];
     
-    // if this stop doesn't have trip times (like the oddball J direction going to the yard)
+    // if this stop doesn't have trip times (like the oddball J direction going to the yard, which we currently ignore)
     // then find the stop with the most trip time entries
     
     if (!tripTimesForFirstStop) {
+      console.log("No trip times found for " + firstStop + ".  Using stop with most entries.");
       tripTimesForFirstStop = Object.values(tripTimesForDir).reduce((accumulator, currentValue) =>
          Object.values(currentValue).length > Object.values(accumulator).length ? currentValue : accumulator, {});
     }
@@ -145,9 +156,20 @@ class RouteSummary extends Component {
     
     const {tripTimesForFirstStop, directionInfo} = this.getTripTimesForFirstStop(routeID, directionID, routes, tripTimes);
     
-    if (!tripTimesForFirstStop) { return -1; } // no precomputed times
+    if (!tripTimesForFirstStop) { // no precomputed times
+      console.log("No precomputed trip time for " + routeID + " " + directionID);
+      return "?";
+    }
     
-    const lastStop = directionInfo.stops[directionInfo.stops.length - 1];
+    const ignoreLast = ignoreLastStop(routeID, directionID);
+    
+    let lastStop = null;
+    
+    if (Number.isInteger(ignoreLast)) {
+      lastStop = ignoreLast;
+    } else {
+      lastStop = directionInfo.stops[directionInfo.stops.length - (ignoreLast ? 2 : 1)];
+    }
 
     //console.log('found ' + Object.keys(tripTimesForFirstStop).length + ' keys' );
 
@@ -156,6 +178,8 @@ class RouteSummary extends Component {
     // again, if we can't find the last stop, then use the highest trip time actually observed
     
     if (!tripTime) {
+      console.log("No trip time found for " + routeID + " " + directionID + " " + lastStop);
+      debugger;
       tripTime = Math.max(...Object.values(tripTimesForFirstStop))
     }
 
@@ -172,9 +196,14 @@ class RouteSummary extends Component {
 
     if (!tripTimesForFirstStop) { return []; } // no precomputed times
 
+    const route = this.props.routes.find(route => route.id === routeID);
+    
+    // TODO; take into account possible skipping for first and last stop
+    
     const dataSeries = directionInfo.stops.map((stop, index) => { return {
       x: index,
-      y: tripTimesForFirstStop[stop] ? tripTimesForFirstStop[stop] : 0
+      y: tripTimesForFirstStop[stop] ? tripTimesForFirstStop[stop] : 0,
+      title: route.stops[stop].title
     }});
     
     return dataSeries;
@@ -185,9 +214,12 @@ class RouteSummary extends Component {
 
     if (!tripTimesForFirstStop) { return []; } // no precomputed times
 
+    const route = this.props.routes.find(route => route.id === routeID);
+    
     const dataSeries = directionInfo.stops.map((stop, index) => { return {
       x: index,
-      y: tripTimesForFirstStop[stop] ? tripTimesForFirstStop[stop] * 0.9 : 0
+      y: tripTimesForFirstStop[stop] ? tripTimesForFirstStop[stop] * 0.9 : 0,
+      title: route.stops[stop].title
     }});
     
     return dataSeries;
@@ -218,6 +250,10 @@ class RouteSummary extends Component {
    * Summarizes waits in one direction.
    */
   getWaitTimeForDir(directionID, waitTimesForRoute) {
+    if (!waitTimesForRoute) {
+      return {wait:0, stops: 0};
+    }
+    
     const waitTimeForDir = waitTimesForRoute[directionID];
 
     if (!waitTimeForDir) {
@@ -262,69 +298,72 @@ class RouteSummary extends Component {
   
   
   
-  getAllWaits() {  
+  getAllWaits(routes, waitTimes) {  
   /**
    *  This is the temporary code used to generate the allWaits array below.
    *  
-   
-  if (graphData) {
-    let allWaits = routes.map(route => {
-      return { routeID: route.id, wait: this.getWaitTime(route.id, waitTimes) }
-    });
+    
+    const filteredRoutes = filterRoutes(routes);
+    let allWaits = filteredRoutes.map(route => {
+        return { routeID: route.id, wait: this.getWaitTime(route.id, waitTimes) }
+    })  ;
     allWaits = allWaits.filter(waitObj => waitObj.wait > 0);
     allWaits.sort((a,b) => { return b.wait - a.wait});
     console.log(JSON.stringify(allWaits));
-  }*/
+    
+    /*/
   
     const allWaits = 
-    
-    [{"routeID":"38BX","wait":169.84285714285716},{"routeID":"38AX","wait":159.70769230769233},
-      {"routeID":"1BX","wait":130.49655172413796},{"routeID":"41","wait":110.75636363636364},
-      {"routeID":"7X","wait":106.77532467532468},{"routeID":"1AX","wait":102.53235294117647},
-      {"routeID":"31BX","wait":97.9939393939394},{"routeID":"8AX","wait":81.05306122448978},
-      {"routeID":"82X","wait":77.36500000000002},{"routeID":"30X","wait":72.21538461538461},
-      {"routeID":"31AX","wait":48.3780487804878},{"routeID":"14X","wait":45.76607142857143},
-      {"routeID":"S","wait":42.98648648648649},{"routeID":"81X","wait":34.93750000000001},
-      {"routeID":"56","wait":26.305769230769233},{"routeID":"36","wait":23.021428571428572},
-      {"routeID":"23","wait":21.24701492537313},{"routeID":"25","wait":20.81190476190476},
-      {"routeID":"67","wait":19.99772727272727},{"routeID":"39","wait":18.764102564102565},
-      {"routeID":"18","wait":15.71111111111111},{"routeID":"12","wait":15.61954022988506},
-      {"routeID":"52","wait":15.015492957746478},{"routeID":"C","wait":14.902702702702705},
-      {"routeID":"PM","wait":14.210869565217392},{"routeID":"8BX","wait":13.026881720430108},
-      {"routeID":"PH","wait":12.933333333333332},{"routeID":"54","wait":12.680722891566266},
-      {"routeID":"8","wait":12.673636363636362},{"routeID":"35","wait":12.5109375},
-      {"routeID":"31","wait":12.00990990990991},{"routeID":"3","wait":11.955172413793104},
-      {"routeID":"37","wait":11.766315789473683},{"routeID":"88","wait":11.75263157894737},
-      {"routeID":"48","wait":11.725000000000001},{"routeID":"M","wait":11.183636363636365},
-      {"routeID":"57","wait":11.163529411764706},{"routeID":"19","wait":11.15373134328358},
-      {"routeID":"66","wait":10.487499999999999},{"routeID":"9R","wait":10.371264367816094},
-      {"routeID":"10","wait":9.95},{"routeID":"33","wait":9.621839080459772},
-      {"routeID":"5","wait":9.588750000000001},{"routeID":"2","wait":9.172},
-      {"routeID":"38","wait":8.974850299401195},{"routeID":"27","wait":8.712631578947367},
-      {"routeID":"9","wait":8.483185840707964},{"routeID":"KT","wait":8.379761904761907},
-      {"routeID":"6","wait":8.184210526315788},{"routeID":"55","wait":7.946428571428571},
-      {"routeID":"24","wait":7.747899159663866},{"routeID":"J","wait":7.675000000000001},
-      {"routeID":"29","wait":7.4916201117318435},{"routeID":"21","wait":7.115789473684211},
-      {"routeID":"7","wait":7.017757009345793},{"routeID":"28R","wait":7.000000000000001},
-      {"routeID":"43","wait":6.9662857142857115},{"routeID":"30","wait":6.941176470588235},
-      {"routeID":"44","wait":6.82734375},{"routeID":"28","wait":6.578481012658228},
-      {"routeID":"45","wait":6.361016949152543},{"routeID":"L","wait":6.295833333333333},
-      {"routeID":"22","wait":6.107608695652175},{"routeID":"F","wait":6.010000000000001},
-      {"routeID":"NX","wait":5.9375},{"routeID":"N","wait":5.803030303030303},
-      {"routeID":"5R","wait":5.579365079365079},{"routeID":"47","wait":5.460344827586206},
-      {"routeID":"14","wait":5.4173913043478255},{"routeID":"49","wait":5.0628205128205135},
-      {"routeID":"14R","wait":4.806521739130435},{"routeID":"1","wait":3.921875},
-      {"routeID":"38R","wait":3.68125}];
-    
+  [{"routeID":"E","wait":28.326666666666668},{"routeID":"81X","wait":24.725},
+    {"routeID":"56","wait":22.653846153846157},{"routeID":"36","wait":20.90793650793651},
+    {"routeID":"39","wait":17.743589743589745},{"routeID":"25","wait":17.014285714285712},
+    {"routeID":"18","wait":16.104444444444447},{"routeID":"23","wait":15.914925373134327},
+    {"routeID":"37","wait":15.226315789473684},{"routeID":"67","wait":13.329545454545455},
+    {"routeID":"52","wait":13.252112676056337},{"routeID":"8","wait":13.12636363636364},
+    {"routeID":"3","wait":12.594827586206897},{"routeID":"54","wait":12.390361445783133},
+    {"routeID":"57","wait":11.845882352941175},{"routeID":"PH","wait":11.727536231884057},
+    {"routeID":"PM","wait":11.706521739130435},{"routeID":"35","wait":11.609375},
+    {"routeID":"38","wait":11.571856287425149},{"routeID":"55","wait":11.532142857142857},
+    {"routeID":"82X","wait":10.934999999999999},{"routeID":"48","wait":10.510638297872338},
+    {"routeID":"31","wait":10.395495495495492},{"routeID":"66","wait":10.242857142857142},
+    {"routeID":"27","wait":9.819999999999999},{"routeID":"88","wait":9.773684210526316},
+    {"routeID":"38AX","wait":9.65},{"routeID":"19","wait":9.631343283582085},
+    {"routeID":"33","wait":9.55977011494253},{"routeID":"10","wait":9.322222222222223},
+    {"routeID":"2","wait":9.153333333333334},{"routeID":"12","wait":9.022988505747126},
+    {"routeID":"9R","wait":8.99655172413793},{"routeID":"C","wait":8.913513513513513},
+    {"routeID":"24","wait":8.184873949579831},{"routeID":"31BX","wait":8.145454545454546},
+    {"routeID":"1AX","wait":8.11176470588235},{"routeID":"7X","wait":7.935064935064935},
+    {"routeID":"29","wait":7.920670391061454},{"routeID":"7","wait":7.878504672897196},
+    {"routeID":"6","wait":7.86421052631579},{"routeID":"38BX","wait":7.428571428571429},
+    {"routeID":"9","wait":7.338053097345133},{"routeID":"8BX","wait":7.310752688172044},
+    {"routeID":"1BX","wait":7.017241379310343},{"routeID":"21","wait":6.994736842105262},
+    {"routeID":"44","wait":6.956249999999999},{"routeID":"30X","wait":6.823076923076922},
+    {"routeID":"31AX","wait":6.77560975609756},{"routeID":"J","wait":6.739473684210527},
+    {"routeID":"45","wait":6.557627118644067},{"routeID":"22","wait":6.52391304347826},
+    {"routeID":"43","wait":6.512000000000002},{"routeID":"KT","wait":6.472619047619048},
+    {"routeID":"28","wait":6.432911392405063},{"routeID":"14X","wait":6.326785714285715},
+    {"routeID":"28R","wait":6.284615384615384},{"routeID":"M","wait":6.13090909090909},
+    {"routeID":"14R","wait":6.034782608695651},{"routeID":"14","wait":5.865217391304348},
+    {"routeID":"F","wait":5.6474576271186425},{"routeID":"NX","wait":5.579166666666667},
+    {"routeID":"30","wait":5.513235294117647},{"routeID":"49","wait":5.467948717948718},
+    {"routeID":"5R","wait":5.307936507936509},{"routeID":"5","wait":5.058750000000001},
+    {"routeID":"N","wait":5.040298507462687},{"routeID":"L","wait":5.037499999999999},
+    {"routeID":"47","wait":4.882758620689656},{"routeID":"1","wait":4.815625},
+    {"routeID":"8AX","wait":4.536734693877551},{"routeID":"41","wait":4.252727272727273},
+    {"routeID":"38R","wait":3.170833333333334}];  
+
     return allWaits;
   }
   
   getSpeedForRoute(route_id, routes, trips, shapes, tripTimes) { // all directions
     const route = routes.find(route => route.id === route_id);
     
-    let speeds = route.directions.map(direction => {
+    const filteredDirections = filterDirections(route.directions, route_id);
+    let speeds = filteredDirections.map(direction => {
       const dist = this.getRouteDistanceInMeters(route.id, direction.id, trips, shapes);
       const tripTime = this.getTripTime(route.id, direction.id, routes, tripTimes);
+      
+      if (dist <= 0 || isNaN(tripTime)) { return -1; } // something wrong with the data here
 
       const speed = Number.parseFloat(dist) / tripTime * 60.0 / 1609.344;  // initial units are meters per minute, final are mph
       return speed;
@@ -345,60 +384,28 @@ class RouteSummary extends Component {
      *
     let allSpeeds = null;
     if (routes && trips && shapes && tripTimes) {
-      allSpeeds = routes.map(route => {
+      const filteredRoutes = filterRoutes(routes);
+      allSpeeds = filteredRoutes.map(route => {
         return { routeID: route.id, speed: this.getSpeedForRoute(route.id, routes, trips, shapes, tripTimes) }
       });
       allSpeeds = allSpeeds.filter(speedObj => speedObj.speed > 0); // not needed?
       allSpeeds.sort((a,b) => { return b.speed - a.speed});
 
       console.log(JSON.stringify(allSpeeds));
-    }*/
+    }/*/
     
   
-    // XXX the shape chosen for S isn't right, need to look at that.  168096 is probably from yard.
-    // XXX instead of picking longest shape, maybe go with the most prevalent in trips.txt?
+    // TODO: instead of picking longest shape, maybe go with the most prevalent in trips.txt?
     
     const allSpeeds =
-      [{"routeID":"S","speed":71.96506731672946},{"routeID":"25","speed":21.88180505967474},
-        {"routeID":"5","speed":20.585745157371854},{"routeID":"56","speed":17.967263381102484},
-        {"routeID":"36","speed":14.591832194964685},{"routeID":"28R","speed":13.401101907945577},
-        {"routeID":"57","speed":13.237010144335347},{"routeID":"28","speed":12.921714862227383},
-        {"routeID":"66","speed":12.499606464911583},{"routeID":"9","speed":12.478706724768266},
-        {"routeID":"39","speed":12.431568478024762},{"routeID":"18","speed":12.38384753629753},
-        {"routeID":"67","speed":12.366435101370392},{"routeID":"23","speed":12.246234093732935},
-        {"routeID":"NX","speed":12.211866897437611},{"routeID":"14X","speed":12.158861636587222},
-        {"routeID":"48","speed":11.695485182500958},{"routeID":"L","speed":11.485168402500745},
-        {"routeID":"54","speed":11.45955645346963},{"routeID":"29","speed":11.273682267549354},
-        {"routeID":"8AX","speed":10.937315443481708},{"routeID":"35","speed":10.878958514151813},
-        {"routeID":"38AX","speed":10.864142742482851},{"routeID":"37","speed":10.835803303611367},
-        {"routeID":"M","speed":10.572728102510284},{"routeID":"31AX","speed":10.466797186575116},
-        {"routeID":"J","speed":10.242009902521922},{"routeID":"14R","speed":9.87950792797499},
-        {"routeID":"52","speed":9.654859038491768},{"routeID":"9R","speed":9.397910080959393},
-        {"routeID":"44","speed":9.393679062721477},{"routeID":"7X","speed":9.197485622538018},
-        {"routeID":"43","speed":9.174924508593438},{"routeID":"8","speed":9.17225706401365},
-        {"routeID":"55","speed":9.004798341323038},{"routeID":"38BX","speed":8.845344785599222},
-        {"routeID":"1AX","speed":8.642213974998622},{"routeID":"38R","speed":8.597711772417352},
-        {"routeID":"5R","speed":8.570760157807591},{"routeID":"1BX","speed":8.568569971976034},
-        {"routeID":"31BX","speed":8.336418841572577},{"routeID":"N","speed":8.186878202967765},
-        {"routeID":"30X","speed":8.1750377637687},{"routeID":"88","speed":8.143835269132298},
-        {"routeID":"7","speed":8.020094044661953},{"routeID":"19","speed":7.839368204216173},
-        {"routeID":"33","speed":7.7815775793949165},{"routeID":"1","speed":7.559416211169557},
-        {"routeID":"24","speed":7.528897366699255},{"routeID":"6","speed":7.313535770060364},
-        {"routeID":"31","speed":7.184332203025409},{"routeID":"12","speed":7.172470572185153},
-        {"routeID":"14","speed":7.0958669024343175},{"routeID":"21","speed":7.049528206391989},
-        {"routeID":"10","speed":7.0099080019303805},{"routeID":"49","speed":6.985820454377681},
-        {"routeID":"3","speed":6.9026440647672285},{"routeID":"PH","speed":6.733517603568379},
-        {"routeID":"2","speed":6.65504391162705},{"routeID":"82X","speed":6.582960083007707},
-        {"routeID":"38","speed":6.480911445156732},{"routeID":"27","speed":6.38450281150451},
-        {"routeID":"22","speed":6.358232657939327},{"routeID":"47","speed":6.19790710056837},
-        {"routeID":"30","speed":6.12741382929436},{"routeID":"F","speed":6.073163327582016},
-        {"routeID":"45","speed":5.768411843675301},{"routeID":"8BX","speed":5.754748408782319},
-        {"routeID":"41","speed":5.616974987846005},{"routeID":"81X","speed":4.749500272494237},
-        {"routeID":"C","speed":3.697334585762861},{"routeID":"PM","speed":3.423848943276791}]  
-   
+
+    [{"routeID":"25","speed":23.53673528077509},{"routeID":"56","speed":18.89642338010723},{"routeID":"36","speed":13.97256755699729},{"routeID":"57","speed":13.083745412641946},{"routeID":"66","speed":12.939880120192345},{"routeID":"L","speed":12.806484295969913},{"routeID":"18","speed":12.755122106920357},{"routeID":"NX","speed":12.747474264539647},{"routeID":"23","speed":12.617453099531058},{"routeID":"28R","speed":12.58609046992892},{"routeID":"M","speed":12.433496116392975},{"routeID":"48","speed":12.22171750329319},{"routeID":"28","speed":12.125254554167583},{"routeID":"31AX","speed":11.562342850099334},{"routeID":"29","speed":11.51112282689134},{"routeID":"14X","speed":11.420420653251856},{"routeID":"39","speed":11.111151172787249},{"routeID":"54","speed":10.958561622719845},{"routeID":"38AX","speed":10.92080476284213},{"routeID":"67","speed":10.805301150867972},{"routeID":"1AX","speed":10.743814727525546},{"routeID":"35","speed":10.471121083622347},{"routeID":"5","speed":10.27119653083695},{"routeID":"8AX","speed":10.269796769509632},{"routeID":"J","speed":10.175561137544854},{"routeID":"38BX","speed":10.135743253376186},{"routeID":"31BX","speed":10.071039229503796},{"routeID":"14R","speed":9.576014982826607},{"routeID":"44","speed":9.537425224664688},{"routeID":"8BX","speed":9.51866032693622},{"routeID":"52","speed":9.469761030387193},{"routeID":"37","speed":9.434999769851835},{"routeID":"N","speed":9.39581339253376},{"routeID":"43","speed":9.287424605037632},{"routeID":"KT","speed":9.280457385907283},{"routeID":"7X","speed":9.215826142135091},{"routeID":"8","speed":8.951557581145465},{"routeID":"38R","speed":8.855247338938689},{"routeID":"82X","speed":8.626424266335725},{"routeID":"88","speed":8.547601887234283},{"routeID":"9R","speed":8.525804539584065},{"routeID":"1BX","speed":8.359532632084957},{"routeID":"5R","speed":8.30286402564446},{"routeID":"7","speed":8.091391500823503},{"routeID":"30X","speed":8.081677563870178},{"routeID":"19","speed":7.8515789040414745},{"routeID":"10","speed":7.738465876122821},{"routeID":"33","speed":7.573458175418235},{"routeID":"PH","speed":7.236549935317842},{"routeID":"6","speed":7.227969145214597},{"routeID":"31","speed":7.140272971757923},{"routeID":"E","speed":7.082045379100897},{"routeID":"24","speed":7.074954574522093},{"routeID":"38","speed":6.997423042784176},{"routeID":"14","speed":6.941802950963222},{"routeID":"1","speed":6.916475971783379},{"routeID":"41","speed":6.868005011207201},{"routeID":"2","speed":6.8341404345430945},{"routeID":"3","speed":6.731185729929051},{"routeID":"9","speed":6.693351533782119},{"routeID":"21","speed":6.646542020431805},{"routeID":"49","speed":6.61271423381964},{"routeID":"81X","speed":6.4926679256969075},{"routeID":"12","speed":6.458392830700827},{"routeID":"47","speed":6.362389701502757},{"routeID":"22","speed":6.2932392707639035},{"routeID":"30","speed":6.211207633218829},{"routeID":"27","speed":6.165550900165391},{"routeID":"45","speed":6.146126977949873},{"routeID":"55","speed":6.137546693508098},{"routeID":"F","speed":5.702729578812806},{"routeID":"C","speed":4.197389598026333},{"routeID":"PM","speed":4.034093952541647}]
+
+
     /*
      * test code to look for routes missing speeds 
      */
+    
     /*
     if (routes && allSpeeds) {
       for (let route of routes) {
@@ -413,54 +420,64 @@ class RouteSummary extends Component {
     
     /**
      * temporary code again
-     *
-    let scores = [];
-    for (let route of routes) {
+     */
+    let allScores = [];
+    const filteredRoutes = filterRoutes(routes);
+    for (let route of filteredRoutes) {
       const waitObj = waits.find(wait => wait.routeID === route.id);
       const speedObj = speeds.find(speed => speed.routeID === route.id);
       if (waitObj && speedObj) {
         const grades = this.computeGrades(waitObj.wait, speedObj.speed);
-        scores.push({ routeID: route.id, totalScore: grades.totalScore });
+        allScores.push({ routeID: route.id, totalScore: grades.totalScore });
       }
     }
-    scores.sort((a,b) => { return b.totalScore - a.totalScore});
+    allScores.sort((a,b) => { return b.totalScore - a.totalScore});
 
-    console.log(JSON.stringify(scores));
-*/
-    const allScores = [{"routeID":"14R","totalScore":198},{"routeID":"NX","totalScore":181},
-      {"routeID":"L","totalScore":174},{"routeID":"38R","totalScore":172},
-      {"routeID":"28","totalScore":168},{"routeID":"28R","totalScore":160},
-      {"routeID":"5R","totalScore":159},{"routeID":"1","totalScore":151},
-      {"routeID":"44","totalScore":151},{"routeID":"29","totalScore":150},
-      {"routeID":"N","totalScore":148},{"routeID":"43","totalScore":144},
-      {"routeID":"49","totalScore":139},{"routeID":"14","totalScore":134},
-      {"routeID":"55","totalScore":121},{"routeID":"7","totalScore":120},
-      {"routeID":"47","totalScore":115},{"routeID":"22","totalScore":105},
-      {"routeID":"KT","totalScore":101},{"routeID":"M","totalScore":100},
-      {"routeID":"8AX","totalScore":100},{"routeID":"14X","totalScore":100},
-      {"routeID":"18","totalScore":100},{"routeID":"23","totalScore":100},
-      {"routeID":"25","totalScore":100},{"routeID":"31AX","totalScore":100},
-      {"routeID":"35","totalScore":100},{"routeID":"36","totalScore":100},
-      {"routeID":"37","totalScore":100},{"routeID":"38AX","totalScore":100},
-      {"routeID":"39","totalScore":100},{"routeID":"48","totalScore":100},
-      {"routeID":"54","totalScore":100},{"routeID":"56","totalScore":100},
-      {"routeID":"57","totalScore":100},{"routeID":"66","totalScore":100},
-      {"routeID":"67","totalScore":100},{"routeID":"21","totalScore":99},
-      {"routeID":"52","totalScore":93},{"routeID":"9R","totalScore":88},
-      {"routeID":"45","totalScore":88},{"routeID":"7X","totalScore":84},
-      {"routeID":"30","totalScore":84},{"routeID":"8","totalScore":83},
-      {"routeID":"6","totalScore":82},{"routeID":"38BX","totalScore":77},
-      {"routeID":"1AX","totalScore":73},{"routeID":"1BX","totalScore":71},
-      {"routeID":"31BX","totalScore":67},{"routeID":"30X","totalScore":64},
-      {"routeID":"33","totalScore":64},{"routeID":"88","totalScore":63},
-      {"routeID":"19","totalScore":57},{"routeID":"27","totalScore":54},
-      {"routeID":"2","totalScore":50},{"routeID":"31","totalScore":44},
-      {"routeID":"12","totalScore":43},{"routeID":"10","totalScore":41},
-      {"routeID":"3","totalScore":38},{"routeID":"PH","totalScore":35},
-      {"routeID":"82X","totalScore":32},{"routeID":"8BX","totalScore":15},
-      {"routeID":"41","totalScore":12},{"routeID":"81X","totalScore":0},
-      {"routeID":"PM","totalScore":0},{"routeID":"C","totalScore":0}]    
+    console.log(JSON.stringify(allScores));
+
+    /*/
     
+    const allScores = 
+    
+    [{"routeID":"8AX","totalScore":200},{"routeID":"L","totalScore":199},
+    {"routeID":"5","totalScore":199},{"routeID":"NX","totalScore":188},
+    {"routeID":"N","totalScore":187},{"routeID":"M","totalScore":177},
+    {"routeID":"38R","totalScore":177},{"routeID":"28R","totalScore":174},
+    {"routeID":"14X","totalScore":173},{"routeID":"14R","totalScore":171},
+    {"routeID":"28","totalScore":171},{"routeID":"J","totalScore":165},
+    {"routeID":"31AX","totalScore":164},{"routeID":"5R","totalScore":160},
+    {"routeID":"KT","totalScore":157},{"routeID":"43","totalScore":156},
+    {"routeID":"44","totalScore":152},{"routeID":"38BX","totalScore":151},
+    {"routeID":"8BX","totalScore":144},{"routeID":"29","totalScore":142},
+    {"routeID":"1","totalScore":138},{"routeID":"1AX","totalScore":138},
+    {"routeID":"31BX","totalScore":137},{"routeID":"41","totalScore":137},
+    {"routeID":"1BX","totalScore":127},{"routeID":"47","totalScore":127},
+    {"routeID":"30X","totalScore":126},{"routeID":"7X","totalScore":125},
+    {"routeID":"49","totalScore":123},{"routeID":"14","totalScore":122},
+    {"routeID":"30","totalScore":114},{"routeID":"38AX","totalScore":107},
+    {"routeID":"7","totalScore":104},{"routeID":"F","totalScore":101},
+    {"routeID":"18","totalScore":100},{"routeID":"23","totalScore":100},
+    {"routeID":"25","totalScore":100},{"routeID":"35","totalScore":100},
+    {"routeID":"36","totalScore":100},{"routeID":"39","totalScore":100},
+    {"routeID":"48","totalScore":100},{"routeID":"54","totalScore":100},
+    {"routeID":"56","totalScore":100},{"routeID":"57","totalScore":100},
+    {"routeID":"66","totalScore":100},{"routeID":"67","totalScore":100},
+    {"routeID":"22","totalScore":96},{"routeID":"21","totalScore":93},
+    {"routeID":"45","totalScore":92},{"routeID":"9R","totalScore":91},
+    {"routeID":"37","totalScore":89},{"routeID":"52","totalScore":89},
+    {"routeID":"6","totalScore":88},{"routeID":"9","totalScore":87},
+    {"routeID":"8","totalScore":79},{"routeID":"24","totalScore":77},
+    {"routeID":"88","totalScore":76},{"routeID":"82X","totalScore":73},
+    {"routeID":"10","totalScore":69},{"routeID":"19","totalScore":64},
+    {"routeID":"33","totalScore":60},{"routeID":"2","totalScore":54},
+    {"routeID":"12","totalScore":49},{"routeID":"PH","totalScore":45},
+    {"routeID":"31","totalScore":43},{"routeID":"E","totalScore":42},
+    {"routeID":"38","totalScore":40},{"routeID":"3","totalScore":35},
+    {"routeID":"81X","totalScore":30},{"routeID":"27","totalScore":27},
+    {"routeID":"55","totalScore":23},{"routeID":"C","totalScore":22},
+    {"routeID":"PM","totalScore":0}]
+    
+    /* end testing area */
     return allScores;
 
   }
@@ -541,7 +558,7 @@ class RouteSummary extends Component {
    * @param {index} index Index of the value in the data array.
    * @private
    */
-  _onNearestX = (value, {index}) => {
+  _onNearestTripX = (value, {index}) => {
     this.setState({crosshairValues: [ this.tripData[index], this.scheduleData[index]]});
   };  
 
@@ -551,7 +568,7 @@ class RouteSummary extends Component {
   };  
   
   render() {
-    const { graphData, graphParams, routeCSVs, shapes, trips, routes, tripTimes, waitTimes } = this.props;
+    const { graphData, graphParams, shapes, trips, routes, tripTimes, waitTimes } = this.props;
 
     // if we have a route, try to find its shape
     // to do this, convert route id to gtfs route id, and parse the direction to get just the terminal
@@ -566,19 +583,22 @@ class RouteSummary extends Component {
     let waitTime = null;
     let waitRanking = null;
     let waitObj = null;
-    const allWaits = this.getAllWaits();
-    const allScores = this.getAllScores(routes, allWaits, allSpeeds);
     let speedObj = null;
     let speedRanking = null;
-    let tripData = null;
     let grades = null;
     let scoreObj = null;
     let scoreRanking = null;
     let allSpeeds = null;
+    let allWaits = null;
+    let allScores = null;
+    
+    let quadrantData = null;
       
     if (graphData && graphParams && graphParams.route_id && graphParams.direction_id && tripTimes && waitTimes) {
 
+      allWaits = this.getAllWaits(routes, waitTimes);
       allSpeeds = this.getAllSpeeds(routes, trips, shapes, tripTimes);
+      allScores = this.getAllScores(routes, allWaits, allSpeeds);
 
       const route_id = graphParams.route_id;
       const direction_id = graphParams.direction_id;
@@ -586,8 +606,11 @@ class RouteSummary extends Component {
       dist = this.getRouteDistanceInMeters(route_id, direction_id, trips, shapes);
       tripTime = this.getTripTime(route_id, direction_id, routes, tripTimes);
 
-      speed = Number.parseFloat(dist) / tripTime * 60.0 / 1609.344;  // initial units are meters per minute, final are mph
-      console.log('speed: ' + speed);
+      if (dist <= 0 || isNaN(tripTime)) { speed = "?"; } // something wrong with the data here
+      else {
+        speed = Number.parseFloat(dist) / tripTime * 60.0 / 1609.344;  // initial units are meters per minute, final are mph
+        console.log('speed: ' + speed + " tripTime: " + tripTime);
+      }
 
       waitTime = this.getWaitTime(route_id, waitTimes);
 
@@ -609,12 +632,22 @@ class RouteSummary extends Component {
       this.waitData = this.getWaitData(route_id, direction_id, routes, waitTimes);
       
       grades = this.computeGrades(waitTime, speed);
+      
+      // experimental quadrant data
+      
+      quadrantData = allSpeeds.map(speed => { return {
+        x: allWaits.find(wait => wait.routeID === speed.routeID).wait,
+        y: speed.speed,
+        title: speed.routeID,
+      }});
+      
     }
 
     const legendItems = [
       { title: 'Scheduled', color: "#a4a6a9", strokeWidth: 10 },  
       { title: 'Actual',   color: "#aa82c5", strokeWidth: 10 }
     ];
+    
     
     return (graphData ? <Card><Card.Body>
             
@@ -652,7 +685,7 @@ class RouteSummary extends Component {
             <Card bg="info" text="white" className="mt-2">
             <Card.Body>
             <Card.Title>Average speed</Card.Title>
-            <span className="h1">{ speed.toFixed(1) } mph</span>
+            <span className="h1">{ isNaN(speed) ? speed : speed.toFixed(1) } mph</span>
             
             <br/>
             
@@ -672,6 +705,64 @@ class RouteSummary extends Component {
             </Col>
 
             <Col xs>
+
+            
+            
+            
+            {/* experimental quadrant chart */}
+            
+            <XYPlot height={800} width={1200} xDomain={[30, 0]} yDomain={[0, 15]}>
+            <HorizontalGridLines />
+            <VerticalGridLines />
+            <XAxis top={400} style={{ text: {stroke: 'none', fill: '#cccccc'}}} />
+            <YAxis left={600} style={{ text: {stroke: 'none', fill: '#cccccc'}}} />
+
+            
+            <CustomSVGSeries
+            className="custom-marking"
+            customComponent={(row, positionInPixels) => {
+              return (
+                <g className="inner-inner-component">
+                  <circle cx="0" cy="0" r={row.size || 3} fill="#aa82c5" />
+                  <text x={parseInt(Math.random()*10.0)} y={parseInt(Math.random()*10.0)} fontSize="75%" fill="#450042">
+                    <tspan x="5" y={parseInt(Math.random()*15.0)-3}>{`${row.title}`}</tspan>
+                  </text>
+                </g>
+              );
+    }}
+     data={quadrantData}
+  />
+
+
+            <ChartLabel 
+              text="speed (mph)"
+              className="alt-y-label"
+              includeMargin={false}
+              xPercent={0.54}
+              yPercent={0.06}
+              style={{
+                transform: 'rotate(-90)',
+                textAnchor: 'end'
+              }}       
+            />
+            
+            <ChartLabel 
+            text="avg wait (min)"
+            className="alt-x-label"
+            includeMargin={false}
+            xPercent={0.94}
+            yPercent={0.50}
+            />       
+            
+
+          </XYPlot>
+
+            
+            
+            { /* end experimental quadrant chart */ }
+            
+            
+            
             <Card>
             <Card.Body>
             <Card.Title>Travel time across stops</Card.Title>
@@ -687,7 +778,7 @@ class RouteSummary extends Component {
             <LineSeries data={ this.tripData }
                stroke="#aa82c5"
                strokeWidth="4"
-               onNearestX={this._onNearestX} />
+               onNearestX={this._onNearestTripX} />
             <LineSeries data={ this.scheduleData }
                stroke="#a4a6a9"
                strokeWidth="4"
@@ -714,6 +805,7 @@ class RouteSummary extends Component {
                     <div className= 'rv-crosshair__inner__content'>
                       <p>Actual: { Math.round(this.state.crosshairValues[0].y)} min</p>
                       <p>Scheduled: { Math.round(this.state.crosshairValues[1].y)} min</p>
+                      <p>{this.state.crosshairValues[0].title}</p>
                     </div>                 
             </Crosshair>)}
 
@@ -732,7 +824,7 @@ class RouteSummary extends Component {
           
           
           
-          <XYPlot height={300} width={400} >
+          <XYPlot height={300} width={400} yDomain={[0, 30]}>
           <HorizontalGridLines />
           <VerticalGridLines />
           <XAxis />

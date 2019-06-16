@@ -231,9 +231,9 @@ class Info extends Component {
     const waitTimes = graphData ? graphData.wait_times : null;
     const tripTimes = graphData ? graphData.trip_times : null;
     
-    this.headwayData = graphData ? headwayMin.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
-    this.waitData = graphData ? waitTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: (100 * bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) : null;
-    this.tripData = graphData ? tripTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
+    this.headwayData = graphData && headwayMin ? headwayMin.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
+    this.waitData = graphData && waitTimes ? waitTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: (100 * bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) : null;
+    this.tripData = graphData && tripTimes ? tripTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
     
     const distance = this.computeDistance(graphParams, routes);
     const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph

@@ -7,14 +7,20 @@ import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
 //import { latLngBounds } from 'leaflet';
+import { filterRoutes } from '../helpers/graphData';
+
 import * as d3 from "d3";
 import {handleRouteSelect} from '../actions';
 
 import DropdownControl from './DropdownControl';
 import './ControlPanel.css';
 
-import { Map, TileLayer, Popup, CircleMarker, Tooltip, Polyline } from 'react-leaflet'
+import { Map, TileLayer, Popup, Marker, CircleMarker, Tooltip, Polyline } from 'react-leaflet'
 import Control from 'react-leaflet-control'
+
+import L from 'leaflet';
+import MapShield from './MapShield'
+import ReactDOMServer from 'react-dom/server';
 
 // todo: figure out why sometimes the zoom gets reset (probably a race condition with setState, need callback)
 // todo: make start stops clickable (equivalent to the buttons)
@@ -309,16 +315,9 @@ class ControlPanel extends Component {
     const latLon = { lat: latLng.lat, lon: latLng.lng };
     let stopsByRouteAndDir = [];
     
-    for (let i = 0; i < routes.length; i++) { // optimize this on back end
+    const filteredRoutes = filterRoutes(routes);
+    for (let i = 0; i < filteredRoutes.length; i++) { // optimize this on back end
       const route = routes[i];
-      
-      // no owls
-      
-      if ((route.title.indexOf("-Owl") > -1) ||
-          (route.title.indexOf(" Owl") > -1)
-          )
-       { continue; }
-      
       
       if (route.directions) {
         for (let direction of route.directions) {
@@ -653,7 +652,7 @@ class ControlPanel extends Component {
           // scale to 0, 1, or 2
           const waitScaled = Math.trunc(waitIndex/allWaits.length * 3);
  
-          const computedWeight = waitScaled * 2 + 2;
+          const computedWeight = waitScaled * 1.5 + 3;
 
                
         for (let i=0; i < downstreamStops.length-1; i++) {
@@ -704,8 +703,32 @@ class ControlPanel extends Component {
                  {startMarker.routeTitle}<br/>{startMarker.direction.title}
               </Tooltip>
             </Polyline>);
-
+            
         } // end for
+
+     // add a shield
+     // TODO: make shield clickable            
+     
+     const lastMarker = downstreamStops[downstreamStops.length - 1];
+     const position = [ lastMarker.lat, lastMarker.lon ];
+     //console.log(startMarker.routeID + "-" + startMarker.direction.id);
+     
+     const icon = L.divIcon({
+       className: 'custom-icon',
+       html: ReactDOMServer.renderToString(<MapShield
+         waitScaled={waitScaled} color={lineColor} routeText={startMarker.routeID}/>)
+     });
+     
+
+     
+     polylines.push(<Marker
+       key={startMarker.routeID + "-" + startMarker.direction.id + "-Shield"} position={position}
+       icon={icon}
+       riseOnHover={true}
+       >
+     </Marker>);
+            
+
         
         } else {
         
@@ -811,6 +834,7 @@ class ControlPanel extends Component {
           </Tooltip>          
         </CircleMarker>
       });
+      
       return <Fragment>{items}</Fragment>
     }
 

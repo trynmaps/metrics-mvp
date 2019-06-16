@@ -162,7 +162,7 @@ def get_cached_json_file_from_s3(filename):
 def cached_trip_times():
     date_str = request.args.get('date')
     if date_str is None:
-        date_str = '2019-04-08'
+        date_str = '2019-05-24'
     if re.match('^[\w\-]+$', date_str) is None:
         raise Exception(f"Invalid date: {date_str}")
     return get_cached_json_file_from_s3(f'trip_times_t1_sf-muni_{date_str}.json')
@@ -171,7 +171,7 @@ def cached_trip_times():
 def cached_wait_times():
     date_str = request.args.get('date')
     if date_str is None:
-        date_str = '2019-04-08'
+        date_str = '2019-05-24'
     if re.match('^[\w\-]+$', date_str) is None:
         raise Exception(f"Invalid date: {date_str}")
     return get_cached_json_file_from_s3(f'wait_times_t2_sf-muni_{date_str}.json')
