@@ -39,15 +39,15 @@ if __name__ == '__main__':
     timestamp_intervals.append((None, None))
     time_str_intervals.append((None, None))
 
-    stat_ids = ['avg','median','p10','p90']
+    stat_groups = {
+        'p10-median-p90': ['p10','median','p90'],
+        'median': 'median',
+    }
 
     for interval_index, _ in enumerate(timestamp_intervals):
         all_wait_times[interval_index] = {}
-        for stat_id in stat_ids:
+        for stat_id in stat_groups.keys():
             all_wait_times[interval_index][stat_id] = {}
-
-    avg_diffs = []
-    median_diffs = []
 
     for route in routes:
         route_id = route.id
@@ -62,7 +62,7 @@ if __name__ == '__main__':
             continue
 
         for interval_index, _ in enumerate(timestamp_intervals):
-            for stat_id in stat_ids:
+            for stat_id in stat_groups.keys():
                 all_wait_times[interval_index][stat_id][route_id] = {}
 
         df = history.get_data_frame()
@@ -73,7 +73,7 @@ if __name__ == '__main__':
             dir_id = dir_info.id
 
             for interval_index, _ in enumerate(timestamp_intervals):
-                for stat_id in stat_ids:
+                for stat_id in stat_groups.keys():
                     all_wait_times[interval_index][stat_id][route_id][dir_id] = {}
 
             stop_ids = dir_info.get_stop_ids()
@@ -85,45 +85,35 @@ if __name__ == '__main__':
                 all_time_values = stop_df['TIME'].values
 
                 for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
-
                     wait_time_stats = wait_times.get_stats(all_time_values, start_time, end_time)
 
-                    def compute_sampled_stats():
-                        waits = wait_time_stats.get_sampled_waits(60)
+                    # waits = wait_time_stats.get_sampled_waits(60)
+                    # quantiles = np.quantile(waits, [0.1, 0.5, 0.9]) if waits is not None else None
 
-                        sampled_avg = np.average(waits) if waits is not None else None
+                    quantiles = wait_time_stats.get_quantiles([0.1,0.5,0.9])
+                    if quantiles is not None:
+                        stats = {
+                            'p10': round(quantiles[0], 1),
+                            'median': round(quantiles[1], 1),
+                            'p90': round(quantiles[2], 1),
+                        }
 
-                        sampled_quantiles = np.quantile(waits, [0.1, 0.5, 0.9]) if waits is not None else None
+                        for stat_id, stat in stat_groups.items():
+                            if isinstance(stat, list):
+                                stat_value = [stats[sub_stat] for sub_stat in stat]
+                            else:
+                                stat_value = stats[stat]
 
-                        return sampled_avg, sampled_quantiles
-
-                    avg, quantiles = compute_sampled_stats()
-
-                    def compute_exact_stats():
-                        quantiles = wait_time_stats.get_quantiles([0.1,0.5,0.9])
-                        avg = wait_time_stats.get_average()
-
-                        return avg, quantiles
-
-                    #avg, quantiles = compute_exact_stats()
-
-                    #if sampled_avg is not None and avg is not None:
-                    #    avg_diffs.append(abs(sampled_avg - avg))
-                    #    median_diffs.append(abs(sampled_quantiles[1] - quantiles[1]))
-
-                    all_wait_times[interval_index]['avg'][route_id][dir_id][stop_id] = round(avg, 1) if avg is not None else None
-                    all_wait_times[interval_index]['p10'][route_id][dir_id][stop_id] = round(quantiles[0], 1) if quantiles is not None else None
-                    all_wait_times[interval_index]['median'][route_id][dir_id][stop_id] = round(quantiles[1], 1) if quantiles is not None else None
-                    all_wait_times[interval_index]['p90'][route_id][dir_id][stop_id] = round(quantiles[2], 1) if quantiles is not None else None
+                            all_wait_times[interval_index][stat_id][route_id][dir_id][stop_id] = stat_value
 
     for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
         start_time_str, end_time_str = time_str_intervals[interval_index]
 
-        for stat_id in stat_ids:
+        for stat_id, stat in stat_groups.items():
             data_str = json.dumps({
                 'start_time': start_time,
                 'end_time': end_time,
-                'stat_id': stat_id,
+                'stat': stat,
                 'routes': all_wait_times[interval_index][stat_id]
             })
 
@@ -149,8 +139,3 @@ if __name__ == '__main__':
                     ContentEncoding='gzip',
                     ACL='public-read'
                 )
-
-    #print('mean absolute err avg')
-    #print(np.average(avg_diffs))
-    #print('mean absolute err median')
-    #print(np.average(median_diffs))

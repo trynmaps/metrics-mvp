@@ -39,12 +39,15 @@ if __name__ == '__main__':
     timestamp_intervals.append((None, None))
     time_str_intervals.append((None, None))
 
-    stat_ids = ['avg','median','p10','p90','count']
+    stat_groups = {
+        'p10-median-p90': ['p10','median','p90'],
+        'median': 'median',
+    }
 
     all_trip_times = {}
     for interval_index, _ in enumerate(timestamp_intervals):
         all_trip_times[interval_index] = {}
-        for stat_id in stat_ids:
+        for stat_id in stat_groups.keys():
             all_trip_times[interval_index][stat_id] = {}
 
     for route in routes:
@@ -60,7 +63,7 @@ if __name__ == '__main__':
             continue
 
         for interval_index, _ in enumerate(timestamp_intervals):
-            for stat_id in stat_ids:
+            for stat_id in stat_groups.keys():
                 all_trip_times[interval_index][stat_id][route_id] = {}
 
         t1 = time.time()
@@ -72,23 +75,17 @@ if __name__ == '__main__':
             dir_id = dir_info.id
 
             for interval_index, _ in enumerate(timestamp_intervals):
-                for stat_id in stat_ids:
+                for stat_id in stat_groups.keys():
                     all_trip_times[interval_index][stat_id][route_id][dir_id] = {}
 
             stop_ids = dir_info.get_stop_ids()
             num_stops = len(stop_ids)
 
-            stop_dfs = {}
             trip_values_by_stop = {}
-            extended_trip_values_by_stop = {}
-
             departure_time_values_by_stop = {}
-            extended_arrival_time_values_by_stop = {}
-
-            arrival_times_by_stop_by_vid = {}
+            arrival_time_values_by_stop = {}
 
             def filter_by_stop(stop_id):
-                #return history.get_data_frame(stop_id=stop_id).sort_values('TRIP', axis=0
                 return route_df[route_df['SID'] == stop_id]
 
             for stop_id in stop_ids:
@@ -97,9 +94,8 @@ if __name__ == '__main__':
                 trip_values = stop_df['TRIP'].values
 
                 trip_values_by_stop[stop_id] = trip_values
-                extended_trip_values_by_stop[stop_id] = np.r_[trip_values, -1]
                 departure_time_values_by_stop[stop_id] = stop_df['DEPARTURE_TIME'].values
-                extended_arrival_time_values_by_stop[stop_id] = np.r_[stop_df['TIME'].values, -1]
+                arrival_time_values_by_stop[stop_id] = stop_df['TIME'].values
 
             for i in range(0, num_stops-1):
 
@@ -125,15 +121,13 @@ if __name__ == '__main__':
                                 s1_departure_time_values >= start_time,
                                 s1_departure_time_values < end_time
                             )
-                            interval_indexes = np.nonzero(interval_condition)[0]
-
-                            s1_departure_time_values_by_interval.append(s1_departure_time_values[interval_indexes])
-                            s1_trip_values_by_interval.append(s1_trip_values[interval_indexes])
+                            s1_departure_time_values_by_interval.append(s1_departure_time_values[interval_condition])
+                            s1_trip_values_by_interval.append(s1_trip_values[interval_condition])
 
                 filter_departures_by_interval()
 
                 for interval_index, _ in enumerate(timestamp_intervals):
-                    for stat_id in stat_ids:
+                    for stat_id in stat_groups.keys():
                         all_trip_times[interval_index][stat_id][route_id][dir_id][s1] = {}
 
                 for j in range(i + 1, num_stops):
@@ -141,34 +135,30 @@ if __name__ == '__main__':
 
                     for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
 
-                        trip_min, _ = trip_times.get_matching_trips_and_arrival_times_presorted(
+                        trip_min = trip_times.get_completed_trip_times(
                             s1_trip_values_by_interval[interval_index],
                             s1_departure_time_values_by_interval[interval_index],
-                            extended_trip_values_by_stop[s2],
-                            extended_arrival_time_values_by_stop[s2],
+                            trip_values_by_stop[s2],
+                            arrival_time_values_by_stop[s2],
+                            assume_sorted=True
                         )
 
-                        try:
-                            trip_min = trip_min[np.isfinite(trip_min)]
-                        except TypeError as ex: # happens when all trips are np.nan
-                            continue
-
                         if len(trip_min) > 0:
+                            sorted_trip_min = np.sort(trip_min)
+                            stats = {
+                                'p10': round(util.quantile_sorted(sorted_trip_min, 0.1), 1),
+                                'median': round(util.quantile_sorted(sorted_trip_min, 0.5), 1),
+                                'p90': round(util.quantile_sorted(sorted_trip_min, 0.9), 1),
+                                #'avg': round(np.average(trip_min), 1)
+                            }
 
-                            def get_average():
-                                return round(np.average(trip_min), 1)
+                            for stat_id, stat in stat_groups.items():
+                                if isinstance(stat, list):
+                                    stat_value = [stats[sub_stat] for sub_stat in stat]
+                                else:
+                                    stat_value = stats[stat]
 
-                            all_trip_times[interval_index]['avg'][route_id][dir_id][s1][s2] = get_average()
-
-                            quantiles = np.quantile(trip_min, [0.1, 0.5, 0.9])
-
-                            all_trip_times[interval_index]['p10'][route_id][dir_id][s1][s2] = round(quantiles[0], 1)
-                            all_trip_times[interval_index]['median'][route_id][dir_id][s1][s2] = round(quantiles[1], 1)
-                            all_trip_times[interval_index]['p90'][route_id][dir_id][s1][s2] = round(quantiles[2], 1)
-
-                            all_trip_times[interval_index]['count'][route_id][dir_id][s1][s2] = len(trip_min)
-
-                            #print(s1_trip_times[s2])
+                                all_trip_times[interval_index][stat_id][route_id][dir_id][s1][s2] = stat_value
 
         t2 = time.time()
         print(f' {round(t2-t1, 2)} sec')
@@ -178,11 +168,12 @@ if __name__ == '__main__':
     for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
         start_time_str, end_time_str = time_str_intervals[interval_index]
 
-        for stat_id in stat_ids:
+        for stat_id, stat in stat_groups.items():
             data_str = json.dumps({
+                'version': trip_times.DefaultVersion,
                 'start_time': start_time,
                 'end_time': end_time,
-                'stat_id': stat_id,
+                'stat': stat,
                 'routes': all_trip_times[interval_index][stat_id]
             })
 

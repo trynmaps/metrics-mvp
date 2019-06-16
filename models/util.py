@@ -2,6 +2,19 @@ from datetime import datetime, date, timedelta
 import os
 import pytz
 
+def quantile_sorted(sorted_arr, quantile):
+    max_index = len(sorted_arr) - 1
+    quantile_index = max_index * quantile
+    quantile_index_int = int(quantile_index)
+    quantile_index_fractional = quantile_index - quantile_index_int
+
+    quantile_lower = sorted_arr[quantile_index_int]
+    if quantile_index_fractional > 0:
+        quantile_upper = sorted_arr[quantile_index_int + 1]
+        return quantile_lower + (quantile_upper - quantile_lower) * quantile_index_fractional
+    else:
+        return quantile_lower
+
 def parse_date(date_str):
     (y,m,d) = date_str.split('-')
     return date(int(y),int(m),int(d))
