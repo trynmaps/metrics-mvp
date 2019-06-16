@@ -122,6 +122,11 @@ def get_route_list(agency_id):
 
     return route_list_from_data(data)
 
+# TODO: if we stay with fetching all the route configs at once, then
+# this method can be refactored with get_route_list since they are now
+# mostly identical.  That is, get_route_config can call get_route_list,
+# then return only the requested RouteConfig.
+
 def get_route_config(agency_id, route_id) -> RouteConfig:
 
     if re.match('^[\w\-]+$', agency_id) is None:
