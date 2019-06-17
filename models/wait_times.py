@@ -260,7 +260,7 @@ class WaitTimeStats:
         if cdf_points is None:
             return None
 
-        cdf_domain, cdf_range = np.transpose(cdf_points)
+        cdf_domain, cdf_range = cdf_points.T
 
         quantile_values = []
 
@@ -287,7 +287,7 @@ class WaitTimeStats:
         if cdf_points is None:
             return None
 
-        cdf_domain, cdf_range = np.transpose(cdf_points)
+        cdf_domain, cdf_range = cdf_points.T
 
         histogram = []
         prev_cumulative_value = None
@@ -306,7 +306,7 @@ class WaitTimeStats:
         if cdf_points is None:
             return None
 
-        cdf_domain, cdf_range = np.transpose(cdf_points)
+        cdf_domain, cdf_range = cdf_points.T
 
         return self._get_probability_less_than(wait_time, cdf_domain, cdf_range)
 
