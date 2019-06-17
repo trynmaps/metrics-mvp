@@ -5,9 +5,9 @@ import {
 } from 'react-leaflet';
 import { updateGraphData } from '../actions'
 const INBOUND_COLOR = 'blue';
-const INBOUND_RADIUS = 15;
+const INBOUND_RADIUS = 10;
 const OUTBOUND_COLOR = 'red';
-const OUTBOUND_RADIUS = 15;
+const OUTBOUND_RADIUS = 10;
 const SF_COORDINATES = {lat : 37.7793, lng: -122.419};
 const ZOOM = 13;
 
