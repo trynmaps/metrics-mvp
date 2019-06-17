@@ -41,6 +41,7 @@ if __name__ == '__main__':
 
     stat_groups = {
         'p10-median-p90': ['p10','median','p90'],
+        'plt5m-30m': ['p<5m','p<10m','p<15m','p<20m','p<25m','p<30m'],
         'median': 'median',
     }
 
@@ -97,6 +98,9 @@ if __name__ == '__main__':
                             'median': round(quantiles[1], 1),
                             'p90': round(quantiles[2], 1),
                         }
+
+                        for wait_time in range(5, 31, 5):
+                            stats[f'p<{wait_time}m'] = round(wait_time_stats.get_probability_less_than(wait_time), 2)
 
                         for stat_id, stat in stat_groups.items():
                             if isinstance(stat, list):

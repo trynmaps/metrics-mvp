@@ -251,29 +251,30 @@ class WaitTimeStats:
             print(f'End wait time: {end_wait_time}', file=sys.stderr)
             raise AssertionError('Invalid cumulative distribution')
 
-        self.cdf_points = points
+        self.cdf_points = np.array(points)
 
-        return points
+        return self.cdf_points
 
     def get_quantiles(self, quantiles):
         cdf_points = self.get_cumulative_distribution()
         if cdf_points is None:
             return None
 
-        cdf_range = np.transpose(np.array(cdf_points))[1]
+        cdf_domain, cdf_range = np.transpose(cdf_points)
 
         quantile_values = []
 
         for quantile in quantiles:
             segment_end_index = np.searchsorted(cdf_range, quantile)
             if segment_end_index == 0:
-                quantile_values.append(cdf_points[0][0])
+                quantile_values.append(cdf_domain[0])
             else:
-                segment_start = cdf_points[segment_end_index-1]
-                segment_end = cdf_points[segment_end_index]
-
+                segment_start_index = segment_end_index - 1
                 # linear interpolation to find wait time where value of CDF = quantile
-                quantile_value = segment_start[0] + (quantile - segment_start[1]) / (segment_end[1] - segment_start[1]) * (segment_end[0] - segment_start[0])
+                quantile_value = cdf_domain[segment_start_index] + \
+                    (quantile - cdf_range[segment_start_index]) / \
+                    (cdf_range[segment_end_index] - cdf_range[segment_start_index]) * \
+                    (cdf_domain[segment_end_index] - cdf_domain[segment_start_index])
                 quantile_values.append(quantile_value)
 
         return np.array(quantile_values)
@@ -286,25 +287,12 @@ class WaitTimeStats:
         if cdf_points is None:
             return None
 
-        cdf_domain = np.transpose(np.array(cdf_points))[0]
+        cdf_domain, cdf_range = np.transpose(cdf_points)
 
-        num_points = len(cdf_points)
         histogram = []
-
         prev_cumulative_value = None
         for bin_index, bin_value in enumerate(bins):
-            segment_end_index = np.searchsorted(cdf_domain, bin_value)
-
-            if segment_end_index >= num_points:
-                cumulative_value = 1.0
-            elif segment_end_index == 0:
-                cumulative_value = 0.0
-            else:
-                segment_start = cdf_points[segment_end_index-1]
-                segment_end = cdf_points[segment_end_index]
-
-                # linear interpolation to find value of CDF with wait time = bin_value
-                cumulative_value = segment_start[1] + (bin_value - segment_start[0]) / (segment_end[0] - segment_start[0]) * (segment_end[1] - segment_start[1])
+            cumulative_value = self._get_probability_less_than(bin_value, cdf_domain, cdf_range)
 
             if prev_cumulative_value is not None:
                 histogram.append(cumulative_value - prev_cumulative_value)
@@ -312,6 +300,39 @@ class WaitTimeStats:
             prev_cumulative_value = cumulative_value
 
         return np.array(histogram)
+
+    def get_probability_less_than(self, wait_time):
+        cdf_points = self.get_cumulative_distribution()
+        if cdf_points is None:
+            return None
+
+        cdf_domain, cdf_range = np.transpose(cdf_points)
+
+        return self._get_probability_less_than(wait_time, cdf_domain, cdf_range)
+
+    def get_probability_greater_than(self, wait_time):
+        prob_less = self.get_probability_less_than(wait_time)
+
+        if prob_less is None:
+            return None
+
+        return 1.0 - prob_less
+
+    def _get_probability_less_than(self, wait_time, cdf_domain, cdf_range):
+        segment_end_index = np.searchsorted(cdf_domain, wait_time)
+
+        if segment_end_index >= len(cdf_domain):
+            return 1.0
+        elif segment_end_index == 0:
+            return 0.0
+        else:
+            segment_start_index = segment_end_index - 1
+
+            # linear interpolation to find value of CDF with wait time = bin_value
+            return cdf_range[segment_start_index] + \
+                (wait_time - cdf_domain[segment_start_index]) / \
+                (cdf_domain[segment_end_index] - cdf_domain[segment_start_index]) * \
+                (cdf_range[segment_end_index] - cdf_range[segment_start_index])
 
     def get_sampled_waits(self, sample_sec=60):
         if self.is_empty:
