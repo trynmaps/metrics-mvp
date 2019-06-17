@@ -40,7 +40,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "heroku-postbuild": "npm build",
-    "lint": "eslint src --fix --ext jsx",
+    "lint": "eslint src --fix --ext .jsx,.js",
     "lint:all": "eslint --fix --ext .jsx src/**/*.jsx src/*.jsx"
   },
   "eslintConfig": {
