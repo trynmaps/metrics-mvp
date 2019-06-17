@@ -238,7 +238,6 @@ class Info extends Component {
     const distance = this.computeDistance(graphParams, routes);
     const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
-    debugger;
     return (
       <div
         className={css`

@@ -41,7 +41,6 @@ class ControlPanel extends Component {
     const {
       routeId, directionId, firstStopId, date, secondStopId, startTimeStr, endTimeStr
     } = this.state;
-    debugger;
     this.props.resetGraphData();
     debugger;
     if (firstStopId != null && routeId != null) {
@@ -196,7 +195,6 @@ class ControlPanel extends Component {
   // }
   findDirectionId = directionName => {
     const currentDirection = this.getSelectedRouteInfo().directions.find(direction =>{
-      debugger;
       return direction.name === directionName;
     });
     return currentDirection ? currentDirection.id : null;

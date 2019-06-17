@@ -46,7 +46,6 @@ class MapStops extends Component {
   }
 
   handleStopSelect = (stop,newRouteDirection) => {
-    debugger;
     const {firstStopId, secondStopId, routeDirection} = this.state;
     if(!firstStopId && !secondStopId) {
       this.setState({firstStopId: stop.sid,routeDirection:newRouteDirection}, () => this.afterStopSelect());
