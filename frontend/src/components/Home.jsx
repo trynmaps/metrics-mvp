@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { css } from 'emotion';
 import { NavLink } from 'redux-first-router-link';
 import MapStops from "./MapStops";
+import MapSpider from "./MapSpider";
 import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
@@ -62,7 +63,7 @@ class Home extends Component {
           display: grid;
           grid-gap: 4px;
           grid-template-columns: [col1-start] 200px [col2-start] 300px  [col3-start] auto [col3-end];
-          grid-template-rows: [row1-start] 80px [row2-start] 400px [row2-end];
+          grid-template-rows: [row1-start] 80px [row2-start] 430px [row2-end];
           background-color: #fff;
           color: #444;
           padding: 2%;
@@ -79,10 +80,23 @@ class Home extends Component {
             fetchIntervalData={this.props.fetchIntervalData}
             fetchData={this.props.fetchData} />
           <div className="metricsWidth">
+            <MapSpider routes={routes}/>
+          </div>
+          <div className={css`
+            grid-column-start: 1`}>
             <div className="largeMarginTop">
               <MapStops />
             </div>
           </div>
+            
+            
+          <div
+          className={css`
+           grid-column: col3-start ;
+           grid-row: row1-start / row2-end;
+          `
+          }
+        >            
           <Info
             graphData={graphData}
             graphError={graphError}
@@ -90,6 +104,8 @@ class Home extends Component {
             routes={routes}
             intervalData={intervalData}
             intervalError={intervalError} />
+            
+          </div>  
         </div>
       </Fragment>
     );
