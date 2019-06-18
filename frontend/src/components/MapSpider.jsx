@@ -11,9 +11,9 @@ import Control from 'react-leaflet-control';
 import * as d3 from "d3";
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
 
-const SF_COORDINATES = {lat : 37.7793, lng: -122.4193};
+const SF_COORDINATES = {lat : 37.7793, lng: -122.4193}; // city hall
 const ZOOM = 13;
-const CLICK_RADIUS_MI = 0.25;
+const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
 
 class MapSpider extends Component {
   
