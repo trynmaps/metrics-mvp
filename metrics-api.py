@@ -11,7 +11,6 @@ import requests
 import math
 import sys
 import re
-from errors import StopNotOnRouteError
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors
 
 """

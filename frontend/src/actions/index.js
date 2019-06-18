@@ -79,21 +79,6 @@ export function fetchRouteConfig(routeId) {
   };
 }
 
-export function fetchAllRouteConfigs(routes) {
-    
-    
-    return function (dispatch) {
-        
-        for (let i = 0; i < routes.length; i++) { // optimize this on back end
-            const route = routes[i];
-            if (!route.directions) {
-              dispatch(fetchRouteConfig(route.id));
-            }
-        }
-        return Promise.resolve();
-    };
-  }
-
 export function fetchTazs() {
   return function (dispatch) {
     axios.get('/data/san_francisco_taz.json', {
@@ -178,15 +163,11 @@ export function fetchAllTheThings() {
               baseURL: metricsBaseURL
             }).then((response) => {
               dispatch({ type: 'RECEIVED_ROUTES', payload: response.data });
-              dispatch(fetchAllRouteConfigs(response.data)).then(
-                      () => {
-                          dispatch(fetchTrips());
-                          dispatch(fetchRouteCSVs());
-                          dispatch(fetchShapes());
-                          dispatch(fetchTripTimes());
-                          dispatch(fetchWaitTimes());
-                      }
-                      );
+              dispatch(fetchTrips());
+              dispatch(fetchRouteCSVs());
+              dispatch(fetchShapes());
+              dispatch(fetchTripTimes());
+              dispatch(fetchWaitTimes());
             }).catch((err) => {
               dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });
             });

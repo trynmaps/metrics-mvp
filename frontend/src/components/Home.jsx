@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { css } from 'emotion';
 import { NavLink } from 'redux-first-router-link';
 import MapStops from "./MapStops";
+import MapSpider from "./MapSpider";
 import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
@@ -28,12 +29,6 @@ class Home extends Component {
     if (!this.props.routes) {
       this.props.fetchAllTheThings();
     }
-    /*    if (!this.props.tazs) {
-    this.props.fetchTazs();
-  }*/
-    /*if (!this.props.trips) {
-      this.props.fetchTrips();
-    }*/
   }
 
   render() {
@@ -91,9 +86,13 @@ class Home extends Component {
             fetchIntervalData={this.props.fetchIntervalData}
             fetchData={this.props.fetchData}
             tripTimes={tripTimes}/>
-          <div className="metricsWidth">
+          <div className="metricsWidth" style={{width:500,height:500}}>
+            <MapSpider routes={routes}/>
+          </div>
+          <div className={css`
+            grid-column-start: 1`}>
             <div className="largeMarginTop">
-              <MapStops />
+              <MapStops/>
             </div>
           </div>
             
