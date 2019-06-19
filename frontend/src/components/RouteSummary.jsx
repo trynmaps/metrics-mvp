@@ -130,7 +130,7 @@ class RouteSummary extends Component {
     let firstStop = null;
     
     if (Number.isInteger(ignoreFirst)) {
-      firstStop = ignoreFirst;
+      firstStop = ignoreFirst; // see note where ignoreLastStop is used
     } else {
       firstStop = directionInfo.stops[ ignoreFirst ? 1 : 0];
     }
@@ -165,6 +165,12 @@ class RouteSummary extends Component {
     
     let lastStop = null;
     
+    /*
+     * For determining end to end trip time, but doesn't currently affect computation of route length, 
+     * which is based on best guess as to the right GTFS shape. And the shape is not linked to the stops,
+     * it's just coordinates and distance along route, so more logic would be needed to "trim" the shape
+     * if stops are ignored.
+     */
     if (Number.isInteger(ignoreLast)) {
       lastStop = ignoreLast;
     } else {
