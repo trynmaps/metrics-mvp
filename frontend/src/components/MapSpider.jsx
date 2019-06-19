@@ -130,8 +130,10 @@ class MapSpider extends Component {
 
   
   /**
-   * Returns { distance: (miles); stop: stopObject }.
-   * stop list is an array of strings (stop ids) that key into the stopHash.
+   * Returns the nearest stop Object to the given latLon coordinates.
+   * 
+   * stopList is an array of strings (stop ids) that are keys into the stopHash,
+   * a dictionary of stops (as found in route config objects).
    */
   findNearestStop(latLon, stopList, stopHash) {
     let nearest = { miles: -1,
