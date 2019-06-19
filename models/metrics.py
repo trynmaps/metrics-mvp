@@ -1,7 +1,7 @@
 import math
 import pytz
 import sys
-from . import wait_times, util, arrival_history, trip_times, errors
+from . import wait_times, util, arrival_history, trip_times, errors, timetable, constants
 
 import pandas as pd
 import numpy as np
@@ -72,6 +72,139 @@ class RouteMetrics:
         self.data_frames[key] = df
         return df
 
+    def get_route_timetable(self, d):
+        try:
+            self.timetables
+        except AttributeError:
+            self.timetables = {}
+
+        self.timetables[d.isoformat()] = timetable.get_timetable_from_csv(self.agency_id, self.route_id, d)
+
+        return self.timetables[d.isoformat()]
+
+    def get_stop_timetable(self, d, stop_id, direction_id):
+        tt = self.get_route_timetable(d)
+        timetable_key = f'{str(d)}_{stop_id}_{direction_id}_timetable'
+        
+        if timetable_key not in self.data_frames:
+            self.data_frames[timetable_key] = tt.get_data_frame(stop_id, direction_id)
+        
+        return self.data_frames[timetable_key]
+    
+    def get_comparison_to_timetable(self, d, stop_id=None, direction_id=None):
+        stop_timetable = self.get_stop_timetable(d, stop_id, direction_id)
+        stop_arrivals = self.get_data_frame(d, stop_id, direction_id)
+
+        # first headway is always nan
+        arrival_headways = np.insert(compute_headway_minutes(stop_arrivals['TIME'].to_numpy()), 0, np.nan)
+        stop_arrivals['headway'] = arrival_headways
+
+        # for each scheduled arrival time, get the next actual arrival and the corresponding headway
+        def get_next_arrival_time(scheduled_arrivals, arrivals, arrival_headways):
+            def get_filter_index(min_scheduled, arrivals):
+                first_index = 0
+
+                # arrivals are sorted, so this returns the index of the first arrival after the first scheduled arrival
+                while arrivals[first_index] < min_scheduled:
+                    first_index += 1
+
+                return first_index
+            
+            # scheduled arrivals are sorted, so the first element is the min
+            filtered_arrivals = arrivals[get_filter_index(scheduled_arrivals[0], arrivals):]
+            real_headways = arrival_headways[get_filter_index(scheduled_arrivals[0], arrivals):]
+            next_arrival_time = []
+            next_headway = []
+            current_index = 0
+
+            for index in range(len(filtered_arrivals)):
+                arrival_index = index
+                while scheduled_arrivals[current_index] <= filtered_arrivals[arrival_index]:
+                    next_arrival_time.append(filtered_arrivals[arrival_index])
+                    next_headway.append(real_headways[arrival_index])
+                    current_index += 1
+                    index += 1
+            
+            while len(next_arrival_time) < len(scheduled_arrivals):
+                next_arrival_time.append(np.nan)
+                next_headway.append(np.nan)
+
+            return next_arrival_time, next_headway
+
+        next_arrivals, next_headways = get_next_arrival_time(stop_timetable['arrival_time'].values, stop_arrivals['TIME'].values, arrival_headways)
+        next_arrival_deltas = next_arrivals - stop_timetable['arrival_time'].values
+        stop_timetable['next_arrival'] = next_arrivals
+        stop_timetable['next_arrival_delta'] = next_arrival_deltas
+        stop_timetable['next_arrival_headway'] = next_headways
+
+        # for each scheduled arrival time, get the closest actual arrival (earlier or later) and the corresponding headway
+        def get_closest_arrival_time(scheduled_arrivals, arrivals, arrival_headways):
+            closest_arrivals = []
+            closest_headway = []
+            current_schedule_index = 0
+            current_arrival_index = 0
+            previous_arrival_index = -1
+
+            while (current_arrival_index < len(arrivals)) and (len(closest_arrivals) < len(scheduled_arrivals)):
+                current_delta = scheduled_arrivals[current_schedule_index] - arrivals[current_arrival_index]
+
+                if current_delta == 0:
+                    closest_arrivals.append(arrivals[current_arrival_index])
+                    closest_headway.append(arrival_headways[current_arrival_index])
+                    current_schedule_index += 1
+                    previous_arrival_index = current_arrival_index
+                    current_arrival_index += 1
+                else:
+                    # in this case, we're comparing the first arrival time to the scheduled times
+                    if previous_arrival_index == -1:
+                        # in this case, the subsequent times will just be further away
+                        if current_delta < 0:
+                            closest_arrivals.append(arrivals[current_arrival_index])
+                            closest_headway.append(arrival_headways[current_arrival_index])
+                            current_schedule_index += 1
+                            
+                        previous_arrival_index = current_arrival_index
+                        current_arrival_index += 1
+                    else:
+                        previous_delta = scheduled_arrivals[current_schedule_index] - arrivals[previous_arrival_index]
+
+                        # since arrivals are sorted, this only happens when the previous arrival happens before the scheduled arrival, and the current arrival happens after
+                        if np.sign(previous_delta) != np.sign(current_delta):
+                            if abs(previous_delta) <= abs(current_delta):
+                                closest_arrivals.append(arrivals[previous_arrival_index])
+                                closest_headway.append(arrival_headways[previous_arrival_index])
+                            else:
+                                closest_arrivals.append(arrivals[current_arrival_index])
+                                closest_headway.append(arrival_headways[current_arrival_index])
+                                previous_arrival_index = current_arrival_index
+                                current_arrival_index += 1
+                            
+                            current_schedule_index +=1
+                        else:
+                            # if both are negative, the previous arrival has to be closer
+                            # if they're both positive, the current arrival has to be closer but we still have to compare it to the next arrival in the next iteration
+                            if previous_delta <= 0:
+                                closest_arrivals.append(arrivals[previous_arrival_index])
+                                closest_headway.append(arrival_headways[previous_arrival_index])
+                                current_schedule_index += 1
+                            else:
+                                previous_arrival_index = current_arrival_index
+                                current_arrival_index += 1
+
+            while len(closest_arrivals) < len(scheduled_arrivals):
+                closest_arrivals.append(arrivals[-1])
+                closest_headway.append(arrival_headways[-1])
+
+            return closest_arrivals, closest_headway
+
+        closest_arrivals, closest_headways = get_closest_arrival_time(stop_timetable['arrival_time'].values, stop_arrivals['TIME'].values, arrival_headways)
+        closest_deltas = closest_arrivals - stop_timetable['arrival_time'].values
+        stop_timetable['closest_arrival'] = closest_arrivals
+        stop_timetable['closest_arrival_delta'] = closest_deltas
+        stop_timetable['closest_arrival_headway'] = closest_headways
+
+        return stop_timetable[['arrival_time', 'arrival_headway', 'next_arrival', 'next_arrival_delta', 'next_arrival_headway', 'closest_arrival', 'closest_arrival_delta', 'closest_arrival_headway']] 
+        
     def get_wait_time_stats(self, direction_id, stop_id, rng: Range, keys=DEFAULT_STAT_KEYS):
 
         averages = []
@@ -155,6 +288,52 @@ class RouteMetrics:
             data['histogram'] = self.get_histogram_data(histogram, bins, bin_size)
 
         return data
+
+    def get_timetable_headway_stats(self, direction_id, stop_id, rng: Range, keys = DEFAULT_STAT_KEYS):
+
+        timetable_headways_arr = []
+
+        for d in rng.dates:
+            df = self.get_stop_timetable(d, stop_id, direction_id)
+            start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
+            end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
+
+            if start_time is not None:
+                df = df[df['arrival_time'] >= start_time]
+            
+            if end_time is not None:
+                df = df[df['arrival_time'] < end_time]
+
+            timetable_headways_arr.append(df['arrival_headway'].dropna().values)
+
+        all_timetable_headways = np.concatenate(timetable_headways_arr)
+
+        return self.get_array_stats(all_timetable_headways, keys)
+
+    def get_timetable_comparison_stats(self, direction_id, stop_id, rng: Range, keys = DEFAULT_STAT_KEYS):
+
+        compared_timetable_arr = []
+
+        for d in rng.dates:
+            df = self.get_comparison_to_timetable(d, stop_id, direction_id)
+            start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
+            end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
+
+            if start_time is not None:
+                df = df[df['arrival_time'] >= start_time]
+
+            if end_time is not None:
+                df = df[df['arrival_time'] < end_time]
+
+            compared_timetable_arr.append(df[["next_arrival_delta", "closest_arrival_delta"]])
+
+        # get array stats and threshold stats for deltas
+        # returns stats in minutes
+        all_compared_timetable_data = pd.concat(compared_timetable_arr)
+        return {
+            "next_arrival_delta_stats": self.get_array_stats(all_compared_timetable_data["next_arrival_delta"].dropna().values/60, keys),
+            "closest_arrival_delta_stats": self.get_array_stats(all_compared_timetable_data["closest_arrival_delta"].values/60, keys)
+        }
 
     def get_trip_time_stats(self, direction_id, start_stop_id, end_stop_id, rng: Range, keys=DEFAULT_STAT_KEYS):
 
@@ -285,93 +464,13 @@ def compute_headway_minutes(time_values, start_time=None, end_time=None):
 
     return (time_values[start_index:end_index] - time_values[start_index - 1 : end_index - 1]) / 60
 
-# TODO: add timetable support to RouteMetrics
-# summary statistics for timetables - will implement in a future PR
-# def get_datetime_stats(df: pd.Series):
-#     timestamp_series = get_series_stats(df.apply(lambda x: x.timestamp() if not pd.isna(x) else np.nan))
+def compare_delta_metrics(s: pd.Series, thresholds: list):
+    no_nan = s.dropna()
 
-#     if timestamp_series['count'] == 0:
-#         return timestamp_series
-#     else:
-#         for k, v in timestamp_series.items():
-#             if k != 'count':
-#                 timestamp_series[k] = datetime.fromtimestamp(v, tz = pytz('US/Pacific'))
-
-#         return timestamp_series
-
-# def get_timedelta_stats(df: pd.Series):
-#     total_seconds_series = get_series_stats(df.apply(lambda x: x.total_seconds() if not pd.isna(x) else np.nan))
-
-#     if total_seconds_series['count'] == 0:
-#         return total_seconds_series
-#     else:
-#         for k, v in total_seconds_series.items():
-#             if k!= 'count':
-#                 total_seconds_series[k] = util.get_time_isoformat(v)
-            
-#         return total_seconds_series
-
-# def get_timetables_stats(df: pd.DataFrame):
-#     stats = {}
-
-#     for k in ["arrival_time", "departure_time"]:
-#         stats[k] = get_datetime_stats(df[k])
-
-#     for k in ["arrival_headway", "departure_headway"]:
-#         stats[k] = get_timedelta_stats(df[k])
-
-#     return stats
-
-
-# def compare_timetable_to_actual(tt: timetable.Timetable, df: pd.DataFrame, direction: str):
-#     stops_df = df.copy(deep = True)
-#     stop_id = stops_df["SID"].unique().squeeze()
-#     timetable = tt.get_data_frame(stop_id, direction)
-
-#     #use dummy data for now
-#     stops_df["headway"] = compute_headway_minutes(stops_df)
-#     stops_df["DATE_TIME"] = stops_df["TIME"].apply(lambda x: datetime.fromtimestamp(x, tz = pytz.timezone('America/Los_Angeles')))
-
-#     def get_closest_nonnegative_timetable_time(dt: datetime):
-#         deltas = dt - timetable["arrival_time"]
-#         nonnegative_deltas = deltas[deltas.apply(lambda x: x.total_seconds() > 0)]
-        
-#         return timetable.iloc[nonnegative_deltas.idxmin()].arrival_time if len(nonnegative_deltas) > 0 else np.nan
-
-#     def get_closest_timetable_time(dt: datetime):
-#         deltas = (timetable["arrival_time"] - dt).apply(lambda x: abs(x.total_seconds()))
-#         return timetable.iloc[deltas.idxmin()].arrival_time if ~np.isnan(deltas.idxmin()) else np.nan
-
-#     def get_corresponding_scheduled_headway(s: pd.Series):
-#         return pd.Series({
-#             "closest_scheduled_headway": timetable[timetable["arrival_time"] == s.closest_scheduled_arrival].arrival_headway.values[0] if not pd.isna(s.closest_scheduled_arrival) else np.nan,
-#             "closest_first_after_headway": timetable[timetable["arrival_time"] == s.first_scheduled_after_arrival].arrival_headway.values[0] if not pd.isna(s.first_scheduled_after_arrival) else np.nan
-#         })
-
-#     stops_df["closest_scheduled_arrival"] = stops_df["DATE_TIME"].apply(get_closest_timetable_time)
-#     stops_df["first_scheduled_after_arrival"] = stops_df["DATE_TIME"].apply(get_closest_nonnegative_timetable_time)
-
-#     stops_df["closest_delta"] = stops_df["DATE_TIME"] - stops_df["closest_scheduled_arrival"]
-#     stops_df["first_after_delta"] = stops_df["DATE_TIME"] - stops_df["first_scheduled_after_arrival"]
-#     stops_df[["closest_delta", "first_after_delta"]] = stops_df[["closest_delta", "first_after_delta"]].applymap(lambda x: x.total_seconds()/60 if isinstance(x, timedelta) else np.nan)
-
-#     stops_df[["closest_scheduled_headway", "closest_first_after_headway"]] = stops_df.apply(get_corresponding_scheduled_headway, axis = "columns")
-#     stops_df[["closest_scheduled_headway", "closest_first_after_headway"]] = stops_df[["closest_scheduled_headway", "closest_first_after_headway"]].applymap(lambda x: x.total_seconds()/60 if isinstance(x, timedelta) else np.nan)
-    
-#     stops_df["closest_headway_delta"] = stops_df["headway"] - stops_df["closest_scheduled_headway"]
-#     stops_df["first_headway_delta"] = stops_df["headway"] - stops_df["closest_first_after_headway"]
-
-#     stops_df = stops_df.rename(mapper = {"DATE_TIME": "actual_arrival_time"}, axis = "columns")
-    
-#     return stops_df[["actual_arrival_time", "closest_scheduled_arrival", "closest_delta", "first_scheduled_after_arrival", "first_after_delta", "headway", "closest_scheduled_headway", "closest_headway_delta",  "closest_first_after_headway", "first_headway_delta"]]
-
-# def compare_delta_metrics(s: pd.Series, thresholds: list):
-#     no_nan = s.dropna()
-
-#     return {
-#         f"on-time rate (at most {thresholds[0]} minutes late)": len(no_nan[(no_nan <= thresholds[0]) & (no_nan >= 0)])/len(no_nan) * 100,
-#         "early rate": len(no_nan[no_nan < 0])/len(no_nan) * 100,
-#         f"gap percentage (more than {thresholds[0]} minutes late)": len(no_nan[no_nan > thresholds[0]])/len(no_nan) * 100,
-#         f"late percentage (between {thresholds[0]} and {thresholds[1]} minutes late)": len(no_nan[(no_nan > thresholds[0]) & (no_nan <= thresholds[1])])/len(no_nan) * 100,
-#         f"very late percentage (more than {thresholds[1]} minutes late)": len(no_nan[no_nan > thresholds[1]])/len(no_nan) * 100
-#     }
+    return {
+        f"on-time rate (at most {thresholds[0]} minutes late)": len(no_nan[(no_nan <= thresholds[0]) & (no_nan >= 0)])/len(no_nan) * 100,
+        "early rate": len(no_nan[no_nan < 0])/len(no_nan) * 100,
+        f"gap percentage (more than {thresholds[0]} minutes late)": len(no_nan[no_nan > thresholds[0]])/len(no_nan) * 100,
+        f"late percentage (between {thresholds[0]} and {thresholds[1]} minutes late)": len(no_nan[(no_nan > thresholds[0]) & (no_nan <= thresholds[1])])/len(no_nan) * 100,
+        f"very late percentage (more than {thresholds[1]} minutes late)": len(no_nan[no_nan > thresholds[1]])/len(no_nan) * 100
+    }

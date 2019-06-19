@@ -8,7 +8,7 @@ from io import StringIO
 import pandas as pd
 import numpy as np
 
-from . import nextbus, arrival_history, util, gtfs
+from . import nextbus, arrival_history, util, gtfs, constants
 
 class Timetable:
     def __init__(self, agency, route_id, timetable, date):
@@ -26,9 +26,10 @@ class Timetable:
         
         midnight = datetime.combine(self.date, time(), tzinfo = pytz.timezone('America/Los_Angeles'))
         df.index = range(len(df))
-        df[["arrival_time", "departure_time"]] = df[["arrival_time", "departure_time"]].applymap(lambda x: midnight + timedelta(seconds = x))
-        df["arrival_headway"] = df.arrival_time - df.arrival_time.shift(1)
-        df["departure_headway"] = df.departure_time - df.departure_time.shift(1)
+        # convert to timestamps for faster computation
+        df[["arrival_time", "departure_time"]] = df[["arrival_time", "departure_time"]].applymap(lambda x: (midnight + timedelta(seconds = x)).timestamp())
+        df["arrival_headway"] = (df.arrival_time - df.arrival_time.shift(1))/60
+        df["departure_headway"] = (df.departure_time - df.departure_time.shift(1))/60
 
         return df
 
@@ -39,8 +40,8 @@ class Timetable:
         df = self.get_data_frame(stop_id = stop_id, direction = direction)
 
         if len(df) > 0:
-            df[["arrival_time", "departure_time"]] = df[["arrival_time", "departure_time"]].applymap(lambda x: x.time())
-            df[["arrival_headway", "departure_headway"]] = df[["arrival_headway", "departure_headway"]].applymap(lambda x: f"{round(x.total_seconds()/60, 1)} min")
+            df[["arrival_time", "departure_time"]] = df[["arrival_time", "departure_time"]].applymap(lambda x: datetime.fromtimestamp(x, constants.PACIFIC_TIMEZONE).time())
+            df[["arrival_headway", "departure_headway"]] = df[["arrival_headway", "departure_headway"]].applymap(lambda x: timedelta(minutes = x) if not pd.isna(x) else np.nan)
             df = df[["arrival_time", "arrival_headway", "departure_time", "departure_headway"]]
 
             with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'display.expand_frame_repr', False):
@@ -69,7 +70,7 @@ def read_file(agency: str, local_path: str, s3_path: str, filename: str):
 
     return pd.read_csv(StringIO(data), dtype = {'stop_id': str, 'nextbus_id': str})
 
-def get_timetable_from_csv(agency: str, route_id: str, d: date, ver: str):
+def get_timetable_from_csv(agency: str, route_id: str, d: date, ver = 'v1'):
     date_period = get_date_period(agency, d, ver)
     date_range_str = f"{date_period[0].date().isoformat()}_to_{date_period[-1].date().isoformat()}"
     local_path = f"{gtfs.get_s3_bucket(agency)}/{date_range_str}"

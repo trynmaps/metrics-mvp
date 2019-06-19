@@ -73,10 +73,6 @@ class GtfsScraper:
         return trips
 
     def get_stop_times(self, route_id, d, route_config, direction):
-        # stop times past midnight happen on the next day
-        def get_date(t: float):
-            return d if t < 60 * 60 * 24 else d.replace(day = d.day + 1)
-
         # convert "inbound" or "outbound" to gtfs direction id
         gtfs_direction = get_gtfs_direction_id(direction)
             

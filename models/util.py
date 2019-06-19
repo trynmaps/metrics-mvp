@@ -36,12 +36,6 @@ def render_dwell_time(seconds):
 
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
-
-def get_schedule_s3_bucket(agency: str):
-    return f"opentransit-{agency}-schedules"
-
-def get_schedule_dir(agency: str):
-    return f"{get_data_dir()}/{get_schedule_s3_bucket(agency)}"
     
 def get_timestamp_or_none(d: date, time_str: str, tz: pytz.timezone):
     return int(get_localized_datetime(d, time_str, tz).timestamp()) if time_str is not None else None
