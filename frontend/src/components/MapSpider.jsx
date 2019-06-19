@@ -202,7 +202,7 @@ class MapSpider extends Component {
       // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
       // when selecting a line.
 
-      // get wait rank
+      // get wait rank, most frequent is highest (largest) rank
       const waitRank = allWaits.findIndex(wait => wait.routeID === startMarker.routeID);
       
       // scale wait rank to 0, 1, or 2
@@ -212,6 +212,10 @@ class MapSpider extends Component {
         polylines.push(this.generatePolyline(startMarker, waitScaled, i));
       }
 
+      // Add a solid circle at the terminal stop.
+      
+      polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
+      
       // Add a route shield next to the terminal stop.
  
       polylines.push(this.generateShield(startMarker, waitScaled));
@@ -273,7 +277,26 @@ class MapSpider extends Component {
           </Tooltip>
         </Polyline>;
   }
-        
+
+
+  /**
+   * Creates a circle at the terminal of a route. 
+   */
+  generateTerminalCircle = (startMarker, waitScaled) => {
+    
+    const lastStop = startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
+    const terminalPosition = [ lastStop.lat, lastStop.lon ];      
+    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+    
+    return <CircleMarker key={ "startMarker-" + startMarker.routeID + "-terminal-" + lastStop.stopID }
+      center={terminalPosition}
+      radius={3.0 + waitScaled/2.0} 
+      fillColor={routeColor}
+      fillOpacity={0.75}
+      stroke={false}>
+    </CircleMarker>;
+  }
+
   /**
    * Creates a Marker with a custom svg icon (MapShield) for the route
    * represented by startMarker.
