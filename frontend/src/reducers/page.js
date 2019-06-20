@@ -4,8 +4,8 @@ const components = {
   HOME: 'Home',
   ABOUT: 'About',
   LANDING: 'Landing',
-  [NOT_FOUND]: 'NotFound'
+  [NOT_FOUND]: 'NotFound',
 };
 
 export default (state = 'HOME', action = {}) =>
-  components[action.type] || state
+  components[action.type] || state;
