@@ -9,7 +9,7 @@ const OUTBOUND_RADIUS = 4;
 const SF_COORDINATES = { lat: 37.7793, lng: -122.419 };
 const ZOOM = 13;
 
-function MapStops() {
+function MapStops(props) {
   //
   // handleRouteSelect = (route) => {
   //
@@ -24,7 +24,7 @@ function MapStops() {
     outboundRadius,
   } = [];
   const mapClass = { width: '500px', height: '500px' };
-  const { routeStops } = [];
+  const { routeStops } = props;
 
   return (
     <Map
