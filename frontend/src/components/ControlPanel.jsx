@@ -714,8 +714,11 @@ class ControlPanel extends Component {
      
      const icon = L.divIcon({
        className: 'custom-icon',
-       html: ReactDOMServer.renderToString(<MapShield
-         waitScaled={waitScaled} color={lineColor} routeText={startMarker.routeID}/>)
+       html: MapShield({ waitScaled:waitScaled, color:lineColor, routeText:startMarker.routeID})
+       
+       
+        //ReactDOMServer.renderToString(<MapShield
+         //waitScaled={waitScaled} color={lineColor} routeText={startMarker.routeID}/>)
      });
      
 
