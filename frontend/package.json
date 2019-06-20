@@ -59,7 +59,6 @@
       "prettier --list-different"
     ]
   },
-  "check-staged": "lint-staged",
   "browserslist": [
     ">0.2%",
     "not dead",
