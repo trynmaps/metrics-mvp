@@ -41,7 +41,7 @@
     "eject": "react-scripts eject",
     "heroku-postbuild": "npm build",
     "lint": "eslint src --fix --ext .jsx,.js",
-    "lint:all": "eslint --fix --ext .jsx src/**/*.jsx src/*.jsx"
+    "lint:all": "eslint --fix --ext src/**/*.{js,jsx}"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -52,11 +52,10 @@
     }
   },
   "lint-staged": {
-    "src/*.{jsx}": [
-      "eslint"
-    ],
-    "src/*.{jsx,json}": [
-      "prettier --list-different"
+    "src/**/*.{js,jsx}": [
+      "prettier --write",
+      "eslint --fix src/",
+      "git add"
     ]
   },
   "check-staged": "lint-staged",
