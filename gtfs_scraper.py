@@ -30,7 +30,7 @@ if __name__ == "__main__":
     print(f"Begin scraping GTFS data: {start_time}")
 
     gtfs_scraper.save_all_stops(outpath, s3)
-    gtfs_scraper.save_date_ranges(outpath, s3)
+    gtfs_scraper.save_date_ranges(s3)
 
     end_time = datetime.now()
     print(f"Finished scraping GTFS data: {end_time}")

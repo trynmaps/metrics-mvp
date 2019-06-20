@@ -62,7 +62,7 @@ def read_file(agency: str, local_path: str, s3_path: str, filename: str):
         with open(f"{path}/{local_path}/{filename}", "r") as f:
             data = f.read()
     except FileNotFoundError as err:
-        s3_bucket = gtfs.get_s3_bucket(agency)
+        s3_bucket = gtfs.get_s3_bucket()
         data = requests.get(f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}{filename}").text
 
         with open(f"{path}/{local_path}/{filename}", "w") as f:
@@ -73,7 +73,7 @@ def read_file(agency: str, local_path: str, s3_path: str, filename: str):
 def get_timetable_from_csv(agency: str, route_id: str, d: date, ver = 'v1'):
     date_period = get_date_period(agency, d, ver)
     date_range_str = f"{date_period[0].date().isoformat()}_to_{date_period[-1].date().isoformat()}"
-    local_path = f"{gtfs.get_s3_bucket(agency)}/{date_range_str}"
+    local_path = f"{gtfs.get_s3_bucket()}/{date_range_str}"
     s3_path = f"{date_range_str}/"
     filename = f"{agency}_route_{route_id}_{date_range_str}_timetable_{ver}.csv"
     
@@ -81,7 +81,7 @@ def get_timetable_from_csv(agency: str, route_id: str, d: date, ver = 'v1'):
     return Timetable(agency, route_id, timetable, d)
 
 def get_date_ranges(agency: str, ver: str):
-    local_path = f"{gtfs.get_s3_bucket(agency)}/"
+    local_path = f"{gtfs.get_s3_bucket()}/"
     s3_path = ""
     filename = f"date_ranges_{ver}.csv"
 
@@ -93,6 +93,7 @@ def get_date_period(agency: str, d: date, ver: str):
     except Exception as err:
         print(f"Error attempting to fetch date ranges for {d.isoformat()}: {err}")
 
+    print(date_ranges)
     date_ranges["date_range"] = date_ranges.apply(lambda x: pd.date_range(start = x.start_date, end = x.end_date), axis = "columns")
 
     period = date_ranges[date_ranges.date_range.apply(lambda x: d in x)]
