@@ -313,8 +313,7 @@ class MapSpider extends Component {
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
-      html: ReactDOMServer.renderToString(<MapShield
-        waitScaled={waitScaled} color={routeColor} routeText={startMarker.routeID}/>)
+      html: MapShield({ waitScaled:waitScaled, color:routeColor, routeText:startMarker.routeID})
     });
 
     return <Marker
