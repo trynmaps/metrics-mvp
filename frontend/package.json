@@ -8,14 +8,9 @@
     "bootstrap": "^4.3.1",
     "d3": "^5.9.2",
     "emotion": "^10.0.9",
-    "eslint": "5.6.0",
-    "eslint-config-airbnb": "^17.1.0",
     "eslint-config-react-app": "^3.0.6",
     "eslint-loader": "^2.1.1",
     "eslint-plugin-flowtype": "^3.2.1",
-    "eslint-plugin-import": "^2.16.0",
-    "eslint-plugin-jsx-a11y": "^6.2.0",
-    "eslint-plugin-react": "^7.12.4",
     "leaflet": "^1.5.1",
     "material-ui-pickers": "^2.2.4",
     "moment": "^2.24.0",
@@ -45,12 +40,25 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "heroku-postbuild": "npm build",
-    "lint": "node ./node_modules/eslint/bin/eslint.js --fix --ext .jsx",
-    "lint:all": "node ./node_modules/eslint/bin/eslint.js --fix --ext .jsx src/**/*.jsx src/*.jsx"
+    "lint": "eslint src --fix --ext .jsx,.js",
+    "lint:all": "eslint --fix --ext src/**/*.{js,jsx}"
   },
   "eslintConfig": {
     "extends": "react-app"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx}": [
+      "prettier --write",
+      "eslint --fix src/",
+      "git add"
+    ]
+  },
+  "check-staged": "lint-staged",
   "browserslist": [
     ">0.2%",
     "not dead",
@@ -60,5 +68,17 @@
   "homepage": "frontend/build",
   "engines": {
     "yarn": "NO LONGER USED - Please use npm"
+  },
+  "devDependencies": {
+    "eslint": "^5.6.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-config-prettier": "^4.3.0",
+    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-react": "^7.13.0",
+    "husky": "^2.4.1",
+    "lint-staged": "^8.2.0",
+    "prettier": "^1.18.2"
   }
 }
