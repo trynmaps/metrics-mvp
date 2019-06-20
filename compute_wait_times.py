@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache wait times')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
+    parser.add_argument('--stat', nargs='*')
     parser.set_defaults(s3=False)
 
     args = parser.parse_args()
@@ -45,9 +46,13 @@ if __name__ == '__main__':
         'median': 'median',
     }
 
+    stat_ids = args.stat
+    if stat_ids is None:
+        stat_ids = stat_groups.keys()
+
     for interval_index, _ in enumerate(timestamp_intervals):
         all_wait_times[interval_index] = {}
-        for stat_id in stat_groups.keys():
+        for stat_id in stat_ids:
             all_wait_times[interval_index][stat_id] = {}
 
     for route in routes:
@@ -63,7 +68,7 @@ if __name__ == '__main__':
             continue
 
         for interval_index, _ in enumerate(timestamp_intervals):
-            for stat_id in stat_groups.keys():
+            for stat_id in stat_ids:
                 all_wait_times[interval_index][stat_id][route_id] = {}
 
         df = history.get_data_frame()
@@ -73,9 +78,13 @@ if __name__ == '__main__':
 
             dir_id = dir_info.id
 
+            dir_stats = {}
+
             for interval_index, _ in enumerate(timestamp_intervals):
-                for stat_id in stat_groups.keys():
+                dir_stats[interval_index] = {}
+                for stat_id in stat_ids:
                     all_wait_times[interval_index][stat_id][route_id][dir_id] = {}
+                    dir_stats[interval_index][stat_id] = []
 
             stop_ids = dir_info.get_stop_ids()
             sid_values = df['SID'].values
@@ -102,7 +111,8 @@ if __name__ == '__main__':
                         for wait_time in range(5, 31, 5):
                             stats[f'p<{wait_time}m'] = round(wait_time_stats.get_probability_less_than(wait_time), 2)
 
-                        for stat_id, stat in stat_groups.items():
+                        for stat_id in stat_ids:
+                            stat = stat_groups[stat_id]
                             if isinstance(stat, list):
                                 stat_value = [stats[sub_stat] for sub_stat in stat]
                             else:
@@ -110,10 +120,26 @@ if __name__ == '__main__':
 
                             all_wait_times[interval_index][stat_id][route_id][dir_id][stop_id] = stat_value
 
+                            dir_stats[interval_index][stat_id].append(stat_value)
+
+            for interval_index, _ in enumerate(timestamp_intervals):
+                for stat_id in stat_ids:
+                    if len(dir_stats[interval_index][stat_id]) > 0:
+                        dir_stat_values = np.array(dir_stats[interval_index][stat_id])
+
+                        if isinstance(stat_groups[stat_id], list):
+                            median = np.median(dir_stat_values, axis=0).tolist()
+                        else:
+                            median = np.median(dir_stat_values)
+
+                        all_wait_times[interval_index][stat_id][route_id][dir_id]["median"] = median
+
     for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
         start_time_str, end_time_str = time_str_intervals[interval_index]
 
-        for stat_id, stat in stat_groups.items():
+        for stat_id in stat_ids:
+            stat = stat_groups[stat_id]
+
             data_str = json.dumps({
                 'version': wait_times.DefaultVersion,
                 'start_time': start_time,
@@ -128,6 +154,7 @@ if __name__ == '__main__':
             if not cache_dir.exists():
                 cache_dir.mkdir(parents = True, exist_ok = True)
 
+            print(f'saving to {cache_path}')
             with open(cache_path, "w") as f:
                 f.write(data_str)
 

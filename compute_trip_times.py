@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache trip times')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
+    parser.add_argument('--stat', nargs='*')
     parser.set_defaults(s3=False)
 
     args = parser.parse_args()
@@ -44,10 +45,14 @@ if __name__ == '__main__':
         'median': 'median',
     }
 
+    stat_ids = args.stat
+    if stat_ids is None:
+        stat_ids = stat_groups.keys()
+
     all_trip_times = {}
     for interval_index, _ in enumerate(timestamp_intervals):
         all_trip_times[interval_index] = {}
-        for stat_id in stat_groups.keys():
+        for stat_id in stat_ids:
             all_trip_times[interval_index][stat_id] = {}
 
     for route in routes:
@@ -63,7 +68,7 @@ if __name__ == '__main__':
             continue
 
         for interval_index, _ in enumerate(timestamp_intervals):
-            for stat_id in stat_groups.keys():
+            for stat_id in stat_ids:
                 all_trip_times[interval_index][stat_id][route_id] = {}
 
         t1 = time.time()
@@ -75,7 +80,7 @@ if __name__ == '__main__':
             dir_id = dir_info.id
 
             for interval_index, _ in enumerate(timestamp_intervals):
-                for stat_id in stat_groups.keys():
+                for stat_id in stat_ids:
                     all_trip_times[interval_index][stat_id][route_id][dir_id] = {}
 
             stop_ids = dir_info.get_stop_ids()
@@ -127,7 +132,7 @@ if __name__ == '__main__':
                 filter_departures_by_interval()
 
                 for interval_index, _ in enumerate(timestamp_intervals):
-                    for stat_id in stat_groups.keys():
+                    for stat_id in stat_ids:
                         all_trip_times[interval_index][stat_id][route_id][dir_id][s1] = {}
 
                 for j in range(i + 1, num_stops):
@@ -152,7 +157,8 @@ if __name__ == '__main__':
                                 #'avg': round(np.average(trip_min), 1)
                             }
 
-                            for stat_id, stat in stat_groups.items():
+                            for stat_id in stat_ids:
+                                stat = stat_groups[stat_id]
                                 if isinstance(stat, list):
                                     stat_value = [stats[sub_stat] for sub_stat in stat]
                                 else:
@@ -168,7 +174,8 @@ if __name__ == '__main__':
     for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
         start_time_str, end_time_str = time_str_intervals[interval_index]
 
-        for stat_id, stat in stat_groups.items():
+        for stat_id in stat_ids:
+            stat = stat_groups[stat_id]
             data_str = json.dumps({
                 'version': trip_times.DefaultVersion,
                 'start_time': start_time,
@@ -185,6 +192,7 @@ if __name__ == '__main__':
             if not cache_dir.exists():
                 cache_dir.mkdir(parents = True, exist_ok = True)
 
+            print(f'saving to {cache_path}')
             with open(cache_path, "w") as f:
                 f.write(data_str)
 

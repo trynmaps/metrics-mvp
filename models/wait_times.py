@@ -413,7 +413,7 @@ def get_cached_wait_times(agency_id, d: date, stat_id: str, start_time_str = Non
     return CachedWaitTimes(data)
 
 def get_s3_bucket() -> str:
-    return 'opentransit-stats'
+    return 'opentransit-precomputed-stats'
 
 def get_time_range_path(start_time_str, end_time_str):
     if start_time_str is None and end_time_str is None:
