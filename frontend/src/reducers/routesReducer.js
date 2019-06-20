@@ -5,22 +5,24 @@ const initialState = {
 };
 
 export default (state = initialState, action) => {
+  let { routes } = state;
+  const routeConfig = action.payload;
+  const routeId = routeConfig.id;
+
+  if (!routes) {
+    routes = [];
+  }
+
+  // update the array of all routes to store full configuration
+  // for the requested route (directions, stops, etc.)
+  const route = routes.find(myroute => myroute.id === routeId);
+
   switch (action.type) {
     case 'RECEIVED_ROUTES':
       return { ...state, fetched: true, routes: action.payload };
     case 'RECEIVED_ROUTE_SELECTION':
       return { ...state, fetched: true, routeStops: action.payload };
     case 'RECEIVED_ROUTE_CONFIG':
-      let { routes } = state;
-      const routeConfig = action.payload;
-      const routeId = routeConfig.id;
-      if (!routes) {
-        routes = [];
-      }
-
-      // update the array of all routes to store full configuration
-      // for the requested route (directions, stops, etc.)
-      const route = routes.find(route => route.id === routeId);
       if (route) {
         Object.assign(route, routeConfig);
       } else {

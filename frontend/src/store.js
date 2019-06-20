@@ -1,10 +1,11 @@
+/* eslint-disable no-underscore-dangle */
 import { createStore, applyMiddleware, combineReducers, compose } from 'redux';
 import { connectRoutes } from 'redux-first-router';
 import thunk from 'redux-thunk';
 
 import routesMap from './routesMap';
 import * as reducers from './reducers';
-import page from './reducers/page';
+// import page from './reducers/page';
 import * as actionCreators from './actions';
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__

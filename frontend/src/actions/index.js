@@ -1,18 +1,5 @@
 import axios from 'axios';
-
 import { metricsBaseURL } from '../config';
-
-/**
- * This is an action creator where the action calls two actions.
- * Basically this a way of calling two APIs at once, where two APIs
- * have no interactions with each other.
- */
-export function fetchData(graphParams, intervalParams) {
-  return function(dispatch) {
-    dispatch(fetchGraphData(graphParams));
-    dispatch(fetchIntervalData(intervalParams));
-  };
-}
 
 export function fetchGraphData(params) {
   return function(dispatch) {
@@ -108,5 +95,17 @@ export function fetchRouteConfig(routeId) {
 export function handleRouteSelect(route) {
   return function(dispatch) {
     dispatch({ type: 'RECEIVED_ROUTE_SELECTION', payload: route });
+  };
+}
+
+/**
+ * This is an action creator where the action calls two actions.
+ * Basically this a way of calling two APIs at once, where two APIs
+ * have no interactions with each other.
+ */
+export function fetchData(graphParams, intervalParams) {
+  return function(dispatch) {
+    dispatch(fetchGraphData(graphParams));
+    dispatch(fetchIntervalData(intervalParams));
   };
 }
