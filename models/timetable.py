@@ -93,7 +93,6 @@ def get_date_period(agency: str, d: date, ver: str):
     except Exception as err:
         print(f"Error attempting to fetch date ranges for {d.isoformat()}: {err}")
 
-    print(date_ranges)
     date_ranges["date_range"] = date_ranges.apply(lambda x: pd.date_range(start = x.start_date, end = x.end_date), axis = "columns")
 
     period = date_ranges[date_ranges.date_range.apply(lambda x: d in x)]
