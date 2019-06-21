@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
-import { Map, TileLayer, CircleMarker, Popup, Marker } from 'react-leaflet';
+import { Map, TileLayer, CircleMarker } from 'react-leaflet';
 
 const INBOUND_COLOR = 'blue';
 const INBOUND_RADIUS = 4;
@@ -22,9 +22,10 @@ function MapStops(props) {
     inboundRadius,
     outboundColor,
     outboundRadius,
-  } = props;
+  } = [];
   const mapClass = { width: '500px', height: '500px' };
-  const { routeStops } = this.props;
+
+  const { routeStops } = props;
 
   return (
     <Map
@@ -33,7 +34,9 @@ function MapStops(props) {
       style={mapClass}
     >
       <TileLayer
-        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        attribution='&copy; <a href="http://osm.org/copyright">
+          OpenStreetMap
+        </a> contributors'
         url="http://{s}.tile.osm.org/{z}/{x}/{y}.png"
       />
       {routeStops
