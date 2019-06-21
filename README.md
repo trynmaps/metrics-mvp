@@ -79,7 +79,7 @@ To get arrival times for one or more routes/days that haven't been precomputed y
 to generate the JSON files locally (if using Docker, run this command from a shell within the Docker container
 `docker exec -it metrics-flask bash`), e.g:
 ```
-python compute_arrivals.py --date=2019-03-01 --route 1 2 47 38 38X
+python compute_arrivals.py --date=2019-06-06 --route 1 2 47 38 38X
 ```
 
 The JSON files with computed arrivals will be stored in your local `data/` directory.
@@ -95,27 +95,27 @@ directory, so that if you run `compute_arrivals.py` again with the same date and
 
 Show overall statistics for a particular route:
 ```
-python route.py --date=2019-04-08 --route=1
+python route.py --date=2019-06-06 --route=1
 ```
 
 Show headways between buses at a particular stop:
 ```
-python headways.py --date=2019-04-08 --route=1 --stop=6290
+python headways.py --date=2019-06-06 --route=1 --stop=6290
 ```
 
 Show trips between two stops:
 ```
-python trips.py --date=2019-04-08 --route=1 --s1=6314 --s2=6304
+python trips.py --date=2019-06-06 --route=1 --s1=6314 --s2=6304
 ```
 
 Show stops visited by a particular vehicle:
 ```
-python vehicle.py --date=2019-04-08 --route=1 --vid=5792
+python vehicle.py --date=2019-06-06 --route=1 --vid=5760
 ```
 
 Show summary statistics of waiting times at a particular stop:
 ```
-python waits.py --date=2019-04-08 --route=12 --stop=3476
+python waits.py --date=2019-06-06 --route=12 --stop=3476
 ```
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni

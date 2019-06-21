@@ -1,10 +1,13 @@
 /**
- * Helper functions for working with routes and stops.
+ * Helper functions for working with routes and stops.  These are used to filter out
+ * routes, spurious directions, and idiosyncratic stops when listing and scoring entire routes.
+ * 
+ * Also includes functions for computing distances between coordinates.
  */
 
 /**
- * Returns an object with centralized declarations of "per route" heuristic rules to apply to
- * data when doing systemwide computations.
+ * Returns a data object with centralized declarations of "per route" heuristic rules
+ * to apply when doing systemwide computations.
  * 
  * For example, for routes with directions that should be ignored:
  * 
@@ -22,6 +25,8 @@
  *     should be used instead for end-to-end calculations.  Cable car lines are like this.  Also the M has a last
  *     stop that it normally does not go to.
  * - Possibly special handling for routes with back end issues (currently 5, 9, 9R) as a temporary workaround.
+ *   - The 9 has multiple terminals so use the last common stop.
+ *   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
  */
 export function getRouteHeuristics() {
   return {

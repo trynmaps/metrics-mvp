@@ -9,12 +9,11 @@ import MapShield from './MapShield'
 import ReactDOMServer from 'react-dom/server';
 import Control from 'react-leaflet-control';
 import * as d3 from "d3";
-import { filterRoutes } from '../helpers/graphData';
-import { milesBetween } from '../helpers/routeCalculations';
+import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
 
-const SF_COORDINATES = {lat : 37.7793, lng: -122.4193};
+const SF_COORDINATES = {lat : 37.7793, lng: -122.4193}; // city hall
 const ZOOM = 13;
-const CLICK_RADIUS_MI = 0.25;
+const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
 
 class MapSpider extends Component {
   
@@ -131,8 +130,10 @@ class MapSpider extends Component {
 
   
   /**
-   * Returns { distance: (miles); stop: stopObject }.
-   * stop list is an array of strings (stop ids) that key into the stopHash.
+   * Returns the nearest stop Object to the given latLon coordinates.
+   * 
+   * stopList is an array of strings (stop ids) that are keys into the stopHash,
+   * a dictionary of stops (as found in route config objects).
    */
   findNearestStop(latLon, stopList, stopHash) {
     let nearest = { miles: -1,
@@ -174,9 +175,9 @@ class MapSpider extends Component {
          stroke={false}
          >
       <Tooltip>
-        {startMarker.stop.title}<br/>
         {startMarker.routeTitle}<br/>
         {startMarker.direction.title}<br/>
+        {startMarker.stop.title}<br/>
         {Math.round(startMarker.miles * 5280)} feet
       </Tooltip>
     </CircleMarker>
@@ -201,7 +202,7 @@ class MapSpider extends Component {
       // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
       // when selecting a line.
 
-      // get wait rank
+      // get wait rank, most frequent is highest (largest) rank
       const waitRank = allWaits.findIndex(wait => wait.routeID === startMarker.routeID);
       
       // scale wait rank to 0, 1, or 2
@@ -211,7 +212,11 @@ class MapSpider extends Component {
         polylines.push(this.generatePolyline(startMarker, waitScaled, i));
       }
 
-      // Add a shield next to the terminal.
+      // Add a solid circle at the terminal stop.
+      
+      polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
+      
+      // Add a route shield next to the terminal stop.
  
       polylines.push(this.generateShield(startMarker, waitScaled));
  
@@ -249,22 +254,49 @@ class MapSpider extends Component {
             return true;                
           }}
 
-          onClick = {e => { // when this segment is clicked, plot only the stops for this route/dir by setting the first stop
+          // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
+          
+          onClick = {e => {
       
             e.originalEvent.view.L.DomEvent.stopPropagation(e);          
     
             // TODO: fire event(s) that select a route, direction, first stop, and second stop.
-            //this.setRouteId(startMarker.routeID);
-            //this.setDirectionId(startMarker.direction.id);
-            //this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
+            
+            /* If this code was integrated with ControlPanel, we would do:
+             *
+             * this.setRouteId(startMarker.routeID);
+             * this.setDirectionId(startMarker.direction.id);
+             * this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
+             */
           }}
         >
           <Tooltip> {/* should this hover text be a leaflet control in a fixed position? */}
-           {startMarker.routeTitle}<br/>{startMarker.direction.title}
+           {startMarker.routeTitle}<br/>
+           {startMarker.direction.title}<br/>
+           {downstreamStops[i+1].title}<br/>
           </Tooltip>
         </Polyline>;
   }
-        
+
+
+  /**
+   * Creates a circle at the terminal of a route. 
+   */
+  generateTerminalCircle = (startMarker, waitScaled) => {
+    
+    const lastStop = startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
+    const terminalPosition = [ lastStop.lat, lastStop.lon ];      
+    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+    
+    return <CircleMarker key={ "startMarker-" + startMarker.routeID + "-terminal-" + lastStop.stopID }
+      center={terminalPosition}
+      radius={3.0 + waitScaled/2.0} 
+      fillColor={routeColor}
+      fillOpacity={0.75}
+      stroke={false}>
+    </CircleMarker>;
+  }
+
   /**
    * Creates a Marker with a custom svg icon (MapShield) for the route
    * represented by startMarker.
@@ -288,6 +320,18 @@ class MapSpider extends Component {
       key={startMarker.routeID + "-" + startMarker.direction.id + "-Shield"} position={shieldPosition}
       icon={icon}
       riseOnHover={true}
+      onClick = {e => {
+      
+            e.originalEvent.view.L.DomEvent.stopPropagation(e);
+            
+            // TODO: fire events that select this route and direction
+            
+            /* If this code was integrated with ControlPanel, we would do:
+             *
+             * this.setRouteId(startMarker.routeID);
+             * this.setDirectionId(startMarker.direction.id);
+             */
+      }}
       >
     </Marker>;    
   }
