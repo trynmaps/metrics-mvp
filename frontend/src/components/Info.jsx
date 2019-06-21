@@ -3,6 +3,7 @@ import { css } from 'emotion';
 import Card from 'react-bootstrap/Card';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData';
+import { milesBetween } from '../helpers/routeCalculations';
 import { PLANNING_PERCENTILE, CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 import * as d3 from 'd3';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
@@ -141,37 +142,6 @@ class Info extends Component {
     };
   }
 
-  /**
-   * Returns the distance between two stops in miles.
-   */
-  milesBetween(p1, p2) {
-    const meters = this.haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
-    return meters / 1609.344;
-  }
-
-  /**
-   * Haversine formula for calcuating distance between two coordinates in lat lon
-   * from bird eye view; seems to be +- 8 meters difference from geopy distance.
-   *
-   * From eclipses.py.  Returns distance in meters.
-   */
-  haverDistance(latstop, lonstop, latbus, lonbus) {
-    const deg2rad = x => x * Math.PI / 180;
-
-    [latstop, lonstop, latbus, lonbus] = [latstop, lonstop, latbus, lonbus].map(deg2rad);
-    const eradius = 6371000;
-
-    const latdiff = (latbus - latstop);
-    const londiff = (lonbus - lonstop);
-
-    const a = Math.sin(latdiff / 2) ** 2 + Math.cos(latstop) * Math.cos(latbus) * Math.sin(londiff / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    const distance = eradius * c;
-    return distance;
-  }
-
-
   computeDistance(graphParams, routes) {
     let miles = 0;
 
@@ -187,7 +157,7 @@ class Info extends Component {
       for (let i = startIndex; i < endIndex; i++) {
         const fromStopInfo = route.stops[stopSequence[i]];
         const toStopInfo = route.stops[stopSequence[i + 1]];
-        miles += this.milesBetween(fromStopInfo, toStopInfo);
+        miles += milesBetween(fromStopInfo, toStopInfo);
       }
     }
 
@@ -319,6 +289,7 @@ minutes
                         <td>Travel time</td>
                         <td>
 Average time
+                          {' '}
                           {Math.round(tripTimes.avg)}
                           {' '}
 minutes (
@@ -418,6 +389,7 @@ minutes
               <h4>Wait Times</h4>
               <p>
 average wait time
+                {' '}
                 {Math.round(waitTimes.avg)}
                 {' '}
 minutes, max wait time
