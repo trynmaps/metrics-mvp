@@ -169,7 +169,7 @@ class GtfsScraper:
 
     def save_date_ranges(self, s3 = False):
         df = self.get_date_ranges()
-        filepath = f"{get_schedule_dir(self.agency)}/date_ranges.csv"
+        filepath = f"{get_schedule_dir()}/date_ranges.csv"
 
         if s3:
             s3_path = f"date_ranges.csv"
@@ -180,19 +180,19 @@ class GtfsScraper:
         else:
             df.to_csv(filepath)
 
-    def save_all_stops(self, outpath: str, s3 = False):
+    def save_all_stops(self, s3 = False):
         date_ranges = self.get_date_ranges()
 
         for row in date_ranges.itertuples():
-            self.save_stops_by_date(outpath, row[1], row[2], s3)
+            self.save_stops_by_date(row[1], row[2], s3)
 
-    def save_stops_by_date(self, outpath: str, start_date: date, end_date: date, s3 = False):
+    def save_stops_by_date(self, start_date: date, end_date: date, s3 = False):
         routes = self.get_gtfs_route_ids()
 
         for nextbus_route_id, gtfs_route_id in routes.items():
             try:
                 date_range_string = f"{start_date.isoformat()}_to_{end_date.isoformat()}"
-                local_path = f"{get_schedule_dir(self.agency)}/{date_range_string}"
+                local_path = f"{get_schedule_dir()}/{date_range_string}"
                 Path(local_path).mkdir(parents = True, exist_ok = True)
 
                 filename = f"{self.agency}_route_{nextbus_route_id}_{date_range_string}_timetable_{self.version}.csv"
@@ -258,6 +258,6 @@ def get_nextbus_stop_id(gtfs_stop_id: str, direction_id: int, routeconfig: nextb
 def get_s3_bucket():
     return f"opentransit-timetables"
 
-def get_schedule_dir(agency: str):
+def get_schedule_dir():
     return f"{util.get_data_dir()}/{get_s3_bucket()}"
     
