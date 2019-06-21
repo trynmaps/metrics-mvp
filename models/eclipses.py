@@ -496,6 +496,11 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         stop_index_diff = np.diff(stop_index_values, prepend=-999999)
 
         new_trip = stop_index_diff <= 0
+
+        # The trip ID is an arbitrary integer that is the same for a group
+        # of arrivals for the same vehicle and direction that have an ascending stop index.
+        # Storing this in the arrival history makes it easy and fast to compute trip times between two stops.
+
         trip_id = np.cumsum(new_trip) + start_trip
 
         dir_arrivals = dir_arrivals.copy()
