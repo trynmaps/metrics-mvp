@@ -7,7 +7,7 @@ import { XYPlot, HorizontalGridLines, VerticalGridLines,
   LineSeries, CustomSVGSeries, ChartLabel, Crosshair } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import '../../node_modules/react-vis/dist/style.css';
-import { filterRoutes, filterDirections, ignoreFirstStop, ignoreLastStop } from '../helpers/graphData'
+import { filterRoutes, filterDirections, ignoreFirstStop, ignoreLastStop } from '../helpers/routeCalculations'
   
 class RouteSummary extends Component {
   constructor(props) {

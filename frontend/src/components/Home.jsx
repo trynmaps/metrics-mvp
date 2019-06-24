@@ -83,7 +83,7 @@ class Home extends Component {
             display: grid;
             grid-gap: 4px;
             grid-template-columns: [col1-start] 200px [col2-start] 300px [col3-start] auto [col3-end];
-            grid-template-rows: [row1-start] 80px [row2-start] 430px [row2-end];
+            grid-template-rows: [row1-start] 80px [row2-start] 900px [row2-end];
             background-color: #fff;
             color: #444;
             padding: 2%;
@@ -93,6 +93,7 @@ class Home extends Component {
           <Intro />
           <ControlPanel
             routes={routes}
+            tripTimes={tripTimes}
             fetchRouteConfig={this.props.fetchRouteConfig}
             resetGraphData={this.props.resetGraphData}
             fetchGraphData={this.props.fetchGraphData}

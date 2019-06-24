@@ -7,7 +7,7 @@ import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
 //import { latLngBounds } from 'leaflet';
-import { filterRoutes } from '../helpers/graphData';
+import { filterRoutes } from '../helpers/routeCalculations';
 
 import * as d3 from "d3";
 import {handleRouteSelect} from '../actions';
@@ -638,98 +638,7 @@ class ControlPanel extends Component {
         // when selecting a line.  Once a line is selected, looks better to have a monolithic polyline.
   
   
-        // multi-polyline for line selection:
-        
         if (!firstStopId) {  
-
-
-          // this polyline is in line color
-          
-          // get wait rank
-          const waitIndex = allWaits.findIndex(wait => wait.routeID === startMarker.routeID);
-          
-          // scale to 0, 1, or 2
-          const waitScaled = Math.trunc(waitIndex/allWaits.length * 3);
- 
-          const computedWeight = waitScaled * 1.5 + 3;
-
-               
-        for (let i=0; i < downstreamStops.length-1; i++) {
-          const latLngs = [[ downstreamStops[i].lat, downstreamStops[i].lon ],
-                           [ downstreamStops[i+1].lat, downstreamStops[i+1].lon ]];
-        
-          
-
-          polylines.push(
-            <Polyline
-              key={"poly-" + startMarker.routeID + "-" + downstreamStops[i].stopID} 
-              positions = { latLngs }
-              color = { lineColor }
-              opacity = { 0.5 }
-              weight = { computedWeight }
-              onMouseOver = { e => {
-
-                if (!firstStopId) { e.target.setStyle({opacity:1, weight: computedWeight+4}); }
-                                
-                /*this.setState({
-                  //hoverMarker: startMarker,
-                  infoValue: startMarker.routeTitle + " - " + startMarker.direction.title
-                });*/
-
-                return true;
-                }
-              }
-              onMouseOut = { e => {
-                  if (!firstStopId) { e.target.setStyle({opacity:0.5, weight:computedWeight}); }                
-                  //this.setState({infoValue: null});
-                  return true;                
-                } 
-              }
-
-              onClick={e => { // when this segment is clicked, plot only the stops for this route/dir by setting the first stop
-            
-                e.originalEvent.view.L.DomEvent.stopPropagation(e);          
-          
-                this.setRouteId(startMarker.routeID);
-                this.setDirectionId(startMarker.direction.id);
-                this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
-              }
-            }
-
-            
-            >
-              <Tooltip>
-                 {startMarker.routeTitle}<br/>{startMarker.direction.title}
-              </Tooltip>
-            </Polyline>);
-            
-        } // end for
-
-     // add a shield
-     // TODO: make shield clickable            
-     
-     const lastMarker = downstreamStops[downstreamStops.length - 1];
-     const position = [ lastMarker.lat, lastMarker.lon ];
-     //console.log(startMarker.routeID + "-" + startMarker.direction.id);
-     
-     const icon = L.divIcon({
-       className: 'custom-icon',
-       html: MapShield({ waitScaled:waitScaled, color:lineColor, routeText:startMarker.routeID})
-       
-       
-        //ReactDOMServer.renderToString(<MapShield
-         //waitScaled={waitScaled} color={lineColor} routeText={startMarker.routeID}/>)
-     });
-     
-
-     
-     polylines.push(<Marker
-       key={startMarker.routeID + "-" + startMarker.direction.id + "-Shield"} position={position}
-       icon={icon}
-       riseOnHover={true}
-       >
-     </Marker>);
-            
 
         
         } else {
