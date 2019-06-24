@@ -91,21 +91,26 @@ if __name__ == '__main__':
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)
 
-        df = history.get_data_frame(s1, start_time = start_time, end_time = end_time)
-        date_str = str(d)
+        s1_df = history.get_data_frame(s1, start_time = start_time, end_time = end_time)
+        s2_df = history.get_data_frame(s2, start_time = start_time)
 
-        s1_df = trip_times.get_trip_times(df, history, tz, s1, s2)
+        s1_df['trip_min'], s1_df['dest_arrival_time'] = trip_times.get_matching_trips_and_arrival_times(
+            s1_df['TRIP'].values,
+            s1_df['DEPARTURE_TIME'].values,
+            s2_df['TRIP'].values,
+            s2_df['TIME'].values,
+        )
 
-        s1_df['DATE_TIME'] = df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
+        s1_df['DATE_TIME'] = s1_df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
 
         if s1_df.empty:
-            print(f"no arrival times found for stop {s1} on {date_str}")
+            print(f"no arrival times found for stop {s1} on {d}")
         else:
             for index, row in s1_df.iterrows():
                 dest_arrival_time = row.dest_arrival_time
                 dest_arrival_time_str = datetime.fromtimestamp(dest_arrival_time, tz).time() if dest_arrival_time is not None and not np.isnan(dest_arrival_time) else None
 
-                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID} trip_minutes:{round(row.trip_min, 1)}")
+                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID}  #{row.TRIP}   trip_minutes:{round(row.trip_min, 1)}")
 
             completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 

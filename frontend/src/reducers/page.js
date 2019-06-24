@@ -5,8 +5,8 @@ const components = {
   ABOUT: 'About',
   LANDING: 'Landing',
   DASHBOARD: 'Dashboard',
-  [NOT_FOUND]: 'NotFound'
+  [NOT_FOUND]: 'NotFound',
 };
 
 export default (state = 'HOME', action = {}) =>
-  components[action.type] || state
+  components[action.type] || state;

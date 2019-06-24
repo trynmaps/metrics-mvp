@@ -14,13 +14,9 @@ const App = ({ page }) => {
     About: <About />,
     Landing: <Landing />,
     Dashboard: <Dashboard />,
-    NotFound: <NotFound />
+    NotFound: <NotFound />,
   };
-  return (
-    <Fragment>
-      {components[page]}
-    </Fragment>
-  );
+  return <Fragment>{components[page]}</Fragment>;
 };
 
 const mapStateToProps = ({ page }) => ({ page });

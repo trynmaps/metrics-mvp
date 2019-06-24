@@ -19,7 +19,7 @@ class ControlPanel extends Component {
       secondStopList: [],
       firstStopId: null,
       secondStopId: null,
-      date: new Date('2019-05-24T03:50'),
+      date: new Date('2019-06-06T03:50'),
       startTimeStr: null,
       endTimeStr: null,
     };
@@ -29,7 +29,9 @@ class ControlPanel extends Component {
     const selectedRoute = this.getSelectedRouteInfo();
     if (selectedRoute) {
       if (!selectedRoute.directions) {
-        this.props.fetchRouteConfig(this.state.routeId);
+        console.log("Shouldn't happen.");
+        debugger;
+        // xxx this.props.fetchRouteConfig(this.state.routeId);
       } else if (!this.state.directionId && selectedRoute.directions.length > 0) {
         this.setState({ directionId: selectedRoute.directions[0].id });
       }
@@ -121,7 +123,9 @@ class ControlPanel extends Component {
     //onRouteSelect(selectedRoute);
     if (!selectedRoute.directions) {
       this.setDirectionId(null);
-      this.props.fetchRouteConfig(routeId);
+      console.log("also shouldn't happen");
+      debugger;
+      //xxx this.props.fetchRouteConfig(routeId);
     } else {
       const directionId = selectedRoute.directions.length > 0 ? selectedRoute.directions[0].id : null;
       this.setDirectionId(directionId);
