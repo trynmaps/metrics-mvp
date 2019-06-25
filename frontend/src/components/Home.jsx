@@ -5,7 +5,6 @@ import { connect } from 'react-redux';
 import { css } from 'emotion';
 import { NavLink } from 'redux-first-router-link';
 import MapStops from './MapStops';
-import MapSpider from './MapSpider';
 import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
@@ -99,9 +98,6 @@ class Home extends Component {
             fetchIntervalData={this.props.fetchIntervalData}
             fetchData={this.props.fetchData}
           />
-          <div className="metricsWidth">
-            <MapSpider routes={routes}/>
-          </div>
           <div className={css`
             grid-column-start: 1`}>
             <div className="largeMarginTop">

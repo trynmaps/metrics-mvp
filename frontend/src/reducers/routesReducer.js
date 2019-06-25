@@ -3,12 +3,26 @@ const initialState = {
   fetching: false,
   routes: null,
   routeStops: null,
+  spiderSelection: [],
+  graphParams: { 
+      routeId: '12',
+      directionId: null,
+      firstStopId: null,
+      secondStopId: null,
+      date: '2019-06-06',
+      startTimeStr: null,
+      endTimeStr: null,
+    },
 };
 
 export default (state = initialState, action) => {
   switch (action.type) {
     case 'RECEIVED_ROUTES':
       return { ...state, fetched: true, routes: action.payload };
+    case 'RECEIVED_SPIDER_MAP_CLICK':
+      return { ...state, fetched: true, spiderSelection: action.payload };
+    case 'RECEIVED_SPIDER_STOP_CLICK':
+      return { ...state, fetched: true, graphParams: Object.assign(state.graphParams, action.payload) };
     case 'RECEIVED_ROUTE_SELECTION':
       return { ...state, fetched: true, routeStops: action.payload };
     case 'RECEIVED_ROUTE_CONFIG':

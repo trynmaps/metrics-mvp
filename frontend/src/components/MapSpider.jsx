@@ -6,10 +6,12 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import MapShield from './MapShield'
-import ReactDOMServer from 'react-dom/server';
 import Control from 'react-leaflet-control';
 import * as d3 from "d3";
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
+import { handleSpiderMapClick, handleSpiderStopClick } from '../actions';
+
+import { push } from 'redux-first-router'
 
 const SF_COORDINATES = {lat : 37.7793, lng: -122.4193}; // city hall
 const ZOOM = 13;
@@ -27,6 +29,23 @@ class MapSpider extends Component {
     this.mapRef = createRef(); // used for geolocating
   }  
 
+  updateDimensions() {
+    const height = window.innerWidth >= 992 ? window.innerHeight : 500
+    this.setState({ height: height })
+  }
+
+  componentWillMount() {
+    this.updateDimensions()
+  }
+
+  componentDidMount() {
+    window.addEventListener("resize", this.updateDimensions.bind(this))
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.updateDimensions.bind(this))
+  }
+  
   /**
    * Geolocation button handler.
    */
@@ -70,12 +89,15 @@ class MapSpider extends Component {
       this.addDownstreamStops(stop);
     }
     
-    // TODO: fire events here indicating that the route list should be filtered to just the
+    // Fire events here indicating that the route list should be filtered to just the
     // routes corresponding to "stops".
      
     this.setState({
       startMarkers: stops,
     });
+    
+    const {onSpiderMapClick} = this.props;
+    onSpiderMapClick(stops);
   }
 
   /**
@@ -260,7 +282,7 @@ class MapSpider extends Component {
       
             e.originalEvent.view.L.DomEvent.stopPropagation(e);          
     
-            // TODO: fire event(s) that select a route, direction, first stop, and second stop.
+            // Fire events that select a route, direction, first stop, and second stop.
             
             /* If this code was integrated with ControlPanel, we would do:
              *
@@ -268,6 +290,15 @@ class MapSpider extends Component {
              * this.setDirectionId(startMarker.direction.id);
              * this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
              */
+            
+            const {onSpiderStopClick} = this.props;
+            onSpiderStopClick({
+              route_id: startMarker.routeID,
+              direction_id: startMarker.direction.id,
+              start_stop_id: startMarker.stopID,
+              end_stop_id: downstreamStops[i+1].stopID,
+            });
+            push('/route');
           }}
         >
           <Tooltip> {/* should this hover text be a leaflet control in a fixed position? */}
@@ -342,7 +373,7 @@ class MapSpider extends Component {
   render() {
     const { position, zoom } = this.props;
 
-    const mapClass = { width: '500px', height: '500px' };
+    const mapClass = { width: '100%', height: this.state.height };
     
     return (
       <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}
@@ -426,4 +457,12 @@ class MapSpider extends Component {
 
 const mapStateToProps = state => ({
 });
-export default connect(mapStateToProps, null)(MapSpider);
+
+const mapDispatchToProps = dispatch => {
+  return ({
+    onSpiderMapClick: routes => dispatch(handleSpiderMapClick(routes)),
+    onSpiderStopClick: params => dispatch(handleSpiderStopClick(params))
+  })
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(MapSpider);

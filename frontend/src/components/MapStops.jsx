@@ -23,7 +23,7 @@ function MapStops(props) {
     outboundColor,
     outboundRadius,
   } = [];
-  const mapClass = { width: '500px', height: '500px' };
+  const mapClass = { width: '100%', height: '500px' };
 
   const { routeStops } = props;
 

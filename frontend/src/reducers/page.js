@@ -5,6 +5,7 @@ const components = {
   ABOUT: 'About',
   LANDING: 'Landing',
   DASHBOARD: 'Dashboard',
+  ROUTESCREEN: 'Route',
   [NOT_FOUND]: 'NotFound',
 };
 

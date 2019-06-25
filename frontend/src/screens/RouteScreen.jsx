@@ -10,8 +10,10 @@ import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import AppBar from '@material-ui/core/AppBar';
 
 import Navigation from '../components/Navigation';
-import MapSpider from '../components/MapSpider';
-import RouteTable from '../components/RouteTable';
+import Info from '../components/Info';
+import MapStops from '../components/MapStops';
+
+import ControlPanel from '../components/ControlPanel';
 
 import {
   fetchData,
@@ -26,7 +28,7 @@ import {
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-class Dashboard extends React.Component {
+class RouteScreen extends React.Component {
   
   componentDidMount() {
     if (!this.props.routes) {
@@ -50,6 +52,11 @@ class Dashboard extends React.Component {
 
   render() {
     const {
+      graphData,
+      graphError,
+      graphParams,
+      intervalData,
+      intervalError,
       routes,
     } = this.props;    
     return (
@@ -92,10 +99,36 @@ class Dashboard extends React.Component {
 
         <Grid container spacing={3}>
           <Grid item xs={6}>
-            <MapSpider routes={routes} />
+            <ControlPanel
+              routes={routes}
+              fetchRouteConfig={this.props.fetchRouteConfig}
+              resetGraphData={this.props.resetGraphData}
+              fetchGraphData={this.props.fetchGraphData}
+              resetIntervalData={this.props.resetIntervalData}
+              fetchIntervalData={this.props.fetchIntervalData}
+              fetchData={this.props.fetchData}
+            />
+            <MapStops />
+
           </Grid>
           <Grid item xs={6}>
-            <RouteTable routes={routes} />
+              
+          { graphData ?  /* if we have graph data, then show the info component */
+              <Info
+                graphData={graphData}
+                graphError={graphError}
+                graphParams={graphParams}
+                routes={routes}
+                intervalData={intervalData}
+                intervalError={intervalError}
+              />
+              
+            : /* if no graph data, show the info summary component */
+      
+            "(Route overview: InfoSummary component will go here)"
+
+          }              
+              
           </Grid>
         </Grid>
       </Fragment>
@@ -123,11 +156,11 @@ const mapDispatchToProps = dispatch => ({
   fetchRouteConfig: routeId => dispatch(fetchRouteConfig(routeId)),
 });
 
-Dashboard.propTypes = {
+RouteScreen.propTypes = {
   graphData: PropTypes.instanceOf(Object),
 };
 
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(Dashboard);
+)(RouteScreen);

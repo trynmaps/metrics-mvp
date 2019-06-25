@@ -1,5 +1,7 @@
 export default {
-  HOME: '/',
+  HOME: '/home',
   ABOUT: '/about',
   LANDING: '/landing',
+  DASHBOARD: '/',
+  ROUTESCREEN: '/route',
 };

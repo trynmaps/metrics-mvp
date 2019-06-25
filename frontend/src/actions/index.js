@@ -92,6 +92,26 @@ export function fetchRouteConfig(routeId) {
   };
 }
 
+export function handleSpiderMapClick(routes) {
+  return function(dispatch) {
+    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: routes });
+  };
+}
+
+export function handleSpiderStopClick(params) {
+  return function(dispatch, getState) {
+    dispatch({ type: 'RECEIVED_SPIDER_STOP_CLICK', payload: params });
+      const graphParams = getState().routes.graphParams;
+      
+      const intervalParams = Object.assign({}, graphParams);
+      delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
+      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
+      
+      dispatch(fetchData(graphParams, intervalParams));
+  };
+}
+
+
 export function handleRouteSelect(route) {
   return function(dispatch) {
     dispatch({ type: 'RECEIVED_ROUTE_SELECTION', payload: route });

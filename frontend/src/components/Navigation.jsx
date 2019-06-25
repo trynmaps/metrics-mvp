@@ -44,6 +44,17 @@ export default props => {
           Dashboard
           </NavLink>
       </button>
+      <button>
+      <NavLink
+        to={{ type: 'ROUTESCREEN' }}
+        activeStyle={{ fontWeight: "bold", color: 'purple' }}
+        exact={true}
+        strict={true}
+      >
+        Route
+        </NavLink>
+    </button>
+          
     </Fragment>
   )
 }
