@@ -9,6 +9,75 @@ import gzip
 import pandas as pd
 import numpy as np
 
+#
+# Computes and caches statistics about wait times for all stops
+# on all routes, for various time ranges in a particular day.
+#
+
+# Map of stat_id (string in file name) to the raw statistics that
+# are stored for each stop pair.
+#  p10 = 10th percentile
+#  median = 50th percentile
+#  p90 = 90th percentile
+#  p<Nm = probability of a wait time less than N minutes
+
+stat_groups = {
+    'p10-median-p90': ['p10','median','p90'],
+    'plt5m-30m': ['p<5m','p<10m','p<15m','p<20m','p<25m','p<30m'],
+    'median': 'median',
+}
+
+def get_stat_value(stat_id, all_stat_values):
+    # For a given stat_id (key in stat_groups dict), returns either
+    # a single value or an array of values from all_stat_values
+    # according to the definition of that stat_id.
+
+    stat = stat_groups[stat_id]
+    if isinstance(stat, list):
+        return [all_stat_values[sub_stat] for sub_stat in stat]
+    else:
+        return all_stat_values[stat]
+
+
+def add_wait_time_stats_for_stop(
+    interval_wait_time_stats,
+    stat_ids,
+    route_id,
+    dir_id,
+    stop_id,
+    wait_time_stats):
+
+    quantiles = wait_time_stats.get_quantiles([0.1,0.5,0.9])
+    if quantiles is None:
+        return
+
+    all_stat_values = {
+        'p10': round(quantiles[0], 1),
+        'median': round(quantiles[1], 1),
+        'p90': round(quantiles[2], 1),
+    }
+
+    for wait_time in range(5, 31, 5):
+        all_stat_values[f'p<{wait_time}m'] = round(wait_time_stats.get_probability_less_than(wait_time), 2)
+
+    for stat_id in stat_ids:
+        stat_value = get_stat_value(stat_id, all_stat_values)
+        interval_wait_time_stats[stat_id][route_id][dir_id][stop_id] = stat_value
+
+def add_median_wait_time_stats_for_direction(
+    dir_wait_time_stats,
+    stat_id
+):
+    dir_stat_values = np.array([stat_value for _, stat_value in dir_wait_time_stats.items()])
+
+    if len(dir_stat_values) > 0:
+        if isinstance(stat_groups[stat_id], list):
+            median = np.median(dir_stat_values, axis=0).tolist()
+        else:
+            median = np.median(dir_stat_values)
+
+        dir_wait_time_stats["median"] = median
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache wait times')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
@@ -20,7 +89,7 @@ if __name__ == '__main__':
 
     agency_id = 'sf-muni'
 
-    all_wait_times = {}
+    all_wait_time_stats = {}
     tz = pytz.timezone('US/Pacific')
 
     routes = nextbus.get_route_list(agency_id)
@@ -40,20 +109,14 @@ if __name__ == '__main__':
     timestamp_intervals.append((None, None))
     time_str_intervals.append((None, None))
 
-    stat_groups = {
-        'p10-median-p90': ['p10','median','p90'],
-        'plt5m-30m': ['p<5m','p<10m','p<15m','p<20m','p<25m','p<30m'],
-        'median': 'median',
-    }
-
     stat_ids = args.stat
     if stat_ids is None:
         stat_ids = stat_groups.keys()
 
     for interval_index, _ in enumerate(timestamp_intervals):
-        all_wait_times[interval_index] = {}
+        all_wait_time_stats[interval_index] = {}
         for stat_id in stat_ids:
-            all_wait_times[interval_index][stat_id] = {}
+            all_wait_time_stats[interval_index][stat_id] = {}
 
     for route in routes:
         route_id = route.id
@@ -69,7 +132,7 @@ if __name__ == '__main__':
 
         for interval_index, _ in enumerate(timestamp_intervals):
             for stat_id in stat_ids:
-                all_wait_times[interval_index][stat_id][route_id] = {}
+                all_wait_time_stats[interval_index][stat_id][route_id] = {}
 
         df = history.get_data_frame()
         df = df.sort_values('TIME', axis=0)
@@ -78,13 +141,9 @@ if __name__ == '__main__':
 
             dir_id = dir_info.id
 
-            dir_stats = {}
-
             for interval_index, _ in enumerate(timestamp_intervals):
-                dir_stats[interval_index] = {}
                 for stat_id in stat_ids:
-                    all_wait_times[interval_index][stat_id][route_id][dir_id] = {}
-                    dir_stats[interval_index][stat_id] = []
+                    all_wait_time_stats[interval_index][stat_id][route_id][dir_id] = {}
 
             stop_ids = dir_info.get_stop_ids()
             sid_values = df['SID'].values
@@ -97,42 +156,20 @@ if __name__ == '__main__':
                 for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
                     wait_time_stats = wait_times.get_stats(all_time_values, start_time, end_time)
 
-                    # waits = wait_time_stats.get_sampled_waits(60)
-                    # quantiles = np.quantile(waits, [0.1, 0.5, 0.9]) if waits is not None else None
-
-                    quantiles = wait_time_stats.get_quantiles([0.1,0.5,0.9])
-                    if quantiles is not None:
-                        stats = {
-                            'p10': round(quantiles[0], 1),
-                            'median': round(quantiles[1], 1),
-                            'p90': round(quantiles[2], 1),
-                        }
-
-                        for wait_time in range(5, 31, 5):
-                            stats[f'p<{wait_time}m'] = round(wait_time_stats.get_probability_less_than(wait_time), 2)
-
-                        for stat_id in stat_ids:
-                            stat = stat_groups[stat_id]
-                            if isinstance(stat, list):
-                                stat_value = [stats[sub_stat] for sub_stat in stat]
-                            else:
-                                stat_value = stats[stat]
-
-                            all_wait_times[interval_index][stat_id][route_id][dir_id][stop_id] = stat_value
-
-                            dir_stats[interval_index][stat_id].append(stat_value)
+                    add_wait_time_stats_for_stop(
+                        all_wait_time_stats[interval_index],
+                        stat_ids,
+                        route_id,
+                        dir_id,
+                        stop_id,
+                        wait_time_stats)
 
             for interval_index, _ in enumerate(timestamp_intervals):
                 for stat_id in stat_ids:
-                    if len(dir_stats[interval_index][stat_id]) > 0:
-                        dir_stat_values = np.array(dir_stats[interval_index][stat_id])
-
-                        if isinstance(stat_groups[stat_id], list):
-                            median = np.median(dir_stat_values, axis=0).tolist()
-                        else:
-                            median = np.median(dir_stat_values)
-
-                        all_wait_times[interval_index][stat_id][route_id][dir_id]["median"] = median
+                    add_median_wait_time_stats_for_direction(
+                        all_wait_time_stats[interval_index][stat_id][route_id][dir_id],
+                        stat_id
+                    )
 
     for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
         start_time_str, end_time_str = time_str_intervals[interval_index]
@@ -145,7 +182,7 @@ if __name__ == '__main__':
                 'start_time': start_time,
                 'end_time': end_time,
                 'stat': stat,
-                'routes': all_wait_times[interval_index][stat_id]
+                'routes': all_wait_time_stats[interval_index][stat_id]
             }, separators=(',', ':'))
 
             cache_path = wait_times.get_cache_path(agency_id, d, stat_id, start_time_str, end_time_str)

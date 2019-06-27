@@ -3,6 +3,11 @@ import os
 import pytz
 
 def quantile_sorted(sorted_arr, quantile):
+    # For small arrays (less than about 4000 items) np.quantile is significantly
+    # slower than sorting the array and picking the quantile out by index. Computing
+    # quantiles this way significantly improves performance for computing
+    # trip time stats across all stops.
+
     max_index = len(sorted_arr) - 1
     quantile_index = max_index * quantile
     quantile_index_int = int(quantile_index)
