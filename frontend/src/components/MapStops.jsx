@@ -7,6 +7,7 @@ const INBOUND_COLOR = 'blue';
 const INBOUND_RADIUS = 4;
 const OUTBOUND_COLOR = 'red';
 const OUTBOUND_RADIUS = 4;
+const STOP_COLORS = ['blue', 'red', 'green', 'purple'];
 const SF_COORDINATES = { lat: 37.7793, lng: -122.419 };
 const ZOOM = 13;
 
@@ -21,18 +22,18 @@ class MapStops extends Component {
     }*/
   }
   
-  populateRouteDirection = (routeStops, routeDirection, color, radius) => {
+  populateRouteDirection = (routeStops, direction_id, color, radius) => {
     let route = null;
     //const { routeStops } = this.props;
-    if (routeStops && routeStops[routeDirection]) {
-      route = routeStops[routeDirection].map((stop) => {
+    if (routeStops && routeStops[direction_id]) {
+      route = routeStops[direction_id].map((stop) => {
         const currentPosition = [stop.lat, stop.lon];
         return (
           <CircleMarker
             center={currentPosition}
             color={color}
             radius={radius}
-            onClick={() => this.handleStopSelect(stop,routeDirection)}
+            onClick={() => this.handleStopSelect(stop, direction_id)}
             onMouseOver={(e) => e.target.openPopup()}
             onMouseOut={(e) => e.target.closePopup()}
           >
@@ -40,39 +41,61 @@ class MapStops extends Component {
           </CircleMarker>
         );
       });
-      route.push(<Polyline color={color} positions={routeStops[routeDirection]} />);
+      // put polyline first so clickable markers are drawn on top of it
+      route.unshift(<Polyline color={color} positions={routeStops[direction_id]} />);
     }
     return route;
   }
   
-  handleStopSelect = (stop,newRouteDirection) => {
-    const {firstStopId, secondStopId, routeDirection} = this.state;
-    if(!firstStopId && !secondStopId) {
-      this.setState({firstStopId: stop.sid,routeDirection:newRouteDirection}, () => this.afterStopSelect());
+  handleStopSelect = (stop, new_direction_id) => {
+    let { start_stop_id, end_stop_id, direction_id} = this.props.graphParams;
+
+    if (!start_stop_id && !end_stop_id) {
+      start_stop_id = stop.sid;
+      end_stop_id = null;
+      direction_id = new_direction_id;
     }
-    else if(!secondStopId) {
-      if(routeDirection !== newRouteDirection) {
-        this.setState({firstStopId: stop.sid, secondStopId: null, routeDirection: newRouteDirection}, () => this.afterStopSelect());
+    else if (!end_stop_id) {
+      if (direction_id !== new_direction_id) {
+        start_stop_id = stop.sid;
+        end_stop_id = null;
+        direction_id = new_direction_id;
       }
       else {
-        this.setState({secondStopId: stop.sid, routeDirection: newRouteDirection}, () => this.afterStopSelect());
+        end_stop_id = stop.sid;
       }
     }
-    else{
-       this.setState({firstStopId: stop.sid, secondStopId: null, routeDirection: newRouteDirection}, () => this.afterStopSelect());
+    else { // both stops were already set, treat as first stop and clear second
+       start_stop_id = stop.sid;
+       end_stop_id = null;
+       direction_id = new_direction_id;
     }
-  }
-  afterStopSelect = () => {
-    const {firstStopId, secondStopId, routeDirection} = this.state;
-    const {updateStopSelection} = this.props;
-    updateStopSelection({firstStopId:firstStopId, secondStopId: secondStopId, routeDirection: routeDirection});
-  }
   
+    const {onGraphParams} = this.props;
+    // for debugging: console.log("end state is: start: " + start_stop_id + " end: " + end_stop_id + " dir: " + direction_id);
+    onGraphParams({
+      start_stop_id: start_stop_id,
+      end_stop_id: end_stop_id,
+      direction_id: direction_id
+    });
+  }
 
+  
+  getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
+    const stopSids = selectedRoute.directions.find(dir => dir.id === directionId);
+    
+    return stopSids.stops.map(stop => {
+      let currentStopInfo = {...selectedRoute.stops[stop]};
+      currentStopInfo.sid = stop;
+      return currentStopInfo;
+    });
+  }
+
+  /*
   getStopsInfoInGivenDirectionName(selectedRoute, name) {
     const stopSids= selectedRoute.directions.find(dir => dir.name === name);
     return stopSids.stops.map(stop => selectedRoute.stops[stop]);
-  }
+  }*/
   
   render() {
     const {position, zoom, inboundColor, inboundRadius, outboundColor, outboundRadius } = this.props;
@@ -84,33 +107,37 @@ class MapStops extends Component {
 
     let selectedRoute = null;
     let routeStops = null;
-
+    let populatedRoutes = null;
 
     if (routes && graphParams) {
       selectedRoute = routes.find(route => route.id === graphParams.route_id);
 
       if (selectedRoute) {
-        routeStops = {
+        routeStops = {};
+        for (let direction of selectedRoute.directions) {
+          routeStops[direction.id] = this.getStopsInfoInGivenDirection(selectedRoute, direction.id);
+        }
+/*        routeStops = {
           'Inbound'  : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
-          'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
-         };
+          'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound') 
+         };*/
+    
+    
+    
+    
+        populatedRoutes = selectedRoute.directions.map((direction, index) =>
+          this.populateRouteDirection(routeStops, direction.id, STOP_COLORS[index % STOP_COLORS.length], inboundRadius ? inboundRadius : INBOUND_RADIUS));
       }
     }
-    
-    
-    
-    
-    
-    const inboundRoute = this.populateRouteDirection(routeStops, 'Inbound', inboundColor ? inboundColor : INBOUND_COLOR, inboundRadius ? inboundRadius : INBOUND_RADIUS);
-    const outboundRoute = this.populateRouteDirection(routeStops, 'Outbound', outboundColor ? outboundColor : OUTBOUND_COLOR, outboundRadius ? outboundRadius : OUTBOUND_RADIUS);
+    //const inboundRoute = this.populateRouteDirection(routeStops, 'Inbound', inboundColor ? inboundColor : INBOUND_COLOR, inboundRadius ? inboundRadius : INBOUND_RADIUS);
+    //const outboundRoute = this.populateRouteDirection(routeStops, 'Outbound', outboundColor ? outboundColor : OUTBOUND_COLOR, outboundRadius ? outboundRadius : OUTBOUND_RADIUS);
     return (
       <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="http://{s}.tile.osm.org/{z}/{x}/{y}.png"
         />
-        { inboundRoute }
-        { outboundRoute }
+        { populatedRoutes }
         </Map>
         );
       }
@@ -168,7 +195,13 @@ const mapStateToProps = state => ({
   graphParams: state.routes.graphParams,
 });
 
+const mapDispatchToProps = dispatch => {
+  return ({
+    onGraphParams: params => dispatch(handleGraphParams(params)),
+  })
+}
+
 export default connect(
   mapStateToProps,
-  null,
+  mapDispatchToProps,
 )(MapStops);
