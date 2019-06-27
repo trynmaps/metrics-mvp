@@ -56,13 +56,3 @@ def parse_prediction_return(prediction: dict) -> dict:
         'arrival_time': prediction['MonitoredVehicleJourney']['MonitoredCall']['AimedArrivalTime'],
         'direction': prediction['MonitoredVehicleJourney']['DirectionRef'],
     }
-
-
-pbs = get_predictions_by_stop_id(
-    '2b81cac7-b863-4f47-bc87-aab157fc052c', 'SF', '13009')
-print(pbs)
-print(pbs.stop_id)
-print(pbs.prediction_data)
-for p in pbs.prediction_data:
-    print(p.vehicle_id)
-    print(p.get_predicted_minutes_to_arrival())
