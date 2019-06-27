@@ -88,10 +88,7 @@ def get_date_ranges(agency: str, ver: str):
     return read_file(agency, local_path, s3_path, filename)
 
 def get_date_period(agency: str, d: date, ver: str):
-    try:
-        date_ranges = get_date_ranges(agency, ver)
-    except Exception as err:
-        print(f"Error attempting to fetch date ranges for {d.isoformat()}: {err}")
+    date_ranges = get_date_ranges(agency, ver)
 
     date_ranges["date_range"] = date_ranges.apply(lambda x: pd.date_range(start = x.start_date, end = x.end_date), axis = "columns")
 

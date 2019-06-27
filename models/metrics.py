@@ -96,54 +96,32 @@ class RouteMetrics:
         arrival_headways = np.insert(compute_headway_minutes(stop_arrivals['TIME'].to_numpy()), 0, np.nan)
         stop_arrivals['headway'] = arrival_headways
 
-        # for each scheduled arrival time, get the next actual arrival and the corresponding headway
-        def get_next_arrival_time(scheduled_arrivals, arrivals, arrival_headways):
-            # index of the first arrival time that occurs after the first scheduled arrival
-            first_arrival_index = np.searchsorted(arrivals, scheduled_arrivals[0])
-            filtered_arrivals = arrivals[first_arrival_index:]
-            real_headways = arrival_headways[first_arrival_index:]
-            next_arrival_time = []
-            next_headway = []
-            current_index = 0
+        # for each scheduled arrival time, get the closest actual arrival (earlier or later), the next actual arrival, and the corresponding headways
+        def get_adjacent_arrival_times(scheduled_arrivals, arrivals, arrival_headways):
+            next_arrival_indices = np.searchsorted(arrivals, scheduled_arrivals)
+            arrivals_padded = np.r_[arrivals, np.nan]
+            headways_padded = np.r_[arrival_headways, np.nan]
+            next_arrivals = arrivals_padded[next_arrival_indices]
+            next_headways = headways_padded[next_arrival_indices]
+            next_abs = np.absolute(next_arrivals - scheduled_arrivals)
 
-            for index in range(len(filtered_arrivals)):
-                arrival_index = index
-                while scheduled_arrivals[current_index] <= filtered_arrivals[arrival_index]:
-                    next_arrival_time.append(filtered_arrivals[arrival_index])
-                    next_headway.append(real_headways[arrival_index])
-                    current_index += 1
-                    index += 1
-            
-            while len(next_arrival_time) < len(scheduled_arrivals):
-                next_arrival_time.append(np.nan)
-                next_headway.append(np.nan)
+            previous_arrivals = np.r_[np.nan, arrivals][next_arrival_indices]
+            previous_headways = np.r_[np.nan, arrival_headways][next_arrival_indices]
+            previous_abs = np.absolute(previous_arrivals - scheduled_arrivals)
 
-            return next_arrival_time, next_headway
+            # compare the delta between scheduled arrival and next arrival to delta between scheduled arrival and previous arrival
+            comparison = next_abs < previous_abs
 
-        next_arrivals, next_headways = get_next_arrival_time(stop_timetable['arrival_time'].values, stop_arrivals['TIME'].values, arrival_headways)
+            # returns, in order: next arrival, next headway, closest arrival, closest headway
+            return next_arrivals, next_headways, np.where(comparison, next_arrivals, previous_arrivals), np.where(comparison, next_headways, previous_headways)
+
+        next_arrivals, next_headways, closest_arrivals, closest_headways = get_adjacent_arrival_times(stop_timetable['arrival_time'].values, stop_arrivals['TIME'].values, arrival_headways)
+
         next_arrival_deltas = next_arrivals - stop_timetable['arrival_time'].values
         stop_timetable['next_arrival'] = next_arrivals
         stop_timetable['next_arrival_delta'] = next_arrival_deltas
         stop_timetable['next_arrival_headway'] = next_headways
 
-        # for each scheduled arrival time, get the closest actual arrival (earlier or later) and the corresponding headway
-        def get_closest_arrival_time(scheduled_arrivals, arrivals, arrival_headways):
-            next_arrival_times = [np.searchsorted(arrivals, scheduled_arrival) for scheduled_arrival in scheduled_arrivals]
-            next_arrivals = [arrivals[next_arrival_times[i]] if next_arrival_times[i] < len(arrivals) else np.nan for i in range(len(next_arrival_times))]
-            next_headways = [arrival_headways[next_arrival_times[i]] if next_arrival_times[i] < len(arrival_headways) else np.nan for i in range(len(next_arrival_times))]
-            next_abs = [abs(scheduled_arrivals[i] - next_arrivals[i]) for i in range(len(scheduled_arrivals))]
-
-            previous_arrival_times = [index - 1 for index in next_arrival_times]
-            previous_arrivals = [arrivals[previous_arrival_times[i]] if previous_arrival_times[i] < len(arrivals) else np.nan for i in range(len(previous_arrival_times))]
-            previous_headways = [arrival_headways[previous_arrival_times[i]] if previous_arrival_times[i] < len(arrival_headways) else np.nan for i in range(len(previous_arrival_times))]
-            previous_abs = [abs(scheduled_arrivals[i] - previous_arrivals[i]) for i in range(len(scheduled_arrivals))]
-
-            # compare the delta between scheduled arrival and next arrival to delta between scheduled arrival and previous arrival
-            comparison = next_abs < previous_abs
-
-            return np.where(comparison, next_arrivals, previous_arrivals), np.where(comparison, next_headways, previous_headways)
-
-        closest_arrivals, closest_headways = get_closest_arrival_time(stop_timetable['arrival_time'].values, stop_arrivals['TIME'].values, arrival_headways)
         closest_deltas = closest_arrivals - stop_timetable['arrival_time'].values
         stop_timetable['closest_arrival'] = closest_arrivals
         stop_timetable['closest_arrival_delta'] = closest_deltas
