@@ -182,7 +182,7 @@ Commit your local changes to a feature branch (i.e. not master), then submit a p
 ## Tech Stack Decisions
 
 ### Overall
-- Docker - We use Docker to ensurent a consistent environment across all machines
+- Docker - We use Docker to ensure a consistent environment across all machines
 - Docker Compose - We use Docker Compose to run multiple containers at once
 
 ### Frontend
@@ -190,7 +190,7 @@ Commit your local changes to a feature branch (i.e. not master), then submit a p
 - React - Our team members switched projects over from OpenTransit Map and decided to use the same frontend framework
 - Material UI - We decided to migrate to Material UI, because it has zero dependence on jQuery (unlike Bootstrap), it is the most popular React framework, and it offers a more fluid and pleasant experience for mobile users
 - Functional Components - We migrated away from ES6 React Components and introduced [Functional Components](https://reactjs.org/docs/components-and-props.html) instead due to the simplification of component logic and the ability to use React Hooks
-- Redux - We use Redux for state management and to simplify our application and component interaction
+- Redux Thunk - We use Redux for state management and to simplify our application and component interaction, and Thunk as middleware
 - React Hooks - We use React Hooks to manage interactions with state management
 
 ## Notes for developers
