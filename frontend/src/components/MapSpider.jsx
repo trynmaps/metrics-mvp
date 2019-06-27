@@ -9,7 +9,7 @@ import MapShield from './MapShield'
 import Control from 'react-leaflet-control';
 import * as d3 from "d3";
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
-import { handleSpiderMapClick, handleSpiderStopClick } from '../actions';
+import { handleSpiderMapClick, handleGraphParams } from '../actions';
 
 import { push } from 'redux-first-router'
 
@@ -22,13 +22,12 @@ class MapSpider extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      latLng: SF_COORDINATES,
-      startMarkers: [],
     }
     
     this.mapRef = createRef(); // used for geolocating
   }  
 
+  // TODO: Needs fixing. This sets height to that of the window, not remaining space.
   updateDimensions() {
     const height = window.innerWidth >= 992 ? window.innerHeight : 500
     this.setState({ height: height })
@@ -65,25 +64,16 @@ class MapSpider extends Component {
     if (map != null) {
       this.handleLocationFound(e);
     }
-   }
+  }
 
   /**
    * Handles events with a location (either click, or geolocation call).
-   */
-  handleLocationFound = e => {
-    this.setState({
-      latLng: e.latlng
-    }, this.findAndPlotStops);
-    
-  }   
-  
-  /**
    * Find nearby stops for each route/direction and plot the rest of the route to its terminal. 
    */
-  findAndPlotStops() {
-    const stops = this.findStops();
+  handleLocationFound = e => {
+    const stops = this.findStops(e.latlng); // note: all lowercase name in event.
      
-    // Plot the downstream stops to the terminal.
+    // Add the downstream stops to the terminal.
      
     for (let stop of stops) {
       this.addDownstreamStops(stop);
@@ -92,12 +82,8 @@ class MapSpider extends Component {
     // Fire events here indicating that the route list should be filtered to just the
     // routes corresponding to "stops".
      
-    this.setState({
-      startMarkers: stops,
-    });
-    
     const {onSpiderMapClick} = this.props;
-    onSpiderMapClick(stops);
+    onSpiderMapClick(stops, e.latlng);
   }
 
   /**
@@ -120,9 +106,8 @@ class MapSpider extends Component {
    * 
    * Take only stops within CLICK_RADIUS_MI miles and sort by distance.
    */
-  findStops() {
+  findStops(latLng) {
     const { routes } = this.props;
-    const latLng = this.state.latLng;
     const latLon = { lat: latLng.lat, lon: latLng.lng };
     let stopsByRouteAndDir = [];
     
@@ -185,25 +170,29 @@ class MapSpider extends Component {
    */
   StartMarkers = () => {  
 
-    const items = this.state.startMarkers.map((startMarker, index) => {
-  
-      const position = [ startMarker.stop.lat, startMarker.stop.lon ];
-      const routeColor = this.routeColor(startMarker.routeIndex % 10); 
+    let items = null;
     
-      return <CircleMarker key={ "startMarker-" + index } center={position}
-         radius="8" 
-         fillColor={routeColor}
-         fillOpacity={0.2}
-         stroke={false}
-         >
-      <Tooltip>
-        {startMarker.routeTitle}<br/>
-        {startMarker.direction.title}<br/>
-        {startMarker.stop.title}<br/>
-        {Math.round(startMarker.miles * 5280)} feet
-      </Tooltip>
-    </CircleMarker>
+    if (this.props.spiderSelection) {
+      items = this.props.spiderSelection.map((startMarker, index) => {
+  
+        const position = [ startMarker.stop.lat, startMarker.stop.lon ];
+        const routeColor = this.routeColor(startMarker.routeIndex % 10); 
+    
+        return <CircleMarker key={ "startMarker-" + index } center={position}
+            radius="8" 
+            fillColor={routeColor}
+            fillOpacity={0.2}
+            stroke={false}
+            >
+          <Tooltip>
+            {startMarker.routeTitle}<br/>
+            {startMarker.direction.title}<br/>
+            {startMarker.stop.title}<br/>
+            {Math.round(startMarker.miles * 5280)} feet
+          </Tooltip>
+        </CircleMarker>
     });
+    }
     return <Fragment>{items}</Fragment>
   }  
 
@@ -214,36 +203,40 @@ class MapSpider extends Component {
 
     const allWaits = this.getAllWaits();
     
-    // One line for each start marker
+    // One polyline for each start marker
   
-    const items = this.state.startMarkers.map(startMarker => {
-      const downstreamStops = startMarker.downstreamStops;
+    let items = null;
     
-      const polylines = [];
+    if (this.props.spiderSelection) {
+      items = this.props.spiderSelection.map(startMarker => {
+        const downstreamStops = startMarker.downstreamStops;
     
-      // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
-      // when selecting a line.
+        const polylines = [];
+    
+        // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
+        // when selecting a line.
 
-      // get wait rank, most frequent is highest (largest) rank
-      const waitRank = allWaits.findIndex(wait => wait.routeID === startMarker.routeID);
+        // get wait rank, most frequent is highest (largest) rank
+        const waitRank = allWaits.findIndex(wait => wait.routeID === startMarker.routeID);
       
-      // scale wait rank to 0, 1, or 2
-      const waitScaled = Math.trunc(waitRank/allWaits.length * 3);
+        // scale wait rank to 0, 1, or 2
+        const waitScaled = Math.trunc(waitRank/allWaits.length * 3);
 
-      for (let i=0; i < downstreamStops.length-1; i++) { // for each stop
-        polylines.push(this.generatePolyline(startMarker, waitScaled, i));
-      }
+        for (let i=0; i < downstreamStops.length-1; i++) { // for each stop
+          polylines.push(this.generatePolyline(startMarker, waitScaled, i));
+        }
 
-      // Add a solid circle at the terminal stop.
-      
-      polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
-      
-      // Add a route shield next to the terminal stop.
+        // Add a solid circle at the terminal stop.
+        
+        polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
+        
+        // Add a route shield next to the terminal stop.
+  
+        polylines.push(this.generateShield(startMarker, waitScaled));
  
-      polylines.push(this.generateShield(startMarker, waitScaled));
- 
-      return polylines;    
-    });
+        return polylines;    
+      });
+    }
 
     return <Fragment>{items}</Fragment>
   }
@@ -291,8 +284,8 @@ class MapSpider extends Component {
              * this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
              */
             
-            const {onSpiderStopClick} = this.props;
-            onSpiderStopClick({
+            const {onGraphParams} = this.props;
+            onGraphParams({
               route_id: startMarker.routeID,
               direction_id: startMarker.direction.id,
               start_stop_id: startMarker.stopID,
@@ -456,12 +449,14 @@ class MapSpider extends Component {
 } // end class
 
 const mapStateToProps = state => ({
+  spiderLatLng: state.routes.spiderLatLng,
+  spiderSelection: state.routes.spiderSelection,
 });
 
 const mapDispatchToProps = dispatch => {
   return ({
-    onSpiderMapClick: routes => dispatch(handleSpiderMapClick(routes)),
-    onSpiderStopClick: params => dispatch(handleSpiderStopClick(params))
+    onSpiderMapClick: (stops, latLng) => dispatch(handleSpiderMapClick(stops, latLng)),
+    onGraphParams: params => dispatch(handleGraphParams(params))
   })
 }
 

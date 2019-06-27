@@ -17,6 +17,8 @@ import FilterListIcon from '@material-ui/icons/FilterList';
 
 import { filterRoutes } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
+import { push } from 'redux-first-router'
+import { handleGraphParams } from '../actions';
 
 function desc(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -168,7 +170,7 @@ const useStyles = makeStyles(theme => ({
 function RouteTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
-  const [orderBy, setOrderBy] = React.useState('calories');
+  const [orderBy, setOrderBy] = React.useState('title');
   const [selected, setSelected] = React.useState([]);
   const dense = true;
 
@@ -178,12 +180,12 @@ function RouteTable(props) {
     setOrderBy(property);
   }
 
-  function handleClick(event, name) {
-    const selectedIndex = selected.indexOf(name);
+  function handleClick(event, route) {
+    const selectedIndex = selected.indexOf(route.title);
     let newSelected = [];
 
     if (selectedIndex === -1) {
-      newSelected = [name];//newSelected.concat(selected, name);
+      newSelected = [route.title];//newSelected.concat(selected, name);
     } else if (selectedIndex === 0) {
       newSelected = newSelected.concat(selected.slice(1));
     } else if (selectedIndex === selected.length - 1) {
@@ -196,6 +198,14 @@ function RouteTable(props) {
     }
 
     setSelected(newSelected);
+
+    props.onGraphParams({
+      route_id: route.id,
+      direction_id: null,
+      start_stop_id: null,
+      end_stop_id: null,
+    });
+    push('/route');
   }
 
   const isSelected = name => selected.indexOf(name) !== -1;
@@ -249,7 +259,7 @@ function RouteTable(props) {
                   return (
                     <TableRow
                       hover
-                      onClick={event => handleClick(event, row.title)}
+                      onClick={event => handleClick(event, row)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
@@ -329,7 +339,13 @@ const mapStateToProps = state => ({
   spiderSelection: state.routes.spiderSelection,
 });
 
+const mapDispatchToProps = dispatch => {
+  return ({
+    onGraphParams: params => dispatch(handleGraphParams(params))
+  })
+}
+
 export default connect(
   mapStateToProps,
-  null,
+  mapDispatchToProps,
 )(RouteTable);

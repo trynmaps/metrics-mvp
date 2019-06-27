@@ -92,22 +92,34 @@ export function fetchRouteConfig(routeId) {
   };
 }
 
-export function handleSpiderMapClick(routes) {
+export function handleRouteSelectFromDashboard(routeID) {
   return function(dispatch) {
-    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: routes });
+    dispatch({ type: 'RECEIVED_ROUTE_SELECT_FROM_DASHBOARD', payload: routeID });
   };
 }
 
-export function handleSpiderStopClick(params) {
+export function handleSpiderMapClick(stops, latLng) {
+  return function(dispatch) {
+    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: [stops, latLng] });
+  };
+}
+
+export function handleGraphParams(params) {
   return function(dispatch, getState) {
-    dispatch({ type: 'RECEIVED_SPIDER_STOP_CLICK', payload: params });
-      const graphParams = getState().routes.graphParams;
-      
+    dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
+    const graphParams = getState().routes.graphParams;
+
+    // fetch graph data if all params provided
+    // TODO: fetch route summary data if all we have is a route ID.
+    
+    if (graphParams.route_id && graphParams.direction_id &&
+        graphParams.start_stop_id && graphParams.end_stop_id) {
       const intervalParams = Object.assign({}, graphParams);
       delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
       delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
       
       dispatch(fetchData(graphParams, intervalParams));
+    }
   };
 }
 

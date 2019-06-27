@@ -135,11 +135,6 @@ class ControlPanel extends Component {
   getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
     return selectedRoute.directions.find(dir => dir.id === directionId);
   }
-  getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
-    const stopSids= selectedRoute.directions.find(dir => dir.name === name);
-    return stopSids.stops.map(stop => selectedRoute.stops[stop]);
-
-  }
 
   selectedDirectionChanged = () => {
     const { firstStopId, directionId } = this.state;
@@ -166,6 +161,7 @@ class ControlPanel extends Component {
     const { routeId } = this.state;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
+  /*
   sendRouteStopsToMap = () => {
     const {directionId} = this.state;
     const {onRouteSelect} = this.props;
@@ -174,7 +170,7 @@ class ControlPanel extends Component {
       'Inbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
       'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
     });
-  }
+  }*/
   // toggleTimekeeper(val) {
   //   // this.setState({ displayTimepicker: val });
   // }
@@ -191,7 +187,7 @@ class ControlPanel extends Component {
     let selectedDirection =null;
     if (selectedRoute && selectedRoute.directions && directionId) {
       selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
-      this.sendRouteStopsToMap();
+      /*this.sendRouteStopsToMap();*/
     }
 
     return (

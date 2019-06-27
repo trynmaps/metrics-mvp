@@ -108,7 +108,7 @@ class RouteScreen extends React.Component {
               fetchIntervalData={this.props.fetchIntervalData}
               fetchData={this.props.fetchData}
             />
-            <MapStops />
+            <MapStops routes={routes}/>
 
           </Grid>
           <Grid item xs={6}>
