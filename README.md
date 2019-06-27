@@ -1,4 +1,5 @@
 # OpenTransit's Metrics MVP
+[Check out our demo!](https://opentransit.herokuapp.com/)
 
 ## Getting started
 
@@ -177,11 +178,24 @@ To make changes, make sure you've been added to the trynmaps organization on Git
 
 Commit your local changes to a feature branch (i.e. not master), then submit a pull request on GitHub.
 
+
+## Tech Stack Decisions
+
+### Overall
+- Docker - We use Docker to ensurent a consistent environment across all machines
+- Docker Compose - We use Docker Compose to run multiple containers at once
+
+### Frontend
+- NPM - Due to both the NPM and Yarn package managers offering roughly the same performance, Yarn being a superset of NPM, and there was nothing in the Yarn roadmap which would indicate it would make it worthwhile in the future, we went with NPM
+- React - Our team members switched projects over from OpenTransit Map and decided to use the same frontend framework
+- Material UI - We decided to migrate to Material UI, because it has zero dependence on jQuery (unlike Bootstrap), it is the most popular React framework, and it offers a more fluid and pleasant experience for mobile users
+- Functional Components - We migrated away from ES6 React Components and introduced [Functional Components](https://reactjs.org/docs/components-and-props.html) instead due to the simplification of component logic and the ability to use React Hooks
+- Redux - We use Redux for state management and to simplify our application and component interaction
+- React Hooks - We use React Hooks to manage interactions with state management
+
 ## Notes for developers
 
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt`
 so other contributors have the latest versions of required packages.
 
-## Demo
-
-[Check out this demo!](https://opentransit.herokuapp.com/)
+If you're on a Mac and you experience issues with Docker eating your CPU cycles and battery, set `CHOKIDAR_USEPOLLING=false` inside `docker-compose.yml`. Note: this will disable hot reloading.
