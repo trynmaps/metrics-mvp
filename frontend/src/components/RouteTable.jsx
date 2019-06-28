@@ -267,7 +267,7 @@ function RouteTable(props) {
                       selected={isItemSelected}
                     >
                       <TableCell component="th" id={labelId} scope="row" padding="none">
-                        {row.title}
+                        <a href="#">{row.title}</a>
                       </TableCell>
                       <TableCell align="right">{row.wait.toFixed(1)}</TableCell>
                       <TableCell align="right">{row.speed}</TableCell>

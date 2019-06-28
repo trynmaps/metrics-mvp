@@ -113,7 +113,7 @@ class MapSpider extends Component {
     
     const filteredRoutes = filterRoutes(routes);
     for (let i = 0; i < filteredRoutes.length; i++) { // optimize this on back end
-      const route = routes[i];
+      const route = filteredRoutes[i];
       
       if (route.directions) {
         for (let direction of route.directions) {
@@ -346,16 +346,26 @@ class MapSpider extends Component {
       riseOnHover={true}
       onClick = {e => {
       
-            e.originalEvent.view.L.DomEvent.stopPropagation(e);
+        e.originalEvent.view.L.DomEvent.stopPropagation(e);
             
-            // TODO: fire events that select this route and direction
+        /* Fire events that select this route and direction.
+         *   
+         * If this code was integrated with ControlPanel, we would do:
+         *
+         * this.setRouteId(startMarker.routeID);
+         * this.setDirectionId(startMarker.direction.id);
+         */
             
-            /* If this code was integrated with ControlPanel, we would do:
-             *
-             * this.setRouteId(startMarker.routeID);
-             * this.setDirectionId(startMarker.direction.id);
-             */
+        const {onGraphParams} = this.props;
+        onGraphParams({
+          route_id: startMarker.routeID,
+          direction_id: startMarker.direction.id,
+          start_stop_id: null,
+          end_stop_id: null,
+        });
+        push('/route');
       }}
+            
       >
     </Marker>;    
   }
@@ -389,6 +399,11 @@ class MapSpider extends Component {
           <button onClick={ this.handleGeoLocate }>
             Routes near me
           </button>
+          <br/>  
+          <button onClick={ e => this.props.onSpiderMapClick([], null) }>
+            Clear map
+          </button>
+            
         </Control>
           
       </Map>

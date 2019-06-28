@@ -65,6 +65,7 @@ class Dashboard extends React.Component {
             >
               <MenuIcon />
             </IconButton>
+        Muni
           </Toolbar>
         </AppBar>
 

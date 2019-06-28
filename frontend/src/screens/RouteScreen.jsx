@@ -58,7 +58,13 @@ class RouteScreen extends React.Component {
       intervalData,
       intervalError,
       routes,
-    } = this.props;    
+    } = this.props;
+    
+    const selectedRoute = routes && graphParams && graphParams.route_id ? routes.find(route => route.id === graphParams.route_id) : null;
+    const direction = selectedRoute && graphParams.direction_id ? selectedRoute.directions.find(direction => direction.id === graphParams.direction_id) : null;
+    const startStopInfo = direction && graphParams.start_stop_id ? selectedRoute.stops[graphParams.start_stop_id] : null;
+    const endStopInfo = direction && graphParams.end_stop_id ? selectedRoute.stops[graphParams.end_stop_id] : null;
+    
     return (
       <Fragment>
         <Navigation />
@@ -72,6 +78,12 @@ class RouteScreen extends React.Component {
             >
               <MenuIcon />
             </IconButton>
+            Muni
+            { selectedRoute ? ' > ' + selectedRoute.title : null }
+            { direction ? ' > ' + direction.title : null }
+            &nbsp;
+            { startStopInfo ? '(from ' + startStopInfo.title : null }
+            { endStopInfo ? ' to ' + endStopInfo.title + ')' : null }
           </Toolbar>
         </AppBar>
 
@@ -142,7 +154,7 @@ const mapStateToProps = state => ({
   graphError: state.fetchGraph.err,
   intervalData: state.fetchGraph.intervalData,
   intervalError: state.fetchGraph.intervalErr,
-  graphParams: state.fetchGraph.graphParams,
+  graphParams: state.routes.graphParams,
 });
 
 const mapDispatchToProps = dispatch => ({

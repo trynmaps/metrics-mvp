@@ -119,6 +119,12 @@ export function handleGraphParams(params) {
       delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
       
       dispatch(fetchData(graphParams, intervalParams));
+      
+    } else { // when we don't have all params, clear graph data
+
+      dispatch(resetGraphData());
+      dispatch(resetIntervalData());
+      
     }
   };
 }

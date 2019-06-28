@@ -203,7 +203,6 @@ class ControlPanel extends Component {
       }
       >
         <Card bg="light" style={{ color: 'black' }}>
-          <Card.Header>Visualize Route</Card.Header>
           <DatePicker
             value={date}
             onChange={this.setDate}
@@ -320,6 +319,11 @@ class ControlPanel extends Component {
 ControlPanel.propTypes = {
   fetchGraphData: PropTypes.func.isRequired,
 };
+
+// TODO: for this entire component, use graphParams values in Redux instead of local state.
+const mapStateToProps = state => ({
+  routeId: state.routes.graphData.route_id
+});
 
 const mapDispatchToProps = dispatch => {
   return ({
