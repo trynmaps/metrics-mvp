@@ -31,6 +31,7 @@ def ping():
 @app.route('/routes', methods=['GET'])
 def routes():
     route_list = nextbus.get_route_list('sf-muni')
+
     data = [{
         'id': route.id,
         'title': route.title,
@@ -59,7 +60,7 @@ def route_config():
             'name': dir.name,
             'stops': dir.get_stop_ids()
         } for dir in route.get_direction_infos()],
-        'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon, 'location_id': stop.location_id} for stop in route.get_stop_infos()}
+        'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
     }
     return Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
 
