@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { css } from 'emotion';
 import Card from 'react-bootstrap/Card';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
-import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData'; 
+import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData';
+import { milesBetween } from '../helpers/routeCalculations';
 import { PLANNING_PERCENTILE, CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 import * as d3 from 'd3';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
@@ -17,7 +18,7 @@ class Info extends Component {
     };
 
   }
-  
+
   computeGrades(headwayMin, waitTimes, tripTimes, speed) {
     //
     // grade and score for average wait
@@ -45,7 +46,7 @@ class Info extends Component {
     };
 
     let longWaitProbability = 0;
-    if (headwayMin) {
+    if (waitTimes && waitTimes.histogram) {
       longWaitProbability = waitTimes.histogram.reduce(reducer, 0);
       longWaitProbability /= waitTimes.count;
     }
@@ -141,37 +142,6 @@ class Info extends Component {
     };
   }
 
-  /**
-   * Returns the distance between two stops in miles.
-   */
-  milesBetween(p1, p2) {
-    const meters = this.haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
-    return meters / 1609.344;
-  }
-
-  /**
-   * Haversine formula for calcuating distance between two coordinates in lat lon
-   * from bird eye view; seems to be +- 8 meters difference from geopy distance.
-   *
-   * From eclipses.py.  Returns distance in meters.
-   */
-  haverDistance(latstop, lonstop, latbus, lonbus) {
-    const deg2rad = x => x * Math.PI / 180;
-
-    [latstop, lonstop, latbus, lonbus] = [latstop, lonstop, latbus, lonbus].map(deg2rad);
-    const eradius = 6371000;
-
-    const latdiff = (latbus - latstop);
-    const londiff = (lonbus - lonstop);
-
-    const a = Math.sin(latdiff / 2) ** 2 + Math.cos(latstop) * Math.cos(latbus) * Math.sin(londiff / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    const distance = eradius * c;
-    return distance;
-  }
-
-
   computeDistance(graphParams, routes) {
     let miles = 0;
 
@@ -187,14 +157,14 @@ class Info extends Component {
       for (let i = startIndex; i < endIndex; i++) {
         const fromStopInfo = route.stops[stopSequence[i]];
         const toStopInfo = route.stops[stopSequence[i + 1]];
-        miles += this.milesBetween(fromStopInfo, toStopInfo);
+        miles += milesBetween(fromStopInfo, toStopInfo);
       }
     }
 
     return miles;
   }
-  
-  
+
+
   /**
    * Event handler for onMouseLeave.
    * @private
@@ -230,15 +200,15 @@ class Info extends Component {
     const headwayMin = graphData ? graphData.headway_min : null;
     const waitTimes = graphData ? graphData.wait_times : null;
     const tripTimes = graphData ? graphData.trip_times : null;
-    
-    this.headwayData = graphData ? headwayMin.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
-    this.waitData = graphData ? waitTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: (100 * bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) : null;
-    this.tripData = graphData ? tripTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
-    
+
+    this.headwayData = headwayMin && headwayMin.histogram ? headwayMin.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
+    this.waitData = waitTimes && waitTimes.histogram ? waitTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: (100 * bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) : null;
+    this.tripData = tripTimes && tripTimes.histogram ? tripTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
+
     const distance = this.computeDistance(graphParams, routes);
     const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
-    
+
     return (
       <div
         className={css`
@@ -319,6 +289,7 @@ minutes
                         <td>Travel time</td>
                         <td>
 Average time
+                          {' '}
                           {Math.round(tripTimes.avg)}
                           {' '}
 minutes (
@@ -355,7 +326,7 @@ minutes
                 </Card.Body>
               </Card>
 
-              <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />            
+              <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />
 
               <p />
 
@@ -380,8 +351,8 @@ minutes
                 <YAxis hideLine />
 
                 <VerticalRectSeries data={ this.headwayData } onNearestX={this._onNearestXHeadway} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
-                
-                <ChartLabel 
+
+                <ChartLabel
                 text="arrivals"
                 className="alt-y-label"
                 includeMargin={false}
@@ -390,23 +361,23 @@ minutes
                 style={{
                   transform: 'rotate(-90)',
                   textAnchor: 'end'
-                }}       
-                />       
-  
-                <ChartLabel 
+                }}
+                />
+
+                <ChartLabel
                 text="minutes"
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.90}
                 yPercent={0.94}
-                />       
+                />
 
                 { this.state.crosshairValues.headway && (
                     <Crosshair values={this.state.crosshairValues.headway}
                       style={REACT_VIS_CROSSHAIR_NO_LINE} >
                            <div className= 'rv-crosshair__inner__content'>
                              Arrivals: { Math.round(this.state.crosshairValues.headway[0].y)}
-                           </div>                 
+                           </div>
                    </Crosshair>)}
 
               </XYPlot>
@@ -418,6 +389,7 @@ minutes
               <h4>Wait Times</h4>
               <p>
 average wait time
+                {' '}
                 {Math.round(waitTimes.avg)}
                 {' '}
 minutes, max wait time
@@ -433,7 +405,7 @@ minutes
 
                 <VerticalRectSeries data={ this.waitData } onNearestX={this._onNearestXWaitTimes} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
 
-                <ChartLabel 
+                <ChartLabel
                 text="chance"
                 className="alt-y-label"
                 includeMargin={false}
@@ -442,23 +414,23 @@ minutes
                 style={{
                   transform: 'rotate(-90)',
                   textAnchor: 'end'
-                }}       
-                />       
-  
-                <ChartLabel 
+                }}
+                />
+
+                <ChartLabel
                 text="minutes"
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.90}
                 yPercent={0.94}
-                />       
+                />
 
                 { this.state.crosshairValues.wait && (
                     <Crosshair values={this.state.crosshairValues.wait}
                       style={REACT_VIS_CROSSHAIR_NO_LINE} >
                            <div className= 'rv-crosshair__inner__content'>
                              Chance: { Math.round(this.state.crosshairValues.wait[0].y)}%
-                           </div>                 
+                           </div>
                    </Crosshair>)}
 
               </XYPlot>
@@ -489,7 +461,7 @@ minutes
 
               <VerticalRectSeries data={ this.tripData } onNearestX={this._onNearestXTripTimes} stroke="white" fill={CHART_COLORS[1]} style={{strokeWidth: 2}}/>
 
-                <ChartLabel 
+                <ChartLabel
                 text="trips"
                 className="alt-y-label"
                 includeMargin={false}
@@ -498,23 +470,23 @@ minutes
                 style={{
                   transform: 'rotate(-90)',
                   textAnchor: 'end'
-                }}       
-                />       
-  
-                <ChartLabel 
+                }}
+                />
+
+                <ChartLabel
                 text="minutes"
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.90}
                 yPercent={0.94}
-                />       
+                />
 
                 { this.state.crosshairValues.trip && (
                   <Crosshair values={this.state.crosshairValues.trip}
                     style={REACT_VIS_CROSSHAIR_NO_LINE} >
                          <div className= 'rv-crosshair__inner__content'>
                            Trips: { Math.round(this.state.crosshairValues.trip[0].y)}
-                         </div>                 
+                         </div>
                  </Crosshair>)}
 
               </XYPlot>

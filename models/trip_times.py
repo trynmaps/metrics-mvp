@@ -1,28 +1,62 @@
-from datetime import datetime, date
-import pytz
-
-import pandas as pd
 import numpy as np
+import sortednp as snp
 
-from . import arrival_history
+def get_completed_trip_times(
+    s1_trip_values, s1_departure_time_values,
+    s2_trip_values, s2_arrival_time_values,
+    assume_sorted=False):
 
-def get_trip_times(df: pd.DataFrame, history: arrival_history.ArrivalHistory, tz: pytz.timezone, s1: str, s2: str):
-    s1_df = df.copy(deep = True)
+    # Returns an array of trip times in minutes from stop s1 to stop s2
+    # for trip IDs contained in both s1_trip_values and s2_trip_values.
+    #
+    # s1_trip_values and s1_departure_time_values are parallel arrays.
+    # s2_trip_values and s2_arrival_time_values are parallel arrays.
+    #
+    # The s1 arrays and s2 arrays may have different lengths.
+    #
+    # The trip times are not necessarily parallel to s1 or s2 arrays.
+    #
+    # If assume_sorted is true, the s1 and s2 arrays should already be sorted by trip ID (not by time).
 
-    if s1_df.empty:
-        s1_df['trip_min'] = []
-        return s1_df
+    if not assume_sorted:
+        s1_trip_values, s1_departure_time_values = sort_parallel(s1_trip_values, s1_departure_time_values)
+        s2_trip_values, s2_arrival_time_values = sort_parallel(s2_trip_values, s2_arrival_time_values)
 
-    s1_df = s1_df.sort_values('TIME', axis=0)
+    _, (s1_indexes, s2_indexes) = snp.intersect(s1_trip_values, s2_trip_values, indices=True)
 
-    # in case we don't see the vehicle arrive at s2 in the current run,
-    # look at the next time the same vehicle arrives back at s1, only look at s2 arrivals before that time
-    def find_dest_arrival_time(row):
-        next_return_time = history.find_next_arrival_time(s1, row.VID, row.TIME)
-        return history.find_next_arrival_time(s2, row.VID, row.TIME, next_return_time)
+    return (s2_arrival_time_values[s2_indexes] - s1_departure_time_values[s1_indexes]) / 60
 
-    s1_df['dest_arrival_time'] = s1_df.apply(find_dest_arrival_time, axis=1)
-    s1_df['trip_min'] = (s1_df.dest_arrival_time - s1_df.DEPARTURE_TIME)/60
-    s1_df['dest_arrival_time_str'] = s1_df['dest_arrival_time'].apply(lambda timestamp: datetime.fromtimestamp(timestamp, tz).time() if (timestamp is not None and not np.isnan(timestamp)) else None)
+def get_matching_trips_and_arrival_times(
+    s1_trip_values, s1_departure_time_values,
+    s2_trip_values, s2_arrival_time_values):
 
-    return s1_df
+    # Returns a tuple (array of trip times in minutes, array of s2 arrival times).
+    # The returned arrays are parallel to s1_trip_values and s1_departure_time_values.
+    #
+    # If no matching trip was found in s2_trip_values, the returned arrays will have the value np.nan
+    # at that index.
+    #
+    # The input arrays do not need to be sorted.
+
+    sort_order = np.argsort(s1_trip_values)
+    sorted_s1_trip_values = s1_trip_values[sort_order]
+
+    sorted_s2_trip_values, sorted_s2_arrival_time_values = sort_parallel(s2_trip_values, s2_arrival_time_values)
+
+    _, (sorted_s1_indexes, sorted_s2_indexes) = snp.intersect(sorted_s1_trip_values, sorted_s2_trip_values, indices=True)
+
+    # start with an array of all nans
+    s1_s2_arrival_time_values = np.full(len(s1_trip_values), np.nan)
+
+    # find original s1 indexes corresponding to sorted s1 indexes
+    result_indexes = sort_order[sorted_s1_indexes]
+
+    s1_s2_arrival_time_values[result_indexes] = sorted_s2_arrival_time_values[sorted_s2_indexes]
+
+    trip_min = (s1_s2_arrival_time_values - s1_departure_time_values) / 60
+
+    return trip_min, s1_s2_arrival_time_values
+
+def sort_parallel(arr, arr2):
+    sort_order = np.argsort(arr)
+    return arr[sort_order], arr2[sort_order]

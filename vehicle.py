@@ -49,13 +49,17 @@ if __name__ == '__main__':
     for d in dates:
         history = arrival_history.get_by_date(agency, route_id, d, version)
 
-        df = history.get_data_frame(vehicle_id=vid, tz=tz, start_time_str=start_time_str, end_time_str=end_time_str)
+        start_time = util.get_timestamp_or_none(d, start_time_str, tz)
+        end_time = util.get_timestamp_or_none(d, end_time_str, tz)
+
+        df = history.get_data_frame(vehicle_id=vid, start_time=start_time, end_time=end_time)
 
         if df.empty:
             print(f"no arrival times found for vehicle {vid} on {date_str}")
             continue
 
         df = df.sort_values('TIME', axis=0)
+        df['DATE_TIME'] = df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
 
         for row in df.itertuples():
             stop_id = row.SID
@@ -70,7 +74,7 @@ if __name__ == '__main__':
             dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
             dist_str = f'{row.DIST}'.rjust(3)
 
-            print(f"t={row.DATE_STR} {row.TIME_STR} ({row.TIME}) {dwell_time} vid:{row.VID} {dist_str}m stop:{stop_id} {row.DID}[{stop_index}] {stop_info.title if stop_info else '?'} dir:{dir_info.title if dir_info else '?'}")
+            print(f"t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  #{row.TRIP} {dist_str}m stop:{stop_id} {row.DID}[{stop_index}] {stop_info.title if stop_info else '?'} dir:{dir_info.title if dir_info else '?'}")
 
             num_stops += 1
 

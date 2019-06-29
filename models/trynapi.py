@@ -57,6 +57,11 @@ def get_state(agency, d: date, start_time, end_time, route_ids) -> CachedState:
 
     chunk_minutes = math.ceil(trynapi_max_chunk / len(route_ids))
 
+    trynapi_min_chunk = 15
+
+    chunk_minutes = max(chunk_minutes, trynapi_min_chunk)
+    num_errors = 0
+
     print(f"chunk_minutes = {chunk_minutes}")
 
     chunk_start_time = start_time
@@ -75,7 +80,15 @@ def get_state(agency, d: date, start_time, end_time, route_ids) -> CachedState:
             raise Exception(f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['errors']}")
 
         if 'message' in chunk_state: # trynapi returns an internal server error if you ask for too much data at once
-            raise Exception(f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}")
+            error = f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}"
+            if num_errors == 0 and chunk_minutes > 5:
+                print(error)
+                chunk_minutes = math.ceil(chunk_minutes / 2)
+                num_errors += 1
+                print(f"chunk_minutes = {chunk_minutes}")
+                continue
+            else:
+                raise Exception(f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}")
 
         if not ('data' in chunk_state):
             print(chunk_state)

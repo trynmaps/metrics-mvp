@@ -5,13 +5,12 @@ import json
 import requests
 import pandas as pd
 from . import nextbus, eclipses, util
-import pytz
 import boto3
 from pathlib import Path
 import gzip
 import numpy as np
 
-DefaultVersion = 'v3'
+DefaultVersion = 'v4'
 
 class ArrivalHistory:
     def __init__(self, agency, route_id, stops_data, start_time = None, end_time = None, version = DefaultVersion):
@@ -23,33 +22,23 @@ class ArrivalHistory:
         self.version = version
 
     def get_data_frame(self, stop_id = None, vehicle_id = None, direction_id = None,
-            start_time_str = None, end_time_str = None,
-            tz = None) -> pd.DataFrame:
+            start_time = None, end_time = None) -> pd.DataFrame:
         '''
         Returns a data frame for a subset of this arrival history, after filtering by the provided parameters:
             stop_id
             vehicle_id
             direction_id
-            start_time_str ("00:00" to "24:00")
-            end_time_str ("00:00" to "24:00")
+            start_time (unix timestamp)
+            end_time (unix timestamp)
 
-        Local times are computed relative to the provided timezone tz.
-        If tz is None, the columns DATE_TIME, DATE_STR, and TIME_STR will not be added,
-        and local time filters will be ignored.
         '''
         stops = self.stops_data
         data = []
 
-        d = datetime.fromtimestamp(self.start_time, tz).date()
-
-        start_dt = util.get_localized_datetime(d, start_time_str, tz) if start_time_str is not None else None
-        end_dt = util.get_localized_datetime(d, end_time_str, tz) if end_time_str is not None else None
-
         has_dist = has_departure_time = self.version and self.version[1] >= '3'
+        has_trip = self.version and self.version[1] >= '4'
 
-        columns = ("VID", "TIME", "DEPARTURE_TIME", "SID", "DID", "DIST")
-        if tz:
-            columns = columns + ("DATE_TIME", "DATE_STR", "TIME_STR")
+        columns = ("VID", "TIME", "DEPARTURE_TIME", "SID", "DID", "DIST", "TRIP")
 
         def add_stop(s):
             stop_info = stops[s]
@@ -64,19 +53,17 @@ class ArrivalHistory:
 
                     timestamp = arrival['t']
 
+                    if start_time is not None and timestamp < start_time:
+                        continue
+                    if end_time is not None and timestamp >= end_time:
+                        break # arrivals for each stop+direction are in timestamp order, so can stop here
+
                     departure_time = arrival['e'] if has_departure_time else timestamp
                     dist = arrival['d'] if has_dist else np.nan
 
-                    values = (v, timestamp, departure_time, s, did, dist)
-                    if tz:
-                        dt = datetime.fromtimestamp(timestamp, tz)
-                        if start_dt is not None and dt < start_dt:
-                            continue
-                        if end_dt is not None and dt >= end_dt:
-                            break # arrivals for each stop+direction are in timestamp order, so can stop here
-                        values = values + (dt, dt.strftime('%Y-%m-%d'), dt.strftime('%H:%M:%S'))
+                    trip = arrival['i'] if has_trip else -1
 
-                    data.append(values)
+                    data.append((v, timestamp, departure_time, s, did, dist, trip))
 
         if stop_id is not None:
             if stop_id in stops:
@@ -103,22 +90,6 @@ class ArrivalHistory:
                             closest_time_diff = time_diff
 
         return closest_time
-
-    def find_next_arrival_time(self, stop_id, vehicle_id, after_time, before_time = None):
-        '''
-        Get the next timestamp when vehicle_id arrives at stop_id
-        after the timestamp after_time and optionally before the timestamp before_time.
-        '''
-        if stop_id in self.stops_data:
-            for direction_id, arrivals in self.stops_data[stop_id]['arrivals'].items():
-                for arrival in arrivals:
-                    arrival_time = arrival['t']
-                    # todo: not necessarily the next arrival time if the stop has multiple directions
-                    if arrival_time > after_time and \
-                        (before_time is None or arrival_time < before_time) and \
-                        (vehicle_id == arrival['v'] or vehicle_id is None):
-                        return arrival_time
-        return None
 
     @classmethod
     def from_data(cls, data):
@@ -158,7 +129,7 @@ def make_stops_data(arrivals: pd.DataFrame):
                 arrivals_data = []
 
                 for row in stop_direction_arrivals.itertuples():
-                    arrivals_data.append({'t': row.TIME, 'e': row.DEPARTURE_TIME, 'd': round(row.DIST), 'v': row.VID})
+                    arrivals_data.append({'t': row.TIME, 'e': row.DEPARTURE_TIME, 'd': round(row.DIST), 'v': row.VID, 'i': row.TRIP})
 
                 stop_directions_data[stop_direction_id] = arrivals_data
 

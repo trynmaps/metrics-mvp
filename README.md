@@ -1,4 +1,5 @@
 # OpenTransit's Metrics MVP
+[Check out our demo!](https://opentransit.herokuapp.com/)
 
 ## Getting started
 
@@ -79,7 +80,7 @@ To get arrival times for one or more routes/days that haven't been precomputed y
 to generate the JSON files locally (if using Docker, run this command from a shell within the Docker container
 `docker exec -it metrics-flask bash`), e.g:
 ```
-python compute_arrivals.py --date=2019-03-01 --route 1 2 47 38 38X
+python compute_arrivals.py --date=2019-06-06 --route 1 2 47 38 38X
 ```
 
 The JSON files with computed arrivals will be stored in your local `data/` directory.
@@ -95,27 +96,27 @@ directory, so that if you run `compute_arrivals.py` again with the same date and
 
 Show overall statistics for a particular route:
 ```
-python route.py --date=2019-04-08 --route=1
+python route.py --date=2019-06-06 --route=1
 ```
 
 Show headways between buses at a particular stop:
 ```
-python headways.py --date=2019-04-08 --route=1 --stop=6290
+python headways.py --date=2019-06-06 --route=1 --stop=6290
 ```
 
 Show trips between two stops:
 ```
-python trips.py --date=2019-04-08 --route=1 --s1=6314 --s2=6304
+python trips.py --date=2019-06-06 --route=1 --s1=6314 --s2=6304
 ```
 
 Show stops visited by a particular vehicle:
 ```
-python vehicle.py --date=2019-04-08 --route=1 --vid=5792
+python vehicle.py --date=2019-06-06 --route=1 --vid=5760
 ```
 
 Show summary statistics of waiting times at a particular stop:
 ```
-python waits.py --date=2019-02-01 --route=12 --stop=3476
+python waits.py --date=2019-06-06 --route=12 --stop=3476
 ```
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
@@ -177,11 +178,24 @@ To make changes, make sure you've been added to the trynmaps organization on Git
 
 Commit your local changes to a feature branch (i.e. not master), then submit a pull request on GitHub.
 
+
+## Tech Stack Decisions
+
+### Overall
+- Docker - We use Docker to ensure a consistent environment across all machines
+- Docker Compose - We use Docker Compose to run multiple containers at once
+
+### Frontend
+- NPM - Due to both the NPM and Yarn package managers offering roughly the same performance, Yarn being a superset of NPM, and there was nothing in the Yarn roadmap which would indicate it would make it worthwhile in the future, we went with NPM
+- React - Our team members switched projects over from OpenTransit Map and decided to use the same frontend framework
+- Material UI - We decided to migrate to Material UI, because it has zero dependence on jQuery (unlike Bootstrap), it is the most popular React framework, and it offers a more fluid and pleasant experience for mobile users
+- Functional Components - We migrated away from ES6 React Components and introduced [Functional Components](https://reactjs.org/docs/components-and-props.html) instead due to the simplification of component logic and the ability to use React Hooks
+- Redux Thunk - We use Redux for state management and to simplify our application and component interaction, and Thunk as middleware
+- React Hooks - We use React Hooks to manage interactions with state management
+
 ## Notes for developers
 
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt`
 so other contributors have the latest versions of required packages.
 
-## Demo
-
-[Check out this demo!](https://opentransit.herokuapp.com/)
+If you're on a Mac and you experience issues with Docker eating your CPU cycles and battery, set `CHOKIDAR_USEPOLLING=false` inside `docker-compose.yml`. Note: this will disable hot reloading.
