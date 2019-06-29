@@ -2,7 +2,7 @@ importScripts(
     "https://unpkg.com/kdbush@3.0.0/kdbush.min.js",
     'https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js',
     "https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js",
-    'common.js?v11'
+    'common.js?v16'
 );
 
 let locations;
@@ -66,11 +66,12 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, 
 
     if (!tripTimes)
     {
-        var timePath = getTimePath(timeStr);
+        let timePath = getTimePath(timeStr);
+        let statPath = getStatPath(stat);
 
-        let s3Url = 'https://opentransit-stats.s3.amazonaws.com/trip_times/i1/sf-muni/'+
+        let s3Url = 'https://opentransit-stats.s3.amazonaws.com/trip-times/i1/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
-            '/trip_times_i1_sf-muni_'+dateStr+'_'+stat+timePath+'.json.gz?v2';
+            '/trip-times_i1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz?v2';
 
         tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
             sendError("error loading trip times: " + e);
@@ -88,7 +89,49 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, 
     {
         return null;
     }
-    return directionTripTimes[startStopId];
+    let tripTimeValues = directionTripTimes[startStopId];
+
+    if (stat === 'median')
+    {
+        return tripTimeValues;
+    }
+    if (stat === 'p10')
+    {
+        return getTripTimeStat(tripTimeValues, 0);
+    }
+    if (stat === 'p90')
+    {
+        return getTripTimeStat(tripTimeValues, 2);
+    }
+}
+
+function getTripTimeStat(tripTimeValues, index)
+{
+    if (!tripTimeValues)
+    {
+        return null;
+    }
+
+    const statValues = {};
+    for (let endStopId in tripTimeValues)
+    {
+        statValues[endStopId] = tripTimeValues[endStopId][index];
+    }
+    return statValues;
+}
+
+function getStatPath(stat)
+{
+    switch (stat)
+    {
+        case 'median':
+            return 'median';
+        case 'p10':
+        case 'p90':
+            return 'p10-median-p90';
+        default:
+            throw new Error('unknown stat ' + stat);
+    }
 }
 
 async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr, stat)
@@ -98,12 +141,13 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
     if (!waitTimes)
     {
         var timePath = getTimePath(timeStr);
+        let statPath = getStatPath(stat);
 
-        let s3Url = 'https://opentransit-stats.s3.amazonaws.com/wait_times/w1/sf-muni/'+
+        let s3Url = 'https://opentransit-stats.s3.amazonaws.com/wait-times/w1/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
-            '/wait_times_w1_sf-muni_'+dateStr+'_median'+timePath+'.json.gz?v2';
+            '/wait-times_w1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz?v2';
 
-        console.log(s3Url);
+        //console.log(s3Url);
 
         waitTimes = waitTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
             sendError("error loading wait times: " + e);
@@ -122,7 +166,20 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
     {
         return null;
     }
-    return directionWaitTimes[stopId];
+    let waitTimeValues = directionWaitTimes[stopId];
+
+    if (stat === 'median')
+    {
+        return waitTimeValues;
+    }
+    if (stat === 'p10')
+    {
+        return waitTimeValues ? waitTimeValues[0] : null;
+    }
+    if (stat === 'p90')
+    {
+        return waitTimeValues ? waitTimeValues[2] : null;
+    }
 }
 
 function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, stat, computeId)
@@ -209,6 +266,8 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
         let res = findStopDirectionAndIndex(stopId, routeInfo);
         if (res)
         {
+            //console.log(`starting from ${stopId} (${routeInfo.stops[stopId].title}) on ${routeInfo.id}`);
+
             let { direction, index } = res;
 
             let tripMin = reachedLocation.tripMin;
@@ -260,7 +319,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
 
                 if (nextTripMin <= maxTripMin)
                 {
-                    let nextLocId = nextStopInfo.location_id;
+                    let nextLocId = `${nextStopInfo.lat},${nextStopInfo.lon}`;
                     if (bestTripMins[nextLocId] < nextTripMin)
                     {
                         continue;
@@ -404,7 +463,6 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
                             throw e;
                         })
                         .then(function(routeInfo) {
-                            //console.log(`starting from ${stop.id} (${routeInfo.stops[stop.id].title}) on ${stop.route_id}`);
                             return addReachableStopsAfterStop(stop.id, routeInfo, reachedLocation);
                         });
                 });
@@ -448,12 +506,45 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
     processLocations();
 }
 
+function makeLocations(routes)
+{
+    let locationsMap = {};
+    let locations = [];
+    for (const route of routes)
+    {
+        for (const stopId in route.stops)
+        {
+            const stopInfo = route.stops[stopId];
+            const locationKey = `${stopInfo.lat},${stopInfo.lon}`;
+            if (!locationsMap[locationKey])
+            {
+                const locInfo = {
+                    id: locationKey,
+                    lat_lon: [stopInfo.lat, stopInfo.lon],
+                    title: stopInfo.title,
+                    stops: []
+                };
+
+                locationsMap[locationKey] = locInfo;
+                locations.push(locInfo);
+            }
+            locationsMap[locationKey].stops.push({
+                route_id: route.id,
+                id: stopId
+            });
+        }
+    }
+    return locations;
+}
+
 async function init()
 {
-    locations = await loadJson('/locations').catch(function(e) {
+    const routes = await loadRoutes().catch(function(e) {
         sendError("error loading locations: " + e);
         throw e;
     });
+
+    locations = makeLocations(routes);
 
     index = new KDBush(locations, p => p.lat_lon[0], p => p.lat_lon[1]);
 

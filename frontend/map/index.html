@@ -7,7 +7,7 @@
    integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
    crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
-<script src="common.js?v11"></script>
+<script src="common.js?v16"></script>
 </head>
 <style type='text/css'>
 #mapid { height: 100%; }
@@ -69,10 +69,17 @@ body { padding:0; margin:0; }
 
 let map = L.map('mapid').setView([37.772,-122.442], 13);
 
+L.tileLayer("http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png", {
+    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+    maxZoom: 18,
+    id: 'osm'
+}).addTo(map);
+
+/*
 loadJson('/config?r='+Math.random()).then(function(config) {
     if (config.mapbox_access_token)
     {
-        let tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
             maxZoom: 18,
             id: 'mapbox.streets',
@@ -82,6 +89,7 @@ loadJson('/config?r='+Math.random()).then(function(config) {
 }).catch(function(e) {
     showError("Error loading map config: " + e);
 });
+*/
 
 /*
 let imageUrl = 'https://www.dropbox.com/s/sgnbbgef9r8f25j/sfmta-webmap-august2017-j2kl-0.8-256.png?dl=1',
@@ -556,21 +564,12 @@ function selectAllRoutes(checked)
     recomputeIsochrones();
 }
 
-loadJson('/routes').then(function(routes) {
+loadRoutes().then(function(routes) {
 
     for (let route of routes) {
 
         let defaultEnabled = defaultDisabledRoutes.indexOf(route.id) === -1;
         //let defaultEnabled = defaultEnabledRoutes.indexOf(route.id) !== -1;
-        if (defaultEnabled)
-        {
-            // preload route data before user clicks
-            loadRoute(route.id)
-                .then(function(routeInfo) {})
-                .catch(function(e) {
-                    console.log("error preloading route config: " + e);
-                });
-        }
 
         let routeContainer = document.createElement('div');
         let label = document.createElement('label');
@@ -659,7 +658,6 @@ controls.onAdd = function (map) {
     var statOptions = {
         'p10': '10th percentile',
         'median': 'median',
-        'avg': 'average',
         'p90': '90th percentile',
     };
     for (let stat in statOptions)

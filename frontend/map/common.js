@@ -20,20 +20,40 @@ function loadJson(url) {
     });
 }
 
-let routesMap = {};
+let allRoutes = null;
+
+function loadRoutes()
+{
+    if (allRoutes)
+    {
+        return Promise.resolve(allRoutes);
+    }
+    else
+    {
+        return loadJson("/routes?v4").then(function(routes) {
+            allRoutes = routes;
+            return routes;
+        });
+    }
+}
+
+let routesMap = null;
+
 function loadRoute(routeId)
 {
-    if (routesMap[routeId])
+    if (routesMap)
     {
         return Promise.resolve(routesMap[routeId]);
     }
     else
     {
-        return loadJson("/route?x=2&route_id=" + routeId)
-            .then(function(routeInfo) {
-                routesMap[routeId] = routeInfo;
-                return routeInfo;
-            });
+        return loadRoutes().then(function(routes) {
+            routesMap = {};
+            for (const route of routes) {
+                routesMap[route.id] = route;
+            }
+            return routesMap[routeId];
+        });
     }
 }
 

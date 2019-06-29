@@ -262,36 +262,6 @@ def metrics_by_interval():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-def get_cached_json_file_from_s3(filename):
-    cache_path = f'{util.get_data_dir()}/{filename}'
-    try:
-        with open(cache_path, 'r') as f:
-            json_data = f.read()
-    except FileNotFoundError:
-        s3_bucket = arrival_history.get_s3_bucket()
-        s3_path = filename
-
-        s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
-        r = requests.get(s3_url)
-
-        if r.status_code == 404:
-            raise FileNotFoundError(f"{s3_url} not found")
-        if r.status_code != 200:
-            raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
-
-        json_data = r.text
-
-        with open(cache_path, "w") as f:
-            f.write(json_data)
-
-    res = Response(json_data, mimetype='application/json')
-    res.headers['Cache-Control'] = 'max-age=3600'
-    return res
-
-@app.route('/locations', methods=['GET'])
-def cached_locations():
-    return get_cached_json_file_from_s3('locations_t1_sf-muni.json')
-
 @app.route('/config', methods=['GET'])
 def config():
     res = Response(json.dumps({"mapbox_access_token": os.environ.get('MAPBOX_ACCESS_TOKEN')}), mimetype='application/json')
