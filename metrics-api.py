@@ -45,7 +45,7 @@ def routes():
 
     res = Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
     if not DEBUG:
-        res.headers['Cache-Control'] = 'public; max-age=3600'
+        res.headers['Cache-Control'] = 'max-age=3600'
     return res
 
 @app.route('/api/route', methods=['GET'])
@@ -74,7 +74,7 @@ def route_config():
     }
     res = Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
     if not DEBUG:
-        res.headers['Cache-Control'] = 'public; max-age=3600'
+        res.headers['Cache-Control'] = 'max-age=3600'
     return res
 
 @app.route('/api/metrics', methods=['GET'])
@@ -171,7 +171,7 @@ def metrics_page():
 
     res = Response(json.dumps(data, indent=2), mimetype='application/json')
     if not DEBUG:
-        res.headers['Cache-Control'] = 'public; max-age=60'
+        res.headers['Cache-Control'] = 'max-age=60'
     return res
 
 def make_error_response(params, error, status):

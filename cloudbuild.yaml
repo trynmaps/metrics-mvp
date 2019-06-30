@@ -1,4 +1,22 @@
-#cloudbuild.yaml
 steps:
-- name: 'docker/compose:1.19.0'
-  args: ['up', '-d']
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '--target', 'flask', '-t', 'gcr.io/$PROJECT_ID/metrics-flask:$REVISION_ID', '.' ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'push', 'gcr.io/$PROJECT_ID/metrics-flask:$REVISION_ID' ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '--target', 'web', '-t', 'gcr.io/$PROJECT_ID/metrics-web:$REVISION_ID', '.' ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'push', 'gcr.io/$PROJECT_ID/metrics-web:$REVISION_ID' ]
+- name: 'gcr.io/cloud-builders/kubectl'
+  args: [ 'set', 'image', 'deployment/web', 'web=gcr.io/$PROJECT_ID/metrics-web:$REVISION_ID' ]
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=${_COMPUTE_ZONE}'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=${_CONTAINER_CLUSTER}'
+- name: 'gcr.io/cloud-builders/kubectl'
+  args: [ 'set', 'image', 'deployment/flask', 'flask=gcr.io/$PROJECT_ID/metrics-flask:$REVISION_ID' ]
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=${_COMPUTE_ZONE}'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=${_CONTAINER_CLUSTER}'
+images:
+- 'gcr.io/$PROJECT_ID/metrics-flask:$REVISION_ID'
+- 'gcr.io/$PROJECT_ID/metrics-web:$REVISION_ID'

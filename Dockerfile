@@ -7,7 +7,7 @@ COPY ./frontend /app/frontend
 WORKDIR /app/frontend
 CMD ["npm","start"]
 
-FROM python:3.7.2-slim-stretch AS flask
+FROM python:3.7.2-slim-stretch AS flask-dev
 RUN mkdir /app
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
@@ -16,6 +16,10 @@ RUN mkdir /app/data
 WORKDIR /app
 ENV FLASK_APP=metrics-api.py
 CMD ["flask", "run", "--host", "0.0.0.0"]
+
+FROM flask-dev as flask
+ENV PORT 5000
+CMD gunicorn --bind 0.0.0.0:$PORT metrics-api:app
 
 FROM react-dev as react-build
 RUN cd /app/frontend && npm run build
