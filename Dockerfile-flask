@@ -1,8 +1,0 @@
-FROM python:3.7.2-slim-stretch AS flask
-RUN mkdir /app
-COPY . /app
-RUN pip install -r /app/requirements.txt
-RUN mkdir /app/data
-WORKDIR /app
-ENV FLASK_APP=metrics-api.py
-CMD ["flask", "run", "--host", "0.0.0.0"]
