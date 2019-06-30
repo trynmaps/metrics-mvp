@@ -3,7 +3,8 @@ services:
   flask:
     container_name: metrics-flask
     build:
-      dockerfile: Dockerfile-flask
+      dockerfile: Dockerfile
+      target: flask
       context: .
     ports:
       - "5000:5000"

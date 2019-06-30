@@ -1,8 +1,7 @@
 build:
   docker:
     web:
-        dockerfile: Dockerfile
-        target: web
-    flask: Dockerfile-flask
+      dockerfile: Dockerfile
+      target: all-in-one
 run:
-  flask: gunicorn --bind 0.0.0.0:5000 metrics-api:app
+  web: gunicorn --bind 0.0.0.0:${PORT} metrics-api:app

@@ -279,11 +279,21 @@ def metrics_by_interval():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-@app.route('/')
-def root():
-    return """<h2>Hello!</h2>
-        <p>This is the API server.</p>"""
+@app.route('/frontend/build/<path:path>')
+def frontend_build(path):
+    return send_from_directory('frontend/build', path)
 
+@app.route('/frontend/public/<path:path>')
+def frontend_public(path):
+    return send_from_directory('frontend/public', path)
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def wildcard(path):
+    try:
+        return send_from_directory('frontend/build', 'index.html')
+    except Exception as e:
+        return """<h2>Hello!</h2><p>This is the API server.</p>"""
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
