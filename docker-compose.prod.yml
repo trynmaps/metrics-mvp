@@ -1,0 +1,17 @@
+version: "3.7"
+services:
+  flask:
+    environment:
+      FLASK_DEBUG: 0
+  react:
+    entrypoint: ["echo", "react dev server disabled in production mode"]
+  web:
+    container_name: metrics-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    ports:
+      - '8080:80'

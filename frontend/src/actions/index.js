@@ -4,7 +4,7 @@ import { metricsBaseURL } from '../config';
 export function fetchGraphData(params) {
   return function(dispatch) {
     axios
-      .get('/metrics', {
+      .get('/api/metrics', {
         params,
         baseURL: metricsBaseURL,
       })
@@ -34,7 +34,7 @@ export function resetGraphData() {
 export function fetchIntervalData(params) {
   return function(dispatch) {
     axios
-      .get('/metrics_by_interval', {
+      .get('/api/metrics_by_interval', {
         params,
         baseURL: metricsBaseURL,
       })
@@ -64,7 +64,7 @@ export function resetIntervalData() {
 export function fetchRoutes() {
   return function(dispatch) {
     axios
-      .get('/routes', {
+      .get('/api/routes', {
         baseURL: metricsBaseURL,
       })
       .then(response => {
@@ -79,7 +79,7 @@ export function fetchRoutes() {
 export function fetchRouteConfig(routeId) {
   return function(dispatch) {
     axios
-      .get('/route', {
+      .get('/api/route', {
         params: { route_id: routeId },
         baseURL: metricsBaseURL,
       })
