@@ -4,9 +4,17 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'push', 'gcr.io/$PROJECT_ID/metrics-flask:$REVISION_ID' ]
 - name: 'gcr.io/cloud-builders/docker'
+  args: [ 'tag', 'gcr.io/$PROJECT_ID/metrics-flask:$REVISION_ID', 'gcr.io/$PROJECT_ID/metrics-flask:latest' ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'push', 'gcr.io/$PROJECT_ID/metrics-flask:latest' ]
+- name: 'gcr.io/cloud-builders/docker'
   args: [ 'build', '--target', 'web', '-t', 'gcr.io/$PROJECT_ID/metrics-web:$REVISION_ID', '.' ]
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'push', 'gcr.io/$PROJECT_ID/metrics-web:$REVISION_ID' ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'tag', 'gcr.io/$PROJECT_ID/metrics-web:$REVISION_ID', 'gcr.io/$PROJECT_ID/metrics-web:latest' ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'push', 'gcr.io/$PROJECT_ID/metrics-web:latest' ]
 - name: 'gcr.io/cloud-builders/kubectl'
   args: [ 'set', 'image', 'deployment/web', 'web=gcr.io/$PROJECT_ID/metrics-web:$REVISION_ID' ]
   env:
