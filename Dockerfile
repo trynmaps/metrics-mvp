@@ -25,6 +25,7 @@ FROM react-dev as react-build
 RUN cd /app/frontend && npm run build
 
 FROM flask AS all-in-one
+ENV METRICS_ALL_IN_ONE 1
 COPY --from=react-build /app/frontend/build /app/frontend/build
 
 FROM nginx:1.16.0-alpine as web

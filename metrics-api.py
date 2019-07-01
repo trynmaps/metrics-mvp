@@ -279,20 +279,22 @@ def metrics_by_interval():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-@app.route('/frontend/build/<path:path>')
-def frontend_build(path):
-    return send_from_directory('frontend/build', path)
+if os.environ.get('METRICS_ALL_IN_ONE') == '1':
+    @app.route('/frontend/build/<path:path>')
+    def frontend_build(path):
+        return send_from_directory('frontend/build', path)
 
-@app.route('/frontend/public/<path:path>')
-def frontend_public(path):
-    return send_from_directory('frontend/public', path)
+    @app.route('/frontend/public/<path:path>')
+    def frontend_public(path):
+        return send_from_directory('frontend/public', path)
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def wildcard(path):
-    try:
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def wildcard(path):
         return send_from_directory('frontend/build', 'index.html')
-    except Exception as e:
+else:
+    @app.route('/')
+    def root():
         return """<h2>Hello!</h2><p>This is the API server.</p>"""
 
 if __name__ == '__main__':
