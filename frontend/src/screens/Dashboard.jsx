@@ -18,7 +18,6 @@ import {
   fetchGraphData,
   fetchIntervalData,
   fetchRoutes,
-  fetchRouteConfig,
   resetGraphData,
   resetIntervalData,
 } from '../actions';
@@ -121,7 +120,6 @@ const mapDispatchToProps = dispatch => ({
   resetIntervalData: params => dispatch(resetIntervalData()),
   fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
-  fetchRouteConfig: routeId => dispatch(fetchRouteConfig(routeId)),
 });
 
 Dashboard.propTypes = {

@@ -1,98 +1,48 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { css } from 'emotion';
-import DatePicker from 'react-date-picker';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import PropTypes from 'prop-types';
-import {handleRouteSelect} from '../actions';
+import { handleGraphParams } from '../actions';
 
 import DropdownControl from './DropdownControl';
 import './ControlPanel.css';
 
 class ControlPanel extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      routeId: '12',
-      directionId: null,
-      secondStopList: [],
-      firstStopId: null,
-      secondStopId: null,
-      date: new Date('2019-06-06T03:50'),
-      startTimeStr: null,
-      endTimeStr: null,
-    };
-  }
 
-  componentDidUpdate() {
-    const selectedRoute = this.getSelectedRouteInfo();
-    if (selectedRoute) {
-      if (!selectedRoute.directions) {
-        console.log("Shouldn't happen.");
-        debugger;
-        // xxx this.props.fetchRouteConfig(this.state.routeId);
-      } else if (!this.state.directionId && selectedRoute.directions.length > 0) {
-        this.setState({ directionId: selectedRoute.directions[0].id });
-      }
-    }
-  }
-
-  updateGraphData = () => {
-    const {
-      routeId, directionId, firstStopId, date, secondStopId, startTimeStr, endTimeStr
-    } = this.state;
-
-    this.props.resetGraphData();
-    if (firstStopId != null && routeId != null) {
-      const formattedDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-      const graphParams = {
-        route_id: routeId,
-        direction_id: directionId,
-        start_stop_id: firstStopId,
-        end_stop_id: secondStopId,
-        start_time: startTimeStr,
-        end_time: endTimeStr,
-        date: formattedDate,
-      };
-      const intervalParams = Object.assign({}, graphParams);
-      delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
-      this.props.fetchData(graphParams, intervalParams);
-    }
-  }
-
-  onSubmit = (event) => {
-    event.preventDefault();
-    this.updateGraphData();
-  }
-
-  setDate = date => this.setState({ date }, this.updateGraphData)
+  setDate = date => this.props.onGraphParams({ date: date });
 
   setTimeRange = timeRange => {
     if (!timeRange) {
-      this.setState({ startTimeStr: null, endTimeStr: null }, this.updateGraphData);
+      this.props.onGraphParams({ start_time: null, end_time: null });
     } else {
       var timeRangeParts = timeRange.split('-');
-      this.setState({ startTimeStr: timeRangeParts[0], endTimeStr: timeRangeParts[1] }, this.updateGraphData);
+      this.props.onGraphParams({ start_time: timeRangeParts[0], end_time: timeRangeParts[1] });
     }
   }
 
-  setRouteId = routeId => this.setState({ routeId }, this.selectedRouteChanged)
+  setRouteId = routeId => {
+    this.selectedRouteChanged(routeId);
+  };
 
-  setDirectionId = directionId => this.setState({ directionId }, this.selectedDirectionChanged)
+  setDirectionId = directionId => this.props.onGraphParams({
+    direction_id: directionId,
+    start_stop_id: null,
+    end_stop_id: null,
+  });
 
-  onSelectSecondStop = (firstStopId, selectFirstStopCallback) => {
-    selectFirstStopCallback ? selectFirstStopCallback(firstStopId)
-      : this.setState({ secondStopId: firstStopId }, this.selectedStopChanged);
-  }
-
-  onSelectFirstStop = (stopId) => {
-    const { directionId, secondStopId } = this.state;
-    const selectedRoute = { ...this.getSelectedRouteInfo() };
+  generateSecondStopList(selectedRoute, directionId, stopId) {
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
-    const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
-    const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
+    const secondStopListIndex = stopId ? secondStopInfo.stops.indexOf(stopId) : 0;
+    return secondStopInfo.stops.slice(secondStopListIndex + 1);
+  }
+  
+  onSelectFirstStop = (stopId) => {
+    const directionId = this.props.graphParams.direction_id;
+    const secondStopId = this.props.graphParams.end_stop_id;
+    const selectedRoute = { ...this.getSelectedRouteInfo() };
+    const secondStopList = this.generateSecondStopList(selectedRoute, directionId, stopId);
 
     let newSecondStopId = secondStopId;
 
@@ -106,88 +56,72 @@ class ControlPanel extends Component {
         newSecondStopId = secondStopList.length >= nStops ? secondStopList[nStops-1] :
             secondStopList[secondStopList.length-1];
     }
-    this.setState({ firstStopId: stopId, secondStopId: newSecondStopId, secondStopList }, this.selectedStopChanged);
+    this.props.onGraphParams({ start_stop_id: stopId, end_stop_id: newSecondStopId});
   }
 
   onSelectSecondStop = (stopId) => {
-    this.setState({ secondStopId: stopId }, this.selectedStopChanged);
+    this.props.onGraphParams({ end_stop_id: stopId });
   }
 
-  selectedRouteChanged = () => {
-    const {onRouteSelect} = this.props;
-    const { routeId } = this.state;
-    const selectedRoute = this.getSelectedRouteInfo();
+  selectedRouteChanged = (routeId) => {
+      
+    const selectedRoute = this.props.routes ? this.props.routes.find(route => route.id === routeId) : null;
+
     if (!selectedRoute) {
       return;
     }
-    //onRouteSelect(selectedRoute);
-    if (!selectedRoute.directions) {
-      this.setDirectionId(null);
-      console.log("also shouldn't happen");
-      debugger;
-      //xxx this.props.fetchRouteConfig(routeId);
-    } else {
-      const directionId = selectedRoute.directions.length > 0 ? selectedRoute.directions[0].id : null;
-      this.setDirectionId(directionId);
-    }
+
+    const directionId = selectedRoute.directions.length > 0 ? selectedRoute.directions[0].id : null;
+    //console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
+    
+    this.props.onGraphParams({ route_id: routeId, direction_id: directionId, start_stop_id: null, end_stop_id: null });
   }
 
   getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
     return selectedRoute.directions.find(dir => dir.id === directionId);
   }
 
+ 
+  /* this code attempts to preserve the from stop if the direction changes 
+  
+   * the from stop is in the new stop list.  It doesn't check the to stop, so
+   * either it needs to do that, or we bypass this and just always clear both
+   * stops on a direction change.
+
   selectedDirectionChanged = () => {
-    const { firstStopId, directionId } = this.state;
+    const firstStopId = this.props.graphParams.start_stop_id;
+    const directionId = this.props.graphParams.direction_id;
     const selectedRoute = this.getSelectedRouteInfo();
     const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
       ? this.getStopsInfoInGivenDirection(selectedRoute, directionId) : null;
     if (firstStopId) {
       if (!selectedDirection || selectedDirection.stops.indexOf(firstStopId) === -1) {
-        this.setState({ firstStopId: null, secondStopId: null }, this.selectedStopChanged);
+        this.props.onGraphParams({ start_stop_id: null, end_stop_id: null });
       }
     }
   }
-
-  selectedStopChanged = () => {
-    this.updateGraphData();
-  }
-
-  handleTimeChange(newTime) {
-    this.setState({ time: newTime.formatted });
-  }
+     */
 
   getSelectedRouteInfo() {
     const { routes } = this.props;
-    const { routeId } = this.state;
+    const routeId = this.props.graphParams.route_id;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
-  /*
-  sendRouteStopsToMap = () => {
-    const {directionId} = this.state;
-    const {onRouteSelect} = this.props;
-    const selectedRoute = this.getSelectedRouteInfo();
-    onRouteSelect({
-      'Inbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
-      'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
-    });
-  }*/
-  // toggleTimekeeper(val) {
-  //   // this.setState({ displayTimepicker: val });
-  // }
 
   render() {
-    const { routes } = this.props;
-    const {
-      date, routeId, directionId, firstStopId, secondStopId, secondStopList, startTimeStr, endTimeStr
-    } = this.state;
+    const { routes, graphParams } = this.props;
 
-    const timeRange = (startTimeStr || endTimeStr) ? (startTimeStr + '-' + endTimeStr) : '';
+    const timeRange = (graphParams.start_time || graphParams.end_time) ? (graphParams.start_time + '-' + graphParams.end_time) : '';
 
     const selectedRoute = this.getSelectedRouteInfo();
-    let selectedDirection =null;
-    if (selectedRoute && selectedRoute.directions && directionId) {
-      selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
-      /*this.sendRouteStopsToMap();*/
+    let selectedDirection = null;
+    if (selectedRoute && selectedRoute.directions && graphParams.direction_id) {
+      selectedDirection = selectedRoute.directions.find(dir => dir.id === graphParams.direction_id);
+    }
+    
+    let secondStopList = null;
+    if (selectedDirection) {
+      secondStopList = this.generateSecondStopList(selectedRoute, graphParams.direction_id, graphParams.start_stop_id);
     }
 
     return (
@@ -203,15 +137,17 @@ class ControlPanel extends Component {
       }
       >
         <Card bg="light" style={{ color: 'black' }}>
+            { /* The date picker is broken because we're no longer passing in a date in the format
+                 it expects.  To be replaced with a new Material UI component.
           <DatePicker
-            value={date}
+            value={graphParams.date}
             onChange={this.setDate}
             className={css`
            padding: 10px!important;
            display: block;
            width: 100%
          `}
-          />
+          />  */ }
         <ListGroup.Item>
           <DropdownControl
             title="Time Range"
@@ -239,7 +175,7 @@ class ControlPanel extends Component {
                   title="Route"
                   name="route"
                   variant="info"
-                  value={routeId}
+                  value={graphParams.route_id}
                   options={
                     (routes || []).map(route => ({
                       label: route.title, key: route.id,
@@ -256,7 +192,7 @@ class ControlPanel extends Component {
                     title="Direction"
                     name="direction"
                     variant="info"
-                    value={directionId}
+                    value={graphParams.direction_id}
                     onSelect={this.setDirectionId}
                     options={
                   (selectedRoute.directions || []).map(direction => ({
@@ -275,7 +211,7 @@ class ControlPanel extends Component {
                       title="From Stop"
                       name="stop"
                       variant="info"
-                      value={firstStopId}
+                      value={graphParams.start_stop_id}
                       onSelect={this.onSelectFirstStop}
                       options={
                     (selectedDirection.stops || []).map(firstStopId => ({
@@ -296,7 +232,7 @@ class ControlPanel extends Component {
                       title="To Stop"
                       name="stop"
                       variant="info"
-                      value={secondStopId}
+                      value={graphParams.end_stop_id}
                       onSelect={this.onSelectSecondStop}
                       options={
                     (secondStopList || []).map(secondStopId => ({
@@ -320,14 +256,15 @@ ControlPanel.propTypes = {
   fetchGraphData: PropTypes.func.isRequired,
 };
 
-// TODO: for this entire component, use graphParams values in Redux instead of local state.
+// for this entire component, now using graphParams values in Redux instead of local state.
 const mapStateToProps = state => ({
-  routeId: state.routes.graphData.route_id
+  graphParams: state.routes.graphParams
 });
 
 const mapDispatchToProps = dispatch => {
   return ({
-    onRouteSelect: route => dispatch(handleRouteSelect(route))
+    onGraphParams: params => dispatch(handleGraphParams(params)),
   })
 }
-export default connect(null,mapDispatchToProps)(ControlPanel);
+
+export default connect(mapStateToProps, mapDispatchToProps)(ControlPanel);

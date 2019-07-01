@@ -76,28 +76,6 @@ export function fetchRoutes() {
   };
 }
 
-export function fetchRouteConfig(routeId) {
-  return function(dispatch) {
-    axios
-      .get('/route', {
-        params: { route_id: routeId },
-        baseURL: metricsBaseURL,
-      })
-      .then(response => {
-        dispatch({ type: 'RECEIVED_ROUTE_CONFIG', payload: response.data });
-      })
-      .catch(err => {
-        dispatch({ type: 'RECEIVED_ROUTE_CONFIG_ERROR', payload: err });
-      });
-  };
-}
-
-export function handleRouteSelectFromDashboard(routeID) {
-  return function(dispatch) {
-    dispatch({ type: 'RECEIVED_ROUTE_SELECT_FROM_DASHBOARD', payload: routeID });
-  };
-}
-
 export function handleSpiderMapClick(stops, latLng) {
   return function(dispatch) {
     dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: [stops, latLng] });
@@ -109,6 +87,7 @@ export function handleGraphParams(params) {
     dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
     const graphParams = getState().routes.graphParams;
 
+    // for debugging: console.log('hGP: ' + graphParams.route_id + ' dirid: ' + graphParams.direction_id + " start: " + graphParams.start_stop_id + " end: " + graphParams.end_stop_id);
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
     
@@ -126,13 +105,6 @@ export function handleGraphParams(params) {
       dispatch(resetIntervalData());
       
     }
-  };
-}
-
-
-export function handleRouteSelect(route) {
-  return function(dispatch) {
-    dispatch({ type: 'RECEIVED_ROUTE_SELECTION', payload: route });
   };
 }
 

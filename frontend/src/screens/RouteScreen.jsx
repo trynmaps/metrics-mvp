@@ -20,7 +20,6 @@ import {
   fetchGraphData,
   fetchIntervalData,
   fetchRoutes,
-  fetchRouteConfig,
   resetGraphData,
   resetIntervalData,
 } from '../actions';
@@ -113,7 +112,6 @@ class RouteScreen extends React.Component {
           <Grid item xs={6}>
             <ControlPanel
               routes={routes}
-              fetchRouteConfig={this.props.fetchRouteConfig}
               resetGraphData={this.props.resetGraphData}
               fetchGraphData={this.props.fetchGraphData}
               resetIntervalData={this.props.resetIntervalData}
@@ -165,7 +163,6 @@ const mapDispatchToProps = dispatch => ({
   resetIntervalData: params => dispatch(resetIntervalData()),
   fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
-  fetchRouteConfig: routeId => dispatch(fetchRouteConfig(routeId)),
 });
 
 RouteScreen.propTypes = {
