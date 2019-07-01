@@ -1,10 +1,28 @@
+#
+# Serves the compiled frontend assets from nginx at http://localhost:8080 ,
+# which proxies paths starting with /api to the flask backend.
+#
+# This allows running locally with the same configuration as used
+# in kubernetes.
+#
+# The production flask service does not support hot reloading, so it
+# needs to be restarted to reflect any python code changes.
+#
+# The web container needs to be rebuilt via `docker-compose build web`
+# to reflect any frontend code changes.
+#
 version: "3.7"
 services:
   flask:
-    environment:
-      FLASK_DEBUG: 0
-  react:
-    entrypoint: ["echo", "react dev server disabled in production mode"]
+    container_name: metrics-flask-prod
+    build:
+      dockerfile: Dockerfile
+      target: flask
+      context: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
   web:
     container_name: metrics-web
     build:

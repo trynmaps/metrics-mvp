@@ -1,3 +1,13 @@
+#
+# Development docker-compose file, supporting hot-reloading
+# for both frontend and backend code.
+#
+# The web app will be accessible at http://localhost:3000 .
+#
+# If the python or react packages have changed, or if you get errors
+# about missing python or react packages, rebuild the containers
+# with `docker-compose build`.
+#
 version: "3.7"
 services:
   flask:

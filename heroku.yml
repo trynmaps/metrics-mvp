@@ -3,5 +3,3 @@ build:
     web:
       dockerfile: Dockerfile
       target: all-in-one
-run:
-  web: gunicorn --bind 0.0.0.0:${PORT} metrics-api:app

@@ -1,0 +1,21 @@
+#
+# Serves the compiled frontend assets directly from the flask backend
+# at http://localhost:5000.
+#
+# This allows running locally with the same configuration as on heroku,
+# which only allows one 'web' dyno per app.
+#
+# Since there are no shared volumes, the container needs to be rebuilt
+# via `docker-compose -f docker-compose.all-in-one.yml build`
+# to reflect any code changes.
+#
+version: "3.7"
+services:
+  all-in-one:
+    container_name: metrics-all-in-one
+    build:
+      dockerfile: Dockerfile
+      target: all-in-one
+      context: .
+    ports:
+      - "5000:5000"
