@@ -8,7 +8,8 @@
 # The production flask service does not support hot reloading, so it
 # needs to be restarted to reflect any python code changes.
 #
-# The web container needs to be rebuilt via `docker-compose build web`
+# The web container needs to be rebuilt via
+# `docker-compose -f docker-compose.prod.yml build web`
 # to reflect any frontend code changes.
 #
 version: "3.7"
