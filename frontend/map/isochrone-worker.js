@@ -69,7 +69,7 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, 
         let timePath = getTimePath(timeStr);
         let statPath = getStatPath(stat);
 
-        let s3Url = 'https://opentransit-stats.s3.amazonaws.com/trip-times/i1/sf-muni/'+
+        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/i1/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
             '/trip-times_i1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz?v2';
 
@@ -143,7 +143,7 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
         var timePath = getTimePath(timeStr);
         let statPath = getStatPath(stat);
 
-        let s3Url = 'https://opentransit-stats.s3.amazonaws.com/wait-times/w1/sf-muni/'+
+        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/w1/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
             '/wait-times_w1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz?v2';
 
