@@ -4,4 +4,5 @@ export default {
   LANDING: '/landing',
   DASHBOARD: '/',
   ROUTESCREEN: '/route',
+  RECEIVED_GRAPH_PARAMS: '/route',
 };

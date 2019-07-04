@@ -18,6 +18,8 @@ import FilterListIcon from '@material-ui/icons/FilterList';
 import { filterRoutes } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
 import { push } from 'redux-first-router'
+import Link from 'redux-first-router-link'
+
 import { handleGraphParams } from '../actions';
 
 function desc(a, b, orderBy) {
@@ -259,7 +261,7 @@ function RouteTable(props) {
                   return (
                     <TableRow
                       hover
-                      onClick={event => handleClick(event, row)}
+                      xxxonClick={event => handleClick(event, row)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
@@ -267,6 +269,12 @@ function RouteTable(props) {
                       selected={isItemSelected}
                     >
                       <TableCell component="th" id={labelId} scope="row" padding="none">
+                        <Link to={{type: 'RECEIVED_GRAPH_PARAMS', payload: {
+                      route_id: row.id,
+                      direction_id: null,
+                      start_stop_id: null,
+                      end_stop_id: null,
+                    }, query: { route_id: row.id } }} >{row.title}</Link>
                         <a href="#">{row.title}</a> {/* TODO: use a real /route/... link here or button, React complains about this dummy href */}
                       </TableCell>
                       <TableCell align="right">{row.wait.toFixed(1)}</TableCell>

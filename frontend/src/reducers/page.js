@@ -6,6 +6,7 @@ const components = {
   LANDING: 'Landing',
   DASHBOARD: 'Dashboard',
   ROUTESCREEN: 'Route',
+  RECEIVED_GRAPH_PARAMS: 'Route',
   [NOT_FOUND]: 'NotFound',
 };
 
