@@ -18,10 +18,7 @@ and will run the Flask backend in development mode at http://localhost:5000.
 Your local directory will be shared within the docker container at /app.
 When you edit files in your local directory, the React and Flask containers should automatically update with the new code.
 
-To start a shell within the Flask Docker container, run:
-```
-docker exec -it metrics-flask bash
-```
+To start a shell within the Flask Docker container, run `./docker-shell.sh` (Linux/Mac) or `docker-shell` (Windows).
 
 You can run command line scripts like `compute_arrivals.py` and `headways.py` from the shell in the Docker container.
 
@@ -198,4 +195,13 @@ Commit your local changes to a feature branch (i.e. not master), then submit a p
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt`
 so other contributors have the latest versions of required packages.
 
-If you're on a Mac and you experience issues with Docker eating your CPU cycles and battery, set `CHOKIDAR_USEPOLLING=false` inside `docker-compose.yml`. Note: this will disable hot reloading.
+If you're on a Mac and you experience issues with Docker eating your CPU cycles and battery, create a docker-compose.override.yml file like this:
+
+```
+services:
+  react-dev:
+    environment:
+      CHOKIDAR_USEPOLLING: "false"
+```
+
+Note: this will disable hot reloading so you will need to restart `docker-compose up` after making changes to the frontend.

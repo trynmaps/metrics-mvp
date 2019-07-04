@@ -10,8 +10,8 @@
 #
 version: "3.7"
 services:
-  flask:
-    container_name: metrics-flask
+  flask-dev:
+    container_name: metrics-flask-dev
     build:
       dockerfile: Dockerfile
       target: flask-dev
@@ -22,8 +22,8 @@ services:
       - .:/app
     environment:
       FLASK_DEBUG: 1
-  react:
-    container_name: metrics-react
+  react-dev:
+    container_name: metrics-react-dev
     build:
       context: .
       dockerfile: Dockerfile

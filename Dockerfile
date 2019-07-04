@@ -8,7 +8,9 @@ WORKDIR /app/frontend
 CMD ["npm","start"]
 
 FROM python:3.7.2-slim-stretch AS flask-dev
-RUN mkdir /app
+RUN mkdir /app && \
+    apt-get update && \
+    apt-get install -y curl nano less sudo
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
 COPY . /app
