@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Renders an SVG "shield" representing a Muni route.
  */

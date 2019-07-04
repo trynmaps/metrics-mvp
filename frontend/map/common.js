@@ -30,7 +30,7 @@ function loadRoutes()
     }
     else
     {
-        return loadJson("/routes?v4").then(function(routes) {
+        return loadJson("/api/routes?v4").then(function(routes) {
             allRoutes = routes;
             return routes;
         });

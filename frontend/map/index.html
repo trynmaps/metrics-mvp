@@ -7,7 +7,7 @@
    integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
    crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
-<script src="common.js?v16"></script>
+<script src="common.js?v17"></script>
 </head>
 <style type='text/css'>
 #mapid { height: 100%; }
@@ -76,7 +76,7 @@ L.tileLayer("http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 /*
-loadJson('/config?r='+Math.random()).then(function(config) {
+loadJson('/api/config?r='+Math.random()).then(function(config) {
     if (config.mapbox_access_token)
     {
         L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {

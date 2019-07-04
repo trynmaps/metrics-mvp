@@ -17,18 +17,18 @@ This is the app's main file!
 """
 
 # configuration
-DEBUG = True
+DEBUG = os.environ.get('FLASK_DEBUG') == '1'
 
 # Create the app
 app = Flask(__name__, static_folder='frontend/build')
 CORS(app)
 
 # Test endpoint
-@app.route('/ping', methods=['GET'])
+@app.route('/api/ping', methods=['GET'])
 def ping():
     return "pong"
 
-@app.route('/routes', methods=['GET'])
+@app.route('/api/routes', methods=['GET'])
 def routes():
     route_list = nextbus.get_route_list('sf-muni')
 
@@ -44,12 +44,23 @@ def routes():
         'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
     } for route in route_list]
 
-    return Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
+    res = Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
+    if not DEBUG:
+        res.headers['Cache-Control'] = 'max-age=3600'
+    return res
 
-@app.route('/route', methods=['GET'])
+@app.route('/api/route', methods=['GET'])
 def route_config():
     route_id = request.args.get('route_id')
+    params = {'route_id': route_id}
+
+    if route_id is None:
+        return make_error_response(params, "Missing route_id", 400)
+
     route = nextbus.get_route_config('sf-muni', route_id)
+
+    if route is None:
+        return make_error_response(params, f"Invalid route ID {route_id}", 404)
 
     data = {
         'id': route_id,
@@ -62,9 +73,12 @@ def route_config():
         } for dir in route.get_direction_infos()],
         'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
     }
-    return Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
+    res = Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
+    if not DEBUG:
+        res.headers['Cache-Control'] = 'max-age=3600'
+    return res
 
-@app.route('/metrics', methods=['GET'])
+@app.route('/api/metrics', methods=['GET'])
 def metrics_page():
     metrics_start = time.time()
     route_id = request.args.get('route_id')
@@ -156,7 +170,10 @@ def metrics_page():
     metrics_end = time.time()
     data['processing_time'] = (metrics_end - metrics_start)
 
-    return Response(json.dumps(data, indent=2), mimetype='application/json')
+    res = Response(json.dumps(data, indent=2), mimetype='application/json')
+    if not DEBUG:
+        res.headers['Cache-Control'] = 'max-age=60'
+    return res
 
 def make_error_response(params, error, status):
     data = {
@@ -165,7 +182,7 @@ def make_error_response(params, error, status):
     }
     return Response(json.dumps(data, indent=2), status=status, mimetype='application/json')
 
-@app.route('/metrics_by_interval', methods=['GET'])
+@app.route('/api/metrics_by_interval', methods=['GET'])
 def metrics_by_interval():
     route_id = request.args.get('route_id')
     if route_id is None:
@@ -263,36 +280,34 @@ def metrics_by_interval():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
-@app.route('/config', methods=['GET'])
+@app.route('/api/config', methods=['GET'])
 def config():
     res = Response(json.dumps({"mapbox_access_token": os.environ.get('MAPBOX_ACCESS_TOKEN')}), mimetype='application/json')
-    res.headers['Cache-Control'] = 'max-age=3600'
+    if not DEBUG:
+        res.headers['Cache-Control'] = 'max-age=3600'
     return res
 
-# Serve production build of React app
-# @app.route('/', defaults={'path': ''}, methods=['GET'])
-# @app.route('/app/<path:path>')
-@app.route('/', methods=['GET'])
-def serve_react():
-    try:
-        return send_from_directory('frontend/build', 'index.html')
-    except Exception as e:
-        source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        if not os.path.isfile(f'{source_dir}/frontend/build/index.html'):
-            return """<h2>Hello!</h2>
-            <p>This is where the production frontend assets would be, but they don't seem to have been built yet.</p>
-            <p>To build the frontend assets, run <code>cd frontend && npm build</code> from the command line.<br />
-            To view the frontend in dev mode, visit port 3000 instead.<br />
-            To explore the backend API, try <a href="/metrics">/metrics</a></p>
-            """
-        else:
-            raise e
+@app.route('/frontend/map/<path:path>')
+def frontend_map(path):
+    return send_from_directory('frontend/map', path)
 
-# serve production build from the `frontend` folder directly
-# (this is mostly static files)
-@app.route('/frontend/<path:path>')
-def send_frontend(path):
-    return send_from_directory('frontend', path)
+if os.environ.get('METRICS_ALL_IN_ONE') == '1':
+    @app.route('/frontend/build/<path:path>')
+    def frontend_build(path):
+        return send_from_directory('frontend/build', path)
+
+    @app.route('/frontend/public/<path:path>')
+    def frontend_public(path):
+        return send_from_directory('frontend/public', path)
+
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def wildcard(path):
+        return send_from_directory('frontend/build', 'index.html')
+else:
+    @app.route('/')
+    def root():
+        return """<h2>Hello!</h2><p>This is the API server.</p>"""
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.

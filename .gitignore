@@ -7,6 +7,8 @@ data/*.json
 data/*.csv
 data/arrivals_*
 data/state_*
+data/wait-times_*
+data/trip-times_*
 
 ### Eclipse ###
 .metadata
@@ -461,8 +463,7 @@ typings/
 ## CUSTOM GITIGNORE STUFF ##
 
 # test notebook
-/models/Untitled.ipynb
-
-#adding data folder
-data/*.json
-data/*.csv
+/models/test.ipynb
+# locally cached timetable/routeconfig data
+/data/**/*.csv
+/data/**/*.json

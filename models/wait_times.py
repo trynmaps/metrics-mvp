@@ -1,7 +1,12 @@
 import pandas as pd
 import numpy as np
 from . import util
+from datetime import date
 import sys
+import re
+import requests
+from pathlib import Path
+import json
 
 def get_stats(time_values, start_time=None, end_time=None):
     return WaitTimeStats(time_values, start_time, end_time)
@@ -246,29 +251,30 @@ class WaitTimeStats:
             print(f'End wait time: {end_wait_time}', file=sys.stderr)
             raise AssertionError('Invalid cumulative distribution')
 
-        self.cdf_points = points
+        self.cdf_points = np.array(points)
 
-        return points
+        return self.cdf_points
 
     def get_quantiles(self, quantiles):
         cdf_points = self.get_cumulative_distribution()
         if cdf_points is None:
             return None
 
-        cdf_range = np.transpose(np.array(cdf_points))[1]
+        cdf_domain, cdf_range = cdf_points.T
 
         quantile_values = []
 
         for quantile in quantiles:
             segment_end_index = np.searchsorted(cdf_range, quantile)
             if segment_end_index == 0:
-                quantile_values.append(cdf_points[0][0])
+                quantile_values.append(cdf_domain[0])
             else:
-                segment_start = cdf_points[segment_end_index-1]
-                segment_end = cdf_points[segment_end_index]
-
+                segment_start_index = segment_end_index - 1
                 # linear interpolation to find wait time where value of CDF = quantile
-                quantile_value = segment_start[0] + (quantile - segment_start[1]) / (segment_end[1] - segment_start[1]) * (segment_end[0] - segment_start[0])
+                quantile_value = cdf_domain[segment_start_index] + \
+                    (quantile - cdf_range[segment_start_index]) / \
+                    (cdf_range[segment_end_index] - cdf_range[segment_start_index]) * \
+                    (cdf_domain[segment_end_index] - cdf_domain[segment_start_index])
                 quantile_values.append(quantile_value)
 
         return np.array(quantile_values)
@@ -281,25 +287,12 @@ class WaitTimeStats:
         if cdf_points is None:
             return None
 
-        cdf_domain = np.transpose(np.array(cdf_points))[0]
+        cdf_domain, cdf_range = cdf_points.T
 
-        num_points = len(cdf_points)
         histogram = []
-
         prev_cumulative_value = None
         for bin_index, bin_value in enumerate(bins):
-            segment_end_index = np.searchsorted(cdf_domain, bin_value)
-
-            if segment_end_index >= num_points:
-                cumulative_value = 1.0
-            elif segment_end_index == 0:
-                cumulative_value = 0.0
-            else:
-                segment_start = cdf_points[segment_end_index-1]
-                segment_end = cdf_points[segment_end_index]
-
-                # linear interpolation to find value of CDF with wait time = bin_value
-                cumulative_value = segment_start[1] + (bin_value - segment_start[0]) / (segment_end[0] - segment_start[0]) * (segment_end[1] - segment_start[1])
+            cumulative_value = self._get_probability_less_than(bin_value, cdf_domain, cdf_range)
 
             if prev_cumulative_value is not None:
                 histogram.append(cumulative_value - prev_cumulative_value)
@@ -307,6 +300,39 @@ class WaitTimeStats:
             prev_cumulative_value = cumulative_value
 
         return np.array(histogram)
+
+    def get_probability_less_than(self, wait_time):
+        cdf_points = self.get_cumulative_distribution()
+        if cdf_points is None:
+            return None
+
+        cdf_domain, cdf_range = cdf_points.T
+
+        return self._get_probability_less_than(wait_time, cdf_domain, cdf_range)
+
+    def get_probability_greater_than(self, wait_time):
+        prob_less = self.get_probability_less_than(wait_time)
+
+        if prob_less is None:
+            return None
+
+        return 1.0 - prob_less
+
+    def _get_probability_less_than(self, wait_time, cdf_domain, cdf_range):
+        segment_end_index = np.searchsorted(cdf_domain, wait_time)
+
+        if segment_end_index >= len(cdf_domain):
+            return 1.0
+        elif segment_end_index == 0:
+            return 0.0
+        else:
+            segment_start_index = segment_end_index - 1
+
+            # linear interpolation to find value of CDF with wait time = bin_value
+            return cdf_range[segment_start_index] + \
+                (wait_time - cdf_domain[segment_start_index]) / \
+                (cdf_domain[segment_end_index] - cdf_domain[segment_start_index]) * \
+                (cdf_range[segment_end_index] - cdf_range[segment_start_index])
 
     def get_sampled_waits(self, sample_sec=60):
         if self.is_empty:
@@ -328,3 +354,96 @@ class WaitTimeStats:
         waits = next_arrival_times - sample_time_values
 
         return waits[np.logical_not(np.isnan(waits))] / 60
+
+DefaultVersion = 'v1'
+
+class CachedWaitTimes:
+    def __init__(self, wait_times_data):
+        self.wait_times_data = wait_times_data
+
+    def get_value(self, route_id, direction_id, stop_id):
+        routes_data = self.wait_times_data['routes']
+
+        if route_id not in routes_data:
+            return None
+
+        route_data = routes_data[route_id]
+
+        if direction_id not in route_data:
+            return None
+
+        direction_data = route_data[direction_id]
+
+        if stop_id not in direction_data:
+            return None
+
+        return direction_data[stop_id]
+
+def get_cached_wait_times(agency_id, d: date, stat_id: str, start_time_str = None, end_time_str = None, version = DefaultVersion) -> CachedWaitTimes:
+
+    cache_path = get_cache_path(agency_id, d, stat_id, start_time_str, end_time_str, version)
+
+    try:
+        with open(cache_path, "r") as f:
+            text = f.read()
+            return CachedWaitTimes(json.loads(text))
+    except FileNotFoundError as err:
+        pass
+
+    s3_bucket = get_s3_bucket()
+    s3_path = get_s3_path(agency_id, d, stat_id, start_time_str, end_time_str, version)
+
+    s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
+    r = requests.get(s3_url)
+
+    if r.status_code == 404:
+        raise FileNotFoundError(f"{s3_url} not found")
+    if r.status_code != 200:
+        raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
+
+    data = json.loads(r.text)
+
+    cache_dir = Path(cache_path).parent
+    if not cache_dir.exists():
+        cache_dir.mkdir(parents = True, exist_ok = True)
+
+    with open(cache_path, "w") as f:
+        f.write(r.text)
+
+    return CachedWaitTimes(data)
+
+def get_s3_bucket() -> str:
+    return 'opentransit-precomputed-stats'
+
+def get_time_range_path(start_time_str, end_time_str):
+    if start_time_str is None and end_time_str is None:
+        return ''
+    else:
+        return f'_{start_time_str.replace(":","")}_{end_time_str.replace(":","")}'
+
+def get_s3_path(agency_id: str, d: date, stat_id: str, start_time_str, end_time_str, version = DefaultVersion) -> str:
+    time_range_path = get_time_range_path(start_time_str, end_time_str)
+    date_str = str(d)
+    date_path = d.strftime("%Y/%m/%d")
+    return f"wait-times/{version}/{agency_id}/{date_path}/wait-times_{version}_{agency_id}_{date_str}_{stat_id}{time_range_path}.json.gz"
+
+def get_cache_path(agency_id: str, d: date, stat_id: str, start_time_str, end_time_str, version = DefaultVersion) -> str:
+    time_range_path = get_time_range_path(start_time_str, end_time_str)
+
+    date_str = str(d)
+    if re.match('^[\w\-]+$', agency_id) is None:
+        raise Exception(f"Invalid agency: {agency_id}")
+
+    if re.match('^[\w\-]+$', date_str) is None:
+        raise Exception(f"Invalid date: {date_str}")
+
+    if re.match('^[\w\-]+$', version) is None:
+        raise Exception(f"Invalid version: {version}")
+
+    if re.match('^[\w\-]+$', stat_id) is None:
+        raise Exception(f"Invalid stat id: {stat_id}")
+
+    if re.match('^[\w\-\+]*$', time_range_path) is None:
+        raise Exception(f"Invalid time range: {time_range_path}")
+
+    return f'{util.get_data_dir()}/wait-times_{version}_{agency_id}/{date_str}/wait-times_{version}_{agency_id}_{date_str}_{stat_id}{time_range_path}.json'

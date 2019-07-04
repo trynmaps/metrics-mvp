@@ -2,7 +2,7 @@ importScripts(
     "https://unpkg.com/kdbush@3.0.0/kdbush.min.js",
     'https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js',
     "https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js",
-    'common.js?v16'
+    'common.js?v17'
 );
 
 let locations;

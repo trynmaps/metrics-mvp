@@ -3,3 +3,6 @@ frontend/node_modules
 data
 venv
 .git
+.idea
+docker-compose.yml
+Dockerfile*

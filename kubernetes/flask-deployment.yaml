@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: flask
+  name: flask
+spec:
+  selector:
+    matchLabels:
+      run: flask
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        run: flask
+    spec:
+      containers:
+      - image: gcr.io/poetic-genius-233804/metrics-flask:latest
+        imagePullPolicy: IfNotPresent
+        name: flask
+        ports:
+          - name: http
+            containerPort: 5000
