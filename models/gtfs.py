@@ -172,7 +172,7 @@ class GtfsScraper:
         filepath = f"{get_schedule_dir()}/date_ranges_{ver}.csv"
 
         if s3:
-            s3_path = f"date_ranges.csv"
+            s3_path = f"date_ranges_{ver}.csv"
             self.upload_to_s3(s3_path, df)
         
         if Path(filepath).is_file():
