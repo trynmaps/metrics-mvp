@@ -20,6 +20,7 @@ services:
       - "5000:5000"
     volumes:
       - .:/app
+      - .aws:/root/.aws
     environment:
       FLASK_DEBUG: 1
   react-dev:
@@ -38,3 +39,4 @@ services:
       NODE_ENV: development
       REACT_APP_METRICS_BASE_URL: http://localhost:5000
       CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "2500"
