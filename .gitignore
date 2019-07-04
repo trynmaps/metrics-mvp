@@ -462,8 +462,7 @@ typings/
 ## CUSTOM GITIGNORE STUFF ##
 
 # test notebook
-/models/Untitled.ipynb
-
-#adding data folder
-data/*.json
-data/*.csv
+/models/test.ipynb
+# locally cached timetable/routeconfig data
+/data/**/*.csv
+/data/**/*.json

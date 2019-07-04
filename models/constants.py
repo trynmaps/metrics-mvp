@@ -9,3 +9,7 @@ DEFAULT_TIME_STR_INTERVALS = [
 ]
 
 PACIFIC_TIMEZONE = pytz.timezone('US/Pacific')
+
+AGENCY = 'sf-muni'
+
+DEFAULT_STAT_KEYS = ['count', 'avg', 'min', 'median', 'max']
