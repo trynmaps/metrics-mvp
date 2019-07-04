@@ -1,23 +1,33 @@
-version: "3.0"
+#
+# Development docker-compose file, supporting hot-reloading
+# for both frontend and backend code.
+#
+# The web app will be accessible at http://localhost:3000 .
+#
+# If the python or react packages have changed, or if you get errors
+# about missing python or react packages, rebuild the containers
+# with `docker-compose build`.
+#
+version: "3.7"
 services:
-  flask:
-    container_name: metrics-flask
+  flask-dev:
+    container_name: metrics-flask-dev
     build:
       dockerfile: Dockerfile
+      target: flask-dev
       context: .
     ports:
       - "5000:5000"
     volumes:
       - .:/app
     environment:
-      - FLASK_DEBUG=1
-  react:
-    container_name: metrics-react
+      FLASK_DEBUG: 1
+  react-dev:
+    container_name: metrics-react-dev
     build:
       context: .
       dockerfile: Dockerfile
-    working_dir: /app/frontend
-    command: ["npm", "start"]
+      target: react-dev
     volumes:
       - ./frontend/build:/app/frontend/build
       - ./frontend/public:/app/frontend/public
@@ -25,6 +35,6 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - NODE_ENV=development
-      - REACT_APP_METRICS_BASE_URL=http://localhost:5000
-      - CHOKIDAR_USEPOLLING=true
+      NODE_ENV: development
+      REACT_APP_METRICS_BASE_URL: http://localhost:5000
+      CHOKIDAR_USEPOLLING: "true"
