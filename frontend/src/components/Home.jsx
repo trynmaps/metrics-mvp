@@ -5,7 +5,6 @@ import { connect } from 'react-redux';
 import { css } from 'emotion';
 import { NavLink } from 'redux-first-router-link';
 import MapStops from './MapStops';
-import MapSpider from './MapSpider';
 import ControlPanel from './ControlPanel';
 import Info from './Info';
 import Intro from './Intro';
@@ -16,7 +15,6 @@ import {
   fetchGraphData,
   fetchIntervalData,
   fetchRoutes,
-  fetchRouteConfig,
   resetGraphData,
   fetchTazs,
   fetchTrips,
@@ -78,6 +76,16 @@ class Home extends Component {
             Landing
           </NavLink>
         </button>
+        <button>
+          <NavLink
+            to={{ type: 'DASHBOARD' }}
+            activeStyle={{ fontWeight: "bold", color: 'purple' }}
+            exact={true}
+            strict={true}
+          >
+            Dashboard
+            </NavLink>
+        </button>
         <div
           className={css`
             display: grid;
@@ -94,16 +102,12 @@ class Home extends Component {
           <ControlPanel
             routes={routes}
             tripTimes={tripTimes}
-            fetchRouteConfig={this.props.fetchRouteConfig}
             resetGraphData={this.props.resetGraphData}
             fetchGraphData={this.props.fetchGraphData}
             resetIntervalData={this.props.resetIntervalData}
             fetchIntervalData={this.props.fetchIntervalData}
             fetchData={this.props.fetchData}
           />
-          <div className="metricsWidth">
-            <MapSpider routes={routes}/>
-          </div>
           <div className={css`
             grid-column-start: 1`}>
             <div className="largeMarginTop">
@@ -158,7 +162,6 @@ const mapDispatchToProps = dispatch => ({
   resetIntervalData: params => dispatch(resetIntervalData()),
   fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
-  fetchRouteConfig: routeId => dispatch(fetchRouteConfig(routeId)),
   fetchTazs: () => dispatch(fetchTazs()),
   fetchTrips: () => dispatch(fetchTrips()),
   fetchAllTheThings: () => dispatch(fetchAllTheThings()),

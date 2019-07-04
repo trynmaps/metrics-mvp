@@ -3,14 +3,15 @@ import { connect } from 'react-redux';
 import { css } from 'emotion';
 import DatePicker from 'react-date-picker';
 import Button from 'react-bootstrap/Button';
-import Card from 'react-bootstrap/Card';
-import ListGroup from 'react-bootstrap/ListGroup';
-import PropTypes from 'prop-types';
 //import { latLngBounds } from 'leaflet';
 import { filterRoutes } from '../helpers/routeCalculations';
 
 import * as d3 from "d3";
 import {handleRouteSelect} from '../actions';
+import Card from 'react-bootstrap/Card';
+import ListGroup from 'react-bootstrap/ListGroup';
+import PropTypes from 'prop-types';
+import { handleGraphParams } from '../actions';
 
 import DropdownControl from './DropdownControl';
 import './ControlPanel.css';
@@ -34,113 +35,39 @@ import ReactDOMServer from 'react-dom/server';
  * Currently trying to minimize state changes within leaflet.
  */
 class ControlPanel extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      routeId: '12',
-      directionId: null,
-      secondStopList: [],
-      firstStopId: null,
-      secondStopId: null,
-      date: new Date('2019-06-06T03:50'),
-      startTimeStr: null,
-      endTimeStr: null,
 
-
-
-
-
-      
-      hasLocation: false, // not geolocated
-      latLng: {
-        lat: 37.7793, // city hall
-        lng: -122.4193,
-      },
-      latLngOriginal: {
-        lat: 37.7793, // city hall
-        lng: -122.4193,
-      },
-      startMarkers: [],
-      routeMarkers: [],
-      hoverMarker: null,
-    }
-    
-    this.mapRef = createRef();
-
-
-
-    
-  }
-
-  componentDidUpdate() {
-    const selectedRoute = this.getSelectedRouteInfo();
-    if (selectedRoute) {
-      if (!selectedRoute.directions) {
-        console.log("Shouldn't happen.");
-        debugger;
-        // xxx this.props.fetchRouteConfig(this.state.routeId);
-      } else if (!this.state.directionId && selectedRoute.directions.length > 0) {
-        this.setState({ directionId: selectedRoute.directions[0].id });
-      }
-      
-    }
-  }
-
-  updateGraphData = () => {
-    const {
-      routeId, directionId, firstStopId, date, secondStopId, startTimeStr, endTimeStr
-    } = this.state;
-
-    this.props.resetGraphData();
-    if (firstStopId != null && routeId != null) {
-      const formattedDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-      const graphParams = {
-        route_id: routeId,
-        direction_id: directionId,
-        start_stop_id: firstStopId,
-        end_stop_id: secondStopId,
-        start_time: startTimeStr,
-        end_time: endTimeStr,
-        date: formattedDate,
-      };
-      const intervalParams = Object.assign({}, graphParams);
-      delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
-      this.props.fetchData(graphParams, intervalParams);
-    }
-  }
-
-  onSubmit = (event) => {
-    event.preventDefault();
-    this.updateGraphData();
-  }
-
-  setDate = date => this.setState({ date }, this.updateGraphData)
+  setDate = date => this.props.onGraphParams({ date: date });
 
   setTimeRange = timeRange => {
     if (!timeRange) {
-      this.setState({ startTimeStr: null, endTimeStr: null }, this.updateGraphData);
+      this.props.onGraphParams({ start_time: null, end_time: null });
     } else {
       var timeRangeParts = timeRange.split('-');
-      this.setState({ startTimeStr: timeRangeParts[0], endTimeStr: timeRangeParts[1] }, this.updateGraphData);
+      this.props.onGraphParams({ start_time: timeRangeParts[0], end_time: timeRangeParts[1] });
     }
   }
 
-  setRouteId = routeId => this.setState({ routeId }, this.selectedRouteChanged)
+  setRouteId = routeId => {
+    this.selectedRouteChanged(routeId);
+  };
 
-  setDirectionId = directionId => this.setState({ directionId }, this.selectedDirectionChanged)
+  setDirectionId = directionId => this.props.onGraphParams({
+    direction_id: directionId,
+    start_stop_id: null,
+    end_stop_id: null,
+  });
 
-  onSelectSecondStop = (firstStopId, selectFirstStopCallback) => {
-    selectFirstStopCallback ? selectFirstStopCallback(firstStopId)
-      : this.setState({ secondStopId: firstStopId }, this.selectedStopChanged);
-  }
-
-  onSelectFirstStop = (stopId, optionalSecondStopId) => {
-    const { directionId, secondStopId } = this.state;
-    const selectedRoute = { ...this.getSelectedRouteInfo() };
+  generateSecondStopList(selectedRoute, directionId, stopId) {
     const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
-    const secondStopListIndex = secondStopInfo.stops.indexOf(stopId);
-    const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
+    const secondStopListIndex = stopId ? secondStopInfo.stops.indexOf(stopId) : 0;
+    return secondStopInfo.stops.slice(secondStopListIndex + 1);
+  }
+  
+  onSelectFirstStop = (stopId, optionalSecondStopId) => {
+    const directionId = this.props.graphParams.direction_id;
+    const secondStopId = this.props.graphParams.end_stop_id;
+    const selectedRoute = { ...this.getSelectedRouteInfo() };
+    const secondStopList = this.generateSecondStopList(selectedRoute, directionId, stopId);
 
     let newSecondStopId = secondStopId;
     
@@ -160,54 +87,41 @@ class ControlPanel extends Component {
           secondStopList[secondStopList.length-1];
       }
     }
-    
-    // if a starting stop is selected, hide mapping of other routes by regenerating just one start marker
-    
-    let newStartMarkers = this.createStartMarkerForOneRoute(this.state.routeId, directionId, stopId);
-    
-    this.setState({
-      firstStopId: stopId,
-      secondStopId: newSecondStopId,
-      secondStopList,
-      startMarkers: newStartMarkers }, this.selectedStopChanged);
-    
+    this.props.onGraphParams({ start_stop_id: stopId, end_stop_id: newSecondStopId});
   }
 
   onSelectSecondStop = (stopId) => {
-    this.setState({ secondStopId: stopId }, this.selectedStopChanged);
+    this.props.onGraphParams({ end_stop_id: stopId });
   }
 
-  selectedRouteChanged = () => {
-    const {onRouteSelect} = this.props;
-    const { routeId } = this.state;
-    const selectedRoute = this.getSelectedRouteInfo();
+  selectedRouteChanged = (routeId) => {
+      
+    const selectedRoute = this.props.routes ? this.props.routes.find(route => route.id === routeId) : null;
+
     if (!selectedRoute) {
       return;
     }
-    //onRouteSelect(selectedRoute);
-    if (!selectedRoute.directions) {
-      this.setDirectionId(null);
-      console.log("also shouldn't happen");
-      debugger;
-      //xxx this.props.fetchRouteConfig(routeId);
-    } else {
-      const directionId = selectedRoute.directions.length > 0 ? selectedRoute.directions[0].id : null;
-      this.setDirectionId(directionId);
 
-    }
+    const directionId = selectedRoute.directions.length > 0 ? selectedRoute.directions[0].id : null;
+    //console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
+    
+    this.props.onGraphParams({ route_id: routeId, direction_id: directionId, start_stop_id: null, end_stop_id: null });
   }
 
   getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
     return selectedRoute.directions.find(dir => dir.id === directionId);
   }
-  getStopsInfoInGivenDirectionName = (selectedRoute, name) => {
-    const stopSids= selectedRoute.directions.find(dir => dir.name === name);
-    return stopSids.stops.map(stop => selectedRoute.stops[stop]);
 
-  }
+ 
+  /* this code attempts to preserve the from stop if the direction changes 
+  
+   * the from stop is in the new stop list.  It doesn't check the to stop, so
+   * either it needs to do that, or we bypass this and just always clear both
+   * stops on a direction change.
 
   selectedDirectionChanged = () => {
-    const { firstStopId, directionId } = this.state;
+    const firstStopId = this.props.graphParams.start_stop_id;
+    const directionId = this.props.graphParams.direction_id;
     const selectedRoute = this.getSelectedRouteInfo();
     const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
       ? this.getStopsInfoInGivenDirection(selectedRoute, directionId) : null;
@@ -219,7 +133,7 @@ class ControlPanel extends Component {
     
     if (firstStopId) {
       if (!selectedDirection || selectedDirection.stops.indexOf(firstStopId) === -1) {
-        this.setState({ firstStopId: null, secondStopId: null, startMarkers: startMarkerArray }, this.selectedStopChanged);
+        this.props.onGraphParams({ start_stop_id: null, end_stop_id: null });
       }
     } else {
     
@@ -232,194 +146,13 @@ class ControlPanel extends Component {
       this.setState({startMarkers: startMarkerArray});
     }
   }
-
-  selectedStopChanged = () => {
-    this.plotSelectedRoute();
-    this.updateGraphData();
-  }
-
-  handleTimeChange(newTime) {
-    this.setState({ time: newTime.formatted });
-  }
+     */
 
   getSelectedRouteInfo() {
     const { routes } = this.props;
-    const { routeId } = this.state;
+    const routeId = this.props.graphParams.route_id;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
-
-  handleGeoLocate = (e) => {
-    e.preventDefault();
-    const map = this.mapRef.current;
-    if (map != null) {
-      map.leafletElement.locate(); // this is for geolocation, see https://leafletjs.com/examples/mobile/
-    }
-   }
-      
-
-
-   handleClick = (e) => {
-    const map = this.mapRef.current
-    if (map != null) {
-      this.handleLocationFound(e);
-    }
-   }
-   
-  handleLocationFound = (e: Object) => {
-    this.setState({
-      hasLocation: true,
-      latLng: e.latlng,
-      firstStopId: null,
-      secondStopId: null,
-    }, this.findAndPlotStops);
-    
-  }   
-  
-  findAndPlotStops() {
-     const stops = this.findStops();
-     
-     // what if we also plot all the downstream stops
-     
-     for (let stop of stops) {
-         this.addDownstreamStops(stop);
-     }
-    
-    // to do: indicators for firstStop and secondStop 
-     
-     this.setState({ startMarkers: stops,
-      });
-  }
-  
-  addDownstreamStops(stop) {
-         const selectedRoute = this.props.routes.find(route => route.id === stop.routeID);
-         
-         const secondStopInfo = stop.direction;//this.getStopsInfoInGivenDirection(selectedRoute, stop.direction);
-         const secondStopListIndex = secondStopInfo.stops.indexOf(stop.stopID);
-
-         const secondStopList = secondStopInfo.stops.slice(secondStopListIndex /* + 1  include starting stop */);
-        
-         const downstreamStops = secondStopList.map(stopID => Object.assign(selectedRoute.stops[stopID], { stopID: stopID}));
-         if (! downstreamStops || !downstreamStops.length){ debugger; }
-         stop.downstreamStops = downstreamStops;
-         
-  }
-  
-  // ugly brute force method:  for each route, fetch route config. for each direction of each route
-  // iterate through all stops to find nearest stop.
-  // collect all nearest stops, sort by distance, and show N stops.
-  
-  findStops() {
-    const { routes } = this.props;
-    const latLng = this.state.latLng;
-    const latLon = { lat: latLng.lat, lon: latLng.lng };
-    let stopsByRouteAndDir = [];
-    
-    const filteredRoutes = filterRoutes(routes);
-    for (let i = 0; i < filteredRoutes.length; i++) { // optimize this on back end
-      const route = routes[i];
-      
-      if (route.directions) {
-        for (let direction of route.directions) {
-          const stopList = direction.stops;
-          const nearest = this.findNearestStop(latLon, stopList, route.stops);
-          nearest.routeID = route.id;
-          nearest.routeIndex = i;
-          nearest.routeTitle = route.title;
-          nearest.direction = direction;
-          stopsByRouteAndDir.push(nearest);
-        }
-      }
-    }
-    // sort by distance and truncate by distance
-    stopsByRouteAndDir.sort((a, b) => a.miles - b.miles);
-    stopsByRouteAndDir = stopsByRouteAndDir.filter(stop => stop.miles < 0.25);
-    
-    
-    return stopsByRouteAndDir;
-    
-  }
-  
-  createStartMarkerForOneRoute(routeID, directionID, optionalStopID) {
-    const { routes } = this.props;
-    let startMarkers = [];
-    
-
-    const route = this.getSelectedRouteInfo();
-    const direction = route.directions.find(dir => dir.id === directionID);
-
-      const stopList = direction.stops;
-      let stop = null;
-      
-      // get the stop object out of the route's hash
-      
-      if (optionalStopID) {
-        stop = route.stops[optionalStopID];
-      } else {
-        stop = route.stops[stopList[0]];
-      }
-      
-      let nearest = {
-        stop: stop,
-        stopID: optionalStopID ? optionalStopID : stopList[0],
-      };
-      nearest.routeID = routeID;
-      nearest.routeIndex = routes.indexOf(route);
-      nearest.routeTitle = route.title;
-      nearest.direction = direction;
-      
-      this.addDownstreamStops(nearest);
-      
-      startMarkers.push(nearest);
-    
-    return startMarkers;
-    
-  }  
-  
-  
-  /**
-   *  returns { distance: (miles); stop: stopObject }
-   * stop list is an array of strings (stop ids) that key into the stopHash
-   */
-  findNearestStop(latLon, stopList, stopHash) {
-    let nearest = { miles: -1,
-     stop: null,
-     stopID: null,
-    }
-    for (let stop of stopList) {
-      const miles = this.milesBetween(latLon, stopHash[stop]);
-      if (nearest.miles === -1 || miles < nearest.miles) {
-        nearest = { miles: miles,
-                    stop: stopHash[stop],
-                    stopID: stop,
-                    }
-      } 
-    }
-    return nearest;
-  }
-
-  /**
-   * updates state to get all downstream markers replotted after first stop is changed 
-   */
-  plotSelectedRoute() {
-    
-    const selectedRoute = this.getSelectedRouteInfo();
-    const { directionId, firstStopId } = this.state;
-    const secondStopInfo = this.getStopsInfoInGivenDirection(selectedRoute, directionId);
-    const secondStopListIndex = secondStopInfo.stops.indexOf(firstStopId);
-    const secondStopList = secondStopInfo.stops.slice(secondStopListIndex + 1);
-    
-    
-    const stops = secondStopList.map(stopID => { return {
-      stop: selectedRoute.stops[stopID],
-      stopID: stopID,
-      routeIndex: this.state.rout
-      }
-    });
-     
-    
-    this.setState({ routeMarkers: stops });
-  }
-
 
 
 
@@ -552,33 +285,16 @@ class ControlPanel extends Component {
 
 
 
-  sendRouteStopsToMap = () => {
-    const {directionId} = this.state;
-    const {onRouteSelect} = this.props;
-    const selectedRoute = this.getSelectedRouteInfo();
-    onRouteSelect({
-      'Inbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Inbound'),
-      'Outbound' : this.getStopsInfoInGivenDirectionName(selectedRoute, 'Outbound')
-    });
-  }
-
-  // toggleTimekeeper(val) {
-  //   // this.setState({ displayTimepicker: val });
-  // }
 
   render() {
-    const { routes } = this.props;
-    
-    
-      
-        
-    const {
-      date, routeId, directionId, firstStopId, secondStopId, secondStopList, startTimeStr, endTimeStr
-    } = this.state;
+    const { routes, graphParams } = this.props;
 
-    const timeRange = (startTimeStr || endTimeStr) ? (startTimeStr + '-' + endTimeStr) : '';
+    const timeRange = (graphParams.start_time || graphParams.end_time) ? (graphParams.start_time + '-' + graphParams.end_time) : '';
 
     const selectedRoute = this.getSelectedRouteInfo();
+    
+    const firstStopId = graphParams.start_stop_id;
+
     // now defined further down const selectedDirection = (selectedRoute && selectedRoute.directions && directionId)
     //  ? selectedRoute.directions.find(dir => dir.id === directionId) : null;
 
@@ -812,10 +528,14 @@ class ControlPanel extends Component {
 
 
 
-    let selectedDirection =null;
-    if (selectedRoute && selectedRoute.directions && directionId) {
-      selectedDirection = selectedRoute.directions.find(dir => dir.id === directionId);
-      this.sendRouteStopsToMap();
+    let selectedDirection = null;
+    if (selectedRoute && selectedRoute.directions && graphParams.direction_id) {
+      selectedDirection = selectedRoute.directions.find(dir => dir.id === graphParams.direction_id);
+    }
+    
+    let secondStopList = null;
+    if (selectedDirection) {
+      secondStopList = this.generateSecondStopList(selectedRoute, graphParams.direction_id, graphParams.start_stop_id);
     }
 
     return (
@@ -831,16 +551,17 @@ class ControlPanel extends Component {
       }
       >
         <Card bg="light" style={{ color: 'black' }}>
-          <Card.Header>Visualize Route</Card.Header>
+            { /* The date picker is broken because we're no longer passing in a date in the format
+                 it expects.  To be replaced with a new Material UI component.
           <DatePicker
-            value={date}
+            value={graphParams.date}
             onChange={this.setDate}
             className={css`
            padding: 10px!important;
            display: block;
            width: 100%
          `}
-          />
+          />  */ }
         <ListGroup.Item>
           <DropdownControl
             title="Time Range"
@@ -868,7 +589,7 @@ class ControlPanel extends Component {
                   title="Route"
                   name="route"
                   variant="info"
-                  value={routeId}
+                  value={graphParams.route_id}
                   options={
                     (routes || []).map(route => ({
                       label: route.title, key: route.id,
@@ -885,7 +606,7 @@ class ControlPanel extends Component {
                     title="Direction"
                     name="direction"
                     variant="info"
-                    value={directionId}
+                    value={graphParams.direction_id}
                     onSelect={this.setDirectionId}
                     options={
                   (selectedRoute.directions || []).map(direction => ({
@@ -904,8 +625,8 @@ class ControlPanel extends Component {
                       title="From Stop"
                       name="stop"
                       variant="info"
-                      value={firstStopId}
-                      onSelect={(eventKey, name) => { return this.onSelectFirstStop(eventKey)}}
+                      value={graphParams.start_stop_id}
+                      onSelect={this.onSelectFirstStop}
                       options={
                     (selectedDirection.stops || []).map(firstStopId => ({
                       label: (selectedRoute.stops[firstStopId] || { title: firstStopId }).title,
@@ -925,8 +646,8 @@ class ControlPanel extends Component {
                       title="To Stop"
                       name="stop"
                       variant="info"
-                      value={secondStopId}
-                      onSelect={(eventKey, name) => { return this.onSelectSecondStop(eventKey)}}
+                      value={graphParams.end_stop_id}
+                      onSelect={this.onSelectSecondStop}
                       options={
                     (secondStopList || []).map(secondStopId => ({
                       label: (selectedRoute.stops[secondStopId] || { title: secondStopId }).title,
@@ -993,9 +714,15 @@ ControlPanel.propTypes = {
   fetchGraphData: PropTypes.func.isRequired,
 };
 
+// for this entire component, now using graphParams values in Redux instead of local state.
+const mapStateToProps = state => ({
+  graphParams: state.routes.graphParams
+});
+
 const mapDispatchToProps = dispatch => {
   return ({
-    onRouteSelect: route => dispatch(handleRouteSelect(route))
+    onGraphParams: params => dispatch(handleGraphParams(params)),
   })
 }
-export default connect(null,mapDispatchToProps)(ControlPanel);
+
+export default connect(mapStateToProps, mapDispatchToProps)(ControlPanel);
