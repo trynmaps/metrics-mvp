@@ -6,6 +6,8 @@ data/*.json
 data/*.csv
 data/arrivals_*
 data/state_*
+data/wait-times_*
+data/trip-times_*
 
 ### Eclipse ###
 .metadata
