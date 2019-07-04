@@ -4,7 +4,7 @@ import { metricsBaseURL } from '../config';
 export function fetchGraphData(params) {
   return function(dispatch) {
     axios
-      .get('/metrics', {
+      .get('/api/metrics', {
         params,
         baseURL: metricsBaseURL,
       })
@@ -34,7 +34,7 @@ export function resetGraphData() {
 export function fetchIntervalData(params) {
   return function(dispatch) {
     axios
-      .get('/metrics_by_interval', {
+      .get('/api/metrics_by_interval', {
         params,
         baseURL: metricsBaseURL,
       })
@@ -64,7 +64,7 @@ export function resetIntervalData() {
 export function fetchRoutes() {
   return function(dispatch) {
     axios
-      .get('/routes', {
+      .get('/api/routes', {
         baseURL: metricsBaseURL,
       })
       .then(response => {
@@ -187,20 +187,20 @@ export function handleGraphParams(params) {
     // for debugging: console.log('hGP: ' + graphParams.route_id + ' dirid: ' + graphParams.direction_id + " start: " + graphParams.start_stop_id + " end: " + graphParams.end_stop_id);
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
-    
+
     if (graphParams.route_id && graphParams.direction_id &&
         graphParams.start_stop_id && graphParams.end_stop_id) {
       const intervalParams = Object.assign({}, graphParams);
       delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
       delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
-      
+
       dispatch(fetchData(graphParams, intervalParams));
-      
+
     } else { // when we don't have all params, clear graph data
 
       dispatch(resetGraphData());
       dispatch(resetIntervalData());
-      
+
     }
   };
 }

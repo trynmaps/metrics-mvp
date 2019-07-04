@@ -18,10 +18,7 @@ and will run the Flask backend in development mode at http://localhost:5000.
 Your local directory will be shared within the docker container at /app.
 When you edit files in your local directory, the React and Flask containers should automatically update with the new code.
 
-To start a shell within the Flask Docker container, run:
-```
-docker exec -it metrics-flask bash
-```
+To start a shell within the Flask Docker container, run `./docker-shell.sh` (Linux/Mac) or `docker-shell` (Windows).
 
 You can run command line scripts like `compute_arrivals.py` and `headways.py` from the shell in the Docker container.
 
@@ -119,20 +116,14 @@ Show summary statistics of waiting times at a particular stop:
 python waits.py --date=2019-06-06 --route=12 --stop=3476
 ```
 
-You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
-(available for 2018-09-01 to 2018-11-30), instead of the arrival times computed from GPS coordinates from Nextbus.
-Muni's timepoint data only contains a small subset of stops for each route, so the arrival history does not include all stops.
-
-Parse [CSV timepoint files from Muni](https://muni-timepoint-avl-data.s3.amazonaws.com/muni_timepoint_data_fall_2018.zip)
- and save arrival history with version `t2` in data/ directory:
+Show scheduled timetable for a particular stop:
 ```
-python parse_timepoint_csv.py path/to/next_bus_avl_20180901_20181001.csv path/to/next_bus_avl_20181001_20181101.csv path/to/next_bus_avl_20181101_20181201.csv
+python timetables.py --route=12 --stops=3476 --date=2019-04-12
 ```
 
-Compare timepoints from Muni with arrival times computed from Nextbus GPS coordinates,
-and show discrepancies between the two data sets based on differences between arrival times of each bus at each stop:
+Compare scheduled timetable to collected arrival data, with 3/5 minutes as the on-time/late thresholds(thresholds optional, the default value are 5/10 minutes)
 ```
-python compare_versions.py --date=2018-11-14 --route=1 t2 v2
+python timetables.py --route=12 --stops=3476 --date=2019-06-06 --comparison --threshold=3,5
 ```
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
@@ -149,6 +140,27 @@ Compare timepoints from Muni with arrival times computed from Nextbus GPS coordi
 and show discrepancies between the two data sets based on differences between arrival times of each bus at each stop:
 ```
 python compare_versions.py --date=2018-11-14 --route=1 t2 v2
+```
+
+You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
+(available for 2018-09-01 to 2018-11-30), instead of the arrival times computed from GPS coordinates from Nextbus.
+Muni's timepoint data only contains a small subset of stops for each route, so the arrival history does not include all stops.
+
+Parse [CSV timepoint files from Muni](https://muni-timepoint-avl-data.s3.amazonaws.com/muni_timepoint_data_fall_2018.zip)
+ and save arrival history with version `t2` in data/ directory:
+```
+python parse_timepoint_csv.py path/to/next_bus_avl_20180901_20181001.csv path/to/next_bus_avl_20181001_20181101.csv path/to/next_bus_avl_20181101_20181201.csv
+```
+
+Compare timepoints from Muni with arrival times computed from Nextbus GPS coordinates,
+and show discrepancies between the two data sets based on differences between arrival times of each bus at each stop:
+```
+python compare_versions.py --date=2018-11-14 --route=1 t2 v2
+```
+
+Scrape timetables from GTFS data stored locally in `inpath` and extract them to `outpath`:
+```
+python gtfs_scraper.py --inpath=inpath --outpath=outpath
 ```
 
 ## Deploying to Heroku
@@ -198,4 +210,13 @@ Commit your local changes to a feature branch (i.e. not master), then submit a p
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt`
 so other contributors have the latest versions of required packages.
 
-If you're on a Mac and you experience issues with Docker eating your CPU cycles and battery, set `CHOKIDAR_USEPOLLING=false` inside `docker-compose.yml`. Note: this will disable hot reloading.
+If you're on a Mac and you experience issues with Docker eating your CPU cycles and battery, create a docker-compose.override.yml file like this:
+
+```
+services:
+  react-dev:
+    environment:
+      CHOKIDAR_USEPOLLING: "false"
+```
+
+Note: this will disable hot reloading so you will need to restart `docker-compose up` after making changes to the frontend.

@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: web
+  name: web
+spec:
+  selector:
+    matchLabels:
+      run: web
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        run: web
+    spec:
+      containers:
+      - image: gcr.io/poetic-genius-233804/metrics-web:latest
+        imagePullPolicy: IfNotPresent
+        name: web
+        ports:
+          - name: http
+            containerPort: 80
