@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import partridge as ptg
 
-from models import metrics, timetable, arrival_history, nextbus, util, constants
+from models import metrics, timetable, arrival_history, nextbus, util, constants, errors
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Get the timetable for stops on a given route")
@@ -25,8 +25,15 @@ if __name__ == "__main__":
     d = date.fromisoformat(args.date)
     comparison = args.comparison
     ver = "v1"
+    
+    try:
+        thresholds = [int(x) for x in args.thresholds.split(',') if len(x) > 0]
 
-    thresholds = [int(x) for x in args.thresholds.split(',') if len(x) > 0]
+        if len(thresholds) != 2:
+            raise errors.InvalidInputError
+    except (TypeError, errors.InvalidInputError):
+        print("Invalid thresholds, using the default of 5/10 minutes.")
+        thresholds = [5, 10]
 
     agency = "sf-muni"
     

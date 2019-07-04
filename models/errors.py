@@ -3,3 +3,6 @@ class ValidationError(Exception):
 
 class ArrivalHistoryNotFoundError(Exception):
    pass
+
+class InvalidInputError(Exception):
+   pass

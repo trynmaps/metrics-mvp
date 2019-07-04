@@ -123,9 +123,9 @@ Show scheduled timetable for a particular stop:
 python timetables.py --route=12 --stops=3476 --date=2019-04-12
 ```
 
-Compare scheduled timetable to collected arrival data, with 3 minutes as the on-time threshold (threshold is optional, the default value is 5 minutes)
+Compare scheduled timetable to collected arrival data, with 3/5 minutes as the on-time/late thresholds(thresholds optional, the default value are 5/10 minutes)
 ```
-python timetables.py --route=12 --stops=3476 --date=2019-04-12 --comparison=true --threshold=3
+python timetables.py --route=12 --stops=3476 --date=2019-06-06 --comparison --threshold=3,5
 ```
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni

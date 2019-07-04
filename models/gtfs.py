@@ -167,9 +167,9 @@ class GtfsScraper:
         
         print(f"{datetime.now().time().isoformat()}: Uploaded {s3_path} to s3 bucket.")
 
-    def save_date_ranges(self, s3 = False):
+    def save_date_ranges(self, s3 = False, ver = "v1"):
         df = self.get_date_ranges()
-        filepath = f"{get_schedule_dir()}/date_ranges.csv"
+        filepath = f"{get_schedule_dir()}/date_ranges_{ver}.csv"
 
         if s3:
             s3_path = f"date_ranges.csv"
