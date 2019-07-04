@@ -25,6 +25,7 @@ stat_groups = {
     'p10-median-p90': ['p10','median','p90'],
     'plt5m-30m': ['p<5m','p<10m','p<15m','p<20m','p<25m','p<30m'],
     'median': 'median',
+    'median-p90-plt20m': ['median', 'p90', 'p<20m'],
 }
 
 def get_stat_value(stat_id, all_stat_values):
