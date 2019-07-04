@@ -29,7 +29,7 @@ class MapSpider extends Component {
 
   // TODO: Needs fixing. This sets height to that of the window, not remaining space.
   updateDimensions() {
-    const height = window.innerWidth >= 992 ? window.innerHeight : 500
+    const height = (window.innerWidth >= 992 ? window.innerHeight : 500) - 64 /* blue header */ - 29 /* buttons at top */;
     this.setState({ height: height })
   }
 
@@ -322,12 +322,10 @@ class MapSpider extends Component {
   }
 
   /**
-   * Creates a Marker with a custom svg icon (MapShield) for the route
+   * Creates a clickable Marker with a custom svg icon (MapShield) for the route
    * represented by startMarker.
    * 
    * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
-   * 
-   * TODO: make shield clickable            
    */
   generateShield = (startMarker, waitScaled) => {
 
@@ -360,8 +358,8 @@ class MapSpider extends Component {
         onGraphParams({
           route_id: startMarker.routeID,
           direction_id: startMarker.direction.id,
-          start_stop_id: null,
-          end_stop_id: null,
+          start_stop_id: startMarker.stopID,
+          end_stop_id: lastStop.stopID,
         });
         push('/route');
       }}
@@ -387,7 +385,7 @@ class MapSpider extends Component {
         ref={this.mapRef}
         >
         <TileLayer
-          attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
           url="http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png"
           opacity={0.3}
         /> {/* see http://maps.stamen.com for details */}

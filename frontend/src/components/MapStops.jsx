@@ -104,26 +104,31 @@ class MapStops extends Component {
 
     let selectedRoute = null;
     let routeStops = null;
-    let populatedRoutes = null;
+    let populatedRoutes = [];
 
     if (routes && graphParams) {
       selectedRoute = routes.find(route => route.id === graphParams.route_id);
 
       if (selectedRoute) {
         routeStops = {};
+        let index = 0;
         for (let direction of selectedRoute.directions) {
-          routeStops[direction.id] = this.getStopsInfoInGivenDirection(selectedRoute, direction.id);
+            
+          // plot only the selected direction if we have one, or else all directions
+            
+          if (!graphParams.direction_id || graphParams.direction_id === direction.id) {
+            routeStops[direction.id] = this.getStopsInfoInGivenDirection(selectedRoute, direction.id);
+            populatedRoutes.push(this.populateRouteDirection(routeStops, direction.id, STOP_COLORS[index % STOP_COLORS.length], radius ? radius : RADIUS, direction));
+          }
+          index++; // use a loop keeps the index consistent with direction and also stop color
         }
-    
-        populatedRoutes = selectedRoute.directions.map((direction, index) =>
-          this.populateRouteDirection(routeStops, direction.id, STOP_COLORS[index % STOP_COLORS.length], radius ? radius : RADIUS, direction));
       }
     }
 
     return (
       <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}>
         <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
           url="http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png"
           opacity={0.3}
         />
