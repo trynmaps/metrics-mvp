@@ -4,6 +4,9 @@ const components = {
   HOME: 'Home',
   ABOUT: 'About',
   LANDING: 'Landing',
+  DASHBOARD: 'Dashboard',
+  ROUTESCREEN: 'Route',
+  RECEIVED_GRAPH_PARAMS: 'Route',
   [NOT_FOUND]: 'NotFound',
 };
 
