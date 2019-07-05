@@ -10,7 +10,7 @@ data/wait-times_*
 data/trip-times_*
 
 docker-compose.override.yml
-.aws/credentials
+.aws/
 
 ### Eclipse ###
 .metadata
