@@ -152,6 +152,37 @@ Scrape timetables from GTFS data stored locally in `inpath` and extract them to 
 python gtfs_scraper.py --inpath=path/to/google_transit
 ```
 
+## AWS Credentials
+
+If you need to write files to S3 from your development environment (e.g. running compute_arrivals.py with the --s3 flag),
+you will need to get AWS credentials from one of the project admins.
+
+The scripts load AWS credentials from the standard locations, such as ~/.aws/credentials, using the "default" profile by default.
+
+The ~/.aws/credentials file should look something like this:
+
+```
+[default]
+aws_access_key_id = ....
+aws_secret_access_key = ....
+```
+
+However, if you are using Docker, the command line scripts will load the ~/.aws/credentials file from within the flask-dev Docker container.
+
+To make it easy to access AWS credentials in your Docker container, you can create a .aws directory
+somewhere on your host machine (e.g. in your host home directory) and share it with your Docker container
+by creating a docker-compose.override.yml file like this:
+
+```
+version: "3.7"
+services:
+  flask-dev:
+    volumes:
+      - /host/path/to/.aws:/root/.aws
+```
+
+For more information on AWS credentials see https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
+
 ## Deploying to Production
 
 When changes are merged to the master branch on GitHub, Google Cloud Build will automatically build

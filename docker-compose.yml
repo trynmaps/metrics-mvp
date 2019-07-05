@@ -20,7 +20,6 @@ services:
       - "5000:5000"
     volumes:
       - .:/app
-      - .aws:/root/.aws
     environment:
       FLASK_DEBUG: 1
   react-dev:
