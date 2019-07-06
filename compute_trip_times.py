@@ -158,29 +158,9 @@ def add_trip_time_stats_for_stop_pair(
             stat_value = get_stat_value(stat_id, all_stat_values)
             interval_trip_time_stats[stat_id][route_id][dir_id][s1][s2] = stat_value
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Compute and cache trip times')
-    parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
-    parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
-    parser.add_argument('--stat', nargs='*')
-    parser.set_defaults(s3=False)
-
-    args = parser.parse_args()
-
-    agency_id = 'sf-muni'
-
-    tz = pytz.timezone('US/Pacific')
-
-    routes = nextbus.get_route_list(agency_id)
-
-    date_str = args.date
-    d = util.parse_date(date_str)
-
-    stat_ids = args.stat
-    if stat_ids is None:
-        stat_ids = stat_groups.keys()
-
-    time_str_intervals = constants.DEFAULT_TIME_STR_INTERVALS
+def compute_trip_times(agency_id, d: date, routes, tz, stat_ids, save_to_s3 = False):
+    print(d)
+    time_str_intervals = constants.DEFAULT_TIME_STR_INTERVALS.copy()
     time_str_intervals.append(('07:00','19:00'))
 
     timestamp_intervals = [(
@@ -244,7 +224,7 @@ if __name__ == '__main__':
             with open(cache_path, "w") as f:
                 f.write(data_str)
 
-            if args.s3:
+            if save_to_s3:
                 s3 = boto3.resource('s3')
                 s3_path = trip_times.get_s3_path(agency_id, d, stat_id, start_time_str, end_time_str)
                 s3_bucket = trip_times.get_s3_bucket()
@@ -257,3 +237,34 @@ if __name__ == '__main__':
                     ContentEncoding='gzip',
                     ACL='public-read'
                 )
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Compute and cache trip times')
+    parser.add_argument('--date', help='Date (yyyy-mm-dd)')
+    parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
+    parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
+    parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
+    parser.add_argument('--stat', nargs='*')
+    parser.set_defaults(s3=False)
+
+    args = parser.parse_args()
+
+    agency_id = 'sf-muni'
+
+    tz = pytz.timezone('US/Pacific')
+
+    routes = nextbus.get_route_list(agency_id)
+
+    if args.date:
+        dates = util.get_dates_in_range(args.date, args.date)
+    elif args.start_date is not None and args.end_date is not None:
+        dates = util.get_dates_in_range(args.start_date, args.end_date)
+    else:
+        raise Exception('missing date, start-date, or end-date')
+
+    stat_ids = args.stat
+    if stat_ids is None:
+        stat_ids = stat_groups.keys()
+
+    for d in dates:
+        compute_trip_times(agency_id, d, routes, tz, stat_ids, save_to_s3=args.s3)
