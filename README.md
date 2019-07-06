@@ -235,16 +235,18 @@ Commit your local changes to a feature branch (i.e. not master), then submit a p
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt`
 so other contributors have the latest versions of required packages.
 
-If you're on a Mac and you experience issues with Docker eating your CPU cycles and battery, it is probably because of the CHOKIDAR_USEPOLLING setting
-which allows React to automatically recompiling the frontend code within the Docker container when you edit files shared from your host computer.
-You can create a docker-compose.override.yml to disable CHOKIDAR_USEPOLLING or increase CHOKIDAR_INTERVAL like this:
+If you're developing within Docker on Windows, by default, React does not automatically recompile the frontend code when you make changes.
+In order to allow React to automatically recompile the frontend code within the Docker container when you edit files shared from your
+Windows host computer, you can create a docker-compose.override.yml to enable CHOKIDAR_USEPOLLING like this:
 
 ```
 version: "3.7"
 services:
   react-dev:
     environment:
-      CHOKIDAR_INTERVAL: "5000"
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "2500"
 ```
 
-Note: if you disable CHOKIDAR_USEPOLLING, you will need to restart `docker-compose up` after making changes to the frontend.
+This setting is not in the main docker-compose.yml file because CHOKIDAR_USEPOLLING causes high CPU/battery usage for developers using Mac OS X,
+and CHOKIDAR_USEPOLLING is not necessary on Mac OS X to automatically recompile the frontend code when it changes.
