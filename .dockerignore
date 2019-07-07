@@ -4,5 +4,6 @@ data
 venv
 .git
 .idea
+.aws
 docker-compose.yml
 Dockerfile*
