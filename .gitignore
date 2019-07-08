@@ -9,6 +9,9 @@ data/state_*
 data/wait-times_*
 data/trip-times_*
 
+docker-compose.override.yml
+.aws/
+
 ### Eclipse ###
 .metadata
 bin/
