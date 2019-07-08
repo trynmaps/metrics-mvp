@@ -358,6 +358,12 @@ if os.environ.get('METRICS_ALL_IN_ONE') == '1':
     def wildcard(path):
         return send_from_directory('frontend/build', 'index.html')
 else:
+
+    # temporary for serving gtfs data -- need to figure out best way to get this for real
+    @app.route('/frontend/public/<path:path>')
+    def frontend_public(path):
+        return send_from_directory('frontend/public', path)
+
     @app.route('/')
     def root():
         return """<h2>Hello!</h2><p>This is the API server.</p>"""

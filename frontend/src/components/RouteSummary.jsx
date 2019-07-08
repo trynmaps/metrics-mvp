@@ -426,7 +426,7 @@ class RouteSummary extends Component {
     
     /**
      * temporary code again
-     */
+     *
     let allScores = [];
     const filteredRoutes = filterRoutes(routes);
     for (let route of filteredRoutes) {
@@ -442,7 +442,7 @@ class RouteSummary extends Component {
     console.log(JSON.stringify(allScores));
 
     /*/
-    
+      
     const allScores = 
     
     [{"routeID":"8AX","totalScore":200},{"routeID":"L","totalScore":199},

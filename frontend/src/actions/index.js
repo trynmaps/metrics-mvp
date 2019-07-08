@@ -162,7 +162,7 @@ export function fetchWaitTimes() {
 export function fetchAllTheThings() {
     return function (dispatch) {
         
-            axios.get('/routes', {
+            axios.get('/api/routes', {
               baseURL: metricsBaseURL
             }).then((response) => {
               dispatch({ type: 'RECEIVED_ROUTES', payload: response.data });
