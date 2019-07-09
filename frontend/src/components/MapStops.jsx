@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Map, TileLayer, CircleMarker, Tooltip, Polyline } from 'react-leaflet';
 import { handleGraphParams } from '../actions';
+import * as d3 from "d3";
+import { milesBetween } from '../helpers/routeCalculations';
+import Control from 'react-leaflet-control'
 
 const RADIUS = 6;
 const STOP_COLORS = ['blue', 'red', 'green', 'purple'];
@@ -35,11 +38,134 @@ class MapStops extends Component {
           </CircleMarker>
         );
       });
+      route.unshift(this.populateSpeed(routeStops, direction_id));
+      
       // put polyline first so clickable markers are drawn on top of it
-      route.unshift(<Polyline key={'polyline-' + direction_id} color={color} positions={routeStops[direction_id]} opacity={0.5} />);
+      route.unshift(<Polyline key={'polyline-' + direction_id} color="white" weight={10} positions={routeStops[direction_id]} opacity={1} />);
     }
     return route;
   }
+
+  // plot speed along a route
+
+  populateSpeed = (routeStops, direction_id) => {
+      
+    const downstreamStops = routeStops[direction_id];
+    let polylines = [];
+    
+    for (let i=0; i < downstreamStops.length-1; i++) {
+      const latLngs = [[ downstreamStops[i].lat, downstreamStops[i].lon ],
+                       [ downstreamStops[i+1].lat, downstreamStops[i+1].lon ]];
+      
+      const speed = this.getSpeed(downstreamStops, i, this.props.tripTimes);
+      polylines.push(
+        <Polyline
+          key={'poly-speed-' + direction_id + '-' + downstreamStops[i].sid} 
+          positions = { latLngs }
+          color = { speed < 0 ? "white" : this.speedColor(speed) }
+          opacity = { 1 }
+          weight = { 5 }
+
+          onClick={e => { // when this segment is clicked, plot only the stops for this route/dir by setting the first stop
+      
+            e.originalEvent.view.L.DomEvent.stopPropagation(e);          
+    
+            /* TODO: decide if clicking on segments changes the stop selection */
+          }
+        }
+        >
+        <Tooltip>
+           { speed < 0 ? "?" : speed.toFixed(1) } mph to { downstreamStops[i+1].title }
+        </Tooltip>
+      </Polyline>);
+
+    } // end for    
+    return polylines;
+  }
+  
+  speedColor(mph) {
+      // should this be multiples of walking speed? 3/6/9/12?
+    return d3.scaleQuantize().domain([2.5,12.5]).range(["#9e1313", "#e60000", "#f07d02", "#84ca50"])(mph);
+    // return d3.scaleQuantize().domain([0, 4]).range(d3.schemeSpectral[5])(mph/15.0*5);
+    // return d3.interpolateRdGy(mph/this.speedMax() /* scale to 0-1 */);
+  }
+  
+  /**
+   * Speed from index to index+1
+   * Using haversine distance for now.
+   */
+  getSpeed = (downstreamStops, index) => {
+    const graphParams = this.props.graphParams;
+    const routeID = graphParams.route_id;
+    const directionID = this.props.graphParams.direction_id;
+    const firstStop = downstreamStops[index];
+    const firstStopID = firstStop.sid;
+    const nextStop = downstreamStops[index+1];
+    const nextStopID = nextStop.sid;
+
+    // refactor time/date handling along with actions/index.js
+    
+    let timeStr = graphParams.start_time ? graphParams.start_time + '-' + graphParams.end_time : '';
+    let dateStr = graphParams.date;    
+    
+    if (!this.props.tripTimesCache[dateStr + timeStr + 'median']) {
+        return -1;
+    }
+    
+    const tripTimesForRoute = this.props.tripTimesCache[dateStr + timeStr + 'median'].routes[routeID];
+    if (!tripTimesForRoute) {
+      return -1;
+    }
+    
+    const tripTimesForDir = tripTimesForRoute[directionID];
+    
+    let time = null;
+    if (tripTimesForDir && tripTimesForDir[firstStopID] && tripTimesForDir[firstStopID][nextStopID]) {
+      time = tripTimesForDir[firstStopID][nextStopID];
+    } else {
+      return -1; // speed not available;
+    }
+    
+    const distance = milesBetween(firstStop, nextStop);
+    
+    return distance/time * 60; // miles per minute -> mph 
+  }
+
+  SpeedLegend = () => {
+      
+    let items = [];
+                
+    const speedColorValues = [ 2.5, 6.25, 8.75, 12.5 ]; // representative values for quantizing
+      // center of scale is 7.5 with quartile boundaries at 5 and 10.
+      
+    const speedColorLabels = [ " < 5", "5-7.5", "7.5-10", "10+" ];
+      
+    for (let speedColorValue of speedColorValues) {
+      items.push(
+        <div key={speedColorValue}>
+          <i style={{
+            backgroundColor: this.speedColor(speedColorValue),
+            width: 18,
+            float: "left"
+            
+            }} >&nbsp;</i> &nbsp;
+          { speedColorLabels[speedColorValues.indexOf(speedColorValue)] } 
+        </div>
+      );
+    }
+      
+    return <Control position="topright">
+                  <div
+                    style={{
+                        backgroundColor: 'white',
+                        padding: '5px',
+                    }}
+                > Speed (mph)
+                { items }
+                </div>
+            </Control> 
+  }
+  
   
   handleStopSelect = (stop, new_direction_id) => {
     let { route_id, start_stop_id, end_stop_id, direction_id} = this.props.graphParams;
@@ -85,7 +211,7 @@ class MapStops extends Component {
 
   
   getStopsInfoInGivenDirection = (selectedRoute, directionId) => {
-      const stopSids = selectedRoute.directions.find(dir => dir.id === directionId);
+    const stopSids = selectedRoute.directions.find(dir => dir.id === directionId);
     
     return stopSids.stops.map(stop => {
       let currentStopInfo = {...selectedRoute.stops[stop]};
@@ -133,6 +259,7 @@ class MapStops extends Component {
           opacity={0.3}
         />
         { populatedRoutes }
+        <this.SpeedLegend/>
         </Map>
         );
       }
@@ -140,6 +267,7 @@ class MapStops extends Component {
     
 const mapStateToProps = state => ({
   graphParams: state.routes.graphParams,
+  tripTimesCache: state.routes.tripTimesCache,
 });
 
 const mapDispatchToProps = dispatch => {

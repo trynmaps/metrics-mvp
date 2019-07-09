@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
+import { getTimePath, getStatPath } from '../helpers/precomputed.js';
 
 export function fetchGraphData(params) {
   return function(dispatch) {
@@ -76,6 +77,52 @@ export function fetchRoutes() {
   };
 }
 
+export function fetchPrecomputedWaitAndTripData(params) {
+  return function(dispatch, getState) {
+
+    let timeStr = params.start_time ? params.start_time + '-' + params.end_time : '';
+    let dateStr = params.date;
+    
+    const tripTimesCache = getState().routes.tripTimesCache;  
+  
+    let tripTimes = tripTimesCache[params.dateStr + timeStr + 'median']; 
+
+    if (!tripTimes) {
+      let timePath = getTimePath(timeStr);
+      let statPath = getStatPath('median');
+
+      let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/'+
+          dateStr.replace(/-/g, '/')+
+          '/trip-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+
+      axios.get(s3Url)
+      .then(response => {
+        dispatch({ type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES', payload: [response.data, dateStr + timeStr + 'median'] })
+      })
+      .catch(err => { /* do something? */ })
+    }
+  
+    const waitTimesCache = getState().routes.waitTimesCache;  
+
+    let waitTimes = waitTimesCache[params.dateStr + timeStr + 'median']; 
+
+    if (!waitTimes) {
+      let timePath = getTimePath(timeStr);
+      let statPath = getStatPath('median');
+
+      let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/'+
+      dateStr.replace(/-/g, '/')+
+      '/wait-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+
+      axios.get(s3Url)
+      .then(response => {
+        dispatch({ type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES', payload: [response.data, dateStr + timeStr + 'median'] })
+      })
+      .catch(err => { /* do something? */ })
+    }
+  }
+}
+
 export function handleSpiderMapClick(stops, latLng) {
   return function(dispatch) {
     dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: [stops, latLng] });
@@ -90,6 +137,10 @@ export function handleGraphParams(params) {
     // for debugging: console.log('hGP: ' + graphParams.route_id + ' dirid: ' + graphParams.direction_id + " start: " + graphParams.start_stop_id + " end: " + graphParams.end_stop_id);
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
+    
+    if (graphParams.route_id) {
+      dispatch(fetchPrecomputedWaitAndTripData(graphParams));
+    }
 
     if (graphParams.route_id && graphParams.direction_id &&
         graphParams.start_stop_id && graphParams.end_stop_id) {

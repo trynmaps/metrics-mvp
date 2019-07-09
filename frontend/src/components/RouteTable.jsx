@@ -261,7 +261,7 @@ function RouteTable(props) {
                   return (
                     <TableRow
                       hover
-                      xxxonClick={event => handleClick(event, row)}
+                      onClick={ null /*event => handleClick(event, row)*/}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
@@ -275,7 +275,6 @@ function RouteTable(props) {
                       start_stop_id: null,
                       end_stop_id: null,
                     }, query: { route_id: row.id } }} >{row.title}</Link>
-                        <a href="#">{row.title}</a> {/* TODO: use a real /route/... link here or button, React complains about this dummy href */}
                       </TableCell>
                       <TableCell align="right">{row.wait.toFixed(1)}</TableCell>
                       <TableCell align="right">{row.speed}</TableCell>
