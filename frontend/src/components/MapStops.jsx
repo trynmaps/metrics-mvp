@@ -108,11 +108,12 @@ class MapStops extends Component {
     let timeStr = graphParams.start_time ? graphParams.start_time + '-' + graphParams.end_time : '';
     let dateStr = graphParams.date;    
     
-    if (!this.props.tripTimesCache[dateStr + timeStr + 'median']) {
+    const tripTimesForDateAndTime = this.props.tripTimesCache[dateStr + timeStr + 'median'];
+    if (!tripTimesForDateAndTime) {
       return -1;
     }
     
-    const tripTimesForRoute = this.props.tripTimesCache[dateStr + timeStr + 'median'].routes[routeID];
+    const tripTimesForRoute = tripTimesForDateAndTime.routes[routeID];
     if (!tripTimesForRoute) {
       return -1;
     }
