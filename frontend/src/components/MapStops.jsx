@@ -57,7 +57,7 @@ class MapStops extends Component {
       const latLngs = [[ downstreamStops[i].lat, downstreamStops[i].lon ],
                        [ downstreamStops[i+1].lat, downstreamStops[i+1].lon ]];
       
-      const speed = this.getSpeed(downstreamStops, i, this.props.tripTimes);
+      const speed = this.getSpeed(downstreamStops, i, direction_id);
       polylines.push(
         <Polyline
           key={'poly-speed-' + direction_id + '-' + downstreamStops[i].sid} 
@@ -94,10 +94,10 @@ class MapStops extends Component {
    * Speed from index to index+1
    * Using haversine distance for now.
    */
-  getSpeed = (downstreamStops, index) => {
+  getSpeed = (downstreamStops, index, directionID) => {
     const graphParams = this.props.graphParams;
     const routeID = graphParams.route_id;
-    const directionID = this.props.graphParams.direction_id;
+
     const firstStop = downstreamStops[index];
     const firstStopID = firstStop.sid;
     const nextStop = downstreamStops[index+1];
@@ -109,7 +109,7 @@ class MapStops extends Component {
     let dateStr = graphParams.date;    
     
     if (!this.props.tripTimesCache[dateStr + timeStr + 'median']) {
-        return -1;
+      return -1;
     }
     
     const tripTimesForRoute = this.props.tripTimesCache[dateStr + timeStr + 'median'].routes[routeID];
@@ -221,10 +221,10 @@ class MapStops extends Component {
   }
 
   render() {
+      
     const {position, zoom, radius } = this.props;
   
     const mapClass = { width: '100%', height: '500px' };
-    
     
     const { routes, graphParams } = this.props;
 
