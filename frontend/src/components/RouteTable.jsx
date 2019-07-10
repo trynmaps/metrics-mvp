@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles } from '@material-ui/core/styles';
@@ -16,11 +16,12 @@ import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
 
 import { filterRoutes } from '../helpers/routeCalculations';
+import { getWaitTimeForDirection } from '../helpers/precomputed';
 import { connect } from 'react-redux';
 import { push } from 'redux-first-router'
 import Link from 'redux-first-router-link'
 
-import { handleGraphParams } from '../actions';
+import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
 function desc(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -176,6 +177,10 @@ function RouteTable(props) {
   const [selected, setSelected] = React.useState([]);
   const dense = true;
 
+  useEffect(() => {
+    props.fetchPrecomputedWaitAndTripData(props.graphParams); // like componentDidMount, runs only once
+  }, []);
+  
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
     setOrder(isDesc ? 'asc' : 'desc');
@@ -201,13 +206,31 @@ function RouteTable(props) {
 
     setSelected(newSelected);
 
-    props.onGraphParams({
+    props.handleGraphParams({
       route_id: route.id,
       direction_id: null,
       start_stop_id: null,
       end_stop_id: null,
     });
     push('/route');
+  }
+
+  /**
+   * 
+   * @param {any} waitTimesCache
+   * @param {any} graphParams
+   * @param {any} route
+   */
+  function getMedianWait(waitTimesCache, graphParams, route) {
+    const directions = route.directions;
+    const sumOfMedians = directions.reduce((total, direction) => {
+      const waitForDir = getWaitTimeForDirection(waitTimesCache, graphParams, route.id, direction.id);
+      if (!waitForDir) {
+          return NaN;
+      }
+      return total + getWaitTimeForDirection(waitTimesCache, graphParams, route.id, direction.id).median;  
+    }, 0);
+    return sumOfMedians/directions.length;
   }
 
   const isSelected = name => selected.indexOf(name) !== -1;
@@ -222,16 +245,8 @@ function RouteTable(props) {
     routes = routes.filter(route => spiderRouteIDs.includes(route.id));
   }
   
-  // put in temporarily hard-coded average waits
-  
-  const allWaits = getAllWaits();
   routes = routes.map(route => {
-    const waitObj = allWaits.find(wait => wait.routeID === route.id);
-    if (waitObj) {
-      route.wait = waitObj.wait;
-    } else {
-      route.wait = 0;
-    }
+    route.wait = getMedianWait(props.waitTimesCache, props.graphParams, route);     
     return route;
   });
 
@@ -276,7 +291,7 @@ function RouteTable(props) {
                       end_stop_id: null,
                     }, query: { route_id: row.id } }} >{row.title}</Link>
                       </TableCell>
-                      <TableCell align="right">{row.wait.toFixed(1)}</TableCell>
+                      <TableCell align="right">{isNaN(row.wait) ? "--" : row.wait.toFixed(1)}</TableCell>
                       <TableCell align="right">{row.speed}</TableCell>
                       <TableCell align="right">{row.score}</TableCell>
                     </TableRow>
@@ -343,12 +358,15 @@ function getAllWaits() {
 }
 
 const mapStateToProps = state => ({
+  graphParams: state.routes.graphParams,
   spiderSelection: state.routes.spiderSelection,
+  waitTimesCache: state.routes.waitTimesCache,
 });
 
 const mapDispatchToProps = dispatch => {
   return ({
-    onGraphParams: params => dispatch(handleGraphParams(params))
+      fetchPrecomputedWaitAndTripData: params => dispatch(fetchPrecomputedWaitAndTripData(params)),
+      handleGraphParams: params => dispatch(handleGraphParams(params))
   })
 }
 
