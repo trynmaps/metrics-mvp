@@ -167,6 +167,32 @@ class MapStops extends Component {
             </Control>
   }
 
+  InboundOutboundLegend = () => {
+    const stopTypeLegend = {"Inbound": "blue", "Outbound": "red"}
+    const items = Object.keys(stopTypeLegend).map(stopType => {
+      return <div key = {stopType}>
+        <i style={{
+          width: 18,
+          height: 18,
+          float: "left",
+          border: `3px solid ${stopTypeLegend[stopType]}`,
+          borderRadius: "50%"
+          }} >&nbsp;</i> &nbsp;
+          {stopType}
+      </div>
+    })
+
+    return <Control position="topright">
+      <div
+      style={{
+        backgroundColor: 'white',
+        padding: '5px',
+      }}> Stop type
+        { items }
+      </div>
+
+    </Control>
+  }
 
   handleStopSelect = (stop, new_direction_id) => {
     let { route_id, start_stop_id, end_stop_id, direction_id} = this.props.graphParams;
@@ -261,6 +287,7 @@ class MapStops extends Component {
         />
         { populatedRoutes }
         <this.SpeedLegend/>
+        <this.InboundOutboundLegend/>
         </Map>
         );
       }
