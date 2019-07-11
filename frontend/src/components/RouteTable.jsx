@@ -138,11 +138,11 @@ const EnhancedTableToolbar = props => {
       </div>
       <div className={classes.spacer} />
       <div className={classes.actions}>
-          <Tooltip title="Filter list">
-            <IconButton aria-label="Filter list">
-              <FilterListIcon />
-            </IconButton>
-          </Tooltip>
+        <Tooltip title="Filter list">
+          <IconButton aria-label="Filter list">
+            <FilterListIcon />
+          </IconButton>
+        </Tooltip>
       </div>
     </Toolbar>
   );
@@ -211,7 +211,7 @@ function RouteTable(props) {
   }
 
   const isSelected = name => selected.indexOf(name) !== -1;
-  
+
   let routes = props.routes ? filterRoutes(props.routes) : [];
   const spiderSelection = props.spiderSelection;
   
