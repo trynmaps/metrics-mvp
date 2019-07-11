@@ -1,16 +1,20 @@
 /**
  * Functions taken from the isochrone branch.
- * 
+ *
  * Fetching of the precomputed wait/trip time json is done using Redux.
  * getTripTimesFromStop and getWaitTimeAtStop is commented out but left here for usage reference.
  */
-export function getTimePath(timeStr)
-{
-    return timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_').replace(/\+/g,'%2B')) : '';
+export function getTimePath(timeStr) {
+  return timeStr
+    ? `_${timeStr
+        .replace(/:/g, '')
+        .replace('-', '_')
+        .replace(/\+/g, '%2B')}`
+    : '';
 }
 
 /**
- * 
+ *
  * @param routeId
  * @param directionId
  * @param startStopId
@@ -65,33 +69,28 @@ export function getTimePath(timeStr)
 }
 */
 
-function getTripTimeStat(tripTimeValues, index)
-{
-    if (!tripTimeValues)
-    {
-        return null;
-    }
+function getTripTimeStat(tripTimeValues, index) {
+  if (!tripTimeValues) {
+    return null;
+  }
 
-    const statValues = {};
-    for (let endStopId in tripTimeValues)
-    {
-        statValues[endStopId] = tripTimeValues[endStopId][index];
-    }
-    return statValues;
+  const statValues = {};
+  for (const endStopId in tripTimeValues) {
+    statValues[endStopId] = tripTimeValues[endStopId][index];
+  }
+  return statValues;
 }
 
-export function getStatPath(stat)
-{
-    switch (stat)
-    {
-        case 'median':
-            return 'median';
-        case 'p10':
-        case 'p90':
-            return 'p10-median-p90';
-        default:
-            throw new Error('unknown stat ' + stat);
-    }
+export function getStatPath(stat) {
+  switch (stat) {
+    case 'median':
+      return 'median';
+    case 'p10':
+    case 'p90':
+      return 'p10-median-p90';
+    default:
+      throw new Error(`unknown stat ${stat}`);
+  }
 }
 
 /*
