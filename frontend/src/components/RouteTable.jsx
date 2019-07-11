@@ -261,7 +261,7 @@ function RouteTable(props) {
                   return (
                     <TableRow
                       hover
-                      onClick={ null /*event => handleClick(event, row)*/}
+                      onClick={ event => handleClick(event, row) }
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}

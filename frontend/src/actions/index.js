@@ -85,7 +85,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
     
     const tripTimesCache = getState().routes.tripTimesCache;  
   
-    let tripTimes = tripTimesCache[params.dateStr + timeStr + 'median']; 
+    let tripTimes = tripTimesCache[dateStr + timeStr + 'median']; 
 
     if (!tripTimes) {
       let timePath = getTimePath(timeStr);
@@ -104,7 +104,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
   
     const waitTimesCache = getState().routes.waitTimesCache;  
 
-    let waitTimes = waitTimesCache[params.dateStr + timeStr + 'median']; 
+    let waitTimes = waitTimesCache[dateStr + timeStr + 'median']; 
 
     if (!waitTimes) {
       let timePath = getTimePath(timeStr);

@@ -1,0 +1,10 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: web-ingress
+  annotations:
+    networking.gke.io/managed-certificates: muni-certificate
+spec:
+  backend:
+    serviceName: web
+    servicePort: 80
