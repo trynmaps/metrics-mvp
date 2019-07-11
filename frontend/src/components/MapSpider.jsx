@@ -1,5 +1,6 @@
 import React, { Fragment, Component, createRef } from 'react';
 import Button from '@material-ui/core/Button';
+import GpsIcon from '@material-ui/icons/GpsFixed'
 import { connect } from 'react-redux';
 import {
   Map, TileLayer, CircleMarker, Marker,
@@ -396,12 +397,13 @@ class MapSpider extends Component {
 
         <Control position="bottomleft" >
           <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
+            <GpsIcon/>
             Routes near me
           </Button>
-          <br/>
+          &nbsp;
           <Button variant="contained" color="secondary" onClick={ e => this.props.onSpiderMapClick([], null) }>
             Clear map
-          </Button>
+          </Button> <br/><br/>
 
         </Control>
 
