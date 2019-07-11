@@ -5,6 +5,7 @@ import { handleGraphParams } from '../actions';
 import * as d3 from "d3";
 import { milesBetween } from '../helpers/routeCalculations';
 import Control from 'react-leaflet-control'
+import { getTripTimesFromStop } from '../helpers/precomputed';
 
 const RADIUS = 6;
 const STOP_COLORS = ['blue', 'red', 'green', 'purple'];
@@ -103,26 +104,11 @@ class MapStops extends Component {
     const nextStop = downstreamStops[index+1];
     const nextStopID = nextStop.sid;
 
-    // refactor time/date handling along with actions/index.js
-
-    let timeStr = graphParams.start_time ? graphParams.start_time + '-' + graphParams.end_time : '';
-    let dateStr = graphParams.date;
-
-    const tripTimesForDateAndTime = this.props.tripTimesCache[dateStr + timeStr + 'median'];
-    if (!tripTimesForDateAndTime) {
-      return -1;
-    }
-
-    const tripTimesForRoute = tripTimesForDateAndTime.routes[routeID];
-    if (!tripTimesForRoute) {
-      return -1;
-    }
-
-    const tripTimesForDir = tripTimesForRoute[directionID];
-
+    const tripTimesFromStop = getTripTimesFromStop(this.props.tripTimesCache, graphParams, routeID, directionID, firstStopID);
+    
     let time = null;
-    if (tripTimesForDir && tripTimesForDir[firstStopID] && tripTimesForDir[firstStopID][nextStopID]) {
-      time = tripTimesForDir[firstStopID][nextStopID];
+    if (tripTimesFromStop && tripTimesFromStop[nextStopID]) {
+      time = tripTimesFromStop[nextStopID];
     } else {
       return -1; // speed not available;
     }
