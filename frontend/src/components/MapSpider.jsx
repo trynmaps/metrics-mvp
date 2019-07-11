@@ -1,4 +1,5 @@
 import React, { Fragment, Component, createRef } from 'react';
+import Button from '@material-ui/core/Button';
 import { connect } from 'react-redux';
 import {
   Map, TileLayer, CircleMarker, Marker,
@@ -393,14 +394,14 @@ class MapSpider extends Component {
         <this.DownstreamLines/>
         <this.StartMarkers/>
 
-        <Control position="topleft" >
-          <button onClick={ this.handleGeoLocate }>
+        <Control position="bottomleft" >
+          <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
             Routes near me
-          </button>
+          </Button>
           <br/>
-          <button onClick={ e => this.props.onSpiderMapClick([], null) }>
+          <Button variant="contained" color="secondary" onClick={ e => this.props.onSpiderMapClick([], null) }>
             Clear map
-          </button>
+          </Button>
 
         </Control>
 
