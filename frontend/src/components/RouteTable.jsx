@@ -261,7 +261,6 @@ function RouteTable(props) {
                   return (
                     <TableRow
                       hover
-                      onClick={ event => handleClick(event, row) }
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
@@ -269,12 +268,12 @@ function RouteTable(props) {
                       selected={isItemSelected}
                     >
                       <TableCell component="th" id={labelId} scope="row" padding="none">
-                        <Link to={{type: 'RECEIVED_GRAPH_PARAMS', payload: {
+                        <Link to={{type: 'ROUTESCREEN', payload: {
                       route_id: row.id,
                       direction_id: null,
                       start_stop_id: null,
-                      end_stop_id: null,
-                    }, query: { route_id: row.id } }} >{row.title}</Link>
+                      end_stop_id: null
+                    }}} >{row.title}</Link>
                       </TableCell>
                       <TableCell align="right">{row.wait.toFixed(1)}</TableCell>
                       <TableCell align="right">{row.speed}</TableCell>
