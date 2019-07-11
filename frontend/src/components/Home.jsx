@@ -35,46 +35,6 @@ class Home extends Component {
     } = this.props;
     return (
       <Fragment>
-        <button>
-          <NavLink
-            to={{ type: 'HOME' }}
-            activeStyle={{ fontWeight: 'bold', color: 'purple' }}
-            exact
-            strict
-          >
-            Home
-          </NavLink>
-        </button>
-        <button>
-          <NavLink
-            to={{ type: 'ABOUT' }}
-            activeStyle={{ fontWeight: 'bold', color: 'purple' }}
-            exact
-            strict
-          >
-            About
-          </NavLink>
-        </button>
-        <button>
-          <NavLink
-            to={{ type: 'LANDING' }}
-            activeStyle={{ fontWeight: 'bold', color: 'purple' }}
-            exact
-            strict
-          >
-            Landing
-          </NavLink>
-        </button>
-        <button>
-          <NavLink
-            to={{ type: 'DASHBOARD' }}
-            activeStyle={{ fontWeight: "bold", color: 'purple' }}
-            exact={true}
-            strict={true}
-          >
-            Dashboard
-            </NavLink>
-        </button>
         <div
           className={css`
             display: grid;
@@ -96,29 +56,30 @@ class Home extends Component {
             fetchIntervalData={this.props.fetchIntervalData}
             fetchData={this.props.fetchData}
           />
-          <div className={css`
-            grid-column-start: 1`}>
+          <div
+            className={css`
+              grid-column-start: 1;
+            `}
+          >
             <div className="largeMarginTop">
               <MapStops />
             </div>
           </div>
-            
-            
+
           <div
-          className={css`
-           grid-column: col3-start ;
-           grid-row: row1-start / row2-end;
-          `
-          }
-        >            
-          <Info
-            graphData={graphData}
-            graphError={graphError}
-            graphParams={graphParams}
-            routes={routes}
-            intervalData={intervalData}
-            intervalError={intervalError}
-          />
+            className={css`
+              grid-column: col3-start;
+              grid-row: row1-start / row2-end;
+            `}
+          >
+            <Info
+              graphData={graphData}
+              graphError={graphError}
+              graphParams={graphParams}
+              routes={routes}
+              intervalData={intervalData}
+              intervalError={intervalError}
+            />
           </div>
         </div>
       </Fragment>

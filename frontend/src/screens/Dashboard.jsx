@@ -9,7 +9,8 @@ import ListItem from '@material-ui/core/ListItem';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import AppBar from '@material-ui/core/AppBar';
 
-import Navigation from '../components/Navigation';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
 import MapSpider from '../components/MapSpider';
 import RouteTable from '../components/RouteTable';
 
@@ -22,38 +23,31 @@ import {
   resetIntervalData,
 } from '../actions';
 
-import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-
 class Dashboard extends React.Component {
-  
   componentDidMount() {
     if (!this.props.routes) {
       this.props.fetchRoutes();
     }
   }
-  
+
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
       drawerOpen: false,
-    }
+    };
 
     this.handleToggleDrawer = this.handleToggleDrawer.bind(this);
   }
 
   handleToggleDrawer() {
-    this.setState({ drawerOpen: !this.state.drawerOpen })
+    this.setState({ drawerOpen: !this.state.drawerOpen });
   }
 
   render() {
-    const {
-      routes,
-    } = this.props;    
+    const { routes } = this.props;
     return (
       <Fragment>
-        <Navigation />
         <AppBar position="relative">
           <Toolbar>
             <IconButton
@@ -64,7 +58,7 @@ class Dashboard extends React.Component {
             >
               <MenuIcon />
             </IconButton>
-        Muni
+            Muni
           </Toolbar>
         </AppBar>
 
@@ -90,16 +84,20 @@ class Dashboard extends React.Component {
           </div>
         </Drawer>
 
-        <Grid container spacing={0}> {/* Using spacing causes horizontal scrolling, see https://material-ui.com/components/grid/#negative-margin */}
+        <Grid container spacing={0}>
+          {' '}
+          {/* Using spacing causes horizontal scrolling, see https://material-ui.com/components/grid/#negative-margin */}
           <Grid item xs={6}>
             <MapSpider routes={routes} />
           </Grid>
-          <Grid item xs={6} style={{ padding:12 }}> {/* Doing the spacing between Grid items ourselves.  See previous comment. */}
+          <Grid item xs={6} style={{ padding: 12 }}>
+            {' '}
+            {/* Doing the spacing between Grid items ourselves.  See previous comment. */}
             <RouteTable routes={routes} />
           </Grid>
         </Grid>
       </Fragment>
-    )
+    );
   }
 }
 
@@ -127,6 +125,6 @@ Dashboard.propTypes = {
 };
 
 export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
+  mapStateToProps,
+  mapDispatchToProps,
 )(Dashboard);

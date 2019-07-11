@@ -79,48 +79,63 @@ export function fetchRoutes() {
 
 export function fetchPrecomputedWaitAndTripData(params) {
   return function(dispatch, getState) {
+    const timeStr = params.start_time
+      ? `${params.start_time}-${params.end_time}`
+      : '';
+    const dateStr = params.date;
 
-    let timeStr = params.start_time ? params.start_time + '-' + params.end_time : '';
-    let dateStr = params.date;
-    
-    const tripTimesCache = getState().routes.tripTimesCache;  
-  
-    let tripTimes = tripTimesCache[dateStr + timeStr + 'median']; 
+    const tripTimesCache = getState().routes.tripTimesCache;
+
+    const tripTimes = tripTimesCache[`${dateStr + timeStr}median`];
 
     if (!tripTimes) {
-      let timePath = getTimePath(timeStr);
-      let statPath = getStatPath('median');
+      const timePath = getTimePath(timeStr);
+      const statPath = getStatPath('median');
 
-      let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/'+
-          dateStr.replace(/-/g, '/')+
-          '/trip-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+      const s3Url = `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/${dateStr.replace(
+        /-/g,
+        '/',
+      )}/trip-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
 
-      axios.get(s3Url)
-      .then(response => {
-        dispatch({ type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES', payload: [response.data, dateStr + timeStr + 'median'] })
-      })
-      .catch(err => { /* do something? */ })
+      axios
+        .get(s3Url)
+        .then(response => {
+          dispatch({
+            type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
+            payload: [response.data, `${dateStr + timeStr}median`],
+          });
+        })
+        .catch(err => {
+          /* do something? */
+        });
     }
-  
-    const waitTimesCache = getState().routes.waitTimesCache;  
 
-    let waitTimes = waitTimesCache[dateStr + timeStr + 'median']; 
+    const waitTimesCache = getState().routes.waitTimesCache;
+
+    const waitTimes = waitTimesCache[`${dateStr + timeStr}median`];
 
     if (!waitTimes) {
-      let timePath = getTimePath(timeStr);
-      let statPath = getStatPath('median');
+      const timePath = getTimePath(timeStr);
+      const statPath = getStatPath('median');
 
-      let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/'+
-      dateStr.replace(/-/g, '/')+
-      '/wait-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+      const s3Url = `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/${dateStr.replace(
+        /-/g,
+        '/',
+      )}/wait-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
 
-      axios.get(s3Url)
-      .then(response => {
-        dispatch({ type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES', payload: [response.data, dateStr + timeStr + 'median'] })
-      })
-      .catch(err => { /* do something? */ })
+      axios
+        .get(s3Url)
+        .then(response => {
+          dispatch({
+            type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
+            payload: [response.data, `${dateStr + timeStr}median`],
+          });
+        })
+        .catch(err => {
+          /* do something? */
+        });
     }
-  }
+  };
 }
 
 export function handleSpiderMapClick(stops, latLng) {
@@ -137,24 +152,27 @@ export function handleGraphParams(params) {
     // for debugging: console.log('hGP: ' + graphParams.route_id + ' dirid: ' + graphParams.direction_id + " start: " + graphParams.start_stop_id + " end: " + graphParams.end_stop_id);
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
-    
+
     if (graphParams.route_id) {
       dispatch(fetchPrecomputedWaitAndTripData(graphParams));
     }
 
-    if (graphParams.route_id && graphParams.direction_id &&
-        graphParams.start_stop_id && graphParams.end_stop_id) {
+    if (
+      graphParams.route_id &&
+      graphParams.direction_id &&
+      graphParams.start_stop_id &&
+      graphParams.end_stop_id
+    ) {
       const intervalParams = Object.assign({}, graphParams);
       delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
+      delete intervalParams.end_time; // because the hourly graph is spiky and can trigger panda "empty axes" errors.
 
       dispatch(fetchData(graphParams, intervalParams));
-
-    } else { // when we don't have all params, clear graph data
+    } else {
+      // when we don't have all params, clear graph data
 
       dispatch(resetGraphData());
       dispatch(resetIntervalData());
-
     }
   };
 }
