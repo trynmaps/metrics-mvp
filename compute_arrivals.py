@@ -84,7 +84,7 @@ if __name__ == '__main__':
         compute_arrivals_for_date(
             d, start_hour=3, tz=tz,
             agency=agency,
-            route_ids=list(set(route_ids) - set(owl_routes)),
+            route_ids=[r for r in route_ids if r not in owl_routes],
             s3=args.s3
         )
         # owl routes run from 1AM to 5AM so they are associated with the same day
