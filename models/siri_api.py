@@ -4,7 +4,7 @@ import json
 from . import predictions as p
 
 
-def get_all_predictions(api_key: str, agency: str) -> p.Predictions:
+def get_all_predictions(api_key: str, agency: str) -> dict:
     url = f"http://api.511.org/transit/StopMonitoring?api_key={api_key}&agency={agency}"
     resp = requests.get(url)
     if resp.status_code != 200:
@@ -27,7 +27,7 @@ def get_all_predictions(api_key: str, agency: str) -> p.Predictions:
     return stops_to_predictions
 
 
-def get_predictions_by_stop_id(api_key: str, agency: str, stop_id: str) -> p.PredictionsByStop:
+def get_predictions_by_stop_id(api_key: str, agency: str, stop_id: str):
     url = f"http://api.511.org/transit/StopMonitoring?api_key={api_key}&agency={agency}&stopCode={stop_id}"
     resp = requests.get(url)
     if resp.status_code != 200:
@@ -52,7 +52,7 @@ def parse_prediction_return(prediction: dict) -> dict:
         'queried_time': prediction['RecordedAtTime'],
         'route_id': prediction['MonitoredVehicleJourney']['LineRef'],
         'stop_id': prediction['MonitoredVehicleJourney']['MonitoredCall']['StopPointRef'],
-        'vehicle_id': prediction['MonitoredVehicleJourney']['FramedVehicleJourneyRef']['DatedVehicleJourneyRef'],
+        'trip_id': prediction['MonitoredVehicleJourney']['FramedVehicleJourneyRef']['DatedVehicleJourneyRef'],
         'arrival_time': prediction['MonitoredVehicleJourney']['MonitoredCall']['AimedArrivalTime'],
         'direction': prediction['MonitoredVehicleJourney']['DirectionRef'],
     }
