@@ -229,7 +229,7 @@ function RouteTable(props) {
       if (!waitForDir) {
           return NaN;
       }
-      return total + getWaitTimeForDirection(waitTimesCache, graphParams, route.id, direction.id).median;  
+      return total + waitForDir.median;  
     }, 0);
     return sumOfMedians/directions.length;
   }

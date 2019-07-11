@@ -1,4 +1,9 @@
 /**
+ * Access of precomputed wait and trip times.
+ * 
+ * See https://github.com/trynmaps/metrics-mvp/pull/143 for an overview of the file structure and
+ * json structure.
+ * 
  * Functions taken from the isochrone branch.
  * 
  * Fetching of the precomputed wait/trip time json is done using Redux.
@@ -62,15 +67,15 @@ export function getTripTimesFromStop(tripTimesCache, graphParams, routeId, direc
   }
   const tripTimeValues = directionTripTimes[startStopId];
 
-  if (stat === 'median')
+  if (stat === 'median') // using the median stat group (see getStatPath)
   {
     return tripTimeValues;
   }
-  if (stat === 'p10')
+  if (stat === 'p10') // using the p10-median-p90 stat group (see getStatPath)
   {
     return getTripTimeStat(tripTimeValues, 0);
   }
-  if (stat === 'p90')
+  if (stat === 'p90') // using the p10-median-p90 stat group (see getStatPath)
   {
     return getTripTimeStat(tripTimeValues, 2);
   }
@@ -95,7 +100,9 @@ function getTripTimeStat(tripTimeValues, index)
 }
 
 /**
- * Maps the given stat to a stat group (part of the file path).
+ * Maps the given stat to a stat group (part of the file path).  Example stat groups are
+ * "median" and "p10-median-p90".  When fetching an individual stat, this function returns
+ * which group should be used, favoring more compact groups over larger ones.
  * 
  * @param stat
  */
