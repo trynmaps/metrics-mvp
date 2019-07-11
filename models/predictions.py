@@ -50,14 +50,14 @@ class Prediction:
 
 
 class PredictionsByStop:
-    def __init__(self, stop_id: str, queried_time, prediction_data: list, agency: str):
+    def __init__(self, stop_id: str, queried_time, predictions: list, agency: str):
         self.queried_time = queried_time
         self.stop_id = stop_id
-        self.prediction_data = prediction_data
+        self.predictions = predictions
         self.agency = agency
 
     def add_prediction(self, prediction: Prediction):
-        self.prediction_data.append(prediction)
+        self.predictions.append(prediction)
 
     @classmethod
     def from_data(cls, data: dict):
@@ -65,7 +65,7 @@ class PredictionsByStop:
         return cls(
             stop_id=data['stop_id'],
             queried_time=data['queried_time'],
-            prediction_data=predictions,
+            predictions=predictions,
             agency=data['agency'],
         )
 
@@ -73,7 +73,7 @@ class PredictionsByStop:
         return {
             'queried_time': self.queried_time,
             'stop_id': self.stop_id,
-            'prediction_data': self.prediction_data,
+            'predictions': [p.get_data() for p in self.predictions],
             'agency': self.agency,
         }
 
@@ -116,11 +116,8 @@ def get_all_predictions(agency: str, datetime: datetime) -> AllPredictions:
     all_predictions = siri_api.get_all_predictions(
         constants.SIRI_API_KEY_TEST, 'sf'
     )
-    all_prediction_data = {}
-    for stop_id in all_predictions:
-        all_prediction_data[stop_id] = [
-            p.get_data() for p in all_predictions[stop_id].get_data()['prediction_data']]
-
+    for stop in all_predictions:
+        all_predictions[stop] = all_predictions[stop].get_data()
     with open(cache_path, "w+") as f:
-        json.dump(all_prediction_data, f)
-    return all_prediction_data
+        json.dump(all_predictions, f)
+    return all_predictions
