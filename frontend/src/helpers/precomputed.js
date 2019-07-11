@@ -1,8 +1,17 @@
 /**
+ * Access of precomputed wait and trip times.
+ * 
+ * See https://github.com/trynmaps/metrics-mvp/pull/143 for an overview of the file structure and
+ * json structure.
+ * 
  * Functions taken from the isochrone branch.
  * 
  * Fetching of the precomputed wait/trip time json is done using Redux.
- * getTripTimesFromStop and getWaitTimeAtStop is commented out but left here for usage reference.
+ * getWaitTimeAtStop is commented out but left here for usage reference.
+ */
+
+/**
+ * Maps time range to a file path (used by Redux action).
  */
 export function getTimePath(timeStr)
 {
@@ -10,6 +19,36 @@ export function getTimePath(timeStr)
 }
 
 /**
+ * Gets trip times for a given route and direction.
+ * 
+ * @param tripTimesCache
+ * @param graphParams -- date and time values
+ * @param routeId
+ * @param directionId
+ * @param stat
+ * @returns
+ */
+export function getTripTimesForDirection(tripTimesCache, graphParams, routeId, directionId, stat = 'median') {
+
+  const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
+  
+  const tripTimes = tripTimesCache[dateStr + timeStr + stat];
+
+  if (!tripTimes) {
+    return null;
+  }
+
+  const routeTripTimes = tripTimes.routes[routeId];
+  if (!routeTripTimes) {
+    return null;
+  }
+
+  const directionTripTimes = routeTripTimes[directionId];
+  return directionTripTimes;
+}
+
+/**
+ * Gets the downstream trip times for a given route, direction, and stop.
  * 
  * @param routeId
  * @param directionId
@@ -19,67 +58,54 @@ export function getTimePath(timeStr)
  * @param stat     "median"
  * @returns
  */
-/* async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, timeStr, stat)
+export function getTripTimesFromStop(tripTimesCache, graphParams, routeId, directionId, startStopId, stat = 'median')
 {
-    let tripTimes = tripTimesCache[dateStr + timeStr + stat];
+  const directionTripTimes = getTripTimesForDirection(tripTimesCache, graphParams, routeId, directionId);
+  if (!directionTripTimes)
+  {
+    return null;
+  }
+  const tripTimeValues = directionTripTimes[startStopId];
 
-    if (!tripTimes)
-    {
-        let timePath = getTimePath(timeStr);
-        let statPath = getStatPath(stat);
-
-        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/'+
-            dateStr.replace(/\-/g, '/')+
-            '/trip-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz?v2';
-
-        tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
-            sendError("error loading trip times: " + e);
-            throw e;
-        });
-    }
-
-    let routeTripTimes = tripTimes.routes[routeId];
-    if (!routeTripTimes)
-    {
-        return null;
-    }
-    let directionTripTimes = routeTripTimes[directionId];
-    if (!directionTripTimes)
-    {
-        return null;
-    }
-    let tripTimeValues = directionTripTimes[startStopId];
-
-    if (stat === 'median')
-    {
-        return tripTimeValues;
-    }
-    if (stat === 'p10')
-    {
-        return getTripTimeStat(tripTimeValues, 0);
-    }
-    if (stat === 'p90')
-    {
-        return getTripTimeStat(tripTimeValues, 2);
-    }
+  if (stat === 'median') // using the median stat group (see getStatPath)
+  {
+    return tripTimeValues;
+  }
+  if (stat === 'p10') // using the p10-median-p90 stat group (see getStatPath)
+  {
+    return getTripTimeStat(tripTimeValues, 0);
+  }
+  if (stat === 'p90') // using the p10-median-p90 stat group (see getStatPath)
+  {
+    return getTripTimeStat(tripTimeValues, 2);
+  }
 }
-*/
 
+/**
+ * Pulls a data series from a collection by index.
+ */
 function getTripTimeStat(tripTimeValues, index)
 {
-    if (!tripTimeValues)
-    {
-        return null;
-    }
+  if (!tripTimeValues)
+  {
+    return null;
+  }
 
-    const statValues = {};
-    for (let endStopId in tripTimeValues)
-    {
-        statValues[endStopId] = tripTimeValues[endStopId][index];
-    }
-    return statValues;
+  const statValues = {};
+  for (let endStopId in tripTimeValues)
+  {
+    statValues[endStopId] = tripTimeValues[endStopId][index];
+  }
+  return statValues;
 }
 
+/**
+ * Maps the given stat to a stat group (part of the file path).  Example stat groups are
+ * "median" and "p10-median-p90".  When fetching an individual stat, this function returns
+ * which group should be used, favoring more compact groups over larger ones.
+ * 
+ * @param stat
+ */
 export function getStatPath(stat)
 {
     switch (stat)
@@ -92,6 +118,48 @@ export function getStatPath(stat)
         default:
             throw new Error('unknown stat ' + stat);
     }
+}
+
+/**
+ * Utility method to pull time and date out of graphParams as strings
+ */
+export function getTimeStrAndDateStr(graphParams) {
+  let timeStr = graphParams.start_time ? graphParams.start_time + '-' + graphParams.end_time : '';
+  let dateStr = graphParams.date;
+  return [timeStr, dateStr];
+}
+
+/**
+ * Gets the wait time info for a given route and direction.
+ * 
+ * @param waitTimesCache
+ * @param graphParams -- used for date and time values
+ * @param routeId
+ * @param directionId
+ * @param stat
+ */
+export function getWaitTimeForDirection(waitTimesCache, graphParams, routeId, directionId, stat = 'median') {
+  
+  const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
+
+  let waitTimes = waitTimesCache[dateStr + timeStr + stat];
+
+  if (!waitTimes) {
+    return null;
+  }
+
+  let routeWaitTimes = waitTimes.routes[routeId];
+  if (!routeWaitTimes)
+  {
+      return null;
+  }
+
+  let directionWaitTimes = routeWaitTimes[directionId];
+  if (!directionWaitTimes)
+  {
+      return null;
+  }
+  return directionWaitTimes;
 }
 
 /*
