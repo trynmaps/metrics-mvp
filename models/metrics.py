@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 ROUND_DIGITS = 3
-DEFAULT_STAT_KEYS = ['count', 'avg', 'min', 'median', 'max']
+DEFAULT_STAT_KEYS = ['count', 'avg', 'min', 'median', 'max', 'percentiles', 'histogram']
 
 # Represents a range of days with a time range within each day.
 # RouteMetrics can calculate various statistics over a range.
