@@ -22,6 +22,9 @@ spec:
       - image: gcr.io/poetic-genius-233804/metrics-web:latest
         imagePullPolicy: IfNotPresent
         name: web
+        resources:
+          requests:
+            cpu: 0.03
         ports:
           - name: http
             containerPort: 80
