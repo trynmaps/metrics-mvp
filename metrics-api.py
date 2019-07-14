@@ -296,10 +296,6 @@ if os.environ.get('METRICS_ALL_IN_ONE') == '1':
     def frontend_build(path):
         return send_from_directory('frontend/build', path)
 
-    @app.route('/frontend/public/<path:path>')
-    def frontend_public(path):
-        return send_from_directory('frontend/public', path)
-
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def wildcard(path):

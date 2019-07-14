@@ -35,7 +35,6 @@ RUN mkdir /usr/share/nginx/html/frontend && \
     mkdir /var/cache/nginx/api-cache && \
     rm -rf /etc/nginx/conf.d
 COPY --from=react-build /app/frontend/build /usr/share/nginx/html/frontend/build
-COPY --from=react-build /app/frontend/public /usr/share/nginx/html/frontend/public
 RUN gzip -k9 /usr/share/nginx/html/frontend/build/static/css/*.css && \
     gzip -k9 /usr/share/nginx/html/frontend/build/static/js/*.js
 COPY ./nginx/conf.d /etc/nginx/conf.d
