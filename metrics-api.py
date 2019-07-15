@@ -287,10 +287,6 @@ def config():
         res.headers['Cache-Control'] = 'max-age=3600'
     return res
 
-@app.route('/frontend/map/<path:path>')
-def frontend_map(path):
-    return send_from_directory('frontend/map', path)
-
 if os.environ.get('METRICS_ALL_IN_ONE') == '1':
     @app.route('/frontend/build/<path:path>')
     def frontend_build(path):
