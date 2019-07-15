@@ -1,22 +1,87 @@
 importScripts(
     "https://unpkg.com/kdbush@3.0.0/kdbush.min.js",
     'https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js',
-    "https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js",
-    'common.js?v17'
+    "https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"
 );
+
+const thisUrl = new URL(self.location);
 
 let locations;
 let index;
+
+const WalkMetersPerMinute = 1.0 * 60;
+
+let allRoutes = null;
+let routesMap = null;
 
 const deg2rad = x => x * Math.PI / 180;
 const EarthRadius = 6371000;
 const MaxWalkRadius = 1800;
 const FirstStopMinWaitMinutes = 1.0;
-const FirstStopWaitTimeToWalkTimeRatio = 0.25;
 
 let curComputeId = null;
 let tripTimesCache = {};
 let waitTimesCache = {};
+let baseUrl = thisUrl.searchParams.get('base');
+
+function loadJson(url)
+{
+    if (url[0] == '/' && baseUrl)
+    {
+        url = baseUrl + url;
+    }
+
+    return new Promise((resolve, reject) => {
+        let req = new XMLHttpRequest();
+        req.addEventListener("load", function() {
+            try
+            {
+                var res = JSON.parse(req.responseText);
+            }
+            catch (e)
+            {
+                return reject("Invalid JSON");
+            }
+            resolve(res);
+        });
+        req.onerror = () => reject(req.statusText);
+        req.open("GET", url);
+        req.send();
+    });
+}
+
+function loadRoutes()
+{
+    if (allRoutes)
+    {
+        return Promise.resolve(allRoutes);
+    }
+    else
+    {
+        return loadJson("/api/routes?v4").then(function(routes) {
+            allRoutes = routes;
+            return routes;
+        });
+    }
+}
+
+function loadRoute(routeId)
+{
+    if (routesMap)
+    {
+        return Promise.resolve(routesMap[routeId]);
+    }
+    else
+    {
+        return loadRoutes().then(function(routes) {
+            routesMap = {};
+            for (const route of routes) {
+                routesMap[route.id] = route;
+            }
+            return routesMap[routeId];
+        });
+    }
+}
 
 function sendError(err) {
     postMessage({type: 'error', error: err});
@@ -279,17 +344,6 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
             {
                 return;
             }
-
-            /* if (!reachedLocation.routes)
-            {
-                // assume that person checks predictions before leaving, so if the first stop is close to their initial
-                // location, they don't have to wait the average wait time.
-                // e.g. if the first stop takes <4 minutes to walk to, they only wait 1 minute even if
-                // the bus only comes every 20 minutes and the average wait time is ~10 minutes
-                waitMin = Math.min(waitMin,
-                    Math.max(FirstStopMinWaitMinutes, tripMin * FirstStopWaitTimeToWalkTimeRatio)
-                );
-            } */
 
             let departureMin = tripMin + waitMin;
 
@@ -564,6 +618,7 @@ async function init()
 
         postMessage({type: 'ok'});
     }
+    postMessage({type: 'ready'});
 }
 
 init();

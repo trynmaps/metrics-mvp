@@ -1,63 +1,12 @@
-const WalkMetersPerMinute = 1.0 * 60;
 
-function loadJson(url) {
-    return new Promise((resolve, reject) => {
-        let req = new XMLHttpRequest();
-        req.addEventListener("load", function() {
-            try
-            {
-                var res = JSON.parse(req.responseText);
-            }
-            catch (e)
-            {
-                return reject("Invalid JSON");
-            }
-            resolve(res);
-        });
-        req.onerror = () => reject(req.statusText);
-        req.open("GET", url);
-        req.send();
-    });
-}
+export const DefaultDisabledRoutes = [
+    'PH','C','PM',
+    'K_OWL','L_OWL','M_OWL','N_OWL','T_OWL',
+    '41','88','90','91','714','S',
+    'NX','1AX','1BX','7X','8AX','8BX','14X','30X','31AX','31BX','38AX','38BX','81X','82X','83X'
+];
 
-let allRoutes = null;
-
-function loadRoutes()
-{
-    if (allRoutes)
-    {
-        return Promise.resolve(allRoutes);
-    }
-    else
-    {
-        return loadJson("/api/routes?v4").then(function(routes) {
-            allRoutes = routes;
-            return routes;
-        });
-    }
-}
-
-let routesMap = null;
-
-function loadRoute(routeId)
-{
-    if (routesMap)
-    {
-        return Promise.resolve(routesMap[routeId]);
-    }
-    else
-    {
-        return loadRoutes().then(function(routes) {
-            routesMap = {};
-            for (const route of routes) {
-                routesMap[route.id] = route;
-            }
-            return routesMap[routeId];
-        });
-    }
-}
-
-const ServiceArea = {
+export const ServiceArea = {
   "type": "FeatureCollection",
   "features": [
     {
