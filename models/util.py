@@ -89,7 +89,7 @@ def get_intervals(start_time, end_time, interval_length):
         new_start_time = rounded_start_time + timedelta(hours = interval_length)
         time_str_intervals.append((
             rounded_start_time.strftime('%H:%M:%S'),
-            (new_start_time).strftime('%H:%M:%S') if start_day == rounded_end_time.date() else f"{(new_start_time).strftime('%H:%M:%S')}+1"
+            (new_start_time).strftime('%H:%M:%S') if start_day == new_start_time.date() else f"{(new_start_time).strftime('%H:%M:%S')}+1"
         ))
         rounded_start_time = new_start_time
 
