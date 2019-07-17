@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 import time
 import math
 import sys
-from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors
+from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors, schema
+from flask_graphql import GraphQLView
 
 """
 This is the app's main file!
@@ -26,6 +27,8 @@ CORS(app)
 @app.route('/api/ping', methods=['GET'])
 def ping():
     return "pong"
+
+app.add_url_rule('/metrics_api', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = True))
 
 @app.route('/api/routes', methods=['GET'])
 def routes():

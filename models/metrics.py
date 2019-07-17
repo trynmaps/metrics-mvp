@@ -91,10 +91,15 @@ class RouteMetrics:
     def get_comparison_to_timetable(self, d, stop_id=None, direction_id=None):
         stop_timetable = self.get_stop_timetable(d, stop_id, direction_id)
         stop_arrivals = self.get_data_frame(d, stop_id, direction_id)
+        
+        if len(stop_arrivals) == 0:
+            raise errors.TimetableError(f"No arrivals found for {stop_id} on {d.isoformat()}.")
 
         # first headway is always nan
         arrival_headways = np.insert(compute_headway_minutes(stop_arrivals['TIME'].to_numpy()), 0, np.nan)
         stop_arrivals['headway'] = arrival_headways
+
+        # comparing headways requires at least 2 arrivals and 
 
         # for each scheduled arrival time, get the closest actual arrival (earlier or later), the next actual arrival, and the corresponding headways
         def get_adjacent_arrival_times(scheduled_arrivals, arrivals, arrival_headways):
@@ -110,9 +115,9 @@ class RouteMetrics:
             previous_abs = np.absolute(previous_arrivals - scheduled_arrivals)
 
             # compare the delta between scheduled arrival and next arrival to delta between scheduled arrival and previous arrival
-            # replace nan values with the length of day (in seconds) to prevent runtime error and guarantee that the other value is smaller
-            np.place(next_abs, np.isnan(next_abs), 86400)
-            np.place(previous_abs, np.isnan(previous_abs), 86400)
+            # replace nan values with np.inf to prevent runtime error and guarantee that the other value is smaller
+            np.place(next_abs, pd.isnull(next_abs), np.inf)
+            np.place(previous_abs, pd.isnull(previous_abs), np.inf)
             comparison = next_abs < previous_abs
 
             # returns, in order: next arrival, next headway, closest arrival, closest headway

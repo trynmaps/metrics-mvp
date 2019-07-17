@@ -22,3 +22,5 @@ urllib3>=1.24.2
 Werkzeug==0.14.1
 boto3==1.9.111
 sortednp==0.2.1
+graphene==2.1.6
+flask-graphql==2.0.0
