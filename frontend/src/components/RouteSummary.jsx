@@ -5,11 +5,10 @@ import { XYPlot, HorizontalGridLines, VerticalGridLines,
   XAxis, YAxis, LineSeries, ChartLabel, Crosshair } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import '../../node_modules/react-vis/dist/style.css';
-import { filterRoutes, filterDirections, ignoreFirstStop, ignoreLastStop,
-  getAllDistances, getAllSpeeds, getAllScores, getEndToEndTripTime,
+import { filterRoutes, getAllDistances, getAllSpeeds, getAllScores, getEndToEndTripTime,
   getTripDataSeries, computeGrades } from '../helpers/routeCalculations'
 
-import { getTripTimesForDirection, getAverageOfMedianWait } from '../helpers/precomputed';
+import { getAverageOfMedianWait } from '../helpers/precomputed';
 import { connect } from 'react-redux';
 
 import { fetchPrecomputedWaitAndTripData } from '../actions';
