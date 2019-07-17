@@ -41,8 +41,6 @@ class Home extends Component {
       routeCSVs,
       trips,
       shapes,
-      tripTimes,
-      waitTimes
     } = this.props;
     return (
       <Fragment>
@@ -101,7 +99,6 @@ class Home extends Component {
           <Intro />
           <ControlPanel
             routes={routes}
-            tripTimes={tripTimes}
             resetGraphData={this.props.resetGraphData}
             fetchGraphData={this.props.fetchGraphData}
             resetIntervalData={this.props.resetIntervalData}
@@ -123,7 +120,7 @@ class Home extends Component {
           `
           }
         >            
-          <RouteSummary graphData={graphData} graphParams={graphParams} trips={trips} routeCSVs={routeCSVs} shapes={shapes} routes={routes} tripTimes={tripTimes} waitTimes={waitTimes} />
+          <RouteSummary graphData={graphData} graphParams={graphParams} trips={trips} routeCSVs={routeCSVs} shapes={shapes} routes={routes} />
           <Info
             graphData={graphData}
             graphError={graphError}
@@ -150,8 +147,6 @@ const mapStateToProps = state => ({
   trips: state.trips.trips,
   routeCSVs: state.routeCSVs.routeCSVs,
   shapes: state.shapes.shapes,
-  tripTimes: state.tripTimes.tripTimes,
-  waitTimes: state.waitTimes.waitTimes,
 });
 
 const mapDispatchToProps = dispatch => ({

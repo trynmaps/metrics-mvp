@@ -82,10 +82,10 @@ export function fetchPrecomputedWaitAndTripData(params) {
 
     let timeStr = params.start_time ? params.start_time + '-' + params.end_time : '';
     let dateStr = params.date;
-    
-    const tripTimesCache = getState().routes.tripTimesCache;  
-  
-    let tripTimes = tripTimesCache[dateStr + timeStr + 'median']; 
+
+    const tripTimesCache = getState().routes.tripTimesCache;
+
+    let tripTimes = tripTimesCache[dateStr + timeStr + 'median'];
 
     if (!tripTimes) {
       let timePath = getTimePath(timeStr);
@@ -101,10 +101,10 @@ export function fetchPrecomputedWaitAndTripData(params) {
       })
       .catch(err => { /* do something? */ })
     }
-  
-    const waitTimesCache = getState().routes.waitTimesCache;  
 
-    let waitTimes = waitTimesCache[dateStr + timeStr + 'median']; 
+    const waitTimesCache = getState().routes.waitTimesCache;
+
+    let waitTimes = waitTimesCache[dateStr + timeStr + 'median'];
 
     if (!waitTimes) {
       let timePath = getTimePath(timeStr);
@@ -178,37 +178,9 @@ export function fetchShapes() {
     };
   }
 
-// these are by route id hash then direction id hash, then first stop hash, then second stop hash, in minutes
-export function fetchTripTimes() {
-    return function (dispatch) {
-      axios.get('/trip-times', { // optional date_str argument omitted, defaults to 4/8
-        baseURL: metricsBaseURL
-      }).then((response) => {
-        dispatch({ type: 'RECEIVED_TRIP_TIMES', payload: response.data });
-      }).catch((err) => {
-        dispatch({ type: 'RECEIVED_TRIP_TIMES_ERROR', payload: err });
-      });
-    };
-  }
-
-// these are by direction id hash and then stop id hash, in minutes
-export function fetchWaitTimes() {
-    return function (dispatch) {
-      axios.get('/wait-times', { // optional date_str argument omitted, defaults to 4/8
-        baseURL: metricsBaseURL
-      }).then((response) => {
-        dispatch({ type: 'RECEIVED_WAIT_TIMES', payload: response.data });
-      }).catch((err) => {
-        dispatch({ type: 'RECEIVED_WAIT_TIMES_ERROR', payload: err });
-      });
-    };
-  }
-
-
-
 export function fetchAllTheThings() {
     return function (dispatch) {
-        
+
             axios.get('/api/routes', {
               baseURL: metricsBaseURL
             }).then((response) => {
@@ -216,12 +188,10 @@ export function fetchAllTheThings() {
               dispatch(fetchTrips());
               dispatch(fetchRouteCSVs());
               dispatch(fetchShapes());
-              dispatch(fetchTripTimes());
-              dispatch(fetchWaitTimes());
             }).catch((err) => {
               dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });
             });
-                  
+
     };
   }
 
@@ -234,7 +204,7 @@ export function handleGraphParams(params) {
     // for debugging: console.log('hGP: ' + graphParams.route_id + ' dirid: ' + graphParams.direction_id + " start: " + graphParams.start_stop_id + " end: " + graphParams.end_stop_id);
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
-    
+
     if (graphParams.route_id) {
       dispatch(fetchPrecomputedWaitAndTripData(graphParams));
     }

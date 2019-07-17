@@ -562,19 +562,20 @@ class ControlPanel extends Component {
 
 
 
+              {/*
 
         <Card bg="light" style={{ color: 'black', width: '500px', height: '500px'}}>
           <Card.Header>Map <Button className="float-sm-right" onClick={this.handleGeoLocate}>Go to my location</Button></Card.Header>
-          
-      <Map
-        style={{
-          height:"500px" // was 40vh
-        }}
-        bounds={bounds}
-        center={ {lat : 37.7793, lng: -122.4193} }
-        length={4}
-        onClick={this.handleClick}
-        onLocationfound={this.handleLocationFound}
+
+          <Map
+          style={{
+            height:"500px" // was 40vh
+          }}
+          bounds={bounds}
+          center={ {lat : 37.7793, lng: -122.4193} }
+          length={4}
+          onClick={this.handleClick}
+          onLocationfound={this.handleLocationFound}
         ref={this.mapRef}
         zoom={ bounds ? null : 13}
         minZoom={11}
@@ -585,17 +586,15 @@ class ControlPanel extends Component {
           //url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           url="http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png"
           opacity={0.3}
-        /> {/* see http://maps.stamen.com for details */}
-        {/*marker*/}
+        /> 
         <DownstreamLine/>
-        {/*<RouteMarkers/>*/}
         <StartMarkers/>
         { this.props.graphParams.start_stop_id ? <SpeedLegend/> : null }
        
 
-      </Map>          
+      </Map> 
           
-        </Card>
+        </Card> */}          
       </div>
     );
   }
