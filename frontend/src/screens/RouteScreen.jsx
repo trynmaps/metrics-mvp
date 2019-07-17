@@ -14,6 +14,7 @@ import Info from '../components/Info';
 import MapStops from '../components/MapStops';
 
 import ControlPanel from '../components/ControlPanel';
+import RouteSummary from '../components/RouteSummary';
 
 import {
   fetchData,
@@ -134,8 +135,11 @@ class RouteScreen extends React.Component {
               />
               
             : /* if no graph data, show the info summary component */
-      
-            "(Route overview: InfoSummary component will go here)"
+
+                <RouteSummary
+                routes={routes}
+              />
+                
 
           }              
               

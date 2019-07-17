@@ -1,22 +1,25 @@
 /**
  * Helper functions for working with routes and stops.  These are used to filter out
  * routes, spurious directions, and idiosyncratic stops when listing and scoring entire routes.
- * 
+ *
  * Also includes functions for computing distances between coordinates.
  */
+
+import * as d3 from "d3";
+import { getTripTimesForDirection } from './precomputed';
 
 /**
  * Returns a data object with centralized declarations of "per route" heuristic rules
  * to apply when doing systemwide computations.
- * 
+ *
  * For example, for routes with directions that should be ignored:
- * 
+ *
  * {
  *   <routeID>: {
  *     directionsToIgnore: [<directionID>]
  *   }
  * }
- * 
+ *
  * Other cases:
  * - Routes to filter out completely:
  *   - S due to lack of regular route and schedule
@@ -30,7 +33,7 @@
  */
 export function getRouteHeuristics() {
   return {
-    
+
     "J": {
       directionsToIgnore: ["J____I_D10"] // this is to 23rd and 3rd
     },
@@ -113,7 +116,7 @@ export function getRouteHeuristics() {
  */
 export function filterRoutes(routes) {
   const heuristics = getRouteHeuristics();
-  
+
   return routes.filter(route => !heuristics[route.id] || !heuristics[route.id].ignoreRoute);
 }
 
@@ -122,16 +125,16 @@ export function filterRoutes(routes) {
  */
 export function filterDirections(directions, routeID) {
   const heuristics = getRouteHeuristics();
-  
+
   if (!heuristics[routeID]) {
     return directions;
   }
-  
+
   const directionsToIgnore = heuristics[routeID].directionsToIgnore;
   if (!directionsToIgnore) {
     return directions;
   }
-  
+
   return directions.filter(direction => !directionsToIgnore.includes(direction.id));
 }
 
@@ -168,11 +171,305 @@ export function ignoreFlag(routeID, directionID, flagName) {
 
 
 /**
+ * Get precomputed trip times for the first stop, then apply heuristic rules
+ * to trim off the first stop or first stops if needed.
+ */
+function getTripTimesUsingHeuristics(props, routeID, directionID) {
+
+  const tripTimesForDir = getTripTimesForDirection(props.tripTimesCache, props.graphParams, routeID, directionID);
+
+  if (!tripTimesForDir) {
+    //console.log("No trip times found at all for " + directionID + " (gtfs out of sync or route not running)");
+    // not sure if we should remap to normal terminal
+    return {tripTimesForFirstStop: null, directionInfo: null};
+  }
+  //console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
+
+  // Note that some routes do not run their full length all day like the 5 Fulton, so they
+  // don't go to all the stops.  Ideally we should know which stops they do run to.
+
+  const route = props.routes.find(route => route.id === routeID);
+  const directionInfo = route.directions.find(direction => direction.id === directionID);
+
+  const ignoreFirst = ignoreFirstStop(routeID, directionID); // look up heuristic rule
+  let firstStop = null;
+
+  if (Number.isInteger(ignoreFirst)) {
+    firstStop = ignoreFirst; // ignore the stops prior the index specified by ignoreFirst
+  } else { // treat as boolean
+    firstStop = directionInfo.stops[ ignoreFirst ? 1 : 0];
+  }
+
+  let tripTimesForFirstStop = tripTimesForDir[firstStop];
+
+  // if this stop doesn't have trip times (like the oddball J direction going to the yard, which we currently ignore)
+  // then find the stop with the most trip time entries
+
+  if (!tripTimesForFirstStop) {
+    //console.log("No trip times found for " + routeID + " from stop " + firstStop + ".  Using stop with most entries.");
+    tripTimesForFirstStop = Object.values(tripTimesForDir).reduce((accumulator, currentValue) =>
+    Object.values(currentValue).length > Object.values(accumulator).length ? currentValue : accumulator, {});
+  }
+
+  return {tripTimesForFirstStop, directionInfo};
+}
+
+/**
+ * Returns trip time across the full route, applying heuristic rules to ignore
+ * the last stop or stops as needed.
+ */
+export function getEndToEndTripTime(props, routeID, directionID) {
+
+  const {tripTimesForFirstStop, directionInfo} = getTripTimesUsingHeuristics(props, routeID, directionID);
+
+  if (!tripTimesForFirstStop) { // no precomputed times
+    //console.log("No precomputed trip times for " + routeID + " " + directionID + " (gtfs out of sync with historic data or route not running)");
+    return "?";
+  }
+
+  const ignoreLast = ignoreLastStop(routeID, directionID); // look up heuristic rule
+
+  let lastStop = null;
+
+  /*
+   * For determining end to end trip time, but doesn't currently affect computation of route length,
+   * which is based on best guess as to the right GTFS shape. And the shape is not linked to the stops,
+   * it's just coordinates and distance along route, so more logic would be needed to "trim" the shape
+   * if stops are ignored.
+   */
+  if (Number.isInteger(ignoreLast)) {
+    lastStop = ignoreLast; // ignore stops after index specified by ignoreLast
+  } else { // treat as boolean
+    lastStop = directionInfo.stops[directionInfo.stops.length - (ignoreLast ? 2 : 1)];
+  }
+
+  //console.log('found ' + Object.keys(tripTimesForFirstStop).length + ' keys' );
+
+  let tripTime = tripTimesForFirstStop[lastStop];
+
+  // if there is no trip time to the last stop, then use the highest trip time actually observed
+
+  if (!tripTime) {
+    //console.log("No trip time found for " + routeID + " " + directionID + " to stop " + lastStop);
+    tripTime = Math.max(...Object.values(tripTimesForFirstStop))
+  }
+
+  //console.log('trip time in minutes is ' + tripTime);
+  return tripTime;
+}
+
+/**
+ * Returns an array of {x: stop index, y: time} objects for
+ * plotting on a chart.
+ */
+export function getTripDataSeries(props, routeID, directionID) {
+  const {tripTimesForFirstStop, directionInfo} = getTripTimesUsingHeuristics(props, routeID, directionID);
+
+  if (!tripTimesForFirstStop) { return []; } // no precomputed times
+
+  const route = props.routes.find(route => route.id === routeID);
+
+  const dataSeries = directionInfo.stops.map((stop, index) => { return {
+    x: index,
+    y: tripTimesForFirstStop[stop] ? tripTimesForFirstStop[stop] : 0,
+        title: route.stops[stop].title
+  }});
+
+  return dataSeries;
+}
+
+/**
+ * Precalculated route distances are used instead of trying to extract route lengths
+ * from GTFS data on the fly.  This is the average route distance across all directions for a route.
+ */
+export function getAllDistances() {
+  const allDistances = [{"routeID":"KT","distance":23428.5},{"routeID":"29","distance":21773},
+                        {"routeID":"43","distance":19751.5},{"routeID":"28","distance":18832},
+                        {"routeID":"8BX","distance":18042},{"routeID":"8","distance":17935},
+                        {"routeID":"54","distance":16818},{"routeID":"44","distance":16617.5},
+                        {"routeID":"57","distance":15346},{"routeID":"48","distance":15314.333333333334},
+                        {"routeID":"M","distance":15072.5},{"routeID":"N","distance":14551.5},
+                        {"routeID":"9R","distance":14407},{"routeID":"14X","distance":14402.5},
+                        {"routeID":"23","distance":14192.5},{"routeID":"14R","distance":13741},
+                        {"routeID":"714","distance":13623.5},{"routeID":"L","distance":13437.5},
+                        {"routeID":"7X","distance":13373.5},{"routeID":"7","distance":13193},
+                        {"routeID":"28R","distance":12828.5},{"routeID":"19","distance":12758.5},
+                        {"routeID":"14","distance":12536},{"routeID":"9","distance":12524},
+                        {"routeID":"8AX","distance":12330.5},{"routeID":"NX","distance":12086.5},
+                        {"routeID":"10","distance":11986},{"routeID":"36","distance":11702.5},
+                        {"routeID":"18","distance":11665},{"routeID":"J","distance":11443},
+                        {"routeID":"5","distance":11400},{"routeID":"5R","distance":11400},
+                        {"routeID":"31","distance":11369.5},{"routeID":"49","distance":11233},
+                        {"routeID":"31AX","distance":11212.5},{"routeID":"38","distance":11122.5},
+                        {"routeID":"24","distance":11057.5},{"routeID":"38R","distance":10782},
+                        {"routeID":"38AX","distance":10544},{"routeID":"33","distance":10414.5},
+                        {"routeID":"12","distance":10315},{"routeID":"6","distance":10139},
+                        {"routeID":"22","distance":9305},{"routeID":"1AX","distance":9271},
+                        {"routeID":"1","distance":9255.5},{"routeID":"37","distance":8477},
+                        {"routeID":"38BX","distance":8392.5},{"routeID":"2","distance":8315},
+                        {"routeID":"25","distance":8219},{"routeID":"F","distance":8206.5},
+                        {"routeID":"27","distance":8177},{"routeID":"47","distance":7845.5},
+                        {"routeID":"31BX","distance":7649},{"routeID":"30","distance":7628},
+                        {"routeID":"21","distance":7185},{"routeID":"45","distance":6827.5},
+                        {"routeID":"52","distance":6766},{"routeID":"30X","distance":6642.5},
+                        {"routeID":"1BX","distance":6334.5},{"routeID":"E","distance":5735},
+                        {"routeID":"41","distance":5656},{"routeID":"3","distance":5548},
+                        {"routeID":"66","distance":4929},{"routeID":"35","distance":4831.5},
+                        {"routeID":"56","distance":4527.5},{"routeID":"82X","distance":4162.5},
+                        {"routeID":"67","distance":3977.5},{"routeID":"55","distance":3693},
+                        {"routeID":"PH","distance":3359.3333333333335},{"routeID":"81X","distance":3274},
+                        {"routeID":"39","distance":2902},{"routeID":"83X","distance":2622.5},
+                        {"routeID":"PM","distance":2607},{"routeID":"C","distance":2302},
+                        {"routeID":"88","distance":2258}];
+
+  return allDistances;
+}
+
+/**
+ * Computes the end to end speed for a route.
+ *
+ * @param {any} props
+ * @param {any} route_id
+ * @param {any} allDistances
+ */
+function getSpeedForRoute(props, route_id, allDistances) {
+  const route = props.routes.find(route => route.id === route_id);
+
+  const filteredDirections = filterDirections(route.directions, route_id);
+  let speeds = filteredDirections.map(direction => {
+
+    const distObj = allDistances.find(distObj => distObj.routeID === route_id);
+    const dist = distObj ? distObj.distance : null;
+    const tripTime = getEndToEndTripTime(props, route.id, direction.id);
+
+    if (dist <= 0 || isNaN(tripTime)) { return -1; } // something wrong with the data here
+
+    const speed = Number.parseFloat(dist) / tripTime * 60.0 / 1609.344;  // initial units are meters per minute, final are mph
+    return speed;
+  });
+
+  speeds = speeds.filter(speed => speed >= 0); // ignore negative speeds, as with oddball 9 direction
+
+  if (speeds.length === 0) { return 0; };
+
+  const sum = speeds.reduce((total, currentValue) => total + currentValue);
+  return sum / speeds.length;
+}
+
+/**
+ * Computes speeds of all routes.
+ *
+ * @param {any} props
+ * @param {any} allDistances
+ */
+export function getAllSpeeds(props, allDistances) {
+
+  let allSpeeds = null;
+  if (props.routes) {
+    const filteredRoutes = filterRoutes(props.routes);
+    allSpeeds = filteredRoutes.map(route => {
+      return { routeID: route.id, speed: getSpeedForRoute(props, route.id, allDistances) }
+    });
+    allSpeeds = allSpeeds.filter(speedObj => speedObj.speed > 0); // not needed?
+    allSpeeds.sort((a,b) => { return b.speed - a.speed});
+
+    //console.log(JSON.stringify(allSpeeds));
+  }
+
+  return allSpeeds;
+}
+
+/**
+ * Computes scores of all routes.
+ *
+ * @param {any} routes
+ * @param {any} speeds
+ */
+export function getAllScores(routes, speeds) {
+
+  let allScores = [];
+  const filteredRoutes = filterRoutes(routes);
+  for (let route of filteredRoutes) {
+    const speedObj = speeds.find(speed => speed.routeID === route.id);
+    if (speedObj) {
+      const grades = computeGrades(route.wait, speedObj.speed);
+      allScores.push({ routeID: route.id, totalScore: grades.totalScore });
+    }
+  }
+  allScores.sort((a,b) => { return b.totalScore - a.totalScore});
+
+  //console.log(JSON.stringify(allScores));
+
+  return allScores;
+}
+
+/**
+ * Grade computation.
+ *
+ * TODO: refactor with Info.jsx's computation of grades once we add in probability
+ * of long wait and travel variability to RouteSummary.
+ */
+export function computeGrades(medianWait, speed) {
+
+  //
+  // grade and score for median wait
+  //
+
+  const medianWaitScoreScale = d3.scaleLinear()
+  .domain([5, 10])
+  .rangeRound([100, 0])
+  .clamp(true);
+
+  const medianWaitGradeScale = d3.scaleThreshold()
+  .domain([5, 7.5, 10])
+  .range(["A", "B", "C", "D"]);
+
+  // grade and score for travel speed
+
+  const speedScoreScale = d3.scaleLinear()
+  .domain([5, 10])
+  .rangeRound([0, 100])
+  .clamp(true);
+
+  const speedGradeScale = d3.scaleThreshold()
+  .domain([5, 7.5, 10])
+  .range(["D", "C", "B", "A"]);
+
+  const totalGradeScale = d3.scaleThreshold()
+  .domain([50, 100, 150])
+  .range(["D", "C", "B", "A"]);
+
+  let medianWaitScore = 0, medianWaitGrade = "";
+  let speedScore = 0, speedGrade = "";
+  let totalScore = 0, totalGrade = "";
+
+
+  medianWaitScore = medianWaitScoreScale(medianWait);
+  medianWaitGrade = medianWaitGradeScale(medianWait)
+
+  speedScore = speedScoreScale(speed);
+  speedGrade = speedGradeScale(speed);
+
+  totalScore = medianWaitScore + speedScore;
+  totalGrade = totalGradeScale(totalScore);
+
+  return {
+    medianWaitScore,
+    medianWaitGrade,
+    speedScore,
+    speedGrade,
+    totalScore,
+    totalGrade,
+    highestPossibleScore: 200
+  }
+}
+
+/**
  * Returns the distance between two stops in miles.
  */
 export function milesBetween(p1, p2) {
   const meters = haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
-  return meters / 1609.344; 
+  return meters / 1609.344;
 }
 
 /**
@@ -184,7 +481,7 @@ export function milesBetween(p1, p2) {
 export function haverDistance(latstop,lonstop,latbus,lonbus) {
 
   const deg2rad = x => x * Math.PI / 180;
-   
+
   [latstop,lonstop,latbus,lonbus] = [latstop,lonstop,latbus,lonbus].map(deg2rad);
   const eradius = 6371000;
 

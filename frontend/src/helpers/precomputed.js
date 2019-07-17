@@ -1,11 +1,11 @@
 /**
  * Access of precomputed wait and trip times.
- * 
+ *
  * See https://github.com/trynmaps/metrics-mvp/pull/143 for an overview of the file structure and
  * json structure.
- * 
+ *
  * Functions taken from the isochrone branch.
- * 
+ *
  * Fetching of the precomputed wait/trip time json is done using Redux.
  * getWaitTimeAtStop is commented out but left here for usage reference.
  */
@@ -20,7 +20,7 @@ export function getTimePath(timeStr)
 
 /**
  * Gets trip times for a given route and direction.
- * 
+ *
  * @param tripTimesCache
  * @param graphParams -- date and time values
  * @param routeId
@@ -31,7 +31,7 @@ export function getTimePath(timeStr)
 export function getTripTimesForDirection(tripTimesCache, graphParams, routeId, directionId, stat = 'median') {
 
   const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
-  
+
   const tripTimes = tripTimesCache[dateStr + timeStr + stat];
 
   if (!tripTimes) {
@@ -49,7 +49,7 @@ export function getTripTimesForDirection(tripTimesCache, graphParams, routeId, d
 
 /**
  * Gets the downstream trip times for a given route, direction, and stop.
- * 
+ *
  * @param routeId
  * @param directionId
  * @param startStopId
@@ -103,7 +103,7 @@ function getTripTimeStat(tripTimeValues, index)
  * Maps the given stat to a stat group (part of the file path).  Example stat groups are
  * "median" and "p10-median-p90".  When fetching an individual stat, this function returns
  * which group should be used, favoring more compact groups over larger ones.
- * 
+ *
  * @param stat
  */
 export function getStatPath(stat)
@@ -131,7 +131,7 @@ export function getTimeStrAndDateStr(graphParams) {
 
 /**
  * Gets the wait time info for a given route and direction.
- * 
+ *
  * @param waitTimesCache
  * @param graphParams -- used for date and time values
  * @param routeId
@@ -139,7 +139,7 @@ export function getTimeStrAndDateStr(graphParams) {
  * @param stat
  */
 export function getWaitTimeForDirection(waitTimesCache, graphParams, routeId, directionId, stat = 'median') {
-  
+
   const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
 
   let waitTimes = waitTimesCache[dateStr + timeStr + stat];
@@ -160,6 +160,25 @@ export function getWaitTimeForDirection(waitTimesCache, graphParams, routeId, di
       return null;
   }
   return directionWaitTimes;
+}
+
+/**
+ * Averages together the median wait in all directions for a route.
+ *
+ * @param {any} waitTimesCache
+ * @param {any} graphParams
+ * @param {any} route
+ */
+export function getAverageOfMedianWait(waitTimesCache, graphParams, route) {
+  const directions = route.directions;
+  const sumOfMedians = directions.reduce((total, direction) => {
+    const waitForDir = getWaitTimeForDirection(waitTimesCache, graphParams, route.id, direction.id);
+    if (!waitForDir) {
+        return NaN;
+    }
+    return total + waitForDir.median;
+  }, 0);
+  return sumOfMedians/directions.length;
 }
 
 /*
