@@ -57,11 +57,11 @@ function ControlPanel(props) {
       ? `${graphParams.start_time}-${graphParams.end_time}`
       : '';
 
-  const selectedRoute = getSelectedRouteInfo(props);
+  const selectedRoute = getSelectedRouteInfo();
   const setDate = date => props.onGraphParams({ date });
   const setDirectionId = directionId =>
     props.onGraphParams({
-      direction_id: directionId,
+      direction_id: directionId.target.value,
       start_stop_id: null,
       end_stop_id: null,
     });
@@ -85,7 +85,7 @@ function ControlPanel(props) {
     const secondStopList = generateSecondStopList(
       selectedRoute,
       directionId,
-      stopId,
+      stopId.target.value,
     );
 
     let newSecondStopId = secondStopId;
@@ -104,18 +104,19 @@ function ControlPanel(props) {
     }
 
     props.onGraphParams({
-      start_stop_id: stopId,
+      start_stop_id: stopId.target.value,
       end_stop_id: newSecondStopId,
     });
   };
 
   const onSelectSecondStop = stopId => {
-    props.onGraphParams({ end_stop_id: stopId });
+    props.onGraphParams({ end_stop_id: stopId.target.value });
   };
 
   const setRouteId = routeId => {
+
     const mySelectedRoute = props.routes
-      ? props.routes.find(route => route.id === routeId)
+      ? props.routes.find(route => route.id === routeId.target.value)
       : null;
 
     if (!mySelectedRoute) {
@@ -129,7 +130,7 @@ function ControlPanel(props) {
     // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
 
     props.onGraphParams({
-      route_id: routeId,
+      route_id: routeId.target.value,
       direction_id: directionId,
       start_stop_id: null,
       end_stop_id: null,
@@ -151,8 +152,7 @@ function ControlPanel(props) {
     return mySelectedRoute.directions.find(dir => dir.id === directionId);
   };
 
-  function getSelectedRouteInfo(props) {
-    const { routes } = props;
+  function getSelectedRouteInfo() {
     const routeId = props.graphParams.route_id;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
@@ -245,12 +245,12 @@ function ControlPanel(props) {
               <FormControl className={classes.formControl}>
                 <InputLabel htmlFor="direction-helper">Direction</InputLabel>
                 <Select
-                  value={graphParams.direction_id}
+                  value={graphParams.direction_id || 1}
                   onChange={setDirectionId}
                   input={<Input name="direction" id="direction" />}
                 >
                   {(selectedRoute.directions || []).map(direction => (
-                    <MenuItem value={direction.id}>{direction.title}</MenuItem>
+                    <MenuItem key={direction.id} value={direction.id}>{direction.title}</MenuItem>
                   ))}
                 </Select>
                 <FormHelperText>Some important helper text</FormHelperText>
@@ -263,7 +263,7 @@ function ControlPanel(props) {
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="from-stop-helper">From Step</InputLabel>
                   <Select
-                    value={graphParams.start_stop_id}
+                    value={graphParams.start_stop_id || 1}
                     onChange={onSelectFirstStop}
                     input={<Input name="stop" id="stop" />}
                   >
@@ -290,7 +290,7 @@ function ControlPanel(props) {
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="to-stop-helper">To Step</InputLabel>
                   <Select
-                    value={graphParams.end_stop_id}
+                    value={graphParams.end_stop_id || 1}
                     onChange={onSelectSecondStop}
                     input={<Input name="stop" id="stop" />}
                   >
