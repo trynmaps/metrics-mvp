@@ -105,19 +105,11 @@ function findStopDirectionAndIndex(stopId, routeInfo)
 
 function distance(latlon1, latlon2)
 {
-    // haversine distance formula
-    const lat1 = deg2rad(latlon1.lat || latlon1[0]),
-        lon1 = deg2rad(latlon1.lon || latlon1.lng || latlon1[1]),
-        lat2 = deg2rad(latlon2.lat || latlon2[0]),
-        lon2 = deg2rad(latlon2.lon || latlon2.lng || latlon2[1]);
-
-    const latdiff = lat1-lat2;
-    const londiff = lon1-lon2;
-
-    const a = Math.sin(latdiff/2)**2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(londiff/2)**2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return EarthRadius * c;
+    const lat1 = latlon1.lat || latlon1[0],
+        lon1 = latlon1.lon || latlon1.lng || latlon1[1],
+        lat2 = latlon2.lat || latlon2[0],
+        lon2 = latlon2.lon || latlon2.lng || latlon2[1];
+    return turf.distance([lon1,lat1],[lon2,lat2]) * 1000;
 }
 
 function getTimePath(timeStr)

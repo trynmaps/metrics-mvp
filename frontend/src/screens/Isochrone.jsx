@@ -197,7 +197,6 @@ class Isochrone extends React.Component {
                 }
             }
         }
-
     }
 
     showTripInfo(endLatLng, reachableCircles)

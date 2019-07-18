@@ -1,6 +1,6 @@
 
 export const DefaultDisabledRoutes = [
-    'PH','C','PM',
+    'PH','C','PM', // cable car lines
     'K_OWL','L_OWL','M_OWL','N_OWL','T_OWL',
     '41','88','90','91','714','S',
     'NX','1AX','1BX','7X','8AX','8BX','14X','30X','31AX','31BX','38AX','38BX','81X','82X','83X'
