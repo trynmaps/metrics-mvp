@@ -1,6 +1,6 @@
 # OpenTransit's Metrics MVP
 
-[Check out our demo!](http://muni.opentransit.city/)
+[Check out our demo!](http://muni.opentransit.city/) Learn more at [http://bit.ly/opentransit-mvp](bit.ly/opentransit-mvp).
 
 ## Getting started
 
