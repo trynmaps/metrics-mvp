@@ -35,7 +35,8 @@
     "redux": "^4.0.1",
     "redux-first-router": "^2.1.1",
     "redux-first-router-link": "^2.1.1",
-    "redux-thunk": "^2.3.0"
+    "redux-thunk": "^2.3.0",
+    "@turf/turf": "^5.1.6"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -1,0 +1,73 @@
+.isochrone-controls,
+.isochrone-legend,
+.isochrone-trip-info
+{
+    border:1px solid #ccc;
+    background-color:#fff;
+    border-radius:5px;
+    opacity:0.9;
+}
+
+.isochrone-controls
+{
+    padding:5px;
+}
+
+.isochrone-legend
+{
+    padding:2px 4px;
+}
+
+.isochrone-trip
+{
+    padding:4px 4px;
+}
+
+.isochrone-select-all a
+{
+    padding-right:2px;
+    text-decoration:none;
+}
+
+.isochrone-legend-colors
+{
+    line-height:1.0;
+}
+
+.isochrone-control-select
+{
+    display:block;
+    margin-bottom:5px;
+}
+
+.isochrone-legend-colors div
+{
+    opacity:0.45;
+    height:15px;
+    width:30px;
+    overflow:hidden;
+    display:inline-block;
+}
+.isochrone-legend-times div:first-child
+{
+    padding-left:15px;
+}
+
+.isochrone-legend-times div
+{
+    box-sizing:content-box;
+    text-align:center;
+    width:30px;
+    display:inline-block;
+}
+
+.isochrone-routes
+{
+    overflow: auto;
+    max-height: 150px;
+}
+
+.isochrone-routes label
+{
+    margin-bottom:0px;
+}
