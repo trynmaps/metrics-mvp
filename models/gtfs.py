@@ -167,6 +167,8 @@ class GtfsScraper:
         
         print(f"{datetime.now().time().isoformat()}: Uploaded {s3_path} to s3 bucket.")
 
+    # uploads date ranges df to s3 and saves a copy locally as a csv
+    # if date_ranges.csv exists locally, then this updates the file with the additional date ranges and overwrites the file in the s3 bucket
     def save_date_ranges(self, s3 = False, ver = "v1"):
         filepath = f"{get_schedule_dir()}/date_ranges_{ver}.csv"
 
@@ -177,6 +179,7 @@ class GtfsScraper:
             s3_path = f"date_ranges_{ver}.csv"
             self.upload_to_s3(s3_path, df)
 
+        # save/update date ranges locally
         df.to_csv(filepath)
         print(f"{datetime.now().time().isoformat()}: date ranges have been updated locally.")
 
