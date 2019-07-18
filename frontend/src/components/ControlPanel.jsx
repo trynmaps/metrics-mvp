@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 import { css } from 'emotion';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
-import PropTypes from 'prop-types';
+// import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -15,6 +15,20 @@ import { handleGraphParams } from '../actions';
 
 import DropdownControl from './DropdownControl';
 import './ControlPanel.css';
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    display: 'flex',
+    flexWrap: 'wrap',
+  },
+  formControl: {
+    margin: theme.spacing(1),
+    minWidth: 120,
+  },
+  selectEmpty: {
+    marginTop: theme.spacing(2),
+  },
+}));
 
 const setDirectionId = directionId =>
   this.props.onGraphParams({
@@ -77,7 +91,7 @@ function ControlPanel(props) {
     if (!timeRange) {
       props.onGraphParams({ start_time: null, end_time: null });
     } else {
-      const timeRangeParts = timeRange.split('-');
+      const timeRangeParts = timeRange.target.value.split('-');
       props.onGraphParams({
         start_time: timeRangeParts[0],
         end_time: timeRangeParts[1],
@@ -163,6 +177,19 @@ function ControlPanel(props) {
     );
   }
 
+  const classes = useStyles();
+  const [values, setValues] = React.useState({
+    age: '',
+    name: 'hai',
+  });
+
+  function handleChange(event) {
+    setValues(oldValues => ({
+      ...oldValues,
+      [event.target.name]: event.target.value,
+    }));
+  }
+
   return (
     <div
       className={css`
@@ -188,38 +215,28 @@ function ControlPanel(props) {
        `}
         />  */}
         <ListGroup.Item>
-          {/* <FormControl className={classes.formControl}> */}
-          {/* <InputLabel htmlFor="age-helper">Age</InputLabel> */}
-          {/* <Select */}
-          {/* value={values.age} */}
-          {/* onChange={handleChange} */}
-          {/* input={<Input name="age" id="age-helper" />} */}
-          {/* > */}
-          {/* <MenuItem value=""> */}
-          {/* <em>None</em> */}
-          {/* </MenuItem> */}
-          {/* <MenuItem value={10}>Ten</MenuItem> */}
-          {/* <MenuItem value={20}>Twenty</MenuItem> */}
-          {/* <MenuItem value={30}>Thirty</MenuItem> */}
-          {/* </Select> */}
-          {/* <FormHelperText>Some important helper text</FormHelperText> */}
-          {/* </FormControl> */}
-          <DropdownControl
-            title="Time Range"
-            name="time_range"
-            variant="info"
-            value={timeRange}
-            onSelect={setTimeRange}
-            options={[
-              { label: 'All Day', key: '' },
-              { label: 'Daytime (7AM - 7PM)', key: '07:00-19:00' },
-              { label: 'Early Morning (3AM - 7AM)', key: '03:00-07:00' },
-              { label: 'AM Peak (7AM - 10AM)', key: '07:00-10:00' },
-              { label: 'Midday (10AM - 4PM)', key: '10:00-16:00' },
-              { label: 'PM Peak (4PM - 7PM)', key: '16:00-19:00' },
-              { label: 'Late Evening (7PM - 3AM)', key: '19:00-03:00+1' },
-            ]}
-          />
+          <FormControl className={classes.formControl}>
+            <InputLabel htmlFor="age-helper">Time Range</InputLabel>
+            <Select
+              value={timeRange}
+              onChange={setTimeRange}
+              input={<Input name="time_range" id="time_range" />}
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              <MenuItem value="">All Day</MenuItem>
+              <MenuItem value="07:00-19:00">Daytime (7AM - 7PM)</MenuItem>
+              <MenuItem value="03:00-07:00">Early Morning (3AM - 7AM)</MenuItem>
+              <MenuItem value="07:00-10:00">AM Peak (7AM - 10AM)</MenuItem>
+              <MenuItem value="10:00-15:00">Midday (10AM - 4PM)</MenuItem>
+              <MenuItem value="16:00-19:00">PM Peak (4PM - 7PM)</MenuItem>
+              <MenuItem value="19:00-03:00+1">
+                Late Evening (7PM - 3AM)
+              </MenuItem>
+            </Select>
+            <FormHelperText>Some important helper text</FormHelperText>
+          </FormControl>
         </ListGroup.Item>
         <ListGroup variant="flush">
           <div className="dropDownOverlay">
