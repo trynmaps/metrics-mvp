@@ -6,3 +6,6 @@ class ArrivalHistoryNotFoundError(Exception):
 
 class InvalidInputError(Exception):
    pass
+
+class TimetableError(Exception):
+   pass
