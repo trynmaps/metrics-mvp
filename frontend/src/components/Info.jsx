@@ -257,7 +257,12 @@ class Info extends Component {
       ? (distance / (tripTimes.avg / 60.0)).toFixed(1)
       : 0; // convert avg trip time to hours for mph
     const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
-    const percentileValues = Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE));
+    const percentileValues = Math.round(
+      getPercentileValue(waitTimes, PLANNING_PERCENTILE),
+    );
+    const travelVariability = Math.round(
+      getPercentileValue(waitTimes, PLANNING_PERCENTILE),
+    );
     return (
       <div
         className={css`
@@ -274,7 +279,7 @@ class Info extends Component {
                 <span>
                   {grades.totalScore
                     ? ` ( ${grades.totalScore} / ${grades.highestPossibleScore} ) `
-                    : 'Not enough information to grade this route'}
+                    : 'Not enough information to grade this trip'}
                 </span>
 
                 <table className="table table-borderless">
@@ -288,12 +293,14 @@ class Info extends Component {
                     <tr>
                       <td>Average wait</td>
                       <td>
-                        {!!waitTimes.avg 
-                          ? ` ${Math.round(waitTimes.avg)} minutes ` 
-                          : 'No departures'
-                        }
+                        {!!waitTimes.avg
+                          ? ` ${Math.round(waitTimes.avg)} minutes `
+                          : 'No departures'}
                         <br />
-                        {`${PLANNING_PERCENTILE} % of waits under ${percentileValues} minutes`}
+                        {!!percentileValues 
+                          ? `${PLANNING_PERCENTILE} % of waits under ${percentileValues} minutes`
+                          : ''
+                        }
                       </td>
                       <td>{grades.averageWaitGrade}</td>
                       <td> {grades.averageWaitScore} </td>
@@ -301,8 +308,7 @@ class Info extends Component {
                     <tr>
                       <td>20 min wait probability</td>
                       <td>
-                        {' '}
-                        {Math.round(grades.longWaitProbability * 100)}%{' '}
+                        {` ${Math.round(grades.longWaitProbability * 100)}% `}
                         {grades.longWaitProbability > 0
                           ? `(1 time out of ${Math.round(
                               1 / grades.longWaitProbability,
@@ -316,8 +322,10 @@ class Info extends Component {
                     <tr>
                       <td>Travel time</td>
                       <td>
-                        Average time {Math.round(tripTimes.avg)} minutes (
-                        {speed} mph)
+                        {!!tripTimes.avg 
+                          ? `Average time ${Math.round(tripTimes.avg)} minutes (${speed} mph)`
+                          : 'N/A'
+                        }
                       </td>
                       <td>{grades.speedGrade}</td>
                       <td>{grades.speedScore}</td>
@@ -325,11 +333,10 @@ class Info extends Component {
                     <tr>
                       <td>Travel variability</td>
                       <td>
-                        {PLANNING_PERCENTILE}% of trips take{' '}
-                        {Math.round(
-                          getPercentileValue(waitTimes, PLANNING_PERCENTILE),
-                        )}{' '}
-                        minutes
+                        {!!travelVariability 
+                          ? `${PLANNING_PERCENTILE}% of trips take ${travelVariability} minutes`
+                          : 'N/A'
+                        }
                       </td>
                       <td> {grades.travelVarianceGrade} </td>
                       <td> {grades.travelVarianceScore} </td>
