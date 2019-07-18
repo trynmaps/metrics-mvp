@@ -9,6 +9,8 @@ import ListItem from '@material-ui/core/ListItem';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import AppBar from '@material-ui/core/AppBar';
 
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
 import Navigation from '../components/Navigation';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
@@ -25,29 +27,25 @@ import {
   resetIntervalData,
 } from '../actions';
 
-import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-
 class RouteScreen extends React.Component {
-  
   componentDidMount() {
     if (!this.props.routes) {
       this.props.fetchRoutes();
     }
   }
-  
+
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
       drawerOpen: false,
-    }
+    };
 
     this.handleToggleDrawer = this.handleToggleDrawer.bind(this);
   }
 
   handleToggleDrawer() {
-    this.setState({ drawerOpen: !this.state.drawerOpen })
+    this.setState({ drawerOpen: !this.state.drawerOpen });
   }
 
   render() {
@@ -59,15 +57,28 @@ class RouteScreen extends React.Component {
       intervalError,
       routes,
     } = this.props;
-    
-    const selectedRoute = routes && graphParams && graphParams.route_id ? routes.find(route => route.id === graphParams.route_id) : null;
-    const direction = selectedRoute && graphParams.direction_id ? selectedRoute.directions.find(direction => direction.id === graphParams.direction_id) : null;
-    const startStopInfo = direction && graphParams.start_stop_id ? selectedRoute.stops[graphParams.start_stop_id] : null;
-    const endStopInfo = direction && graphParams.end_stop_id ? selectedRoute.stops[graphParams.end_stop_id] : null;
-    
+
+    const selectedRoute =
+      routes && graphParams && graphParams.route_id
+        ? routes.find(route => route.id === graphParams.route_id)
+        : null;
+    const direction =
+      selectedRoute && graphParams.direction_id
+        ? selectedRoute.directions.find(
+            direction => direction.id === graphParams.direction_id,
+          )
+        : null;
+    const startStopInfo =
+      direction && graphParams.start_stop_id
+        ? selectedRoute.stops[graphParams.start_stop_id]
+        : null;
+    const endStopInfo =
+      direction && graphParams.end_stop_id
+        ? selectedRoute.stops[graphParams.end_stop_id]
+        : null;
+
     return (
       <Fragment>
-        <Navigation />
         <AppBar position="relative">
           <Toolbar>
             <IconButton
@@ -79,11 +90,11 @@ class RouteScreen extends React.Component {
               <MenuIcon />
             </IconButton>
             Muni
-            { selectedRoute ? ' > ' + selectedRoute.title : null }
-            { direction ? ' > ' + direction.title : null }
+            {selectedRoute ? ` > ${selectedRoute.title}` : null}
+            {direction ? ` > ${direction.title}` : null}
             &nbsp;
-            { startStopInfo ? '(from ' + startStopInfo.title : null }
-            { endStopInfo ? ' to ' + endStopInfo.title + ')' : null }
+            {startStopInfo ? `(from ${startStopInfo.title}` : null}
+            {endStopInfo ? ` to ${endStopInfo.title})` : null}
           </Toolbar>
         </AppBar>
 
@@ -119,12 +130,10 @@ class RouteScreen extends React.Component {
               fetchIntervalData={this.props.fetchIntervalData}
               fetchData={this.props.fetchData}
             />
-            <MapStops routes={routes}/>
-
+            <MapStops routes={routes} />
           </Grid>
           <Grid item xs={6}>
-              
-          { graphData ?  /* if we have graph data, then show the info component */
+            {graphData /* if we have graph data, then show the info component */ ? (
               <Info
                 graphData={graphData}
                 graphError={graphError}
@@ -133,20 +142,17 @@ class RouteScreen extends React.Component {
                 intervalData={intervalData}
                 intervalError={intervalError}
               />
-              
-            : /* if no graph data, show the info summary component */
+            ) : (
+              /* if no graph data, show the info summary component */
 
                 <RouteSummary
                 routes={routes}
               />
-                
-
-          }              
-              
+            )}
           </Grid>
         </Grid>
       </Fragment>
-    )
+    );
   }
 }
 
@@ -174,6 +180,6 @@ RouteScreen.propTypes = {
 };
 
 export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
+  mapStateToProps,
+  mapDispatchToProps,
 )(RouteScreen);

@@ -18,8 +18,9 @@ import FilterListIcon from '@material-ui/icons/FilterList';
 import { filterRoutes, getAllDistances, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
 import { getAverageOfMedianWait } from '../helpers/precomputed';
 import { connect } from 'react-redux';
-import { push } from 'redux-first-router'
-import Link from 'redux-first-router-link'
+import { push } from 'redux-first-router';
+import Link from 'redux-first-router-link';
+import { getWaitTimeForDirection } from '../helpers/precomputed';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
@@ -44,7 +45,9 @@ function stableSort(array, cmp) {
 }
 
 function getSorting(order, orderBy) {
-  return order === 'desc' ? (a, b) => desc(a, b, orderBy) : (a, b) => -desc(a, b, orderBy);
+  return order === 'desc'
+    ? (a, b) => desc(a, b, orderBy)
+    : (a, b) => -desc(a, b, orderBy);
 }
 
 const headRows = [
@@ -139,11 +142,11 @@ const EnhancedTableToolbar = props => {
       </div>
       <div className={classes.spacer} />
       <div className={classes.actions}>
-          <Tooltip title="Filter list">
-            <IconButton aria-label="Filter list">
-              <FilterListIcon />
-            </IconButton>
-          </Tooltip>
+        <Tooltip title="Filter list">
+          <IconButton aria-label="Filter list">
+            <FilterListIcon />
+          </IconButton>
+        </Tooltip>
       </div>
     </Toolbar>
   );
@@ -179,8 +182,8 @@ function RouteTable(props) {
 
   useEffect(() => {
     props.fetchPrecomputedWaitAndTripData(props.graphParams);
-  }, []);  // like componentDidMount, this runs only on first render
-  
+  }, []); // like componentDidMount, this runs only on first render
+
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
     setOrder(isDesc ? 'asc' : 'desc');
@@ -192,7 +195,7 @@ function RouteTable(props) {
     let newSelected = [];
 
     if (selectedIndex === -1) {
-      newSelected = [route.title];//newSelected.concat(selected, name);
+      newSelected = [route.title]; // newSelected.concat(selected, name);
     } else if (selectedIndex === 0) {
       newSelected = newSelected.concat(selected.slice(1));
     } else if (selectedIndex === selected.length - 1) {
@@ -216,12 +219,12 @@ function RouteTable(props) {
   }
 
   const isSelected = name => selected.indexOf(name) !== -1;
-  
+
   let routes = props.routes ? filterRoutes(props.routes) : [];
   const spiderSelection = props.spiderSelection;
-  
+
   // filter the route list down to the spider routes if needed
-  
+
   if (spiderSelection && spiderSelection.length > 0) {
     const spiderRouteIDs = spiderSelection.map(spider => spider.routeID);
     routes = routes.filter(route => spiderRouteIDs.includes(route.id));
@@ -229,7 +232,10 @@ function RouteTable(props) {
 
   // first add in waits
   routes = routes.map(route => {
-    route.wait = getAverageOfMedianWait(props.waitTimesCache, props.graphParams, route);
+    route.wait = getAverageOfMedianWait(
+      props.waitTimesCache,
+      props.graphParams,
+      route);
     return route;
   });
 
@@ -269,41 +275,58 @@ function RouteTable(props) {
               rowCount={routes.length}
             />
             <TableBody>
-              {stableSort(routes, getSorting(order, orderBy))
-                .map((row, index) => {
+              {stableSort(routes, getSorting(order, orderBy)).map(
+                (row, index) => {
                   const isItemSelected = isSelected(row.title);
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
                     <TableRow
                       hover
-                      onClick={ event => handleClick(event, row) }
+                      onClick={event => handleClick(event, row)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
                       key={row.id}
                       selected={isItemSelected}
                     >
-                      <TableCell component="th" id={labelId} scope="row" padding="none">
-                        <Link to={{type: 'RECEIVED_GRAPH_PARAMS', payload: {
-                      route_id: row.id,
-                      direction_id: null,
-                      start_stop_id: null,
-                      end_stop_id: null,
-                    }, query: { route_id: row.id } }} >{row.title}</Link>
+                      <TableCell
+                        component="th"
+                        id={labelId}
+                        scope="row"
+                        padding="none"
+                      >
+                        <Link
+                          to={{
+                            type: 'RECEIVED_GRAPH_PARAMS',
+                            payload: {
+                              route_id: row.id,
+                              direction_id: null,
+                              start_stop_id: null,
+                              end_stop_id: null,
+                            },
+                            query: { route_id: row.id },
+                          }}
+                        >
+                          {row.title}
+                        </Link>
+                      </TableCell>
+                      <TableCell align="right">
+                        {isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
                       </TableCell>
                       <TableCell align="right">{isNaN(row.wait) ? "--" : row.wait.toFixed(1)}</TableCell>
                       <TableCell align="right">{isNaN(row.speed) ? "--" : row.speed.toFixed(1)}</TableCell>
                       <TableCell align="right">{row.totalScore}</TableCell>
                     </TableRow>
                   );
-                })}
+                },
+              )}
             </TableBody>
           </Table>
         </div>
       </Paper>
-   </div>
-  );    
+    </div>
+  );
 }
 
 const mapStateToProps = state => ({
@@ -314,11 +337,12 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => {
-  return ({
-      fetchPrecomputedWaitAndTripData: params => dispatch(fetchPrecomputedWaitAndTripData(params)),
-      handleGraphParams: params => dispatch(handleGraphParams(params))
-  })
-}
+  return {
+    fetchPrecomputedWaitAndTripData: params =>
+      dispatch(fetchPrecomputedWaitAndTripData(params)),
+    handleGraphParams: params => dispatch(handleGraphParams(params)),
+  };
+};
 
 export default connect(
   mapStateToProps,

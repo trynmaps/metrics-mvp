@@ -7,6 +7,7 @@ import pandas as pd
 import pytz
 from datetime import datetime, timedelta
 import time
+import requests
 import math
 import sys
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors
@@ -278,6 +279,13 @@ def metrics_by_interval():
         return make_error_response(params, str(ex), 400)
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
+
+@app.route('/api/config', methods=['GET'])
+def config():
+    res = Response(json.dumps({"mapbox_access_token": os.environ.get('MAPBOX_ACCESS_TOKEN')}), mimetype='application/json')
+    if not DEBUG:
+        res.headers['Cache-Control'] = 'max-age=3600'
+    return res
 
 if os.environ.get('METRICS_ALL_IN_ONE') == '1':
     @app.route('/frontend/build/<path:path>')

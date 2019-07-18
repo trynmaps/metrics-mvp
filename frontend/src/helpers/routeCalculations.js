@@ -33,82 +33,81 @@ import { getTripTimesForDirection } from './precomputed';
  */
 export function getRouteHeuristics() {
   return {
-
-    "J": {
-      directionsToIgnore: ["J____I_D10"] // this is to 23rd and 3rd
+    J: {
+      directionsToIgnore: ['J____I_D10'], // this is to 23rd and 3rd
     },
-    "L": {
-      directionsToIgnore: ["L____I_U53"]
+    L: {
+      directionsToIgnore: ['L____I_U53'],
     },
-    "M": {
-      "M____O_D00": {
-        ignoreFirstStop: true // Embarcadero & Folsom is not a real stop
-      }
-    },
-    "N": {
-      "N____O_F10": {
-        ignoreFirstStop: true // 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
-      }
-    },
-    "S": {
-      ignoreRoute: true
-    },
-    "5": {
-      "5____I_F00": {
-        ignoreFirstStop: 4218 // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
-      }
-    },
-    "9": {
-      "9____I_N00": {
-        ignoreFirstStop: 7297 // use Bayshore as actual first stop (daytime)
+    M: {
+      M____O_D00: {
+        ignoreFirstStop: true, // Embarcadero & Folsom is not a real stop
       },
-      "9____O_N00": {
-        ignoreLastStop: 7297 // use Bayshore as actual terminal (daytime)
-      }
     },
-    "24": {
-      directionsToIgnore: ["24___I_D10"]
-    },
-    "90": {
-      ignoreRoute: true
-    },
-    "91": {
-      ignoreRoute: true
-    },
-    "K_OWL": {
-      ignoreRoute: true
-    },
-    "L_OWL": {
-      ignoreRoute: true
-    },
-    "M_OWL": {
-      ignoreRoute: true
-    },
-    "N_OWL": {
-      ignoreRoute: true
-    },
-    "T_OWL": {
-      ignoreRoute: true
-    },
-    "PM": {
-      "PM___O_F00": {
-        ignoreLastStop: true // long time to Taylor and Bay (probably in holding area)
+    N: {
+      N____O_F10: {
+        ignoreFirstStop: true, // 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
       },
-      "PM___I_F00": {
-        ignoreFirstStop: true // 30 minutes from Hyde & Beach to Hyde & North Point
-      }
     },
-    "PH": {
-      "PH___I_F00": {
-        ignoreFirstStop: true // 30 minutes from Hyde & Beach to Hyde & North Point
-      }
+    S: {
+      ignoreRoute: true,
     },
-    "C": {
-      "C____I_F00": {
-        ignoreLastStop: true // long time to California & Drumm (probably in holding area)
-      }
-    }
-  }
+    '5': {
+      '5____I_F00': {
+        ignoreFirstStop: 4218, // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
+      },
+    },
+    '9': {
+      '9____I_N00': {
+        ignoreFirstStop: 7297, // use Bayshore as actual first stop (daytime)
+      },
+      '9____O_N00': {
+        ignoreLastStop: 7297, // use Bayshore as actual terminal (daytime)
+      },
+    },
+    '24': {
+      directionsToIgnore: ['24___I_D10'],
+    },
+    '90': {
+      ignoreRoute: true,
+    },
+    '91': {
+      ignoreRoute: true,
+    },
+    K_OWL: {
+      ignoreRoute: true,
+    },
+    L_OWL: {
+      ignoreRoute: true,
+    },
+    M_OWL: {
+      ignoreRoute: true,
+    },
+    N_OWL: {
+      ignoreRoute: true,
+    },
+    T_OWL: {
+      ignoreRoute: true,
+    },
+    PM: {
+      PM___O_F00: {
+        ignoreLastStop: true, // long time to Taylor and Bay (probably in holding area)
+      },
+      PM___I_F00: {
+        ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
+      },
+    },
+    PH: {
+      PH___I_F00: {
+        ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
+      },
+    },
+    C: {
+      C____I_F00: {
+        ignoreLastStop: true, // long time to California & Drumm (probably in holding area)
+      },
+    },
+  };
 }
 
 /**
@@ -117,7 +116,9 @@ export function getRouteHeuristics() {
 export function filterRoutes(routes) {
   const heuristics = getRouteHeuristics();
 
-  return routes.filter(route => !heuristics[route.id] || !heuristics[route.id].ignoreRoute);
+  return routes.filter(
+    route => !heuristics[route.id] || !heuristics[route.id].ignoreRoute,
+  );
 }
 
 /**
@@ -135,7 +136,9 @@ export function filterDirections(directions, routeID) {
     return directions;
   }
 
-  return directions.filter(direction => !directionsToIgnore.includes(direction.id));
+  return directions.filter(
+    direction => !directionsToIgnore.includes(direction.id),
+  );
 }
 
 /**
@@ -146,11 +149,11 @@ export function filterDirections(directions, routeID) {
  */
 
 export function ignoreFirstStop(routeID, directionID) {
-  return ignoreFlag(routeID, directionID, "ignoreFirstStop");
+  return ignoreFlag(routeID, directionID, 'ignoreFirstStop');
 }
 
 export function ignoreLastStop(routeID, directionID) {
-  return ignoreFlag(routeID, directionID, "ignoreLastStop");
+  return ignoreFlag(routeID, directionID, 'ignoreLastStop');
 }
 
 export function ignoreFlag(routeID, directionID, flagName) {
@@ -164,11 +167,9 @@ export function ignoreFlag(routeID, directionID, flagName) {
   }
   if (direction[flagName]) {
     return direction[flagName];
-  } else {
-    return false;
   }
+  return false;
 }
-
 
 /**
  * Get precomputed trip times for the first stop, then apply heuristic rules
@@ -478,18 +479,21 @@ export function milesBetween(p1, p2) {
  *
  * From eclipses.py.  Returns distance in meters.
  */
-export function haverDistance(latstop,lonstop,latbus,lonbus) {
+export function haverDistance(latstop, lonstop, latbus, lonbus) {
+  const deg2rad = x => (x * Math.PI) / 180;
 
-  const deg2rad = x => x * Math.PI / 180;
-
-  [latstop,lonstop,latbus,lonbus] = [latstop,lonstop,latbus,lonbus].map(deg2rad);
+  [latstop, lonstop, latbus, lonbus] = [latstop, lonstop, latbus, lonbus].map(
+    deg2rad,
+  );
   const eradius = 6371000;
 
-  const latdiff = (latbus-latstop);
-  const londiff = (lonbus-lonstop);
+  const latdiff = latbus - latstop;
+  const londiff = lonbus - lonstop;
 
-  const a = Math.sin(latdiff/2)**2 + Math.cos(latstop) * Math.cos(latbus) * Math.sin(londiff/2)**2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const a =
+    Math.sin(latdiff / 2) ** 2 +
+    Math.cos(latstop) * Math.cos(latbus) * Math.sin(londiff / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   const distance = eradius * c;
   return distance;
