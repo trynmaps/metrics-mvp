@@ -222,18 +222,15 @@ class Info extends Component {
             <div>
               <Card>
                 <Card.Body>
-                  <span className="h4">Overall Grade: </span>
+                  <span className="h4">This Trip's Grade: </span>
                   <span className="h1">{grades.totalGrade}</span>
-                  {' '}
-(
-                  {' '}
-                  {grades.totalScore}
-                  {' '}
-/
-                  {' '}
-                  {grades.highestPossibleScore}
-                  {' '}
-)
+                  <span>
+                  {/* {' '}({' '}{grades.totalScore}{' '}/{' '}{grades.highestPossibleScore}{' '}) */}
+                  { grades.totalScore ?
+                      ` ( ${grades.totalScore} / ${grades.highestPossibleScore} ) ` :
+                      "Not enough information for this route"
+                  }
+                  </span>
 
                   <table className="table table-borderless">
                     <tbody>
