@@ -305,7 +305,7 @@ mph)
                         <td>
             {PLANNING_PERCENTILE}% of trips take
                           {' '}
-                          { Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE)) }
+                          { Math.round(getPercentileValue(tripTimes, PLANNING_PERCENTILE)) }
                           {' '}
 minutes
 
