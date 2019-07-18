@@ -168,17 +168,17 @@ class GtfsScraper:
         print(f"{datetime.now().time().isoformat()}: Uploaded {s3_path} to s3 bucket.")
 
     def save_date_ranges(self, s3 = False, ver = "v1"):
-        df = self.get_date_ranges()
         filepath = f"{get_schedule_dir()}/date_ranges_{ver}.csv"
+
+        # if the file exists, update it, otherwise create the file
+        df = pd.concat([pd.read_csv(filepath), self.get_date_ranges()], sort = True) if Path(filepath).is_file() else self.get_date_ranges
 
         if s3:
             s3_path = f"date_ranges_{ver}.csv"
             self.upload_to_s3(s3_path, df)
-        
-        if Path(filepath).is_file():
-            print(f"{datetime.now().time().isoformat()}: Date ranges have already been cached locally.")
-        else:
-            df.to_csv(filepath)
+
+        df.to_csv(filepath)
+        print(f"{datetime.now().time().isoformat()}: date ranges have been updated locally.")
 
     def save_all_stops(self, s3 = False):
         date_ranges = self.get_date_ranges()
@@ -220,6 +220,9 @@ class GtfsScraper:
                         df = pd.concat(stops)
 
                     self.upload_to_s3(s3_path, df)
+
+                if local_file_exists:
+                    print(f"{datetime.now().time().isoformat()}: {filename} has been cached locally.")
             except NoRouteError as err:
                 print(f"{datetime.now()}: {err}")
                 continue

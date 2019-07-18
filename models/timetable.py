@@ -8,7 +8,7 @@ from io import StringIO
 import pandas as pd
 import numpy as np
 
-from . import nextbus, arrival_history, util, gtfs, constants
+from . import nextbus, arrival_history, util, gtfs, constants, errors
 
 class Timetable:
     def __init__(self, agency, route_id, timetable, date):
@@ -100,6 +100,6 @@ def get_date_period(agency: str, d: date, ver: str):
     elif len(period) > 0:
         date_range = period.date_range.iloc[0]
     else:
-        raise Exception(f"No timetable data for {d.isoformat()}")
+        raise errors.TimetableError(f"No timetable data for {d.isoformat()}")
 
     return [date_range[0], date_range[-1]]
