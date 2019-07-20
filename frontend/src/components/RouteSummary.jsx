@@ -5,7 +5,8 @@ import { XYPlot, HorizontalGridLines, VerticalGridLines,
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import '../../node_modules/react-vis/dist/style.css';
 import { filterRoutes, getAllDistances, getAllSpeeds, getAllScores, getEndToEndTripTime,
-  getTripDataSeries, computeGrades, quartileBackgroundColor, quartileForegroundColor } from '../helpers/routeCalculations'
+  getTripDataSeries, computeGrades, quartileBackgroundColor, quartileForegroundColor,
+  metersToMiles } from '../helpers/routeCalculations'
 
 import { getAverageOfMedianWait } from '../helpers/precomputed';
 import { connect } from 'react-redux';
@@ -90,10 +91,10 @@ function RouteSummary(props) {
     if (direction_id) {
       tripTimeForDirection = getEndToEndTripTime(props, route_id, direction_id);
     
-    /*  
+    /* this is the end-to-end speed in the selected direction, not currently used
     if (dist <= 0 || isNaN(tripTime)) { speed = "?"; } // something wrong with the data here
     else {
-      speed = Number.parseFloat(dist) / tripTime * 60.0 / 1609.344;  // initial units are meters per minute, final are mph
+      speed = metersToMiles(Number.parseFloat(dist)) / tripTime * 60.0;  // initial units are meters per minute, final are mph
       //console.log('speed: ' + speed + " tripTime: " + tripTime);
     }*/
     }
@@ -194,7 +195,7 @@ function RouteSummary(props) {
             
             <br/>
 
-            Length: { (dist / 1609.344).toFixed(1) } miles
+            Length: { metersToMiles(dist).toFixed(1) } miles
             
           </Paper>
         </Grid>

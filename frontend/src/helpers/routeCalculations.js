@@ -351,7 +351,7 @@ function getSpeedForRoute(props, route_id, allDistances) {
 
     if (dist <= 0 || isNaN(tripTime)) { return -1; } // something wrong with the data here
 
-    const speed = Number.parseFloat(dist) / tripTime * 60.0 / 1609.344;  // initial units are meters per minute, final are mph
+    const speed = metersToMiles(Number.parseFloat(dist)) / tripTime * 60.0;  // initial units are meters per minute, final are mph
     return speed;
   });
 
@@ -484,6 +484,15 @@ export const quartileForegroundColor = d3.scaleThreshold()
  */
 export function milesBetween(p1, p2) {
   const meters = haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
+  return metersToMiles(meters);
+}
+
+/**
+ *
+ * @param meters
+ * @returns Conversion from meters to miles.
+ */
+export function metersToMiles(meters) {
   return meters / 1609.344;
 }
 
