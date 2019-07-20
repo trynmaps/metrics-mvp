@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Container, Row, Col } from 'react-bootstrap';
+import React, { Fragment, useState, useEffect } from 'react';
 
 import { XYPlot, HorizontalGridLines, VerticalGridLines,
   XAxis, YAxis, LineSeries, ChartLabel, Crosshair } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import '../../node_modules/react-vis/dist/style.css';
 import { filterRoutes, getAllDistances, getAllSpeeds, getAllScores, getEndToEndTripTime,
-  getTripDataSeries, computeGrades } from '../helpers/routeCalculations'
+  getTripDataSeries, computeGrades, quartileBackgroundColor, quartileForegroundColor } from '../helpers/routeCalculations'
 
 import { getAverageOfMedianWait } from '../helpers/precomputed';
 import { connect } from 'react-redux';
 
 import { fetchPrecomputedWaitAndTripData } from '../actions';
 
-
+import Grid from '@material-ui/core/Grid';
+import Paper from '@material-ui/core/Paper';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.
  * 
@@ -46,11 +48,10 @@ function RouteSummary(props) {
     //props.fetchAllTheThings();
   }, []);  // like componentDidMount, this runs only on first render    
   
-  const { graphParams, routes } = props;
+  const { graphParams } = props;
   
   let speed = null;
   let dist = null;
-  let tripTime = null;
   let waitRanking = null;
   let speedObj = null;
   let speedRanking = null;
@@ -60,12 +61,16 @@ function RouteSummary(props) {
   let allSpeeds = null;
   let allScores = null;
   let tripData = null;
-  
+
+  let routes = null;
   let route = null;
+  let direction_id = null;
+
+  let tripTimeForDirection = null;
   
-  if (graphParams.route_id && graphParams.direction_id) {
+  if (graphParams.route_id) {
     
-    let routes = props.routes ? filterRoutes(props.routes) : [];
+    routes = props.routes ? filterRoutes(props.routes) : [];
     
     routes = routes.map(route => {
       route.wait = getAverageOfMedianWait(props.waitTimesCache, props.graphParams, route);     
@@ -77,17 +82,20 @@ function RouteSummary(props) {
     allScores = getAllScores(routes, allSpeeds);
     
     const route_id = graphParams.route_id;
-    const direction_id = graphParams.direction_id;
+    direction_id = graphParams.direction_id;
     
     const distObj = allDistances.find(distObj => distObj.routeID === route_id);
     dist = distObj ? distObj.distance : null;
 
-    tripTime = getEndToEndTripTime(props, route_id, direction_id);
+    if (direction_id) {
+      tripTimeForDirection = getEndToEndTripTime(props, route_id, direction_id);
     
+    /*  
     if (dist <= 0 || isNaN(tripTime)) { speed = "?"; } // something wrong with the data here
     else {
       speed = Number.parseFloat(dist) / tripTime * 60.0 / 1609.344;  // initial units are meters per minute, final are mph
       //console.log('speed: ' + speed + " tripTime: " + tripTime);
+    }*/
     }
     
     route = routes.find(route => route.id === route_id);
@@ -97,14 +105,16 @@ function RouteSummary(props) {
     
     speedObj = allSpeeds.find(obj => obj.routeID === route_id);
     speedRanking = speedObj ? allSpeeds.indexOf(speedObj) + 1 : null;
+    speed = speedObj ? speedObj.speed : null;
     
     scoreObj = allScores.find(obj => obj.routeID === route_id);
     scoreRanking = scoreObj ? allScores.indexOf(scoreObj) + 1 : null;
     
-    
     tripData = getTripDataSeries(props, route_id, direction_id);
-    
-    grades = computeGrades(route.wait, speed);
+
+    if (route) {
+      grades = computeGrades(route.wait, speed);
+    }
   }
   
   const legendItems = [
@@ -112,48 +122,72 @@ function RouteSummary(props) {
                        { title: 'Actual',   color: "#aa82c5", strokeWidth: 10 }
                        ];
   
-  // TODO: change from Bootstrap components to Material UI
+  const useStyles = makeStyles(theme => ({
+    grade: {
+      background: grades ? quartileBackgroundColor(grades.totalScore/grades.highestPossibleScore) : null,
+      color: grades ? quartileForegroundColor(grades.totalScore/grades.highestPossibleScore) : null,
+      padding: theme.spacing(2)
+    },
+    wait: {
+      background: grades ? quartileBackgroundColor(grades.medianWaitScore/100.0) : null,
+      color: grades ? quartileForegroundColor(grades.medianWaitScore/100.0) : null,
+      padding: theme.spacing(2)
+    },
+    trip: { 
+      background: grades ? quartileBackgroundColor(grades.speedScore/100.0) : null,
+      color: grades ? quartileForegroundColor(grades.speedScore/100.0) : null, // xxx not working
+      padding: theme.spacing(2)
+    },
+  }));
   
-  return (grades ? <Card><Card.Body>
-            
-      <span className="h4">Route Summary: </span>
-      <span className="h1">{grades.totalGrade}</span>
+  const classes = useStyles();
+  
+  return grades ? (<Fragment>
+      
+      <div style={{ padding: 12 }}>
+      <Grid container spacing={3}>
+
+        <Grid item xs>            
+          <Paper className={classes.grade}>
+          <Typography variant="overline">Route score</Typography><br/>
+          <Grid container justify="space-between">
+          <Grid item>
+          <Typography variant="h3" display="inline">{grades.totalScore}</Typography>
+          <Typography variant="h5" display="inline">/{grades.highestPossibleScore}</Typography>
+          </Grid>
      
-        { scoreRanking ? ` (#${scoreRanking} of ${allScores.length} for best score)` : null }
-        { scoreRanking ? <small>&nbsp;({grades.totalScore}/{grades.highestPossibleScore})</small>
-            : " ranking not available"}
+          <Grid item>
+          <Typography variant="body1" align="right" display="inline">
+            { scoreRanking ?  '#' + scoreRanking + ' out of ' + allScores.length + ' routes' : 'Rank not available' }
+          </Typography>
+          </Grid>
+          </Grid>
+
+          </Paper>
+          </Grid>
+
+        <Grid item xs>            
+          <Paper className={classes.wait}>
+
+            <Typography variant="overline">Median wait</Typography>
+            <Typography variant="h3">{ route.wait < 0 ? "?" : route.wait.toFixed(0) } minutes</Typography>
             
-      <br/>
-            
-        <Container>
-        <Row>
-        <Col>
-            
-            <Card bg="info" text="white">
-            <Card.Body>
-            <Card.Title>Median wait</Card.Title>
-            <span className="h1">{ route.wait < 0 ? "?" : route.wait.toFixed(0) } minutes</span>
-            
-            <br/>
-            
-            { waitRanking ? ` (#${waitRanking} of ${routes.length} for shortest wait)` : null }
+            { waitRanking ? `#${waitRanking} of ${routes.length} for shortest wait` : null }
             { waitRanking ? <small>&nbsp;({ grades.medianWaitScore }/100)</small>
                 : " ranking not available"}
 
+          </Paper>            
+        </Grid>            
             
-            
+        <Grid item xs>            
 
-            </Card.Body>
-            </Card>
             
-            <Card bg="info" text="white" className="mt-2">
-            <Card.Body>
-            <Card.Title>Median speed</Card.Title>
-            <span className="h1">{ isNaN(speed) ? speed : speed.toFixed(1) } mph</span>
+          <Paper className={classes.trip}>
+
+            <Typography variant="overline">Median speed</Typography>
+            <Typography variant="h3">{ isNaN(speed) ? speed : speed.toFixed(1) } mph</Typography>
             
-            <br/>
-            
-            { speedRanking ? ` (#${speedRanking} of ${allSpeeds.length} for fastest)` : null }
+            { speedRanking ? `#${speedRanking} of ${allSpeeds.length} for fastest` : null }
             { speedRanking ? <small>&nbsp;({ grades.speedScore }/100)</small> : " ranking not available"}
             
 
@@ -162,26 +196,25 @@ function RouteSummary(props) {
 
             Length: { (dist / 1609.344).toFixed(1) } miles
             
-            <br/>
-            Travel time: { tripTime } minutes<br/>
-            </Card.Body>
-            </Card>
-        </Col>
-
-        <Col xs>
+          </Paper>
+        </Grid>
 
 
-            <Card>
-            <Card.Body>
-            <Card.Title>Travel time across stops</Card.Title>
+        { direction_id ? <Grid item xs={12}>
+
+            <Typography variant="h5">Travel time across stops</Typography>
+
+            Full travel time: { tripTimeForDirection } minutes<br/>
             
+            {/* set the y domain to start at zero and end at highest value (which is not always
+             the end to end travel time due to spikes in the data) */}
             
-            
-            <XYPlot height={300} width={400} onMouseLeave={_onMouseLeave}>
+            <XYPlot height={300} width={400} yDomain={[0, tripData.reduce((max, coord) => coord.y > max ? coord.y : max, 0)]}
+              onMouseLeave={_onMouseLeave}>
             <HorizontalGridLines />
             <VerticalGridLines />
-            <XAxis />
-            <YAxis hideLine />
+            <XAxis tickPadding={4} />
+            <YAxis hideLine={true} tickPadding={4} />
 
             <LineSeries data={ tripData }
                stroke="#aa82c5"
@@ -196,17 +229,29 @@ function RouteSummary(props) {
             />*/}
 
             <ChartLabel 
-              text="minutes"
+              text="Minutes"
               className="alt-y-label"
-              includeMargin={false}
-              xPercent={0.06}
-              yPercent={0.06}
+              includeMargin={true}
+              xPercent={0.02}
+              yPercent={0.2}
               style={{
                 transform: 'rotate(-90)',
                 textAnchor: 'end'
               }}       
             />       
 
+            <ChartLabel 
+            text="Stop Number"
+            className="alt-x-label"
+            includeMargin={true}
+            xPercent={0.6}
+            yPercent={0.86}
+            style={{
+              textAnchor: 'end'
+            }}       
+          />       
+            
+            
             { crosshairValues.length > 0 && (
              <Crosshair values={crosshairValues}
                style={{line:{background: 'none'}}} >
@@ -219,18 +264,15 @@ function RouteSummary(props) {
 
           </XYPlot>
           <DiscreteColorLegend orientation="horizontal" width={300} items={legendItems}/>
+          </Grid>
             
-          </Card.Body>
-          </Card>
+            : null }
 
-        </Col>
-            
-        </Row>  
-        </Container>
-            
-        </Card.Body></Card>            
+      </Grid>
+      </div>
+      </Fragment>
 
-    : null);
+     ) : null;
   }
 
 const mapStateToProps = state => ({

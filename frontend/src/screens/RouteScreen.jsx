@@ -120,7 +120,7 @@ class RouteScreen extends React.Component {
           </div>
         </Drawer>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={0}>
           <Grid item xs={6}>
             <ControlPanel
               routes={routes}

@@ -7,6 +7,10 @@
 
 import * as d3 from "d3";
 import { getTripTimesForDirection } from './precomputed';
+import red from '@material-ui/core/colors/red';
+import yellow from '@material-ui/core/colors/yellow';
+import lightGreen from '@material-ui/core/colors/lightGreen';
+import green from '@material-ui/core/colors/green';
 
 /**
  * Returns a data object with centralized declarations of "per route" heuristic rules
@@ -54,15 +58,15 @@ export function getRouteHeuristics() {
     },
     '5': {
       '5____I_F00': {
-        ignoreFirstStop: 4218, // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
+        ignoreFirstStop: '4218', // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
       },
     },
     '9': {
       '9____I_N00': {
-        ignoreFirstStop: 7297, // use Bayshore as actual first stop (daytime)
+        ignoreFirstStop: '7297', // use Bayshore as actual first stop (daytime)
       },
       '9____O_N00': {
-        ignoreLastStop: 7297, // use Bayshore as actual terminal (daytime)
+        ignoreLastStop: '7297', // use Bayshore as actual terminal (daytime)
       },
     },
     '24': {
@@ -195,9 +199,9 @@ function getTripTimesUsingHeuristics(props, routeID, directionID) {
   const ignoreFirst = ignoreFirstStop(routeID, directionID); // look up heuristic rule
   let firstStop = null;
 
-  if (Number.isInteger(ignoreFirst)) {
+  if (ignoreFirst !== true && ignoreFirst !== false) {
     firstStop = ignoreFirst; // ignore the stops prior the index specified by ignoreFirst
-  } else { // treat as boolean
+  } else { // is a boolean
     firstStop = directionInfo.stops[ ignoreFirst ? 1 : 0];
   }
 
@@ -238,9 +242,9 @@ export function getEndToEndTripTime(props, routeID, directionID) {
    * it's just coordinates and distance along route, so more logic would be needed to "trim" the shape
    * if stops are ignored.
    */
-  if (Number.isInteger(ignoreLast)) {
+  if (ignoreLast !== true && ignoreLast !== false) {
     lastStop = ignoreLast; // ignore stops after index specified by ignoreLast
-  } else { // treat as boolean
+  } else { // is a boolean
     lastStop = directionInfo.stops[directionInfo.stops.length - (ignoreLast ? 2 : 1)];
   }
 
@@ -270,10 +274,12 @@ export function getTripDataSeries(props, routeID, directionID) {
 
   const route = props.routes.find(route => route.id === routeID);
 
-  const dataSeries = directionInfo.stops.map((stop, index) => { return {
-    x: index,
+  // omit the first stop since trip time is always zero
+
+  const dataSeries = directionInfo.stops.slice(1).map((stop, index) => { return {
+    x: index + 1,
     y: tripTimesForFirstStop[stop] ? tripTimesForFirstStop[stop] : 0,
-        title: route.stops[stop].title
+    title: route.stops[stop].title,
   }});
 
   return dataSeries;
@@ -464,6 +470,14 @@ export function computeGrades(medianWait, speed) {
     highestPossibleScore: 200
   }
 }
+
+export const quartileBackgroundColor = d3.scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range([red[300], yellow[500], lightGreen[700], green[900]]);
+
+export const quartileForegroundColor = d3.scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range(['black', 'black', 'black', 'white']);
 
 /**
  * Returns the distance between two stops in miles.

@@ -165,9 +165,6 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     marginBottom: theme.spacing(2),
   },
-  table: {
-    minWidth: 750,
-  },
   tableWrapper: {
     overflowX: 'auto',
   },
@@ -263,7 +260,6 @@ function RouteTable(props) {
         <EnhancedTableToolbar numSelected={selected.length} />
         <div className={classes.tableWrapper}>
           <Table
-            className={classes.table}
             aria-labelledby="tableTitle"
             size={dense ? 'small' : 'medium'}
           >
@@ -314,9 +310,12 @@ function RouteTable(props) {
                       <TableCell align="right">
                         {isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
                       </TableCell>
-                      <TableCell align="right">{isNaN(row.wait) ? "--" : row.wait.toFixed(1)}</TableCell>
-                      <TableCell align="right">{isNaN(row.speed) ? "--" : row.speed.toFixed(1)}</TableCell>
-                      <TableCell align="right">{row.totalScore}</TableCell>
+                      <TableCell align="right">
+                        {isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {row.totalScore}
+                      </TableCell>
                     </TableRow>
                   );
                 },
