@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
-import { Map, TileLayer } from 'react-leaflet';
+import { Map, TileLayer, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as turf from '@turf/turf';
@@ -258,26 +258,46 @@ class Isochrone extends React.Component {
                             if (routeInfo)
                             {
                                 let dirInfo = getDirectionInfo(tripItem.direction, routeInfo);
-                                let fromStopIndex = dirInfo.stops.indexOf(tripItem.fromStop);
-                                let toStopIndex = dirInfo.stops.indexOf(tripItem.toStop);
-                                if (fromStopIndex !== -1 && toStopIndex !== -1)
+
+                                let fromStop = tripItem.fromStop;
+                                let toStop = tripItem.toStop;
+
+                                let fromStopInfo = routeInfo.stops[fromStop];
+                                let toStopInfo = routeInfo.stops[toStop];
+
+                                let fromStopGeometry = dirInfo.stop_geometry[fromStop];
+                                let toStopGeometry = dirInfo.stop_geometry[toStop];
+                                let tripPoints = [];
+
+                                if (fromStopGeometry && toStopGeometry)
                                 {
-                                    let stopPoints = [];
-
-                                    for (let i = fromStopIndex; i <= toStopIndex; i++)
-                                    {
-                                        let stopInfo = routeInfo.stops[dirInfo.stops[i]];
-                                        stopPoints.push(stopInfo);
+                                    tripPoints.push(fromStopInfo);
+                                    for (let i = fromStopGeometry.after_index + 1; i <= toStopGeometry.after_index; i++) {
+                                        // this.tripLayers.push(L.circle(dirInfo.coords[i], 40, {color:'#009', fillOpacity:0.8, stroke:false}).addTo(map));
+                                        tripPoints.push(dirInfo.coords[i]);
                                     }
+                                    tripPoints.push(toStopInfo);
+                                }
+                                else // if unknown geometry, draw straight lines between stops
+                                {
+                                    let fromStopIndex = dirInfo.stops.indexOf(tripItem.fromStop);
+                                    let toStopIndex = dirInfo.stops.indexOf(tripItem.toStop);
+                                    if (fromStopIndex !== -1 && toStopIndex !== -1)
+                                    {
+                                        for (let i = fromStopIndex; i <= toStopIndex; i++)
+                                        {
+                                            let stopInfo = routeInfo.stops[dirInfo.stops[i]];
+                                            tripPoints.push(stopInfo);
+                                        }
+                                    }
+                                }
 
-                                    let polyLine = L.polyline(stopPoints).addTo(map);
+                                if (tripPoints.length)
+                                {
+                                    let polyLine = L.polyline(tripPoints).addTo(map);
                                     polyLine.bindTooltip(routeInfo.id, {direction:'center', opacity:0.9, permanent:true});
 
                                     this.tripLayers.push(polyLine);
-
-                                    let fromStopInfo = routeInfo.stops[tripItem.fromStop];
-                                    let toStopInfo = routeInfo.stops[tripItem.toStop];
-
                                     this.tripLayers.push(L.circle(fromStopInfo, 40, {color:'#090', fillOpacity:0.8, stroke:false}).addTo(map));
                                     this.tripLayers.push(L.circle(toStopInfo, 40, {color:'#900', fillOpacity: 0.8, stroke:false}).addTo(map));
                                 }

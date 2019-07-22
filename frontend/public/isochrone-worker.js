@@ -58,9 +58,9 @@ function loadRoutes()
     }
     else
     {
-        return loadJson("/api/routes?v4").then(function(routes) {
-            allRoutes = routes;
-            return routes;
+        return loadJson("https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v1_sf-muni.json.gz?v3").then(function(data) {
+            allRoutes = data.routes;
+            return allRoutes;
         });
     }
 }

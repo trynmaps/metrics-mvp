@@ -65,11 +65,9 @@ export function resetIntervalData() {
 export function fetchRoutes() {
   return function(dispatch) {
     axios
-      .get('/api/routes', {
-        baseURL: metricsBaseURL,
-      })
+      .get('https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v1_sf-muni.json.gz?v3')
       .then(response => {
-        dispatch({ type: 'RECEIVED_ROUTES', payload: response.data });
+        dispatch({ type: 'RECEIVED_ROUTES', payload: response.data.routes });
       })
       .catch(err => {
         dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });
