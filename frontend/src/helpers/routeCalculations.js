@@ -6,7 +6,7 @@
  */
 
 import * as d3 from "d3";
-import { getTripTimesForDirection } from './precomputed';
+import { getTripTimesForDirection, getAverageOfMedianWait } from './precomputed';
 import red from '@material-ui/core/colors/red';
 import yellow from '@material-ui/core/colors/yellow';
 import lightGreen from '@material-ui/core/colors/lightGreen';
@@ -183,7 +183,7 @@ function getTripTimesUsingHeuristics(props, routeID, directionID) {
 
   const tripTimesForDir = getTripTimesForDirection(props.tripTimesCache, props.graphParams, routeID, directionID);
 
-  if (!tripTimesForDir) {
+  if (!tripTimesForDir || !props.routes) {
     //console.log("No trip times found at all for " + directionID + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
     return {tripTimesForFirstStop: null, directionInfo: null};
@@ -274,15 +274,43 @@ export function getTripDataSeries(props, routeID, directionID) {
 
   const route = props.routes.find(route => route.id === routeID);
 
-  // omit the first stop since trip time is always zero
+  const dataSeries = [];
 
-  const dataSeries = directionInfo.stops.slice(1).map((stop, index) => { return {
-    x: index + 1,
-    y: tripTimesForFirstStop[stop] ? tripTimesForFirstStop[stop] : 0,
-    title: route.stops[stop].title,
-  }});
+  // Omit the first stop since trip time is always zero.
+  //
+  // Drop trip data points with no data.
+
+  directionInfo.stops.slice(1).map((stop, index) => {
+    if (tripTimesForFirstStop[stop]) {
+      dataSeries.push({
+        x: index + 1,
+        y: tripTimesForFirstStop[stop],
+        title: route.stops[stop].title,
+      });
+    }
+    return null;
+  });
 
   return dataSeries;
+}
+
+/**
+ * Computes waits of all routes.
+ *
+ * @param {any} props
+ */
+export function getAllWaits(props) {
+
+  let allWaits = null;
+  if (props.routes) {
+    allWaits = filterRoutes(props.routes).map(route => {
+      return { routeID: route.id, wait: getAverageOfMedianWait(props.waitTimesCache, props.graphParams, route) }
+    });
+    allWaits = allWaits.filter(waitObj => !isNaN(waitObj.wait));
+    allWaits.sort((a,b) => { return b.wait - a.wait});
+  }
+
+  return allWaits;
 }
 
 /**
@@ -349,7 +377,10 @@ function getSpeedForRoute(props, route_id, allDistances) {
     const dist = distObj ? distObj.distance : null;
     const tripTime = getEndToEndTripTime(props, route.id, direction.id);
 
-    if (dist <= 0 || isNaN(tripTime)) { return -1; } // something wrong with the data here
+    if (dist <= 0 || isNaN(tripTime)) {  // something wrong with the data here
+      //console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + route_id + ' ' + direction.id);
+      return -1;
+    }
 
     const speed = metersToMiles(Number.parseFloat(dist)) / tripTime * 60.0;  // initial units are meters per minute, final are mph
     return speed;
@@ -366,15 +397,14 @@ function getSpeedForRoute(props, route_id, allDistances) {
 /**
  * Computes speeds of all routes.
  *
- * @param {any} props
+ * @param {any} routes
  * @param {any} allDistances
  */
 export function getAllSpeeds(props, allDistances) {
 
   let allSpeeds = null;
   if (props.routes) {
-    const filteredRoutes = filterRoutes(props.routes);
-    allSpeeds = filteredRoutes.map(route => {
+    allSpeeds = filterRoutes(props.routes).map(route => {
       return { routeID: route.id, speed: getSpeedForRoute(props, route.id, allDistances) }
     });
     allSpeeds = allSpeeds.filter(speedObj => speedObj.speed > 0); // not needed?
@@ -392,14 +422,14 @@ export function getAllSpeeds(props, allDistances) {
  * @param {any} routes
  * @param {any} speeds
  */
-export function getAllScores(routes, speeds) {
+export function getAllScores(routes, waits, speeds) {
 
   let allScores = [];
-  const filteredRoutes = filterRoutes(routes);
-  for (let route of filteredRoutes) {
+  for (let route of routes) {
     const speedObj = speeds.find(speed => speed.routeID === route.id);
-    if (speedObj) {
-      const grades = computeGrades(route.wait, speedObj.speed);
+    const waitObj = waits.find(wait => wait.routeID === route.id);
+    if (waitObj && speedObj) {
+      const grades = computeGrades(waitObj.wait, speedObj.speed);
       allScores.push({ routeID: route.id, totalScore: grades.totalScore });
     }
   }
@@ -443,21 +473,24 @@ export function computeGrades(medianWait, speed) {
   .range(["D", "C", "B", "A"]);
 
   const totalGradeScale = d3.scaleThreshold()
-  .domain([50, 100, 150])
+  .domain([25, 50, 75])
   .range(["D", "C", "B", "A"]);
 
   let medianWaitScore = 0, medianWaitGrade = "";
   let speedScore = 0, speedGrade = "";
   let totalScore = 0, totalGrade = "";
 
+  if (medianWait != null) {
+    medianWaitScore = medianWaitScoreScale(medianWait);
+    medianWaitGrade = medianWaitGradeScale(medianWait);
+  }
 
-  medianWaitScore = medianWaitScoreScale(medianWait);
-  medianWaitGrade = medianWaitGradeScale(medianWait)
+  if (speed != null) {
+    speedScore = speedScoreScale(speed);
+    speedGrade = speedGradeScale(speed);
+  }
 
-  speedScore = speedScoreScale(speed);
-  speedGrade = speedGradeScale(speed);
-
-  totalScore = medianWaitScore + speedScore;
+  totalScore = Math.round((medianWaitScore + speedScore)/2.0);
   totalGrade = totalGradeScale(totalScore);
 
   return {
@@ -467,7 +500,7 @@ export function computeGrades(medianWait, speed) {
     speedGrade,
     totalScore,
     totalGrade,
-    highestPossibleScore: 200
+    highestPossibleScore: 100
   }
 }
 

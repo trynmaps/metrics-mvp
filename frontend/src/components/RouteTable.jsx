@@ -15,12 +15,10 @@ import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
 
-import { filterRoutes, getAllDistances, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
-import { getAverageOfMedianWait } from '../helpers/precomputed';
+import { filterRoutes, getAllWaits, getAllDistances, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
 import { push } from 'redux-first-router';
 import Link from 'redux-first-router-link';
-import { getWaitTimeForDirection } from '../helpers/precomputed';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
@@ -227,22 +225,20 @@ function RouteTable(props) {
     routes = routes.filter(route => spiderRouteIDs.includes(route.id));
   }
 
-  // first add in waits
-  routes = routes.map(route => {
-    route.wait = getAverageOfMedianWait(
-      props.waitTimesCache,
-      props.graphParams,
-      route);
-    return route;
-  });
-
   // then compute speeds and scores, which depend on waits
 
+  const allWaits = getAllWaits(props);
   const allDistances = getAllDistances();
   const allSpeeds = getAllSpeeds(props, allDistances);
-  const allScores = getAllScores(routes, allSpeeds);
+  const allScores = getAllScores(routes, allWaits, allSpeeds);
   
   routes = routes.map(route => {
+    
+    const waitObj = allWaits.find(waitObj => waitObj.routeID === route.id);
+    if (waitObj) {
+      route.wait = waitObj.wait;
+    }
+    
     const speedObj = allSpeeds.find(speedObj => speedObj.routeID === route.id);
     if (speedObj) {
       route.speed = speedObj.speed;

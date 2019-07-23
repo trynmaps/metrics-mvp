@@ -11,7 +11,6 @@ import AppBar from '@material-ui/core/AppBar';
 
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import Navigation from '../components/Navigation';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
 
@@ -145,9 +144,7 @@ class RouteScreen extends React.Component {
             ) : (
               /* if no graph data, show the info summary component */
 
-                <RouteSummary
-                routes={routes}
-              />
+                <RouteSummary/>
             )}
           </Grid>
         </Grid>
