@@ -355,9 +355,10 @@ class Info extends Component {
 
             <h4>Headways</h4>
             <p>
-              {headwayMin.count + 1} arrivals, average headway{' '}
-              {Math.round(headwayMin.avg)} minutes, max headway{' '}
-              {Math.round(headwayMin.max)} minutes
+              {headwayMin.avg 
+                ? `${headwayMin.count + 1} arrivals, average headway ${Math.round(headwayMin.avg)} minutes, max headway ${Math.round(headwayMin.max)} minutes`
+                : `${headwayMin.count + 1} arrivals, no headway data available`
+              }
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(headwayMin.max) + 5)]}
@@ -415,9 +416,11 @@ class Info extends Component {
           <div>
             <h4>Wait Times</h4>
             <p>
-              average wait time {Math.round(waitTimes.avg)} minutes, max wait
-              time
-              {Math.round(waitTimes.max)} minutes
+              {!!waitTimes.avg
+                ? `average wait time ${Math.round(waitTimes.avg)} minutes, 
+                  max wait time ${Math.round(waitTimes.max)} minutes`
+                : 'N/A'
+                }
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(waitTimes.max) + 5)]}
@@ -474,8 +477,10 @@ class Info extends Component {
           <div>
             <h4>Trip Times</h4>
             <p>
-              {tripTimes.count} trips, average {Math.round(tripTimes.avg)}{' '}
-              minutes, max {Math.round(tripTimes.max)} minutes
+              {tripTimes.count 
+                  ? `${tripTimes.count} trips, average ${Math.round(tripTimes.avg)} minutes, max ${Math.round(tripTimes.max)} minutes`
+                  : `${tripTimes.count} trips`
+                }
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(tripTimes.max) + 5)]}
