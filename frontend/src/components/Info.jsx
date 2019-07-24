@@ -297,10 +297,9 @@ class Info extends Component {
                           ? ` ${Math.round(waitTimes.avg)} minutes `
                           : 'No departures'}
                         <br />
-                        {!!percentileValues 
+                        {!!percentileValues
                           ? `${PLANNING_PERCENTILE} % of waits under ${percentileValues} minutes`
-                          : ''
-                        }
+                          : ''}
                       </td>
                       <td>{grades.averageWaitGrade}</td>
                       <td> {grades.averageWaitScore} </td>
@@ -322,10 +321,11 @@ class Info extends Component {
                     <tr>
                       <td>Travel time</td>
                       <td>
-                        {!!tripTimes.avg 
-                          ? `Average time ${Math.round(tripTimes.avg)} minutes (${speed} mph)`
-                          : 'N/A'
-                        }
+                        {!!tripTimes.avg
+                          ? `Average time ${Math.round(
+                              tripTimes.avg,
+                            )} minutes (${speed} mph)`
+                          : 'N/A'}
                       </td>
                       <td>{grades.speedGrade}</td>
                       <td>{grades.speedScore}</td>
@@ -333,10 +333,9 @@ class Info extends Component {
                     <tr>
                       <td>Travel variability</td>
                       <td>
-                        {!!travelVariability 
+                        {!!travelVariability
                           ? `${PLANNING_PERCENTILE}% of trips take ${travelVariability} minutes`
-                          : 'N/A'
-                        }
+                          : 'N/A'}
                       </td>
                       <td> {grades.travelVarianceGrade} </td>
                       <td> {grades.travelVarianceScore} </td>
@@ -355,10 +354,12 @@ class Info extends Component {
 
             <h4>Headways</h4>
             <p>
-              {headwayMin.avg 
-                ? `${headwayMin.count + 1} arrivals, average headway ${Math.round(headwayMin.avg)} minutes, max headway ${Math.round(headwayMin.max)} minutes`
-                : `${headwayMin.count + 1} arrivals, no headway data available`
-              }
+              {headwayMin.avg
+                ? `${headwayMin.count +
+                    1} arrivals, average headway ${Math.round(
+                    headwayMin.avg,
+                  )} minutes, max headway ${Math.round(headwayMin.max)} minutes`
+                : `${headwayMin.count + 1} arrivals, no headway data available`}
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(headwayMin.max) + 5)]}
@@ -419,8 +420,7 @@ class Info extends Component {
               {!!waitTimes.avg
                 ? `average wait time ${Math.round(waitTimes.avg)} minutes, 
                   max wait time ${Math.round(waitTimes.max)} minutes`
-                : 'N/A'
-                }
+                : 'N/A'}
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(waitTimes.max) + 5)]}
@@ -477,10 +477,11 @@ class Info extends Component {
           <div>
             <h4>Trip Times</h4>
             <p>
-              {tripTimes.count 
-                  ? `${tripTimes.count} trips, average ${Math.round(tripTimes.avg)} minutes, max ${Math.round(tripTimes.max)} minutes`
-                  : `${tripTimes.count} trips`
-                }
+              {tripTimes.count
+                ? `${tripTimes.count} trips, average ${Math.round(
+                    tripTimes.avg,
+                  )} minutes, max ${Math.round(tripTimes.max)} minutes`
+                : `${tripTimes.count} trips`}
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(tripTimes.max) + 5)]}
