@@ -117,13 +117,12 @@ function RouteSummary(props) {
         </Grid>
 
         <Grid item xs>            
+          <Tooltip title={ waitRanking ? 'Subscore: ' + grades.medianWaitScore + '/100' : null}>
           <Paper className={classes.wait}>
 
             <Typography variant="overline">Median wait</Typography>
             <br/>
-            <Tooltip title={ waitRanking ? 'Subscore: ' + grades.medianWaitScore + '/100' : null}>
             <Typography variant="h3" display="inline">{ wait === null ? "--" : wait.toFixed(0) }</Typography>
-            </Tooltip>
             <Typography variant="h5" display="inline">&nbsp;minutes</Typography>
 
             <Rating
@@ -137,18 +136,17 @@ function RouteSummary(props) {
             </Box>
 
           </Paper>            
+          </Tooltip>
         </Grid>            
             
         <Grid item xs>            
 
-            
+          <Tooltip title={ speedRanking ? 'Subscore: ' + grades.speedScore + '/100' : null}>
           <Paper className={classes.trip}>
 
             <Typography variant="overline">Median speed</Typography>
             <br/>
-            <Tooltip title={ speedRanking ? 'Subscore: ' + grades.speedScore + '/100' : null}>
             <Typography variant="h3" display="inline">{ speed === null || isNaN(speed) ? "--" : speed.toFixed(1) }</Typography>
-            </Tooltip>
             <Typography variant="h5" display="inline">&nbsp;mph</Typography>
             
             <Rating
@@ -164,6 +162,7 @@ function RouteSummary(props) {
             Length: { metersToMiles(dist).toFixed(1) } miles
             
           </Paper>
+          </Tooltip>
         </Grid>
 
 
