@@ -211,7 +211,6 @@ class Info extends Component {
     this.setState({ crosshairValues: { trip: [this.tripData[index]] } });
   };
 
-  
   render() {
     const {
       graphData,
@@ -225,7 +224,7 @@ class Info extends Component {
     const headwayMin = graphData ? graphData.headway_min : null;
     const waitTimes = graphData ? graphData.wait_times : null;
     const tripTimes = graphData ? graphData.trip_times : null;
-    const isSufficientData = !!headwayMin.count
+    const isSufficientData = !!headwayMin.count;
 
     this.headwayData =
       headwayMin && headwayMin.histogram
@@ -279,7 +278,7 @@ class Info extends Component {
                 <span className="h4">This Trip's Grade: </span>
                 <span className="h1">{grades.totalGrade}</span>
                 <span>
-                  {grades.totalScore
+                  {isSufficientData
                     ? ` ( ${grades.totalScore} / ${grades.highestPossibleScore} ) `
                     : 'Not enough information to grade this trip'}
                 </span>
@@ -295,11 +294,11 @@ class Info extends Component {
                     <tr>
                       <td>Average wait</td>
                       <td>
-                        {!!waitTimes.avg
+                        {isSufficientData
                           ? ` ${Math.round(waitTimes.avg)} minutes `
                           : 'No departures'}
                         <br />
-                        {!!percentileValues
+                        {isSufficientData
                           ? `${PLANNING_PERCENTILE} % of waits under ${percentileValues} minutes`
                           : ''}
                       </td>
@@ -309,7 +308,7 @@ class Info extends Component {
                     <tr>
                       <td>20 min wait probability</td>
                       <td>
-                        {` ${Math.round(grades.longWaitProbability * 100)}% `}
+                        {isSufficientData ? ` ${Math.round(grades.longWaitProbability * 100)}% ` : `N/A`}
                         {grades.longWaitProbability > 0
                           ? `(1 time out of ${Math.round(
                               1 / grades.longWaitProbability,
@@ -317,25 +316,25 @@ class Info extends Component {
                           : ''}{' '}
                         <br />
                       </td>
-                      <td> {grades.longWaitGrade} </td>
-                      <td> {grades.longWaitScore} </td>
+                      <td> {isSufficientData ? grades.longWaitGrade : ""} </td>
+                      <td> {isSufficientData ? grades.longWaitScore : ""} </td>
                     </tr>
                     <tr>
                       <td>Travel time</td>
                       <td>
-                        {!!tripTimes.avg
+                        {isSufficientData
                           ? `Average time ${Math.round(
                               tripTimes.avg,
                             )} minutes (${speed} mph)`
                           : 'N/A'}
                       </td>
-                      <td>{grades.speedGrade}</td>
+                      <td>{isSufficientData ? grades.speedGrade : ""}</td>
                       <td>{grades.speedScore}</td>
                     </tr>
                     <tr>
                       <td>Travel variability</td>
                       <td>
-                        {!!travelVariability
+                        {isSufficientData
                           ? `${PLANNING_PERCENTILE}% of trips take ${travelVariability} minutes`
                           : 'N/A'}
                       </td>
@@ -356,11 +355,9 @@ class Info extends Component {
 
             <h4>Headways</h4>
             <p>
-              {`${headwayMin.count +
-                    1} arrivals, average headway ${Math.round(
-                    headwayMin.avg,
-                  )} minutes, max headway ${Math.round(headwayMin.max)} minutes`
-              }
+              {`${headwayMin.count + 1} arrivals, average headway ${Math.round(
+                headwayMin.avg,
+              )} minutes, max headway ${Math.round(headwayMin.max)} minutes`}
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(headwayMin.max) + 5)]}
@@ -419,8 +416,7 @@ class Info extends Component {
             <h4>Wait Times</h4>
             <p>
               {`average wait time ${Math.round(waitTimes.avg)} minutes, 
-                max wait time ${Math.round(waitTimes.max)} minutes`
-              }
+                max wait time ${Math.round(waitTimes.max)} minutes`}
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(waitTimes.max) + 5)]}
@@ -479,8 +475,7 @@ class Info extends Component {
             <p>
               {`${tripTimes.count} trips, average ${Math.round(
                 tripTimes.avg,
-                )} minutes, max ${Math.round(tripTimes.max)} minutes`
-              }
+              )} minutes, max ${Math.round(tripTimes.max)} minutes`}
             </p>
             <XYPlot
               xDomain={[0, Math.max(60, Math.round(tripTimes.max) + 5)]}
