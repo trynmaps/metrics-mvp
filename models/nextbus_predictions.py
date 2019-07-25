@@ -19,7 +19,11 @@ def get_prediction_data_for_request(request_url: str) -> dict:
     response = requests.get(request_url)
     if response.status_code != 200:
         response.raise_for_status()
-    return parse_prediction_response(queried_time, response.json())
+    resp_json = response.json()
+    if 'predictions' not in resp_json:
+        # request errored out, will raise an error here later
+        return
+    return parse_prediction_response(queried_time, resp_json)
 
 def parse_prediction_response(queried_time, resp_json: dict) -> list:
     predictions_for_route = []
