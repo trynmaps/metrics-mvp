@@ -2,6 +2,7 @@
 # Created by https://www.gitignore.io/api/node,macos,flask,python,eclipse,intellij
 # Edit at https://www.gitignore.io/?templates=node,macos,flask,python,eclipse,intellij
 
+# local cache
 data/*.json
 data/*.csv
 data/arrivals_*

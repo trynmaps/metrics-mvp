@@ -1,4 +1,5 @@
 # OpenTransit's Metrics MVP
+
 [Check out our demo!](http://muni.opentransit.city/)
 
 ## Getting started
@@ -215,6 +216,10 @@ To make changes, make sure you've been added to the trynmaps organization on Git
 
 Commit your local changes to a feature branch (i.e. not master), then submit a pull request on GitHub.
 
+## Frontend code
+
+The frontend React code is in the /frontend directory and is built using Create React App.
+For more information, see https://facebook.github.io/create-react-app/docs/folder-structure
 
 ## Tech Stack Decisions
 
@@ -229,6 +234,7 @@ Commit your local changes to a feature branch (i.e. not master), then submit a p
 - Functional Components - We migrated away from ES6 React Components and introduced [Functional Components](https://reactjs.org/docs/components-and-props.html) instead due to the simplification of component logic and the ability to use React Hooks
 - Redux Thunk - We use Redux for state management and to simplify our application and component interaction, and Thunk as middleware
 - React Hooks - We use React Hooks to manage interactions with state management
+
 
 ## Notes for developers
 

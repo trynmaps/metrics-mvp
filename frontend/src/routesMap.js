@@ -4,6 +4,7 @@ export default {
   HOME: '/home',
   ABOUT: '/about',
   LANDING: '/landing',
+  ISOCHRONE: '/isochrone',
   DASHBOARD: '/',
   ROUTESCREEN: {
     path: '/route/:route_id/:direction_id?/:start_stop_id?/:end_stop_id?',
