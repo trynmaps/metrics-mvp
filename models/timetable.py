@@ -20,7 +20,7 @@ class Timetable:
     def get_data_frame(self, stop_id, direction = None):
         try:
             if direction is None:
-                df = self.timetable.loc[self.timetable.nextbus_id.apply(lambda x: x == stop_id) ["arrival_time", "departure_time"]].copy(deep = True)
+                df = self.timetable.loc[self.timetable.nextbus_id.apply(lambda x: x == stop_id), ["arrival_time", "departure_time"]].copy(deep = True)
             else:
                 direction_name = "inbound" if "i" in direction.lower() else "outbound"
                 df = self.timetable.loc[(self.timetable.nextbus_id.apply(lambda x: x == stop_id)) & (self.timetable.direction.apply(lambda x: x == direction_name)), ["arrival_time", "departure_time"]].copy(deep = True)
