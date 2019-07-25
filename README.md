@@ -27,10 +27,15 @@ If you need to install some new dependencies in the Docker images, you can rebui
 
 ### Option 2: Cloud IDE
 
+> NOTE: may not work as of July 2019
+
 If you don't want to handle installing anything locally, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
 This will automatically install requirements on a cloud machine and get the app running for you instantly.
 
 ### Option 3: Run it manually
+
+> NOTE: may not work as of July 2019
+
 If you don't want to use the Cloud IDE and can't get Docker running, you can run the project manually.
 
 To set up, first do:
