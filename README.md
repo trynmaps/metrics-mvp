@@ -28,6 +28,17 @@ You can run command line scripts like `compute_arrivals.py` and `headways.py` fr
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
 
+## Contributing
+
+Make sure you've been added to the trynmaps organization on GitHub.
+[Join the Code for SF Slack](http://c4sf.me/slack) and join the #opentransit channel,
+then you'll see a guide to get in.
+
+To get started, see the Issues page. You may want to [identify good first issues](https://github.com/trynmaps/metrics-mvp/labels/Good%20First%20Issue).
+
+*TODO: mention the recommendation to  deploy a demo to  Heroku*
+
+
 ## Computing Arrival Times
 
 The API and command-line scripts generate statistics based on vehicle arrival times that are precomputed from the raw GPS data.
@@ -183,10 +194,6 @@ git push heroku local-branch-name:master
 ```
 
 ## Contributing
-
-To make changes, make sure you've been added to the trynmaps organization on GitHub.
-
-Commit your local changes to a feature branch (i.e. not master), then submit a pull request on GitHub.
 
 ## Frontend code
 
