@@ -1,22 +1,25 @@
 # OpenTransit's Metrics MVP
 
-[Check out our demo!](http://muni.opentransit.city/)
+Welcome to OpenTransit! We're passionate about using open data to improve
+public transit systems around the world, starting with San Francisco.
 
-## Getting started
+This app uses historical transit data to help riders understand
+the quality of SF Muni bus and subway lines. [Check out the app!](http://muni.opentransit.city/)
 
-### Option 1: Docker + Local IDE
+## Building the app
 
-Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
+To start, you'll need to get Docker. Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
 
 Build and run the Docker containers:
-```
+
+```sh
 docker-compose up
 ```
 
 This will run the React frontend in development mode at http://localhost:3000,
-and will run the Flask backend in development mode at http://localhost:5000.
+and the Flask backend in development mode at http://localhost:5000.
 
-Your local directory will be shared within the Docker container at /app.
+Your local directory will be shared within the Docker container at `/app`.
 When you edit files in your local directory, the React and Flask containers should automatically update with the new code.
 
 To start a shell within the Flask Docker container, run `./docker-shell.sh` (Linux/Mac) or `docker-shell` (Windows).
@@ -24,42 +27,6 @@ To start a shell within the Flask Docker container, run `./docker-shell.sh` (Lin
 You can run command line scripts like `compute_arrivals.py` and `headways.py` from the shell in the Docker container.
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
-
-### Option 2: Cloud IDE
-
-> NOTE: may not work as of July 2019
-
-If you don't want to handle installing anything locally, just **[use this cloud editor](http://gitpod.io#https://github.com/trynmaps/metrics-mvp)**.
-This will automatically install requirements on a cloud machine and get the app running for you instantly.
-
-### Option 3: Run it manually
-
-> NOTE: may not work as of July 2019
-
-If you don't want to use the Cloud IDE and can't get Docker running, you can run the project manually.
-
-To set up, first do:
-
-```
-virtualenv venv
-```
-
-To run, do this in one terminal tab:
-
-```
-source venv/bin/activate
-pip3 install -r requirements.txt
-FLASK_DEBUG=1 FLASK_APP=metrics-api.py python3 -m flask run --host=0.0.0.0
-```
-
-In another terminal tab, do:
-
-```
-(cd frontend && npm install)
-NODE_ENV=development REACT_APP_METRICS_BASE_URL=http://localhost:5000 npm start
-```
-
-Then open `localhost:3000` in your browser to view the app!
 
 ## Computing Arrival Times
 
