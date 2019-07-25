@@ -1,8 +1,8 @@
-# Backend API documentation
+# Backend API Documentation
 
 The backend API uses graphQL. There is one endpoint, `/metrics_api`, that accepts a query string containing the necessary parameters for the query and the fields to be returned in the response. 
 
-# Structure of a graphQL query 
+# Structure of a graphQL Query 
 
 OpenTransit's data is organized as a nested structure of objects. Each object represents a subset of the data (data about a route, data about a stop, data about bus arrivals, etc). This data is divided into fields, which are either other objects or primitive types like `String` or `Float`. For instance, to fetch information about every route, we would start by querying `routes`, which is a `RouteList`, an object that contains information about each route:
 
@@ -76,9 +76,9 @@ wouldn't work because the query isn't requesting any fields from `stops` that ar
 
 would work, because `title`, `lat` and `lon` are all primitive types.
 
-### Parameters in queries
+### Parameters in Queries
 
-Querying information about a particular route or stop requires parameters. For instance, to fetch the summary statistics for wait times at stop `3476` on route `12` on the date `2019-06-06`, the query would need to pass in `routeId`, `startStopId` and `date` parameters:
+Querying information about a particular route or stop requires input parameters. For instance, to fetch the summary statistics for wait times at stop `3476` on route `12` on the date `2019-06-06`, the query would need to pass in `routeId`, `startStopId` and `date` parameters:
 
 ```
 {
@@ -100,13 +100,13 @@ Querying information about a particular route or stop requires parameters. For i
 }
 ```
 
-A list of parameters for the `routeInfo` and `routeMetrics` objects is given [below](#parameters).
+A list of parameters for the `routeInfo` and `routeMetrics` objects is given below (see "Parameters" under "Structure of the Backend API").
 
-# Example queries
+# Example Queries
 
 Each of these queries returns the same data as a particular endpoint from the old REST API.
 
-## Return information for all routes
+### Return information for all routes
 
 Equivalent to a call to `/api/routes`.
 
@@ -135,7 +135,7 @@ Equivalent to a call to `/api/routes`.
 }
 ```
 
-## Return information for one route
+### Return information for one route
 
 Equivalent to a call to `/api/route`.
 
@@ -162,7 +162,7 @@ Equivalent to a call to `/api/route`.
 }
 ```
 
-## Return metrics data for a pair of stops on a route
+### Return metrics data for a pair of stops on a route
 
 Equivalent to a call to `/api/metrics-by-interval`.
 
@@ -292,7 +292,7 @@ Equivalent to a call to `/api/metrics-by-interval`.
   }
   ```
 
-# Structure of the backend API 
+# Structure of the Backend API 
 
 ### Query
 
@@ -304,7 +304,7 @@ The root query object for the API.
 | `routeInfo` | `RouteInfo` | Returns data for a particular route. |
 | `routeMetrics` | `RouteMetrics` | Returns metrics data for a stop (or pair of stops) on a single route.
 
-### Parameters {#parameters}
+### Parameters
 
 `String!` denotes a required parameter field, and `[String]` denotes a list of `String` objects.
 
@@ -327,7 +327,7 @@ The root query object for the API.
 | `startTime` | `String` | Start time for each date to return metrics data from. Times use `HH:MM` format. |
 | `endTime` | `String` | End time for each date to return metrics data from. |
 | `directionId` | `String` | ID of the direction to return metrics data from. |
-| `intervalLengths` | `Int` | Length, in hours, of the intervals to aggregate bus arrivals to compute metrics data for. |
+| `intervalLengths` | `Int` | Option to aggregate arrival data over intervals of a fixed length before computing metrics data. This parameter gives the length of the interval, in hours. |
 
 ### RouteList
 
@@ -418,7 +418,7 @@ Contains summary statistics for a single metric (wait times, headways, or trip t
 
 ### IntervalStats
 
-Contains summary statistics for arrivals aggregated over a fixed time interval.
+Contains summary statistics for a single metric from arrivals aggregated over a fixed time interval.
 
 | Field Name | Type | Description |
 | --- | --- | --- |
