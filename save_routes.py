@@ -12,10 +12,12 @@ import math
 import zipfile
 
 agency_id = 'sf-muni'
-gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 gtfs_url = 'http://gtfs.sfmta.com/transitdata/google_transit.zip'
 center_lat = 37.772
 center_lon = -122.442
+save_to_s3 = True
+
+gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 
 cache_dir = Path(gtfs_cache_dir)
 if not cache_dir.exists():
@@ -111,9 +113,6 @@ for route in routes:
         first_stop_xy = shapely.geometry.Point(project_xy(first_stop_info.lon, first_stop_info.lat))
         last_stop_xy = shapely.geometry.Point(project_xy(last_stop_info.lon, last_stop_info.lat))
 
-        #print(f'first_stop_xy = {first_stop_xy}')
-        #print(f'last_stop_xy = {last_stop_xy}')
-
         geometries = []
 
         for shape_id in route_shape_ids:
@@ -124,16 +123,12 @@ for route in routes:
             shape_end_xy = shapely.geometry.Point(project_xy(*geometry.coords[-1]))
 
             start_dist = distance(first_stop_xy.x, shape_start_xy.x, first_stop_xy.y, shape_start_xy.y)
-            #print(f'shape_start_xy = {shape_start_xy} ({start_dist} m)')
 
             end_dist = distance(last_stop_xy.x, shape_end_xy.x, last_stop_xy.y, shape_end_xy.y)
-            #print(f'shape_end_xy = {shape_end_xy} ({end_dist} m)')
 
             terminal_dist = start_dist + end_dist
 
             terminal_dists.append(terminal_dist)
-
-            #print(f'{shape_id} {terminal_dist}')
 
         terminal_dist_order = np.argsort(terminal_dists)
 
@@ -148,7 +143,6 @@ for route in routes:
 
         xy_geometry = shapely.ops.transform(project_xy, geometry)
 
-        #dir_data['gtfs_direction_id'] = gtfs_direction_id
         dir_data['gtfs_shape_id'] = shape_id
         dir_data['coords'] = [{'lat': round(coord[1], 5), 'lon': round(coord[0], 5)} for coord in geometry.coords]
         dir_data['distance'] = int(xy_geometry.length)
@@ -202,7 +196,6 @@ cache_path = f'{util.get_data_dir()}/routes_v1_{agency_id}.json'
 with open(cache_path, "w") as f:
     f.write(data_str)
 
-save_to_s3 = True
 if save_to_s3:
     s3 = boto3.resource('s3')
     s3_path = f'routes_v1_{agency_id}.json.gz'
