@@ -4,16 +4,16 @@ The backend API uses graphQL. There is one endpoint, `/metrics_api`, that accept
 
 # Structure of a graphQL Query 
 
-OpenTransit's data is organized as a nested structure of objects. Each object represents a subset of the data (data about a route, data about a stop, data about bus arrivals, etc). This data is divided into fields, which are either other objects or primitive types like `String` or `Float`. For instance, to fetch information about every route, we would start by querying `routes`, which is a `RouteList`, an object that contains information about each route:
+OpenTransit's data is organized as a nested structure of objects. Each object represents a subset of the data (data about a route, data about a stop, data about bus arrivals, etc). This data is divided into fields, which are either other objects or primitive types (the relevant primitive types for this API are `String`, `Int` and `Float`). For instance, to fetch information about every route, we would start by querying `routes`, which is a `RouteList`, an object that contains information about each route:
 
-```
+```py
 class RouteList(ObjectType):
     routeInfos = List(RouteInfo)
 ```
 
 `routeList` has one field, `routeInfos`, which is a list of `RouteInfo` objects:
 
-```
+```py
 class RouteInfo(ObjectType):
     id = String()
     title = String()
@@ -46,14 +46,17 @@ returns only the `id` and `title` of every route (which you can verify by loadin
       title
       directions {
         id
-        stops {}
+      }
+      stops {
+        key
+        value {}
       }
     }
   }
 }
 ```
 
-wouldn't work because the query isn't requesting any fields from `stops` that are primitive types. But the query
+**wouldn't** work because the query isn't requesting any fields from `stops` that are primitive types. But the query
 
 ```
 {
@@ -63,10 +66,14 @@ wouldn't work because the query isn't requesting any fields from `stops` that ar
       title
       directions {
         id
-        stops {
+      } 
+      stops {
+        key
+        value {
           title
           lat
           lon
+          }
         }
       }
     }
@@ -74,7 +81,7 @@ wouldn't work because the query isn't requesting any fields from `stops` that ar
 }
 ```
 
-would work, because `title`, `lat` and `lon` are all primitive types.
+**would** work, because `title`, `lat` and `lon` are all primitive types.
 
 ### Parameters in Queries
 
