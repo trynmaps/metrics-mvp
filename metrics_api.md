@@ -583,9 +583,9 @@ The root query object for the API. The `routeInfo` and `routeMetrics` fields req
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `routes` | [`RouteList`]($routelist) | Returns data about every route. |
-| `routeInfo` | [`RouteInfo`]($routeinfo) | Returns data for a particular route. |
-| `routeMetrics` | [`RouteMetrics`]($routemetrics) | Returns metrics data for a stop (or pair of stops) on a single route.
+| `routes` | [`RouteList`](#routelist) | Returns data about every route. |
+| `routeInfo` | [`RouteInfo`](#routeinfo) | Returns data for a particular route. |
+| `routeMetrics` | [`RouteMetrics`](#routemetrics) | Returns metrics data for a stop (or pair of stops) on a single route.
 
 #### Parameters for `routeInfo`
 
@@ -614,7 +614,7 @@ Contains data about every route.
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `routeInfos` | [`[RouteInfo]`](#routeinfo) | A list of [`RouteInfo`]($routeinfo) objects containing data about every route. |
+| `routeInfos` | [`[RouteInfo]`](#routeinfo) | A list of [`RouteInfo`](#routeinfo) objects containing data about every route. |
 
 ### RouteInfo
 
@@ -624,8 +624,8 @@ Contains data about a single route.
 | --- | --- | --- |
 | `id` | `String` | ID of the route. |
 | `title` | `String` | Title of the route. |
-| `directions` | [`[DirectionInfo]`]($directioninfo) | List of directions on the route. |
-| `stops` | [`[StopDictionary]`]($stopdictionary) | A list of data for every stop on the route, indexed by stop ID. |
+| `directions` | [`[DirectionInfo]`](#directioninfo) | List of directions on the route. |
+| `stops` | [`[StopDictionary]`](#stopdictionary) | A list of data for every stop on the route, indexed by stop ID. |
 
 ### DirectionInfo
 
@@ -640,12 +640,12 @@ Contains data about a direction on a route.
 
 ### StopDictionary
 
-A key-value pair in the `stops` field of [`RouteInfo`]($routeinfo). Contains information about one stop.
+A key-value pair in the `stops` field of [`RouteInfo`](#routeinfo). Contains information about one stop.
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `key` | `Int` | The ID of the stop. Used to index the `stops` field in [`RouteInfo`]($routeinfo). |
-| `value` | [`StopInfo`]($stopinfo) | Data about the stop. |
+| `key` | `Int` | The ID of the stop. Used to index the `stops` field in [`RouteInfo`](#routeinfo). |
+| `value` | [`StopInfo`](#stopinfo) | Data about the stop. |
 
 ### StopInfo
 
@@ -663,12 +663,12 @@ Contains metrics data for a stop (or a pair of stops) on one route on a particul
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `stopInfo` | [`MetricsStopInfo`]($metricsstopinfo) | Contains data for `startStopId` and `endStopId`. |
-| `metrics` | [`StopMetrics`]($stopmetrics) | Contains metrics data. |
+| `stopInfo` | [`MetricsStopInfo`](#metricsstopinfo) | Contains data for `startStopId` and `endStopId`. |
+| `metrics` | [`StopMetrics`](#stopmetrics) | Contains metrics data. |
 
 ### MetricsStopInfo
 
-Contains stop data for queries to [`RouteMetrics`]($routemetrics).
+Contains stop data for queries to [`RouteMetrics`](#routemetrics).
 
 | Field Name | Type | Description |
 | --- | --- | --- |
@@ -677,15 +677,15 @@ Contains stop data for queries to [`RouteMetrics`]($routemetrics).
 
 ### StopMetrics
 
-Contains metrics data for queries to [`RouteMetrics`]($routemetrics).
+Contains metrics data for queries to [`RouteMetrics`](#routemetrics).
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `waitTimes` | [`MetricsStats`]($metricsstats) | Contains metrics data for wait times. |
-| `headways` | [`MetricsStats`]($metricsstats) | Contains metrics data for headways. |
-| `tripTimes` | [`MetricsStats`]($metricsstats) | Contains metrics data for trip times (will be `None` if `endStopId` isn't given). |
-| `timetableHeadways` | [`MetricsStats`]($metricsstats) | Contains metrics data for timetable/scheduled headways. |
-| `timetableComparison` | [`ComparisonStats`]($comparisonstats) | Contains metrics data for comparisons between scheduled arrivals and arrival data. |
+| `waitTimes` | [`MetricsStats`](#metricsstats) | Contains metrics data for wait times. |
+| `headways` | [`MetricsStats`](#metricsstats) | Contains metrics data for headways. |
+| `tripTimes` | [`MetricsStats`](#metricsstats) | Contains metrics data for trip times (will be `None` if `endStopId` isn't given). |
+| `timetableHeadways` | [`MetricsStats`](#metricsstats) | Contains metrics data for timetable/scheduled headways. |
+| `timetableComparison` | [`ComparisonStats`](#comparisonstats) | Contains metrics data for comparisons between scheduled arrivals and arrival data. |
 
 ### MetricsStats
 
@@ -693,7 +693,7 @@ Contains summary statistics for a single metric (wait times, headways, or trip t
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `intervals` | [`[IntervalStats]`]($intervalstats) | A list of [`IntervalStats`]($intervalstats) objects containing summary statistics for arrivals aggregated into the intervals specified by `intervalLengths`. |
+| `intervals` | [`[IntervalStats]`](#intervalstats) | A list of [`IntervalStats`](#intervalstats) objects containing summary statistics for arrivals aggregated into the intervals specified by `intervalLengths`. |
 
 ### IntervalStats
 
@@ -703,7 +703,7 @@ Contains summary statistics for a single metric from arrivals aggregated over a 
 | --- | --- | --- |
 | `intervalStart` | `String` | The start of the interval. Times use `HH:MM` format. |
 | `intervalEnd` | `String` | The end of the interval. |
-| `stats` | [`ArrayStats`]($arraystats) | Contains summary statistics for arrivals from `intervalStart` to `intervalEnd`. |
+| `stats` | [`ArrayStats`](#arraystats) | Contains summary statistics for arrivals from `intervalStart` to `intervalEnd`. |
 
 ### ArrayStats
 
@@ -716,8 +716,8 @@ Contains summary statistics for a single metric, computed from arrivals in a sin
 | `min` | `Float` | The minimum value of the computed metric. |
 | `median` | `Float` | The median value of the computed metric. |
 | `max` | `Float` | The maximum value of the computed metric. |
-| `percentiles` | [`[PercentileData]`]($percentiledata) | Data for percentile values of the computed metric. |
-| `histogram` | [`[HistogramBin]`]($histogrambin) | Data for rendering histograms on the frontend. |
+| `percentiles` | [`[PercentileData]`](#percentiledata) | Data for percentile values of the computed metric. |
+| `histogram` | [`[HistogramBin]`](#histogrambin) | Data for rendering histograms on the frontend. |
 
 ### PercentileData
 
@@ -745,5 +745,5 @@ Contains metrics data for comparisons between scheduled arrivals and arrival dat
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `closestDeltaStats` | [`[IntervalStats]`]($intervalstats) | Metrics data for differences between each arrival and the closest scheduled arrival. |
-| `nextDeltaStats` | [`[IntervalStats]`]($intervalstats) | Metrics data for differences between each arrival and the next scheduled arrival (closest scheduled arrival that occurs after the actual arrival). |
+| `closestDeltaStats` | [`[IntervalStats]`](#intervalstats) | Metrics data for differences between each arrival and the closest scheduled arrival. |
+| `nextDeltaStats` | [`[IntervalStats]`](#intervalstats) | Metrics data for differences between each arrival and the next scheduled arrival (closest scheduled arrival that occurs after the actual arrival). |
