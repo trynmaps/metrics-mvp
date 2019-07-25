@@ -297,6 +297,7 @@ class MapStops extends Component {
     return (
       <Map
         center={position || SF_COORDINATES}
+        bounds={routeStops ? routeStops[selectedRoute.directions[0].id] : null}
         zoom={zoom || ZOOM}
         style={mapClass}
       >

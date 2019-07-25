@@ -181,6 +181,25 @@ export function getWaitTimeForDirection(
   return directionWaitTimes;
 }
 
+/**
+ * Averages together the median wait in all directions for a route.
+ *
+ * @param {any} waitTimesCache
+ * @param {any} graphParams
+ * @param {any} route
+ */
+export function getAverageOfMedianWait(waitTimesCache, graphParams, route) {
+  const directions = route.directions;
+  const sumOfMedians = directions.reduce((total, direction) => {
+    const waitForDir = getWaitTimeForDirection(waitTimesCache, graphParams, route.id, direction.id);
+    if (!waitForDir) {
+        return NaN;
+    }
+    return total + waitForDir.median;
+  }, 0);
+  return sumOfMedians/directions.length;
+}
+
 /*
 async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr, stat)
 {
