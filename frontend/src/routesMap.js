@@ -10,8 +10,7 @@ export default {
     path: '/route/:route_id/:direction_id?/:start_stop_id?/:end_stop_id?',
     thunk: async (dispatch, getState) => {
       const {location} = getState();
-      const {route_id, direction_id,start_stop_id, end_stop_id } = location.payload
-      debugger;
+      const {route_id, direction_id,start_stop_id, end_stop_id } = location.payload;
 
       dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: {
       	route_id,

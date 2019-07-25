@@ -288,7 +288,6 @@ function RouteTable(props) {
                   return (
                     <TableRow
                       hover
-                      onClick={event => handleClick(event, row)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
@@ -303,14 +302,15 @@ function RouteTable(props) {
                       >
                         <Link
                           to={{
-                            type: 'RECEIVED_GRAPH_PARAMS',
+                            type: 'ROUTESCREEN',
                             payload: {
                               route_id: row.id,
                               direction_id: null,
                               start_stop_id: null,
                               end_stop_id: null,
-                            },
-                            query: { route_id: row.id },
+                              path:'/test'
+                            }
+                            
                           }}
                         >
                           {row.title}
