@@ -22,12 +22,10 @@ def quantile_sorted(sorted_arr, quantile):
         return quantile_lower
 
 def parse_date(date_str):
-    (y, m, d) = date_str.split('-')
-    return date(int(y), int(m), int(d))
+    (y,m,d) = date_str.split('-')
+    return date(int(y),int(m),int(d))
 
 # todo: allow specifying day(s) of week
-
-
 def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
     start_date = parse_date(start_date_str)
     end_date = parse_date(end_date_str)
@@ -47,8 +45,7 @@ def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
             break
 
         if len(res) > max_dates:
-            raise Exception(
-                f'too many dates between {start_date_str} and {end_date_str}')
+            raise Exception(f'too many dates between {start_date_str} and {end_date_str}')
 
     return res
 
@@ -69,8 +66,7 @@ def haver_distance(lat1, lon1, lat2, lon2):
 
 def render_dwell_time(seconds):
     # remove 0 hours and replace 00 minutes with spaces to make it easier to scan column for large durations
-    return f'+{timedelta(seconds=round(seconds))}'.replace('+0:', '+').replace('+00:', '+  :')
-
+    return f'+{timedelta(seconds=round(seconds))}'.replace('+0:','+').replace('+00:','+  :')
 
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
@@ -78,10 +74,9 @@ def get_data_dir():
 def get_timestamp_or_none(d: date, time_str: str, tz: pytz.timezone):
     return int(get_localized_datetime(d, time_str, tz).timestamp()) if time_str is not None else None
 
-
 def get_localized_datetime(d: date, time_str: str, tz: pytz.timezone):
 
-    time_str_parts = time_str.split('+')  # + number of days
+    time_str_parts = time_str.split('+') # + number of days
 
     if len(time_str_parts[0].split(':')) == 2:
         format = "%Y-%m-%d %H:%M"

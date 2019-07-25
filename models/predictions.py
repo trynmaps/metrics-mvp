@@ -2,16 +2,15 @@ from datetime import datetime, time
 import re
 import os
 import json
-from . import util, constants, nextbus_predictions as np
+from . import util, constants, nextbus_predictions as np, nextbus
 
 
 class Prediction:
-    def __init__(self, route_id, stop_id, vehicle_id, minutes_to_arrival, epoch_time, queried_time, dir_tag):
+    def __init__(self, route_id, stop_id, vehicle_id, minutes_to_arrival, queried_time, dir_tag):
         self.route_id = route_id
         self.stop_id = stop_id
         self.vehicle_id = vehicle_id
         self.minutes_to_arrival = minutes_to_arrival
-        self.epoch_time = epoch_time
         self.dir_tag = dir_tag
         self.queried_time = queried_time
 
@@ -24,7 +23,6 @@ class Prediction:
             vehicle_id=data['vehicle_id'],
             dir_tag=data['dir_tag'],
             minutes_to_arrival=data['minutes_to_arrival'],
-            epoch_time=data['epoch_time'],
         )
 
     def get_data(self):
@@ -35,7 +33,6 @@ class Prediction:
             'vehicle_id': self.vehicle_id,
             'dir_tag': self.dir_tag,
             'minutes_to_arrival': self.minutes_to_arrival,
-            'epoch_time': self.epoch_time
         }
 
 # Not used currently since we're only getting predictions for one route at a time.
@@ -94,7 +91,7 @@ def get_cache_path(agency: str, datetime: datetime) -> str:
 
 def get_predictions_for_route(agency: str, route_id: str) -> list:
     # TODO: add cache path logic
-
-    route_to_prediction_request = np.create_predictions_requests('sf-muni')
-    request_url = route_to_prediction_request[route_id]
+    route_config = nextbus.get_route_config(agency, route_id)
+    stops = route_config.get_stop_ids()
+    request_url = np.create_prediction_request_for_route(agency, route_id, stops)
     return np.get_prediction_data_for_request(request_url)
