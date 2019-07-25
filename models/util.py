@@ -1,8 +1,6 @@
 from datetime import datetime, date, timedelta
 import os
 import pytz
-<<<<<<< HEAD
-<<<<<<< HEAD
 import numpy as np
 
 def quantile_sorted(sorted_arr, quantile):
@@ -22,12 +20,6 @@ def quantile_sorted(sorted_arr, quantile):
         return quantile_lower + (quantile_upper - quantile_lower) * quantile_index_fractional
     else:
         return quantile_lower
-=======
-from models import nextbus
->>>>>>> limit number of stops per call
-=======
-
->>>>>>> remove unnecessary import
 
 def parse_date(date_str):
     (y, m, d) = date_str.split('-')
@@ -82,12 +74,7 @@ def render_dwell_time(seconds):
 
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
-<<<<<<< HEAD
     
-=======
-
-
->>>>>>> remove unnecessary import
 def get_timestamp_or_none(d: date, time_str: str, tz: pytz.timezone):
     return int(get_localized_datetime(d, time_str, tz).timestamp()) if time_str is not None else None
 
