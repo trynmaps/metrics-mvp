@@ -5,7 +5,7 @@ import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as turf from '@turf/turf';
 
-import { fetchRoutes } from '../actions';
+import { fetchRoutes, routesUrl } from '../actions';
 import { ServiceArea, DefaultDisabledRoutes } from '../agencies/sf-muni';
 import { metricsBaseURL } from '../config';
 
@@ -85,6 +85,8 @@ class Isochrone extends React.Component {
         {
             workerUrl += '&base=' + encodeURIComponent(metricsBaseURL);
         }
+
+        workerUrl += '&routes_url=' + encodeURIComponent(routesUrl);
 
         let isochroneWorker = new Worker(workerUrl);
 

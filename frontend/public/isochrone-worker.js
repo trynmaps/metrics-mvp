@@ -23,6 +23,7 @@ let curComputeId = null;
 let tripTimesCache = {};
 let waitTimesCache = {};
 let baseUrl = thisUrl.searchParams.get('base');
+let routesUrl = thisUrl.searchParams.get('routes_url');
 
 function loadJson(url)
 {
@@ -58,7 +59,7 @@ function loadRoutes()
     }
     else
     {
-        return loadJson("https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz").then(function(data) {
+        return loadJson(routesUrl).then(function(data) {
             allRoutes = data.routes;
             return allRoutes;
         });
