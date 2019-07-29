@@ -153,6 +153,11 @@ Scrape timetables from GTFS data stored locally in `inpath` and extract them to 
 python gtfs_scraper.py --inpath=path/to/google_transit
 ```
 
+Merge route information from Nextbus API and GTFS
+```
+python save_routes.py
+```
+
 ## AWS Credentials
 
 If you need to write files to S3 from your development environment (e.g. running compute_arrivals.py with the --s3 flag),

@@ -273,7 +273,6 @@ class Isochrone extends React.Component {
                                 {
                                     tripPoints.push(fromStopInfo);
                                     for (let i = fromStopGeometry.after_index + 1; i <= toStopGeometry.after_index; i++) {
-                                        // this.tripLayers.push(L.circle(dirInfo.coords[i], 40, {color:'#009', fillOpacity:0.8, stroke:false}).addTo(map));
                                         tripPoints.push(dirInfo.coords[i]);
                                     }
                                     tripPoints.push(toStopInfo);
@@ -294,10 +293,13 @@ class Isochrone extends React.Component {
 
                                 if (tripPoints.length)
                                 {
+                                    // draw line segments along the route between fromStop and toStop
                                     let polyLine = L.polyline(tripPoints).addTo(map);
                                     polyLine.bindTooltip(routeInfo.id, {direction:'center', opacity:0.9, permanent:true});
 
                                     this.tripLayers.push(polyLine);
+
+                                    // draw small circles at fromStop and toStop
                                     this.tripLayers.push(L.circle(fromStopInfo, 40, {color:'#090', fillOpacity:0.8, stroke:false}).addTo(map));
                                     this.tripLayers.push(L.circle(toStopInfo, 40, {color:'#900', fillOpacity: 0.8, stroke:false}).addTo(map));
                                 }

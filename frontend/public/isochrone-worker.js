@@ -58,7 +58,7 @@ function loadRoutes()
     }
     else
     {
-        return loadJson("https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v1_sf-muni.json.gz?v3").then(function(data) {
+        return loadJson("https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz").then(function(data) {
             allRoutes = data.routes;
             return allRoutes;
         });
