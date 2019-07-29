@@ -11,11 +11,11 @@ import AppBar from '@material-ui/core/AppBar';
 
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import Navigation from '../components/Navigation';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
 
 import ControlPanel from '../components/ControlPanel';
+import RouteSummary from '../components/RouteSummary';
 
 import {
   fetchData,
@@ -119,7 +119,7 @@ class RouteScreen extends React.Component {
           </div>
         </Drawer>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={0}>
           <Grid item xs={6}>
             <ControlPanel
               routes={routes}
@@ -144,7 +144,7 @@ class RouteScreen extends React.Component {
             ) : (
               /* if no graph data, show the info summary component */
 
-              '(Route overview: InfoSummary component will go here)'
+                <RouteSummary/>
             )}
           </Grid>
         </Grid>
