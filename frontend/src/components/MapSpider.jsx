@@ -391,7 +391,6 @@ class MapSpider extends Component {
           url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
           opacity={0.3}
         /> {/* see http://maps.stamen.com for details */}
-
         <this.DownstreamLines/>
         <this.StartMarkers/>
 
