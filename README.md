@@ -36,8 +36,29 @@ then you'll see a guide to get in.
 
 To get started, see the Issues page. You may want to [identify good first issues](https://github.com/trynmaps/metrics-mvp/labels/Good%20First%20Issue).
 
-*TODO: mention the recommendation to  deploy a demo to  Heroku*
+### Deploying to Heroku
 
+When you make a Pull Request, we would suggest you deploy your branch to Heroku so that other
+team members can try out your feature.
+
+First, create an account  at [heroku.com](https://heroku.com) and
+[create an app](https://dashboard.heroku.com/apps). Follow the instructions to deploy
+using Heroku Git with an existing Git repository.
+
+The first time you deploy to Heroku, you'll need to tell it to build Docker
+containers using heroku.yml:
+
+```sh
+heroku stack:set container
+```
+
+You then need to set up a remote called `heroku`. Then run this to deploy your local branch:
+
+```sh
+git push heroku local-branch-name:master
+```
+
+Then copy the link to this app and paste it in the PR.
 
 ## Computing Arrival Times
 
@@ -172,26 +193,7 @@ For more information on AWS credentials see https://boto3.amazonaws.com/v1/docum
 When changes are merged to the master branch on GitHub, Google Cloud Build will automatically build
 the latest code and deploy it to a cluster on Google Kubernetes Engine. The build steps are defined in cloudbuild.yaml.
 
-## Deploying to Heroku
 
-Anyone can create a free account on Heroku to deploy their local version of the repo.
-Create an app in Heroku at https://dashboard.heroku.com/apps and follow the instructions to deploy using Heroku Git
-with an existing Git repository.
-
-The first time you deploy to Heroku, you'll need to tell it to build Docker containers using heroku.yml:
-```
-heroku stack:set container
-```
-
-To deploy the latest commit in your local master branch to Heroku (assuming you have set up a remote named "heroku"):
-```
-git push heroku master
-```
-
-If you are working on another branch besides master, deploy it like this:
-```
-git push heroku local-branch-name:master
-```
 
 ## Contributing
 
