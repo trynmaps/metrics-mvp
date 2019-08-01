@@ -119,3 +119,8 @@ services:
 
 This setting is not in the main docker-compose.yml file because CHOKIDAR_USEPOLLING causes high CPU/battery usage for developers using Mac OS X,
 and CHOKIDAR_USEPOLLING is not necessary on Mac OS X to automatically recompile the frontend code when it changes.
+
+### Advanced Concepts
+
+Please see <ADVANCED_DEV.md> for advanced information like computing arrival times and
+deploying to AWS.
