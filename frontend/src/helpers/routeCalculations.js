@@ -5,12 +5,15 @@
  * Also includes functions for computing distances between coordinates.
  */
 
-import * as d3 from "d3";
-import { getTripTimesForDirection, getAverageOfMedianWait } from './precomputed';
+import * as d3 from 'd3';
 import red from '@material-ui/core/colors/red';
 import yellow from '@material-ui/core/colors/yellow';
 import lightGreen from '@material-ui/core/colors/lightGreen';
 import green from '@material-ui/core/colors/green';
+import {
+  getTripTimesForDirection,
+  getAverageOfMedianWait,
+} from './precomputed';
 
 /**
  * Returns a data object with centralized declarations of "per route" heuristic rules
@@ -180,29 +183,36 @@ export function ignoreFlag(routeID, directionID, flagName) {
  * to trim off the first stop or first stops if needed.
  */
 function getTripTimesUsingHeuristics(props, routeID, directionID) {
-
-  const tripTimesForDir = getTripTimesForDirection(props.tripTimesCache, props.graphParams, routeID, directionID);
+  const tripTimesForDir = getTripTimesForDirection(
+    props.tripTimesCache,
+    props.graphParams,
+    routeID,
+    directionID,
+  );
 
   if (!tripTimesForDir || !props.routes) {
-    //console.log("No trip times found at all for " + directionID + " (gtfs out of sync or route not running)");
+    // console.log("No trip times found at all for " + directionID + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
-    return {tripTimesForFirstStop: null, directionInfo: null};
+    return { tripTimesForFirstStop: null, directionInfo: null };
   }
-  //console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
+  // console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
 
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
 
   const route = props.routes.find(route => route.id === routeID);
-  const directionInfo = route.directions.find(direction => direction.id === directionID);
+  const directionInfo = route.directions.find(
+    direction => direction.id === directionID,
+  );
 
   const ignoreFirst = ignoreFirstStop(routeID, directionID); // look up heuristic rule
   let firstStop = null;
 
   if (ignoreFirst !== true && ignoreFirst !== false) {
     firstStop = ignoreFirst; // ignore the stops prior the index specified by ignoreFirst
-  } else { // is a boolean
-    firstStop = directionInfo.stops[ ignoreFirst ? 1 : 0];
+  } else {
+    // is a boolean
+    firstStop = directionInfo.stops[ignoreFirst ? 1 : 0];
   }
 
   let tripTimesForFirstStop = tripTimesForDir[firstStop];
@@ -211,12 +221,17 @@ function getTripTimesUsingHeuristics(props, routeID, directionID) {
   // then find the stop with the most trip time entries
 
   if (!tripTimesForFirstStop) {
-    //console.log("No trip times found for " + routeID + " from stop " + firstStop + ".  Using stop with most entries.");
-    tripTimesForFirstStop = Object.values(tripTimesForDir).reduce((accumulator, currentValue) =>
-    Object.values(currentValue).length > Object.values(accumulator).length ? currentValue : accumulator, {});
+    // console.log("No trip times found for " + routeID + " from stop " + firstStop + ".  Using stop with most entries.");
+    tripTimesForFirstStop = Object.values(tripTimesForDir).reduce(
+      (accumulator, currentValue) =>
+        Object.values(currentValue).length > Object.values(accumulator).length
+          ? currentValue
+          : accumulator,
+      {},
+    );
   }
 
-  return {tripTimesForFirstStop, directionInfo};
+  return { tripTimesForFirstStop, directionInfo };
 }
 
 /**
@@ -224,12 +239,16 @@ function getTripTimesUsingHeuristics(props, routeID, directionID) {
  * the last stop or stops as needed.
  */
 export function getEndToEndTripTime(props, routeID, directionID) {
+  const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
+    props,
+    routeID,
+    directionID,
+  );
 
-  const {tripTimesForFirstStop, directionInfo} = getTripTimesUsingHeuristics(props, routeID, directionID);
-
-  if (!tripTimesForFirstStop) { // no precomputed times
-    //console.log("No precomputed trip times for " + routeID + " " + directionID + " (gtfs out of sync with historic data or route not running)");
-    return "?";
+  if (!tripTimesForFirstStop) {
+    // no precomputed times
+    // console.log("No precomputed trip times for " + routeID + " " + directionID + " (gtfs out of sync with historic data or route not running)");
+    return '?';
   }
 
   const ignoreLast = ignoreLastStop(routeID, directionID); // look up heuristic rule
@@ -244,22 +263,24 @@ export function getEndToEndTripTime(props, routeID, directionID) {
    */
   if (ignoreLast !== true && ignoreLast !== false) {
     lastStop = ignoreLast; // ignore stops after index specified by ignoreLast
-  } else { // is a boolean
-    lastStop = directionInfo.stops[directionInfo.stops.length - (ignoreLast ? 2 : 1)];
+  } else {
+    // is a boolean
+    lastStop =
+      directionInfo.stops[directionInfo.stops.length - (ignoreLast ? 2 : 1)];
   }
 
-  //console.log('found ' + Object.keys(tripTimesForFirstStop).length + ' keys' );
+  // console.log('found ' + Object.keys(tripTimesForFirstStop).length + ' keys' );
 
   let tripTime = tripTimesForFirstStop[lastStop];
 
   // if there is no trip time to the last stop, then use the highest trip time actually observed
 
   if (!tripTime) {
-    //console.log("No trip time found for " + routeID + " " + directionID + " to stop " + lastStop);
-    tripTime = Math.max(...Object.values(tripTimesForFirstStop))
+    // console.log("No trip time found for " + routeID + " " + directionID + " to stop " + lastStop);
+    tripTime = Math.max(...Object.values(tripTimesForFirstStop));
   }
 
-  //console.log('trip time in minutes is ' + tripTime);
+  // console.log('trip time in minutes is ' + tripTime);
   return tripTime;
 }
 
@@ -268,9 +289,15 @@ export function getEndToEndTripTime(props, routeID, directionID) {
  * plotting on a chart.
  */
 export function getTripDataSeries(props, routeID, directionID) {
-  const {tripTimesForFirstStop, directionInfo} = getTripTimesUsingHeuristics(props, routeID, directionID);
+  const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
+    props,
+    routeID,
+    directionID,
+  );
 
-  if (!tripTimesForFirstStop) { return []; } // no precomputed times
+  if (!tripTimesForFirstStop) {
+    return [];
+  } // no precomputed times
 
   const route = props.routes.find(route => route.id === routeID);
 
@@ -300,14 +327,22 @@ export function getTripDataSeries(props, routeID, directionID) {
  * @param {any} props
  */
 export function getAllWaits(props) {
-
   let allWaits = null;
   if (props.routes) {
     allWaits = filterRoutes(props.routes).map(route => {
-      return { routeID: route.id, wait: getAverageOfMedianWait(props.waitTimesCache, props.graphParams, route) }
+      return {
+        routeID: route.id,
+        wait: getAverageOfMedianWait(
+          props.waitTimesCache,
+          props.graphParams,
+          route,
+        ),
+      };
     });
     allWaits = allWaits.filter(waitObj => !isNaN(waitObj.wait));
-    allWaits.sort((a,b) => { return b.wait - a.wait});
+    allWaits.sort((a, b) => {
+      return b.wait - a.wait;
+    });
   }
 
   return allWaits;
@@ -318,44 +353,83 @@ export function getAllWaits(props) {
  * from GTFS data on the fly.  This is the average route distance across all directions for a route.
  */
 export function getAllDistances() {
-  const allDistances = [{"routeID":"KT","distance":23428.5},{"routeID":"29","distance":21773},
-                        {"routeID":"43","distance":19751.5},{"routeID":"28","distance":18832},
-                        {"routeID":"8BX","distance":18042},{"routeID":"8","distance":17935},
-                        {"routeID":"54","distance":16818},{"routeID":"44","distance":16617.5},
-                        {"routeID":"57","distance":15346},{"routeID":"48","distance":15314.333333333334},
-                        {"routeID":"M","distance":15072.5},{"routeID":"N","distance":14551.5},
-                        {"routeID":"9R","distance":14407},{"routeID":"14X","distance":14402.5},
-                        {"routeID":"23","distance":14192.5},{"routeID":"14R","distance":13741},
-                        {"routeID":"714","distance":13623.5},{"routeID":"L","distance":13437.5},
-                        {"routeID":"7X","distance":13373.5},{"routeID":"7","distance":13193},
-                        {"routeID":"28R","distance":12828.5},{"routeID":"19","distance":12758.5},
-                        {"routeID":"14","distance":12536},{"routeID":"9","distance":12524},
-                        {"routeID":"8AX","distance":12330.5},{"routeID":"NX","distance":12086.5},
-                        {"routeID":"10","distance":11986},{"routeID":"36","distance":11702.5},
-                        {"routeID":"18","distance":11665},{"routeID":"J","distance":11443},
-                        {"routeID":"5","distance":11400},{"routeID":"5R","distance":11400},
-                        {"routeID":"31","distance":11369.5},{"routeID":"49","distance":11233},
-                        {"routeID":"31AX","distance":11212.5},{"routeID":"38","distance":11122.5},
-                        {"routeID":"24","distance":11057.5},{"routeID":"38R","distance":10782},
-                        {"routeID":"38AX","distance":10544},{"routeID":"33","distance":10414.5},
-                        {"routeID":"12","distance":10315},{"routeID":"6","distance":10139},
-                        {"routeID":"22","distance":9305},{"routeID":"1AX","distance":9271},
-                        {"routeID":"1","distance":9255.5},{"routeID":"37","distance":8477},
-                        {"routeID":"38BX","distance":8392.5},{"routeID":"2","distance":8315},
-                        {"routeID":"25","distance":8219},{"routeID":"F","distance":8206.5},
-                        {"routeID":"27","distance":8177},{"routeID":"47","distance":7845.5},
-                        {"routeID":"31BX","distance":7649},{"routeID":"30","distance":7628},
-                        {"routeID":"21","distance":7185},{"routeID":"45","distance":6827.5},
-                        {"routeID":"52","distance":6766},{"routeID":"30X","distance":6642.5},
-                        {"routeID":"1BX","distance":6334.5},{"routeID":"E","distance":5735},
-                        {"routeID":"41","distance":5656},{"routeID":"3","distance":5548},
-                        {"routeID":"66","distance":4929},{"routeID":"35","distance":4831.5},
-                        {"routeID":"56","distance":4527.5},{"routeID":"82X","distance":4162.5},
-                        {"routeID":"67","distance":3977.5},{"routeID":"55","distance":3693},
-                        {"routeID":"PH","distance":3359.3333333333335},{"routeID":"81X","distance":3274},
-                        {"routeID":"39","distance":2902},{"routeID":"83X","distance":2622.5},
-                        {"routeID":"PM","distance":2607},{"routeID":"C","distance":2302},
-                        {"routeID":"88","distance":2258}];
+  const allDistances = [
+    { routeID: 'KT', distance: 23428.5 },
+    { routeID: '29', distance: 21773 },
+    { routeID: '43', distance: 19751.5 },
+    { routeID: '28', distance: 18832 },
+    { routeID: '8BX', distance: 18042 },
+    { routeID: '8', distance: 17935 },
+    { routeID: '54', distance: 16818 },
+    { routeID: '44', distance: 16617.5 },
+    { routeID: '57', distance: 15346 },
+    { routeID: '48', distance: 15314.333333333334 },
+    { routeID: 'M', distance: 15072.5 },
+    { routeID: 'N', distance: 14551.5 },
+    { routeID: '9R', distance: 14407 },
+    { routeID: '14X', distance: 14402.5 },
+    { routeID: '23', distance: 14192.5 },
+    { routeID: '14R', distance: 13741 },
+    { routeID: '714', distance: 13623.5 },
+    { routeID: 'L', distance: 13437.5 },
+    { routeID: '7X', distance: 13373.5 },
+    { routeID: '7', distance: 13193 },
+    { routeID: '28R', distance: 12828.5 },
+    { routeID: '19', distance: 12758.5 },
+    { routeID: '14', distance: 12536 },
+    { routeID: '9', distance: 12524 },
+    { routeID: '8AX', distance: 12330.5 },
+    { routeID: 'NX', distance: 12086.5 },
+    { routeID: '10', distance: 11986 },
+    { routeID: '36', distance: 11702.5 },
+    { routeID: '18', distance: 11665 },
+    { routeID: 'J', distance: 11443 },
+    { routeID: '5', distance: 11400 },
+    { routeID: '5R', distance: 11400 },
+    { routeID: '31', distance: 11369.5 },
+    { routeID: '49', distance: 11233 },
+    { routeID: '31AX', distance: 11212.5 },
+    { routeID: '38', distance: 11122.5 },
+    { routeID: '24', distance: 11057.5 },
+    { routeID: '38R', distance: 10782 },
+    { routeID: '38AX', distance: 10544 },
+    { routeID: '33', distance: 10414.5 },
+    { routeID: '12', distance: 10315 },
+    { routeID: '6', distance: 10139 },
+    { routeID: '22', distance: 9305 },
+    { routeID: '1AX', distance: 9271 },
+    { routeID: '1', distance: 9255.5 },
+    { routeID: '37', distance: 8477 },
+    { routeID: '38BX', distance: 8392.5 },
+    { routeID: '2', distance: 8315 },
+    { routeID: '25', distance: 8219 },
+    { routeID: 'F', distance: 8206.5 },
+    { routeID: '27', distance: 8177 },
+    { routeID: '47', distance: 7845.5 },
+    { routeID: '31BX', distance: 7649 },
+    { routeID: '30', distance: 7628 },
+    { routeID: '21', distance: 7185 },
+    { routeID: '45', distance: 6827.5 },
+    { routeID: '52', distance: 6766 },
+    { routeID: '30X', distance: 6642.5 },
+    { routeID: '1BX', distance: 6334.5 },
+    { routeID: 'E', distance: 5735 },
+    { routeID: '41', distance: 5656 },
+    { routeID: '3', distance: 5548 },
+    { routeID: '66', distance: 4929 },
+    { routeID: '35', distance: 4831.5 },
+    { routeID: '56', distance: 4527.5 },
+    { routeID: '82X', distance: 4162.5 },
+    { routeID: '67', distance: 3977.5 },
+    { routeID: '55', distance: 3693 },
+    { routeID: 'PH', distance: 3359.3333333333335 },
+    { routeID: '81X', distance: 3274 },
+    { routeID: '39', distance: 2902 },
+    { routeID: '83X', distance: 2622.5 },
+    { routeID: 'PM', distance: 2607 },
+    { routeID: 'C', distance: 2302 },
+    { routeID: '88', distance: 2258 },
+  ];
 
   return allDistances;
 }
@@ -372,23 +446,25 @@ function getSpeedForRoute(props, route_id, allDistances) {
 
   const filteredDirections = filterDirections(route.directions, route_id);
   let speeds = filteredDirections.map(direction => {
-
     const distObj = allDistances.find(distObj => distObj.routeID === route_id);
     const dist = distObj ? distObj.distance : null;
     const tripTime = getEndToEndTripTime(props, route.id, direction.id);
 
-    if (dist <= 0 || isNaN(tripTime)) {  // something wrong with the data here
-      //console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + route_id + ' ' + direction.id);
+    if (dist <= 0 || isNaN(tripTime)) {
+      // something wrong with the data here
+      // console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + route_id + ' ' + direction.id);
       return -1;
     }
 
-    const speed = metersToMiles(Number.parseFloat(dist)) / tripTime * 60.0;  // initial units are meters per minute, final are mph
+    const speed = (metersToMiles(Number.parseFloat(dist)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
     return speed;
   });
 
   speeds = speeds.filter(speed => speed >= 0); // ignore negative speeds, as with oddball 9 direction
 
-  if (speeds.length === 0) { return 0; };
+  if (speeds.length === 0) {
+    return 0;
+  }
 
   const sum = speeds.reduce((total, currentValue) => total + currentValue);
   return sum / speeds.length;
@@ -401,16 +477,20 @@ function getSpeedForRoute(props, route_id, allDistances) {
  * @param {any} allDistances
  */
 export function getAllSpeeds(props, allDistances) {
-
   let allSpeeds = null;
   if (props.routes) {
     allSpeeds = filterRoutes(props.routes).map(route => {
-      return { routeID: route.id, speed: getSpeedForRoute(props, route.id, allDistances) }
+      return {
+        routeID: route.id,
+        speed: getSpeedForRoute(props, route.id, allDistances),
+      };
     });
     allSpeeds = allSpeeds.filter(speedObj => speedObj.speed > 0); // not needed?
-    allSpeeds.sort((a,b) => { return b.speed - a.speed});
+    allSpeeds.sort((a, b) => {
+      return b.speed - a.speed;
+    });
 
-    //console.log(JSON.stringify(allSpeeds));
+    // console.log(JSON.stringify(allSpeeds));
   }
 
   return allSpeeds;
@@ -423,9 +503,8 @@ export function getAllSpeeds(props, allDistances) {
  * @param {any} speeds
  */
 export function getAllScores(routes, waits, speeds) {
-
-  let allScores = [];
-  for (let route of routes) {
+  const allScores = [];
+  for (const route of routes) {
     const speedObj = speeds.find(speed => speed.routeID === route.id);
     const waitObj = waits.find(wait => wait.routeID === route.id);
     if (waitObj && speedObj) {
@@ -433,9 +512,11 @@ export function getAllScores(routes, waits, speeds) {
       allScores.push({ routeID: route.id, totalScore: grades.totalScore });
     }
   }
-  allScores.sort((a,b) => { return b.totalScore - a.totalScore});
+  allScores.sort((a, b) => {
+    return b.totalScore - a.totalScore;
+  });
 
-  //console.log(JSON.stringify(allScores));
+  // console.log(JSON.stringify(allScores));
 
   return allScores;
 }
@@ -447,38 +528,45 @@ export function getAllScores(routes, waits, speeds) {
  * of long wait and travel variability to RouteSummary.
  */
 export function computeGrades(medianWait, speed) {
-
   //
   // grade and score for median wait
   //
 
-  const medianWaitScoreScale = d3.scaleLinear()
-  .domain([5, 10])
-  .rangeRound([100, 0])
-  .clamp(true);
+  const medianWaitScoreScale = d3
+    .scaleLinear()
+    .domain([5, 10])
+    .rangeRound([100, 0])
+    .clamp(true);
 
-  const medianWaitGradeScale = d3.scaleThreshold()
-  .domain([5, 7.5, 10])
-  .range(["A", "B", "C", "D"]);
+  const medianWaitGradeScale = d3
+    .scaleThreshold()
+    .domain([5, 7.5, 10])
+    .range(['A', 'B', 'C', 'D']);
 
   // grade and score for travel speed
 
-  const speedScoreScale = d3.scaleLinear()
-  .domain([5, 10])
-  .rangeRound([0, 100])
-  .clamp(true);
+  const speedScoreScale = d3
+    .scaleLinear()
+    .domain([5, 10])
+    .rangeRound([0, 100])
+    .clamp(true);
 
-  const speedGradeScale = d3.scaleThreshold()
-  .domain([5, 7.5, 10])
-  .range(["D", "C", "B", "A"]);
+  const speedGradeScale = d3
+    .scaleThreshold()
+    .domain([5, 7.5, 10])
+    .range(['D', 'C', 'B', 'A']);
 
-  const totalGradeScale = d3.scaleThreshold()
-  .domain([25, 50, 75])
-  .range(["D", "C", "B", "A"]);
+  const totalGradeScale = d3
+    .scaleThreshold()
+    .domain([25, 50, 75])
+    .range(['D', 'C', 'B', 'A']);
 
-  let medianWaitScore = 0, medianWaitGrade = "";
-  let speedScore = 0, speedGrade = "";
-  let totalScore = 0, totalGrade = "";
+  let medianWaitScore = 0;
+  let medianWaitGrade = '';
+  let speedScore = 0;
+  let speedGrade = '';
+  let totalScore = 0;
+  let totalGrade = '';
 
   if (medianWait != null) {
     medianWaitScore = medianWaitScoreScale(medianWait);
@@ -490,7 +578,7 @@ export function computeGrades(medianWait, speed) {
     speedGrade = speedGradeScale(speed);
   }
 
-  totalScore = Math.round((medianWaitScore + speedScore)/2.0);
+  totalScore = Math.round((medianWaitScore + speedScore) / 2.0);
   totalGrade = totalGradeScale(totalScore);
 
   return {
@@ -500,15 +588,17 @@ export function computeGrades(medianWait, speed) {
     speedGrade,
     totalScore,
     totalGrade,
-    highestPossibleScore: 100
-  }
+    highestPossibleScore: 100,
+  };
 }
 
-export const quartileBackgroundColor = d3.scaleThreshold()
+export const quartileBackgroundColor = d3
+  .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
   .range([red[300], yellow[500], lightGreen[700], green[900]]);
 
-export const quartileForegroundColor = d3.scaleThreshold()
+export const quartileForegroundColor = d3
+  .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
   .range(['black', 'black', 'black', 'white']);
 

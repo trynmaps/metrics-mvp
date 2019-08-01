@@ -2,7 +2,8 @@ import axios from 'axios';
 import { metricsBaseURL } from '../config';
 import { getTimePath, getStatPath } from '../helpers/precomputed.js';
 
-export const routesUrl = 'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
+export const routesUrl =
+  'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
 
 export function fetchGraphData(params) {
   return function(dispatch) {
