@@ -78,20 +78,41 @@ function ControlPanel(props) {
     }
   };
 
+  function getSelectedRouteInfo() {
+    const routeId = props.graphParams.route_id;
+    return routes ? routes.find(route => route.id === routeId) : null;
+  }
+
+  const getStopsInfoInGivenDirection = (mySelectedRoute, directionId) => {
+    return mySelectedRoute.directions.find(dir => dir.id === directionId);
+  };
+
+  function generateSecondStopList(mySelectedRoute, directionId, stopId) {
+    const secondStopInfo = getStopsInfoInGivenDirection(
+      mySelectedRoute,
+      directionId,
+    );
+    const secondStopListIndex = stopId
+      ? secondStopInfo.stops.indexOf(stopId)
+      : 0;
+    return secondStopInfo.stops.slice(secondStopListIndex + 1);
+  }
+
   const onSelectFirstStop = stopId => {
     const directionId = props.graphParams.direction_id;
     const secondStopId = props.graphParams.end_stop_id;
-    const selectedRoute = { ...getSelectedRouteInfo() };
+    const mySelectedRoute = { ...getSelectedRouteInfo() };
     const secondStopList = generateSecondStopList(
-      selectedRoute,
+      mySelectedRoute,
       directionId,
       stopId.target.value,
     );
 
     let newSecondStopId = secondStopId;
 
-    // If the "to stop" is not set or is not valid for the current "from stop",
-    // set a default "to stop" that is some number of stops down.  If there aren't
+    // If the "to stop" is not set or is not valid for
+    // the current "from stop", set a default "to stop" that
+    // is some number of stops down.  If there aren't
     // enough stops, use the end of the line.
 
     const nStops = 5;
@@ -102,6 +123,8 @@ function ControlPanel(props) {
           ? secondStopList[nStops - 1]
           : secondStopList[secondStopList.length - 1];
     }
+
+    console.log(stopId, stopId.target.value, newSecondStopId);
 
     props.onGraphParams({
       start_stop_id: stopId.target.value,
@@ -135,26 +158,6 @@ function ControlPanel(props) {
       end_stop_id: null,
     });
   };
-
-  function generateSecondStopList(mySelectedRoute, directionId, stopId) {
-    const secondStopInfo = getStopsInfoInGivenDirection(
-      mySelectedRoute,
-      directionId,
-    );
-    const secondStopListIndex = stopId
-      ? secondStopInfo.stops.indexOf(stopId)
-      : 0;
-    return secondStopInfo.stops.slice(secondStopListIndex + 1);
-  }
-
-  const getStopsInfoInGivenDirection = (mySelectedRoute, directionId) => {
-    return mySelectedRoute.directions.find(dir => dir.id === directionId);
-  };
-
-  function getSelectedRouteInfo() {
-    const routeId = props.graphParams.route_id;
-    return routes ? routes.find(route => route.id === routeId) : null;
-  }
 
   let selectedDirection = null;
   if (selectedRoute && selectedRoute.directions && graphParams.direction_id) {
@@ -269,7 +272,7 @@ function ControlPanel(props) {
                     input={<Input name="stop" id="stop" />}
                   >
                     {(selectedDirection.stops || []).map(firstStopId => (
-                      <MenuItem key={firstStopId}>
+                      <MenuItem key={firstStopId} value={firstStopId}>
                         {
                           (
                             selectedRoute.stops[firstStopId] || {
@@ -295,12 +298,12 @@ function ControlPanel(props) {
                     onChange={onSelectSecondStop}
                     input={<Input name="stop" id="stop" />}
                   >
-                    {(selectedDirection.stops || []).map(secondStopList => (
-                      <MenuItem key={secondStopList}>
+                    {(selectedDirection.stops || []).map(secondStopId => (
+                      <MenuItem key={secondStopId} value={secondStopId}>
                         {
                           (
-                            selectedRoute.stops[secondStopList] || {
-                              title: secondStopList,
+                            selectedRoute.stops[secondStopId] || {
+                              title: secondStopId,
                             }
                           ).title
                         }
