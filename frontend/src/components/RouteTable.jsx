@@ -183,35 +183,7 @@ function RouteTable(props) {
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
   }
-
-  function handleClick(event, route) {
-    const selectedIndex = selected.indexOf(route.title);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = [route.title]; // newSelected.concat(selected, name);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-
-    setSelected(newSelected);
-
-    props.handleGraphParams({
-      route_id: route.id,
-      direction_id: null,
-      start_stop_id: null,
-      end_stop_id: null,
-    });
-    push('/route');
-  }
-
+  
   const isSelected = name => selected.indexOf(name) !== -1;
 
   let routes = props.routes ? filterRoutes(props.routes) : [];
@@ -272,7 +244,6 @@ function RouteTable(props) {
                   return (
                     <TableRow
                       hover
-                      onClick={event => handleClick(event, row)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
@@ -287,14 +258,14 @@ function RouteTable(props) {
                       >
                         <Link
                           to={{
-                            type: 'RECEIVED_GRAPH_PARAMS',
+                            type: 'ROUTESCREEN',
                             payload: {
                               route_id: row.id,
                               direction_id: null,
                               start_stop_id: null,
-                              end_stop_id: null,
-                            },
-                            query: { route_id: row.id },
+                              end_stop_id: null
+                            }
+                            
                           }}
                         >
                           {row.title}
