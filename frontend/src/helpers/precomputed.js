@@ -13,6 +13,7 @@
 /**
  * Maps time range to a file path (used by Redux action).
  */
+
 export function getTimePath(timeStr) {
   return timeStr
     ? `_${timeStr
@@ -191,13 +192,18 @@ export function getWaitTimeForDirection(
 export function getAverageOfMedianWait(waitTimesCache, graphParams, route) {
   const directions = route.directions;
   const sumOfMedians = directions.reduce((total, direction) => {
-    const waitForDir = getWaitTimeForDirection(waitTimesCache, graphParams, route.id, direction.id);
+    const waitForDir = getWaitTimeForDirection(
+      waitTimesCache,
+      graphParams,
+      route.id,
+      direction.id,
+    );
     if (!waitForDir) {
-        return NaN;
+      return NaN;
     }
     return total + waitForDir.median;
   }, 0);
-  return sumOfMedians/directions.length;
+  return sumOfMedians / directions.length;
 }
 
 /*
