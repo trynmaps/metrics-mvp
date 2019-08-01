@@ -205,9 +205,9 @@ class Info extends Component {
     this.waitData = waitTimes && waitTimes.histogram ? waitTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: (100 * bin.count / (waitTimes.histogram.reduce((acc, bin) => acc + bin.count, 0))) })) : null;
     this.tripData = tripTimes && tripTimes.histogram ? tripTimes.histogram.map(bin => ({ x0: getBinMin(bin), x: getBinMax(bin), y: bin.count })) : null;
 
-    const distance = this.computeDistance(graphParams, routes);
-    const speed = tripTimes ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
-    const grades = this.computeGrades(headwayMin, waitTimes, tripTimes, speed);
+    const distance = routes ? this.computeDistance(graphParams, routes) : null;
+    const speed = tripTimes && distance ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
+    const grades = speed ? this.computeGrades(headwayMin, waitTimes, tripTimes, speed) : null;
 
     return (
       <div
@@ -217,7 +217,7 @@ class Info extends Component {
         `
         }
       >
-        {headwayMin
+        {headwayMin && grades
           ? (
             <div>
               <Card>
