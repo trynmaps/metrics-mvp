@@ -1,5 +1,5 @@
-import { redirect, NOT_FOUND } from 'redux-first-router'
 import {handleGraphParams} from './actions';
+
 export default {
   HOME: '/home',
   ABOUT: '/about',
