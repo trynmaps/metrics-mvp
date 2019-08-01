@@ -66,36 +66,49 @@ Once a PR is merged into master, Google Cloud Build  will automatically build
 the latest code and deploy it to a cluster on Google Kubernetes Engine (GKE).
 The build steps are defined in `cloudbuild.yaml`.
 
-## Frontend code
+## Our tech stack
 
-The frontend React code is in the /frontend directory and is built using Create React App.
-For more information, see https://facebook.github.io/create-react-app/docs/folder-structure
+Overall:
 
-## Tech Stack Decisions
+- **Docker**, to ensure a consistent environment across machines.
+- **Docker Compose**, to run multiple containers at once.
 
-### Overall
-- Docker - We use Docker to ensure a consistent environment across all machines
-- Docker Compose - We use Docker Compose to run multiple containers at once
+Frontend:
 
-### Frontend
-- NPM - Due to both the NPM and Yarn package managers offering roughly the same performance, Yarn being a superset of NPM, and there was nothing in the Yarn roadmap which would indicate it would make it worthwhile in the future, we went with NPM
-- React - Our team members switched projects over from OpenTransit Map and decided to use the same frontend framework
-- Material UI - We decided to migrate to Material UI, because it has zero dependence on jQuery (unlike Bootstrap), it is the most popular React framework, and it offers a more fluid and pleasant experience for mobile users
-- Functional Components - We migrated away from ES6 React Components and introduced [Functional Components](https://reactjs.org/docs/components-and-props.html) instead due to the simplification of component logic and the ability to use React Hooks
-- Redux Thunk - We use Redux for state management and to simplify our application and component interaction, and Thunk as middleware
-- React Hooks - We use React Hooks to manage interactions with state management
+- **React**; code lives in the `/frontend` directory.  It was built using
+[Create React App](https://facebook.github.io/create-react-app/docs/folder-structure).
+- **NPM** for package management. We explicitly decided to *not* use Yarn, because both
+package managers offer similar performance, we were already using NPM for backend
+package management, and the Yarn roadmap did not offer compelling
+improvements going forward.
+- **React**, which was inherited from an older OpenTransit Map app.
+- **Material UI**, which we use over Bootstrap since MUI doesn't rely on jQuery. It has a
+popular React framework and looks great on mobile.
+- **Functional Components** for React; we migrated away from ES6 React Components and toward
+[Functional Components](https://reactjs.org/docs/components-and-props.html) due to the
+simpler component logic and the ability to use React Hooks that Functional Components offer.
+- **Redux** for state management and to simplify our application and component interaction.
+- **Redux Thunk** as middleware for Thunk.
+- **React Hooks** - to manage interactions with state management.
 
+Backend:
+- **Flask**, because our data science work was already done in iPython and using
+Python for the backend would ease the migration from experimentation to production.
 
 ## Notes for developers
+
+### Python
 
 If you ever need to use a new pip library, make sure you run `pip freeze > requirements.txt`
 so other contributors have the latest versions of required packages.
 
+### Windows
+
 If you're developing within Docker on Windows, by default, React does not automatically recompile the frontend code when you make changes.
 In order to allow React to automatically recompile the frontend code within the Docker container when you edit files shared from your
-Windows host computer, you can create a docker-compose.override.yml to enable CHOKIDAR_USEPOLLING like this:
+Windows host computer, you can create a `docker-compose.override.yml` to enable CHOKIDAR_USEPOLLING like this:
 
-```
+```yml
 version: "3.7"
 services:
   react-dev:
