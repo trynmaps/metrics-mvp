@@ -44,10 +44,10 @@ function TravelTimeChart(props) {
   let direction_id = null;
   let tripTimeForDirection = null;
   
-  if (graphParams.route_id) {
+  if (props.route_id || graphParams.route_id) { // take route id from props if given, else use redux graphParams
     
-    const route_id = graphParams.route_id;
-    direction_id = graphParams.direction_id;
+    const route_id = props.route_id || graphParams.route_id;
+    direction_id = props.direction_id || graphParams.direction_id; // also take direction_id from props if given
     
     if (direction_id) {
       tripTimeForDirection = getEndToEndTripTime(props, route_id, direction_id);

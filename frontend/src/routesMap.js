@@ -5,5 +5,6 @@ export default {
   ISOCHRONE: '/isochrone',
   DASHBOARD: '/',
   ROUTESCREEN: '/route',
+  DATADIAGNOSTIC: '/dataDiagnostic',
   RECEIVED_GRAPH_PARAMS: '/route',
 };
