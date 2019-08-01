@@ -391,13 +391,12 @@ class MapSpider extends Component {
           url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
           opacity={0.3}
         /> {/* see http://maps.stamen.com for details */}
-
         <this.DownstreamLines/>
         <this.StartMarkers/>
 
         <Control position="bottomleft" >
           <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
-            <GpsIcon/>
+            <GpsIcon/>&nbsp;
             Routes near me
           </Button>
           &nbsp;

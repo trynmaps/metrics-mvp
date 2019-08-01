@@ -23,6 +23,7 @@ let curComputeId = null;
 let tripTimesCache = {};
 let waitTimesCache = {};
 let baseUrl = thisUrl.searchParams.get('base');
+let routesUrl = thisUrl.searchParams.get('routes_url');
 
 function loadJson(url)
 {
@@ -58,9 +59,9 @@ function loadRoutes()
     }
     else
     {
-        return loadJson("/api/routes?v4").then(function(routes) {
-            allRoutes = routes;
-            return routes;
+        return loadJson(routesUrl).then(function(data) {
+            allRoutes = data.routes;
+            return allRoutes;
         });
     }
 }

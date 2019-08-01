@@ -14,7 +14,6 @@ import Paper from '@material-ui/core/Paper';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
-
 import { filterRoutes, getAllWaits, getAllDistances, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
 import { push } from 'redux-first-router';
@@ -184,35 +183,7 @@ function RouteTable(props) {
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
   }
-
-  function handleClick(event, route) {
-    const selectedIndex = selected.indexOf(route.title);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = [route.title]; // newSelected.concat(selected, name);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-
-    setSelected(newSelected);
-
-    props.handleGraphParams({
-      route_id: route.id,
-      direction_id: null,
-      start_stop_id: null,
-      end_stop_id: null,
-    });
-    push('/route');
-  }
-
+  
   const isSelected = name => selected.indexOf(name) !== -1;
 
   let routes = props.routes ? filterRoutes(props.routes) : [];
@@ -224,8 +195,6 @@ function RouteTable(props) {
     const spiderRouteIDs = spiderSelection.map(spider => spider.routeID);
     routes = routes.filter(route => spiderRouteIDs.includes(route.id));
   }
-
-  // then compute speeds and scores, which depend on waits
 
   const allWaits = getAllWaits(props);
   const allDistances = getAllDistances();
@@ -275,7 +244,6 @@ function RouteTable(props) {
                   return (
                     <TableRow
                       hover
-                      onClick={event => handleClick(event, row)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
@@ -290,18 +258,19 @@ function RouteTable(props) {
                       >
                         <Link
                           to={{
-                            type: 'RECEIVED_GRAPH_PARAMS',
+                            type: 'ROUTESCREEN',
                             payload: {
                               route_id: row.id,
                               direction_id: null,
                               start_stop_id: null,
-                              end_stop_id: null,
-                            },
-                            query: { route_id: row.id },
+                              end_stop_id: null
+                            }
+                            
                           }}
                         >
                           {row.title}
                         </Link>
+                        
                       </TableCell>
                       <TableCell align="right">
                         {isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
