@@ -1,19 +1,16 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { connect } from 'react-redux';
-import { css } from 'emotion';
-import Card from 'react-bootstrap/Card';
-import ListGroup from 'react-bootstrap/ListGroup';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
-import FormHelperText from '@material-ui/core/FormHelperText';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { handleGraphParams } from '../actions';
 import './ControlPanel.css';
+import { List, ListItem } from '@material-ui/core';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -58,7 +55,7 @@ function ControlPanel(props) {
       : '';
 
   const selectedRoute = getSelectedRouteInfo();
-  const setDate = date => props.onGraphParams({ date });
+  // const setDate = date => props.onGraphParams({ date });
   const setDirectionId = directionId =>
     props.onGraphParams({
       direction_id: directionId.target.value,
@@ -166,9 +163,8 @@ function ControlPanel(props) {
     );
   }
 
-  let secondStopList = null;
   if (selectedDirection) {
-    secondStopList = generateSecondStopList(
+    let secondStopList = generateSecondStopList(
       selectedRoute,
       graphParams.direction_id,
       graphParams.start_stop_id,
@@ -179,7 +175,7 @@ function ControlPanel(props) {
 
   return (
     <div className="ControlPanel">
-      <Card bg="light" style={{ color: 'black' }}>
+      <List style={{ color: 'black' }}>
         {/* The date picker is broken because we're no longer passing in a date in the format
                it expects.  To be replaced with a new Material UI component.
         <DatePicker
@@ -191,7 +187,7 @@ function ControlPanel(props) {
          width: 100%
        `}
         />  */}
-        <ListGroup.Item>
+        <ListItem>
           <FormControl className={classes.formControl}>
             <InputLabel htmlFor="time-helper">Time Range</InputLabel>
             <Select
@@ -210,98 +206,96 @@ function ControlPanel(props) {
               </MenuItem>
             </Select>
           </FormControl>
-        </ListGroup.Item>
-        <ListGroup variant="flush">
+        </ListItem>
+        <div className="dropDownOverlay">
+          <ListItem>
+            <FormControl className={classes.formControl}>
+              <InputLabel htmlFor="route-helper">Route</InputLabel>
+              <Select
+                value={graphParams.route_id || 0}
+                onChange={setRouteId}
+                input={<Input name="route" id="route" />}
+              >
+                {(routes || []).map(route => (
+                  <MenuItem key={route.id} value={route.id}>
+                    {route.title}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </ListItem>
+        </div>
+        {selectedRoute ? (
+          <ListItem>
+            <FormControl className={classes.formControl}>
+              <InputLabel htmlFor="direction-helper">Direction</InputLabel>
+              <Select
+                value={graphParams.direction_id || 1}
+                onChange={setDirectionId}
+                input={<Input name="direction" id="direction" />}
+              >
+                {(selectedRoute.directions || []).map(direction => (
+                  <MenuItem key={direction.id} value={direction.id}>
+                    {direction.title}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </ListItem>
+        ) : null}
+        {selectedDirection ? (
           <div className="dropDownOverlay">
-            <ListGroup.Item>
+            <ListItem>
               <FormControl className={classes.formControl}>
-                <InputLabel htmlFor="route-helper">Route</InputLabel>
+                <InputLabel htmlFor="from-stop-helper">From Stop</InputLabel>
                 <Select
-                  value={graphParams.route_id || 1}
-                  onChange={setRouteId}
-                  input={<Input name="route" id="route" />}
+                  value={graphParams.start_stop_id || 1}
+                  onChange={onSelectFirstStop}
+                  input={<Input name="stop" id="stop" />}
                 >
-                  {(routes || []).map(route => (
-                    <MenuItem key={route.id} value={route.id}>
-                      {route.title}
+                  {(selectedDirection.stops || []).map(firstStopId => (
+                    <MenuItem key={firstStopId} value={firstStopId}>
+                      {
+                        (
+                          selectedRoute.stops[firstStopId] || {
+                            title: firstStopId,
+                          }
+                        ).title
+                      }
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-            </ListGroup.Item>
+            </ListItem>
           </div>
-          {selectedRoute ? (
-            <ListGroup.Item>
+        ) : null}
+        {selectedDirection ? (
+          <div className="dropDownOverlay">
+            <ListItem>
               <FormControl className={classes.formControl}>
-                <InputLabel htmlFor="direction-helper">Direction</InputLabel>
+                <InputLabel htmlFor="to-stop-helper">To Stop</InputLabel>
                 <Select
-                  value={graphParams.direction_id || 1}
-                  onChange={setDirectionId}
-                  input={<Input name="direction" id="direction" />}
+                  value={graphParams.end_stop_id || 1}
+                  onChange={onSelectSecondStop}
+                  input={<Input name="stop" id="stop" />}
                 >
-                  {(selectedRoute.directions || []).map(direction => (
-                    <MenuItem key={direction.id} value={direction.id}>
-                      {direction.title}
+                  {(selectedDirection.stops || []).map(secondStopId => (
+                    <MenuItem key={secondStopId} value={secondStopId}>
+                      {
+                        (
+                          selectedRoute.stops[secondStopId] || {
+                            title: secondStopId,
+                          }
+                        ).title
+                      }
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-            </ListGroup.Item>
-          ) : null}
-          {selectedDirection ? (
-            <div className="dropDownOverlay">
-              <ListGroup.Item>
-                <FormControl className={classes.formControl}>
-                  <InputLabel htmlFor="from-stop-helper">From Step</InputLabel>
-                  <Select
-                    value={graphParams.start_stop_id || 1}
-                    onChange={onSelectFirstStop}
-                    input={<Input name="stop" id="stop" />}
-                  >
-                    {(selectedDirection.stops || []).map(firstStopId => (
-                      <MenuItem key={firstStopId} value={firstStopId}>
-                        {
-                          (
-                            selectedRoute.stops[firstStopId] || {
-                              title: firstStopId,
-                            }
-                          ).title
-                        }
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </ListGroup.Item>
-            </div>
-          ) : null}
-          {selectedDirection ? (
-            <div className="dropDownOverlay">
-              <ListGroup.Item>
-                <FormControl className={classes.formControl}>
-                  <InputLabel htmlFor="to-stop-helper">To Step</InputLabel>
-                  <Select
-                    value={graphParams.end_stop_id || 1}
-                    onChange={onSelectSecondStop}
-                    input={<Input name="stop" id="stop" />}
-                  >
-                    {(selectedDirection.stops || []).map(secondStopId => (
-                      <MenuItem key={secondStopId} value={secondStopId}>
-                        {
-                          (
-                            selectedRoute.stops[secondStopId] || {
-                              title: secondStopId,
-                            }
-                          ).title
-                        }
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </ListGroup.Item>
-            </div>
-          ) : null}
-        </ListGroup>
-      </Card>
+            </ListItem>
+          </div>
+        ) : null}
+      </List>
     </div>
   );
 }
