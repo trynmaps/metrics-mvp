@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { css } from 'emotion';
-import Card from 'react-bootstrap/Card';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData';
 import { milesBetween } from '../helpers/routeCalculations';
@@ -8,6 +7,7 @@ import { PLANNING_PERCENTILE, CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '
 import * as d3 from 'd3';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
   ChartLabel, Crosshair } from 'react-vis';
+import { Card } from '@material-ui/core';
 
 
 class Info extends Component {
@@ -221,7 +221,6 @@ class Info extends Component {
           ? (
             <div>
               <Card>
-                <Card.Body>
                   <span className="h4">Overall Grade: </span>
                   <span className="h1">{grades.totalGrade}</span>
                   {' '}
@@ -323,7 +322,6 @@ minutes
                       </tr>
                     </tbody>
                   </table>
-                </Card.Body>
               </Card>
 
               <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />
