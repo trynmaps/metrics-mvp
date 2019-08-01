@@ -294,8 +294,7 @@ function RouteTable(props) {
                               route_id: row.id,
                               direction_id: null,
                               start_stop_id: null,
-                              end_stop_id: null,
-                              path:'/test'
+                              end_stop_id: null
                             }
                             
                           }}
