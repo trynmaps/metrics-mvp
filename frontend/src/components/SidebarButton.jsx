@@ -5,7 +5,7 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import MenuIcon from '@material-ui/icons/Menu';
-
+import { NavLink } from 'redux-first-router-link';
 
 class SidebarButton extends React.Component {
     constructor(props) {
@@ -23,6 +23,7 @@ class SidebarButton extends React.Component {
     }
 
     render() {
+        const activeStyle = { fontWeight: "bold", color: '#3f51b5', textDecoration: 'none' };
         return <div>
               <IconButton
               color="inherit"
@@ -47,8 +48,26 @@ class SidebarButton extends React.Component {
                         <ChevronLeftIcon />
                     </IconButton>
                     <List>
-                        <ListItem><a href="/">Dashboard</a></ListItem>
-                        <ListItem><a href="/isochrone">Isochrone</a></ListItem>
+                        <ListItem>
+                            <NavLink
+                              to={{ type: 'DASHBOARD' }}
+                              activeStyle={activeStyle}
+                              exact={true}
+                              strict={true}
+                            >
+                                Dashboard
+                            </NavLink>
+                        </ListItem>
+                        <ListItem>
+                            <NavLink
+                              to={{ type: 'ISOCHRONE' }}
+                              activeStyle={activeStyle}
+                              exact={true}
+                              strict={true}
+                            >
+                                Isochrone
+                            </NavLink>
+                        </ListItem>
                     </List>
                 </div>
             </Drawer>
