@@ -2,6 +2,8 @@ import axios from 'axios';
 import { metricsBaseURL } from '../config';
 import { getTimePath, getStatPath } from '../helpers/precomputed.js';
 
+export const routesUrl = 'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
+
 export function fetchGraphData(params) {
   return function(dispatch) {
     axios
@@ -65,11 +67,9 @@ export function resetIntervalData() {
 export function fetchRoutes() {
   return function(dispatch) {
     axios
-      .get('/api/routes', {
-        baseURL: metricsBaseURL,
-      })
+      .get(routesUrl)
       .then(response => {
-        dispatch({ type: 'RECEIVED_ROUTES', payload: response.data });
+        dispatch({ type: 'RECEIVED_ROUTES', payload: response.data.routes });
       })
       .catch(err => {
         dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });

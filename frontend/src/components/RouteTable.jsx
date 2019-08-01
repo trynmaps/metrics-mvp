@@ -15,11 +15,10 @@ import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
 
+import { filterRoutes, getAllWaits, getAllDistances, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
 import { push } from 'redux-first-router';
 import Link from 'redux-first-router-link';
-import { getWaitTimeForDirection } from '../helpers/precomputed';
-import { filterRoutes } from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
@@ -53,7 +52,7 @@ const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'wait', numeric: true, disablePadding: false, label: 'Wait (min)' },
   { id: 'speed', numeric: true, disablePadding: false, label: 'Speed (mph)' },
-  { id: 'score', numeric: true, disablePadding: false, label: 'Score' },
+  { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
 ];
 
 function EnhancedTableHead(props) {
@@ -164,9 +163,6 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     marginBottom: theme.spacing(2),
   },
-  table: {
-    minWidth: 750,
-  },
   tableWrapper: {
     overflowX: 'auto',
   },
@@ -217,30 +213,6 @@ function RouteTable(props) {
     push('/route');
   }
 
-  /**
-   * Averages together the median wait in all directions for a route.
-   *
-   * @param {any} waitTimesCache
-   * @param {any} graphParams
-   * @param {any} route
-   */
-  function getAverageOfMedianWait(waitTimesCache, graphParams, route) {
-    const directions = route.directions;
-    const sumOfMedians = directions.reduce((total, direction) => {
-      const waitForDir = getWaitTimeForDirection(
-        waitTimesCache,
-        graphParams,
-        route.id,
-        direction.id,
-      );
-      if (!waitForDir) {
-        return NaN;
-      }
-      return total + waitForDir.median;
-    }, 0);
-    return sumOfMedians / directions.length;
-  }
-
   const isSelected = name => selected.indexOf(name) !== -1;
 
   let routes = props.routes ? filterRoutes(props.routes) : [];
@@ -253,12 +225,28 @@ function RouteTable(props) {
     routes = routes.filter(route => spiderRouteIDs.includes(route.id));
   }
 
+  // then compute speeds and scores, which depend on waits
+
+  const allWaits = getAllWaits(props);
+  const allDistances = getAllDistances();
+  const allSpeeds = getAllSpeeds(props, allDistances);
+  const allScores = getAllScores(routes, allWaits, allSpeeds);
+  
   routes = routes.map(route => {
-    route.wait = getAverageOfMedianWait(
-      props.waitTimesCache,
-      props.graphParams,
-      route,
-    );
+    
+    const waitObj = allWaits.find(waitObj => waitObj.routeID === route.id);
+    if (waitObj) {
+      route.wait = waitObj.wait;
+    }
+    
+    const speedObj = allSpeeds.find(speedObj => speedObj.routeID === route.id);
+    if (speedObj) {
+      route.speed = speedObj.speed;
+    }
+    const scoreObj = allScores.find(scoreObj => scoreObj.routeID === route.id);
+    if (scoreObj) {
+      route.totalScore = scoreObj.totalScore;
+    }
     return route;
   });
 
@@ -268,7 +256,6 @@ function RouteTable(props) {
         <EnhancedTableToolbar numSelected={selected.length} />
         <div className={classes.tableWrapper}>
           <Table
-            className={classes.table}
             aria-labelledby="tableTitle"
             size={dense ? 'small' : 'medium'}
           >
@@ -319,8 +306,12 @@ function RouteTable(props) {
                       <TableCell align="right">
                         {isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
                       </TableCell>
-                      <TableCell align="right">{row.speed}</TableCell>
-                      <TableCell align="right">{row.score}</TableCell>
+                      <TableCell align="right">
+                        {isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {row.totalScore}
+                      </TableCell>
                     </TableRow>
                   );
                 },
@@ -337,6 +328,7 @@ const mapStateToProps = state => ({
   graphParams: state.routes.graphParams,
   spiderSelection: state.routes.spiderSelection,
   waitTimesCache: state.routes.waitTimesCache,
+  tripTimesCache: state.routes.tripTimesCache,
 });
 
 const mapDispatchToProps = dispatch => {

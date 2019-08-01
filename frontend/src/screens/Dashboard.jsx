@@ -78,8 +78,7 @@ class Dashboard extends React.Component {
               <ChevronLeftIcon />
             </IconButton>
             <List>
-              <ListItem>Test</ListItem>
-              <ListItem>Test</ListItem>
+               <ListItem><a href="/isochrone">Isochrone</a></ListItem>
             </List>
           </div>
         </Drawer>
