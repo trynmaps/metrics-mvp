@@ -164,7 +164,7 @@ function ControlPanel(props) {
   }
 
   if (selectedDirection) {
-    let secondStopList = generateSecondStopList(
+    const secondStopList = generateSecondStopList(
       selectedRoute,
       graphParams.direction_id,
       graphParams.start_stop_id,
