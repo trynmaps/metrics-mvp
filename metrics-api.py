@@ -7,6 +7,7 @@ import pandas as pd
 import pytz
 from datetime import datetime, timedelta
 import time
+import requests
 import math
 import sys
 from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors
@@ -26,56 +27,6 @@ CORS(app)
 @app.route('/api/ping', methods=['GET'])
 def ping():
     return "pong"
-
-@app.route('/api/routes', methods=['GET'])
-def routes():
-    route_list = nextbus.get_route_list('sf-muni')
-
-    data = [{
-        'id': route.id,
-        'title': route.title,
-        'directions': [{
-            'id': dir.id,
-            'title': dir.title,
-            'name': dir.name,
-            'stops': dir.get_stop_ids()
-        } for dir in route.get_direction_infos()],
-        'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
-    } for route in route_list]
-
-    res = Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
-    if not DEBUG:
-        res.headers['Cache-Control'] = 'max-age=3600'
-    return res
-
-@app.route('/api/route', methods=['GET'])
-def route_config():
-    route_id = request.args.get('route_id')
-    params = {'route_id': route_id}
-
-    if route_id is None:
-        return make_error_response(params, "Missing route_id", 400)
-
-    route = nextbus.get_route_config('sf-muni', route_id)
-
-    if route is None:
-        return make_error_response(params, f"Invalid route ID {route_id}", 404)
-
-    data = {
-        'id': route_id,
-        'title': route.title,
-        'directions': [{
-            'id': dir.id,
-            'title': dir.title,
-            'name': dir.name,
-            'stops': dir.get_stop_ids()
-        } for dir in route.get_direction_infos()],
-        'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
-    }
-    res = Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
-    if not DEBUG:
-        res.headers['Cache-Control'] = 'max-age=3600'
-    return res
 
 @app.route('/api/metrics', methods=['GET'])
 def metrics_page():
@@ -279,14 +230,17 @@ def metrics_by_interval():
 
     return Response(json.dumps(data, indent=2), mimetype='application/json')
 
+@app.route('/api/config', methods=['GET'])
+def config():
+    res = Response(json.dumps({"mapbox_access_token": os.environ.get('MAPBOX_ACCESS_TOKEN')}), mimetype='application/json')
+    if not DEBUG:
+        res.headers['Cache-Control'] = 'max-age=3600'
+    return res
+
 if os.environ.get('METRICS_ALL_IN_ONE') == '1':
     @app.route('/frontend/build/<path:path>')
     def frontend_build(path):
         return send_from_directory('frontend/build', path)
-
-    @app.route('/frontend/public/<path:path>')
-    def frontend_public(path):
-        return send_from_directory('frontend/public', path)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')

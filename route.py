@@ -70,7 +70,7 @@ if __name__ == '__main__':
                 stop_info = route_config.get_stop_info(stop_id)
 
                 if prev_stop_info is not None:
-                    delta_dist = eclipses.haver_distance(stop_info.lat, stop_info.lon, prev_stop_info.lat, prev_stop_info.lon)
+                    delta_dist = util.haver_distance(stop_info.lat, stop_info.lon, prev_stop_info.lat, prev_stop_info.lon)
                 else:
                     delta_dist = np.nan
 

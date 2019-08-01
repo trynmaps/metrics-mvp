@@ -8,11 +8,13 @@ import Landing from './components/Landing';
 import NotFound from './components/NotFound';
 import Dashboard from './screens/Dashboard';
 import RouteScreen from './screens/RouteScreen';
+import Isochrone from './screens/Isochrone';
 
 const App = ({ page }) => {
   const components = {
     Home: <Home />,
     About: <About />,
+    Isochrone: <Isochrone />,
     Landing: <Landing />,
     Dashboard: <Dashboard />,
     Route: <RouteScreen />,
