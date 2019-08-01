@@ -396,7 +396,7 @@ class MapSpider extends Component {
 
         <Control position="bottomleft" >
           <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
-            <GpsIcon/>
+            <GpsIcon/>&nbsp;
             Routes near me
           </Button>
           &nbsp;
