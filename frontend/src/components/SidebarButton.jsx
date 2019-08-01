@@ -23,7 +23,7 @@ class SidebarButton extends React.Component {
     }
 
     render() {
-        const activeStyle = { fontWeight: "bold", color: '#3f51b5', textDecoration: 'none' };
+        const activeStyle = { fontWeight: "bold", color: '#3f51b5', textDecoration: 'none', cursor: 'pointer' };
         return <div>
               <IconButton
               color="inherit"
