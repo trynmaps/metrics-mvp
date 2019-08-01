@@ -114,7 +114,6 @@ function ControlPanel(props) {
   };
 
   const setRouteId = routeId => {
-
     const mySelectedRoute = props.routes
       ? props.routes.find(route => route.id === routeId.target.value)
       : null;
@@ -250,7 +249,9 @@ function ControlPanel(props) {
                   input={<Input name="direction" id="direction" />}
                 >
                   {(selectedRoute.directions || []).map(direction => (
-                    <MenuItem key={direction.id} value={direction.id}>{direction.title}</MenuItem>
+                    <MenuItem key={direction.id} value={direction.id}>
+                      {direction.title}
+                    </MenuItem>
                   ))}
                 </Select>
                 <FormHelperText>Some important helper text</FormHelperText>
