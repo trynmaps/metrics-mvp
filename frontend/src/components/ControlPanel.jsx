@@ -178,17 +178,7 @@ function ControlPanel(props) {
   const classes = useStyles();
 
   return (
-    <div
-      className={css`
-        color: #fff;
-        border-radius: 5px;
-        padding: 10px;
-        margin-right: 20px;
-        grid-column: col1-start / col3-start;
-        grid-row: row2-start;
-        font-family: 'Oswald', sans-serif;
-      `}
-    >
+    <div className="ControlPanel">
       <Card bg="light" style={{ color: 'black' }}>
         {/* The date picker is broken because we're no longer passing in a date in the format
                it expects.  To be replaced with a new Material UI component.
@@ -219,7 +209,6 @@ function ControlPanel(props) {
                 Late Evening (7PM - 3AM)
               </MenuItem>
             </Select>
-            <FormHelperText>Some important helper text</FormHelperText>
           </FormControl>
         </ListGroup.Item>
         <ListGroup variant="flush">
@@ -238,7 +227,6 @@ function ControlPanel(props) {
                     </MenuItem>
                   ))}
                 </Select>
-                <FormHelperText>Some important helper text</FormHelperText>
               </FormControl>
             </ListGroup.Item>
           </div>
@@ -257,7 +245,6 @@ function ControlPanel(props) {
                     </MenuItem>
                   ))}
                 </Select>
-                <FormHelperText>Some important helper text</FormHelperText>
               </FormControl>
             </ListGroup.Item>
           ) : null}
@@ -283,7 +270,6 @@ function ControlPanel(props) {
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>Some important helper text</FormHelperText>
                 </FormControl>
               </ListGroup.Item>
             </div>
@@ -310,7 +296,6 @@ function ControlPanel(props) {
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>Some important helper text</FormHelperText>
                 </FormControl>
               </ListGroup.Item>
             </div>
