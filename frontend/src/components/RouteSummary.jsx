@@ -116,7 +116,7 @@ function RouteSummary(props) {
         </Grid>
 
         <Grid item xs>            
-          <Tooltip title={ waitRanking ? 'Subscore: ' + grades.medianWaitScore + '/100' : null}>
+          <Tooltip title={ waitRanking ? 'Subscore: ' + grades.medianWaitScore + '/100' : ''}>
           <Paper className={classes.wait}>
 
             <Typography variant="overline">Median wait</Typography>
@@ -140,7 +140,7 @@ function RouteSummary(props) {
             
         <Grid item xs>            
 
-          <Tooltip title={ speedRanking ? 'Subscore: ' + grades.speedScore + '/100' : null}>
+          <Tooltip title={ speedRanking ? 'Subscore: ' + grades.speedScore + '/100' : ''}>
           <Paper className={classes.trip}>
 
             <Typography variant="overline">Median speed</Typography>
