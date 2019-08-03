@@ -9,7 +9,6 @@ import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { handleGraphParams } from '../actions';
-import './ControlPanel.css';
 import Grid from '@material-ui/core/Grid';
 
 const useStyles = makeStyles(theme => ({
