@@ -13,6 +13,10 @@ import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { List, ListItem } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
+import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
+import { initialState } from '../reducers/routesReducer';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
 
 const useStyles = makeStyles(theme => ({
   button: {
@@ -40,6 +44,12 @@ const useStyles = makeStyles(theme => ({
     margin: theme.spacing(1),
     minWidth: 120,
   },
+  closeButton: {
+    position: 'absolute',
+    right: theme.spacing(1),
+    top: theme.spacing(1),
+    color: theme.palette.grey[500],
+  },  
 }));
 
 /**
@@ -66,15 +76,46 @@ function DateTimePanel(props) {
   function handleClose() {
     setAnchorEl(null);
   }
-
   
-  const timeRange =
-    graphParams.start_time || graphParams.end_time
-      ? `${graphParams.start_time}-${graphParams.end_time}`
-      : '';
+  function handleReset() {
+    const initialParams = initialState.graphParams;
+    props.handleGraphParams({
+      date: initialParams.date,
+      start_time: initialParams.start_time,
+      end_time: initialParams.end_time,
+    });
+    handleClose(); // this forces the native date picker to reset, otherwise it doesn't stay in sync 
+  }
+  
+  /**
+   * convert yyyy/mm/dd to mm/dd/yyyy
+   */
+  function convertDate(ymdString) {
 
+    const date = new Date(ymdString);
+    return (date.getUTCMonth()+1).toString().padStart(2, '0') + '-' +
+      date.getUTCDate().toString().padStart(2, '0') + '-' +
+      date.getUTCFullYear();
+  }
+  
+  // convert the state's current time range to a string or the sentinel value 
+  const timeRange =
+    graphParams.start_time && graphParams.end_time
+      ? `${graphParams.start_time}-${graphParams.end_time}`
+      : TIME_RANGE_ALL_DAY;
+
+  // these are the read-only representations of the date and time range
+  const dateLabel = convertDate(graphParams.date);
+  const timeLabel = TIME_RANGES.find(range => range.value === timeRange).shortLabel;
+  
+  /**
+   * Handler that takes the time range as a string and sets 
+   * the start and end time state.
+   * 
+   * @param {any} myTimeRange
+   */
   const setTimeRange = myTimeRange => {
-    if (!myTimeRange) {
+    if (myTimeRange.target.value === TIME_RANGE_ALL_DAY) {
       props.handleGraphParams({ start_time: null, end_time: null });
     } else {
       const timeRangeParts = myTimeRange.target.value.split('-');
@@ -85,9 +126,14 @@ function DateTimePanel(props) {
     }
   };  
 
+  /**
+   * Handler that updates the date string in the state.
+   * 
+   * @param {any} myDate
+   */
   const setDate = myDate => {
     if (!myDate.target.value) {
-      // ignore bad date, could revert to default.
+      // ignore empty date and leave at current value
     } else {
       props.handleGraphParams({
         date: myDate.target.value
@@ -105,10 +151,11 @@ function DateTimePanel(props) {
       <Typography className={classes.secondaryHeading}>Date-Time Range</Typography>
       </div>
       <div>
-      <Typography className={classes.heading}>
-        {graphParams.date}&nbsp;
-        {graphParams.start_time ? graphParams.start_time : "All day"}
-        {graphParams.end_time ? ' - ' + graphParams.end_time : ""}
+      <Typography className={classes.heading} display="inline">
+        {dateLabel}&nbsp;
+      </Typography>
+      <Typography className={classes.secondaryHeading} display="inline">
+        {timeLabel}
         <ExpandMoreIcon/>
       </Typography>
       </div>
@@ -127,7 +174,12 @@ function DateTimePanel(props) {
           horizontal: 'right',
         }}
       >
-      
+
+        
+      <IconButton size="small" aria-label="close" className={classes.closeButton} onClick={handleClose}>
+        <CloseIcon />
+      </IconButton>
+      <br/>
       <List style={{ color: 'black' }}>
         
       <ListItem>
@@ -154,21 +206,13 @@ function DateTimePanel(props) {
             onChange={setTimeRange}
             input={<Input name="time_range" id="time_range" />}
           >
-            <MenuItem value="">All Day</MenuItem>
-            <MenuItem value="07:00-19:00">Daytime (7AM - 7PM)</MenuItem>
-            <MenuItem value="03:00-07:00">Early Morning (3AM - 7AM)</MenuItem>
-            <MenuItem value="07:00-10:00">AM Peak (7AM - 10AM)</MenuItem>
-            <MenuItem value="10:00-15:00">Midday (10AM - 4PM)</MenuItem>
-            <MenuItem value="16:00-19:00">PM Peak (4PM - 7PM)</MenuItem>
-            <MenuItem value="19:00-03:00+1">
-              Late Evening (7PM - 3AM)
-            </MenuItem>
+          { TIME_RANGES.map(range => <MenuItem value={range.value} key={range.value}>{range.shortLabel}{range.restOfLabel}</MenuItem>) }
           </Select>
         </FormControl>
       </ListItem>
       <ListItem>
-        <Button onClick={handleClose} color="primary">
-          Close
+        <Button onClick={handleReset}>
+          Reset
         </Button>            
       </ListItem>
       </List>

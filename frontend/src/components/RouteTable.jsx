@@ -200,18 +200,14 @@ function RouteTable(props) {
   routes = routes.map(route => {
     
     const waitObj = allWaits.find(waitObj => waitObj.routeID === route.id);
-    if (waitObj) {
-      route.wait = waitObj.wait;
-    }
+    route.wait = waitObj ? waitObj.wait : NaN;
     
     const speedObj = allSpeeds.find(speedObj => speedObj.routeID === route.id);
-    if (speedObj) {
-      route.speed = speedObj.speed;
-    }
+    route.speed = speedObj ? speedObj.speed : NaN;
+    
     const scoreObj = allScores.find(scoreObj => scoreObj.routeID === route.id);
-    if (scoreObj) {
-      route.totalScore = scoreObj.totalScore;
-    }
+    route.totalScore = scoreObj ? scoreObj.totalScore : NaN
+    
     return route;
   });
 
@@ -271,7 +267,7 @@ function RouteTable(props) {
                         {isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
                       </TableCell>
                       <TableCell align="right">
-                        {row.totalScore}
+                        {isNaN(row.totalScore) ? '--' : row.totalScore}
                       </TableCell>
                     </TableRow>
                   );
