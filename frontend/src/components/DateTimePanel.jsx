@@ -23,7 +23,6 @@ const useStyles = makeStyles(theme => ({
     textTransform: 'none',
     display: 'flex',
     justifyContent: 'flex-start',
-    width: '400px',
   },
   heading: {
     fontSize: theme.typography.pxToRem(15),
@@ -35,6 +34,9 @@ const useStyles = makeStyles(theme => ({
   },
   column: {
     flexGrow: '1',
+  },
+  nowrap: {
+    whiteSpace: 'nowrap',
   },
   root: {
     display: 'flex',
@@ -93,8 +95,8 @@ function DateTimePanel(props) {
   function convertDate(ymdString) {
 
     const date = new Date(ymdString);
-    return (date.getUTCMonth()+1).toString().padStart(2, '0') + '-' +
-      date.getUTCDate().toString().padStart(2, '0') + '-' +
+    return (date.getUTCMonth()+1).toString().padStart(2, '0') + '/' +
+      date.getUTCDate().toString().padStart(2, '0') + '/' +
       date.getUTCFullYear();
   }
   
@@ -148,9 +150,9 @@ function DateTimePanel(props) {
     <div className={classes.root}>
       <Button variant="contained" className={classes.button} onClick={handleClick}>
       <div className={classes.column}>
-      <Typography className={classes.secondaryHeading}>Date-Time Range</Typography>
+      <Typography className={classes.secondaryHeading}>Date-Time Range&nbsp;</Typography>
       </div>
-      <div>
+      <div className={classes.nowrap}>
       <Typography className={classes.heading} display="inline">
         {dateLabel}&nbsp;
       </Typography>
