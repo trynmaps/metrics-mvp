@@ -68,6 +68,17 @@ class SidebarButton extends React.Component {
                                 Isochrone
                             </NavLink>
                         </ListItem>
+                        <ListItem>
+                            <NavLink
+                              to={{ type: 'DATADIAGNOSTIC' }}
+                              activeStyle={activeStyle}
+                              exact={true}
+                              strict={true}
+                            >
+                                .{/* Semi-hidden data diagnostic link for developers */}
+                            </NavLink>
+                        </ListItem>
+                                
                     </List>
                 </div>
             </Drawer>

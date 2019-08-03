@@ -6,6 +6,7 @@ export default {
   LANDING: '/landing',
   ISOCHRONE: '/isochrone',
   DASHBOARD: '/',
+  DATADIAGNOSTIC: '/dataDiagnostic',
   ROUTESCREEN: {
     /*
     Redux first router path syntax
