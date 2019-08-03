@@ -1,14 +1,15 @@
-import React, { Fragment } from 'react';
+import React, { useEffect, Fragment } from 'react';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import { makeStyles } from '@material-ui/core/styles';
 
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
 import SidebarButton from '../components/SidebarButton';
-
+import DateTimePanel from '../components/DateTimePanel';
 
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
@@ -22,14 +23,22 @@ import {
   resetIntervalData,
 } from '../actions';
 
-class RouteScreen extends React.Component {
-  componentDidMount() {
-    if (!this.props.routes) {
-      this.props.fetchRoutes();
-    }
-  }
+const useStyles = makeStyles({
+  title: {
+    flexGrow: 1,
+  },
+});
 
-  render() {
+function RouteScreen(props) {
+
+  const classes = useStyles();
+  
+  useEffect(() => {
+    if (!props.routes) {
+      props.fetchRoutes();
+    }
+  }, []);  // like componentDidMount, this runs only on first render
+
     const {
       graphData,
       graphError,
@@ -37,7 +46,7 @@ class RouteScreen extends React.Component {
       intervalData,
       intervalError,
       routes,
-    } = this.props;
+    } = props;
 
     const selectedRoute =
       routes && graphParams && graphParams.route_id
@@ -63,7 +72,7 @@ class RouteScreen extends React.Component {
         <AppBar position="relative">
           <Toolbar>
             <SidebarButton />
-            <div>
+            <div className={classes.title}>
               Muni
               {selectedRoute ? ` > ${selectedRoute.title}` : null}
               {direction ? ` > ${direction.title}` : null}
@@ -71,6 +80,7 @@ class RouteScreen extends React.Component {
               {startStopInfo ? `(from ${startStopInfo.title}` : null}
               {endStopInfo ? ` to ${endStopInfo.title})` : null}
             </div>
+            <DateTimePanel/>              
           </Toolbar>
         </AppBar>
 
@@ -78,11 +88,11 @@ class RouteScreen extends React.Component {
           <Grid item xs={6}>
             <ControlPanel
               routes={routes}
-              resetGraphData={this.props.resetGraphData}
-              fetchGraphData={this.props.fetchGraphData}
-              resetIntervalData={this.props.resetIntervalData}
-              fetchIntervalData={this.props.fetchIntervalData}
-              fetchData={this.props.fetchData}
+              resetGraphData={props.resetGraphData}
+              fetchGraphData={props.fetchGraphData}
+              resetIntervalData={props.resetIntervalData}
+              fetchIntervalData={props.fetchIntervalData}
+              fetchData={props.fetchData}
             />
             <MapStops routes={routes} />
           </Grid>
@@ -105,7 +115,6 @@ class RouteScreen extends React.Component {
         </Grid>
       </Fragment>
     );
-  }
 }
 
 const mapStateToProps = state => ({

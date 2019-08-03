@@ -153,7 +153,7 @@ export function handleGraphParams(params) {
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
 
-    if (graphParams.route_id) {
+    if (graphParams.date) {
       dispatch(fetchPrecomputedWaitAndTripData(graphParams));
     }
 
