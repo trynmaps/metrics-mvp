@@ -16,7 +16,6 @@ import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import { filterRoutes, getAllWaits, getAllDistances, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
-import { push } from 'redux-first-router';
 import Link from 'redux-first-router-link';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
@@ -171,7 +170,6 @@ function RouteTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
-  const [selected, setSelected] = React.useState([]);
   const dense = true;
 
   useEffect(() => {
@@ -184,8 +182,6 @@ function RouteTable(props) {
     setOrderBy(property);
   }
   
-  const isSelected = name => selected.indexOf(name) !== -1;
-
   let routes = props.routes ? filterRoutes(props.routes) : [];
   const spiderSelection = props.spiderSelection;
 
@@ -204,32 +200,27 @@ function RouteTable(props) {
   routes = routes.map(route => {
     
     const waitObj = allWaits.find(waitObj => waitObj.routeID === route.id);
-    if (waitObj) {
-      route.wait = waitObj.wait;
-    }
+    route.wait = waitObj ? waitObj.wait : NaN;
     
     const speedObj = allSpeeds.find(speedObj => speedObj.routeID === route.id);
-    if (speedObj) {
-      route.speed = speedObj.speed;
-    }
+    route.speed = speedObj ? speedObj.speed : NaN;
+    
     const scoreObj = allScores.find(scoreObj => scoreObj.routeID === route.id);
-    if (scoreObj) {
-      route.totalScore = scoreObj.totalScore;
-    }
+    route.totalScore = scoreObj ? scoreObj.totalScore : NaN
+    
     return route;
   });
 
   return (
     <div className={classes.root}>
       <Paper className={classes.paper}>
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <EnhancedTableToolbar numSelected={0}/>
         <div className={classes.tableWrapper}>
           <Table
             aria-labelledby="tableTitle"
             size={dense ? 'small' : 'medium'}
           >
             <EnhancedTableHead
-              numSelected={selected.length}
               order={order}
               orderBy={orderBy}
               onRequestSort={handleRequestSort}
@@ -238,17 +229,14 @@ function RouteTable(props) {
             <TableBody>
               {stableSort(routes, getSorting(order, orderBy)).map(
                 (row, index) => {
-                  const isItemSelected = isSelected(row.title);
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
                     <TableRow
                       hover
                       role="checkbox"
-                      aria-checked={isItemSelected}
                       tabIndex={-1}
                       key={row.id}
-                      selected={isItemSelected}
                     >
                       <TableCell
                         component="th"
@@ -279,7 +267,7 @@ function RouteTable(props) {
                         {isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
                       </TableCell>
                       <TableCell align="right">
-                        {row.totalScore}
+                        {isNaN(row.totalScore) ? '--' : row.totalScore}
                       </TableCell>
                     </TableRow>
                   );

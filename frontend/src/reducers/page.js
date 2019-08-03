@@ -8,7 +8,6 @@ const components = {
   DASHBOARD: 'Dashboard',
   ROUTESCREEN: 'Route',
   DATADIAGNOSTIC: 'DataDiagnostic',
-  RECEIVED_GRAPH_PARAMS: 'Route',
   [NOT_FOUND]: 'NotFound',
 };
 
