@@ -37,24 +37,6 @@ const tripMinOptions = {
 
 const defaultLayerOptions = {color:'#666'};
 
-const initialInstructions = L.divIcon({
-    className: 'isochrone-instructions',
-    html:'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.',
-    iconSize: [160, 80]
-});
-
-const computingInstructions = L.divIcon({
-    className: 'isochrone-instructions',
-    html:'Computing...',
-    iconSize: [80, 30]
-});
-
-const tripInstructions = L.divIcon({
-    className: 'isochrone-instructions',
-    html:'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.',
-    iconSize: [175, 100]
-});
-
 let redIcon = new L.Icon({
   iconUrl: process.env.PUBLIC_URL + '/marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -641,20 +623,6 @@ class Isochrone extends React.Component {
         tripMins.push(90);
 
         const center = {lat: 37.772, lng: -122.442};
-        const instructionsPosition = {lat: 37.800, lng: -122.500};
-
-        let instructionsMarker = null;
-        if (!this.state.latLng) {
-            instructionsMarker = <Marker icon={initialInstructions} position={instructionsPosition} />;
-        }
-        else if (this.state.computing)
-        {
-            instructionsMarker = <Marker icon={computingInstructions} position={instructionsPosition} />;
-        }
-        else
-        {
-            instructionsMarker = <Marker icon={tripInstructions} position={instructionsPosition} />;
-        }
 
         return <div className='flex-screen'>
             <AppBar position="relative">
@@ -676,7 +644,6 @@ class Isochrone extends React.Component {
                   attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
                   url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
                 /> {/* see http://maps.stamen.com for details */}
-                {instructionsMarker}
                 <Control position="topleft">
                     <div className="isochrone-controls">
                         <div>
@@ -708,9 +675,14 @@ class Isochrone extends React.Component {
                     </div>
                 </Control>
                 <Control position="topright">
-                    <div className="isochrone-trip-info">
-                        {this.state.tripInfo}
-                    </div>
+                    {this.state.tripInfo ?
+                        <div className="isochrone-trip-info">{this.state.tripInfo}</div>
+                        : <div className='isochrone-instructions'>{
+                            !this.state.latLng ? 'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.' :
+                            this.state.computing ? 'Computing...' :
+                            'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.'
+                        }</div>
+                    }
                 </Control>
                 <Control position="bottomright">
                     <div className="isochrone-legend">

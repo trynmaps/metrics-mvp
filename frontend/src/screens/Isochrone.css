@@ -5,12 +5,20 @@
 
 .isochrone-controls,
 .isochrone-legend,
+.isochrone-instructions,
 .isochrone-trip-info
 {
     border:1px solid #ccc;
     background-color:#fff;
     border-radius:5px;
     opacity:0.9;
+}
+
+.isochrone-instructions
+{
+    max-width:180px;
+    padding:8px;
+    opacity:1.0;
 }
 
 .isochrone-controls
@@ -22,14 +30,6 @@
 {
     padding:2px 4px;
     white-space:nowrap;
-}
-
-.isochrone-instructions
-{
-    opacity:0.8;
-    padding:5px;
-    border-radius:5px;
-    background-color:#fff;
 }
 
 .isochrone-trip
