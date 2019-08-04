@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import { XYPlot, HorizontalGridLines, VerticalGridLines,
-  XAxis, YAxis, LineSeries, ChartLabel, Crosshair } from 'react-vis';
+  XAxis, YAxis, LineMarkSeries, ChartLabel, Crosshair } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import '../../node_modules/react-vis/dist/style.css';
 import { getEndToEndTripTime, getTripDataSeries } from '../helpers/routeCalculations'
@@ -73,23 +73,29 @@ function TravelTimeChart(props) {
   
   return direction_id ? <Grid item xs={12}>
 
-            <Typography variant="h5">Travel time across stops</Typography>
+            <Typography variant="h5">Travel time along route</Typography>
 
-            Full travel time: { tripTimeForDirection } minutes<br/>
+            Full travel time: { tripTimeForDirection } minutes &nbsp;&nbsp; Stops: {tripData[tripData.length-1].stopIndex + 1 }<br/>
             
             {/* set the y domain to start at zero and end at highest value (which is not always
              the end to end travel time due to spikes in the data) */}
             
-            <XYPlot height={300} width={400} yDomain={[0, tripData.reduce((max, coord) => coord.y > max ? coord.y : max, 0)]}
+            <XYPlot height={300} width={400}
+              xDomain={[0, tripData.reduce((max, coord) => coord.x > max ? coord.x : max, 0)]}
+              yDomain={[0, tripData.reduce((max, coord) => coord.y > max ? coord.y : max, 0)]}
               onMouseLeave={_onMouseLeave}>
             <HorizontalGridLines />
             <VerticalGridLines />
             <XAxis tickPadding={4} />
             <YAxis hideLine={true} tickPadding={4} />
 
-            <LineSeries data={ tripData }
+            <LineMarkSeries data={ tripData }
                stroke="#aa82c5"
-               strokeWidth="4"
+               color="aa82c5"              
+               style={{
+                 strokeWidth: '3px'
+               }}              
+               size="1"
                onNearestX={_onNearestTripX} />
             {/*<LineSeries data={ scheduleData }
                stroke="#a4a6a9"
@@ -112,10 +118,10 @@ function TravelTimeChart(props) {
             />       
 
             <ChartLabel 
-            text="Stop Number"
+            text="Distance Along Route (miles)"
             className="alt-x-label"
             includeMargin={true}
-            xPercent={0.6}
+            xPercent={0.7}
             yPercent={0.86}
             style={{
               textAnchor: 'end'
@@ -130,6 +136,7 @@ function TravelTimeChart(props) {
                       <p>{ Math.round(crosshairValues[0].y)} min</p>
                       {/*<p>Scheduled: { Math.round(crosshairValues[1].y)} min</p>*/}
                       <p>{crosshairValues[0].title}</p>
+                      <p>(Stop #{crosshairValues[0].stopIndex + 1})</p>
                     </div>                 
             </Crosshair>)}
 
