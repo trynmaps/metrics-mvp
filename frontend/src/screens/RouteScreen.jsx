@@ -23,16 +23,8 @@ import {
   resetIntervalData,
 } from '../actions';
 
-const useStyles = makeStyles({
-  title: {
-    flexGrow: 1,
-  },
-});
-
 function RouteScreen(props) {
 
-  const classes = useStyles();
-  
   useEffect(() => {
     if (!props.routes) {
       props.fetchRoutes();
@@ -72,7 +64,7 @@ function RouteScreen(props) {
         <AppBar position="relative">
           <Toolbar>
             <SidebarButton />
-            <div className={classes.title}>
+            <div className='page-title'>
               Muni
               {selectedRoute ? ` > ${selectedRoute.title}` : null}
               {direction ? ` > ${direction.title}` : null}
@@ -80,7 +72,7 @@ function RouteScreen(props) {
               {startStopInfo ? `(from ${startStopInfo.title}` : null}
               {endStopInfo ? ` to ${endStopInfo.title})` : null}
             </div>
-            <DateTimePanel/>              
+            <DateTimePanel/>
           </Toolbar>
         </AppBar>
 

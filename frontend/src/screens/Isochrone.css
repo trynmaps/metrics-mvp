@@ -1,3 +1,8 @@
+.isochrone-map
+{
+    flex-grow:1;
+}
+
 .isochrone-controls,
 .isochrone-legend,
 .isochrone-trip-info
@@ -16,6 +21,15 @@
 .isochrone-legend
 {
     padding:2px 4px;
+    white-space:nowrap;
+}
+
+.isochrone-instructions
+{
+    opacity:0.8;
+    padding:5px;
+    border-radius:5px;
+    background-color:#fff;
 }
 
 .isochrone-trip

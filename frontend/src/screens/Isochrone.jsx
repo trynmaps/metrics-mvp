@@ -1,9 +1,13 @@
 import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
-import { Map, TileLayer, Polyline } from 'react-leaflet';
+import { Map, TileLayer, Polyline, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as turf from '@turf/turf';
+import SidebarButton from '../components/SidebarButton';
+import DateTimePanel from '../components/DateTimePanel';
+import Toolbar from '@material-ui/core/Toolbar';
+import AppBar from '@material-ui/core/AppBar';
 
 import { fetchRoutes, routesUrl } from '../actions';
 import { ServiceArea, DefaultDisabledRoutes } from '../agencies/sf-muni';
@@ -32,6 +36,24 @@ const tripMinOptions = {
 };
 
 const defaultLayerOptions = {color:'#666'};
+
+const initialInstructions = L.divIcon({
+    className: 'isochrone-instructions',
+    html:'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.',
+    iconSize: [160, 80]
+});
+
+const computingInstructions = L.divIcon({
+    className: 'isochrone-instructions',
+    html:'Computing...',
+    iconSize: [80, 30]
+});
+
+const tripInstructions = L.divIcon({
+    className: 'isochrone-instructions',
+    html:'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.',
+    iconSize: [175, 100]
+});
 
 let redIcon = new L.Icon({
   iconUrl: process.env.PUBLIC_URL + '/marker-icon-2x-red.png',
@@ -64,16 +86,23 @@ class Isochrone extends React.Component {
         }
     }
 
+    componentDidUpdate(prevProps) {
+        if (this.props.date !== prevProps.date ||
+            this.props.start_time !== prevProps.start_time ||
+            this.props.end_time !== prevProps.end_time) {
+            this.recomputeIsochrones();
+        }
+    }
+
     constructor(props) {
-        super(props)
+        super(props);
 
         this.state = {
-            dateStr: '2019-06-06',
-            timeStr: '',
             stat: 'median',
             maxTripMin: 90,
             computedMaxTripMin: null,
             computeId: null,
+            computing: false,
             latLng: null,
             endLatLng: null,
             tripInfo: null,
@@ -103,8 +132,6 @@ class Isochrone extends React.Component {
         }
 
         this.handleMapClick = this.handleMapClick.bind(this);
-        this.handleDateChange = this.handleDateChange.bind(this);
-        this.handleTimeChange = this.handleTimeChange.bind(this);
         this.handleStatChange = this.handleStatChange.bind(this);
         this.handleToggleRoute = this.handleToggleRoute.bind(this);
         this.handleMaxTripMinChange = this.handleMaxTripMinChange.bind(this);
@@ -163,6 +190,16 @@ class Isochrone extends React.Component {
         let tripMin = data.tripMin;
         let reachableCircles = data.circles;
         let geoJson = data.geoJson;
+
+        if (this.state.computeId != data.computeId)
+        {
+            return;
+        }
+
+        if (this.state.computing && tripMin == this.state.maxTripMin)
+        {
+            this.setState({computing: false});
+        }
 
         let layerOptions = tripMinOptions['' + tripMin] || defaultLayerOptions;
 
@@ -352,13 +389,12 @@ class Isochrone extends React.Component {
             return;
         }
 
-        const {maxTripMin, dateStr, timeStr, stat, enabledRoutes} = this.state;
+        const dateStr = this.props.date;
+        const startTimeStr = this.props.start_time;
+        const endTimeStr = this.props.end_time;
+        const timeStr = (startTimeStr && endTimeStr) ? `${startTimeStr}-${endTimeStr}` : "";
 
-        this.setState({
-            latLng: latLng,
-            endLatLng: endLatLng,
-            computedMaxTripMin: maxTripMin
-        });
+        const {maxTripMin, stat, enabledRoutes} = this.state;
 
         let enabledRoutesArr = [];
 
@@ -380,7 +416,12 @@ class Isochrone extends React.Component {
             enabledRoutesArr.join(',')
         ].join(',');
 
-        this.setState({computeId: computeId});
+        this.setState({
+            latLng: latLng,
+            endLatLng: endLatLng,
+            computedMaxTripMin: maxTripMin,
+            computeId: computeId
+        });
 
         let map = this.mapRef.current.leafletElement;
 
@@ -423,6 +464,10 @@ class Isochrone extends React.Component {
             tripMins.push(maxTripMin);
         }
 
+        this.setState({
+            computing: true
+        });
+
         this.isochroneWorker.postMessage({
             action:'computeIsochrones',
             latlng: latLng,
@@ -433,16 +478,6 @@ class Isochrone extends React.Component {
             stat: stat,
             computeId: computeId
         });
-    }
-
-    handleDateChange(event)
-    {
-        this.setState({dateStr: event.target.value}, this.recomputeIsochrones);
-    }
-
-    handleTimeChange(event)
-    {
-        this.setState({timeStr: event.target.value}, this.recomputeIsochrones);
     }
 
     handleStatChange(event)
@@ -605,8 +640,33 @@ class Isochrone extends React.Component {
         }
         tripMins.push(90);
 
-        return <Fragment>
-            <Map center={{lat: 37.772, lng: -122.442}} zoom={13} style={{ height: '100%' }}
+        const center = {lat: 37.772, lng: -122.442};
+        const instructionsPosition = {lat: 37.800, lng: -122.500};
+
+        let instructionsMarker = null;
+        if (!this.state.latLng) {
+            instructionsMarker = <Marker icon={initialInstructions} position={instructionsPosition} />;
+        }
+        else if (this.state.computing)
+        {
+            instructionsMarker = <Marker icon={computingInstructions} position={instructionsPosition} />;
+        }
+        else
+        {
+            instructionsMarker = <Marker icon={tripInstructions} position={instructionsPosition} />;
+        }
+
+        return <div className='flex-screen'>
+            <AppBar position="relative">
+              <Toolbar>
+                <SidebarButton />
+                <div className='page-title'>
+                  Isochrone
+                </div>
+                <DateTimePanel/>
+              </Toolbar>
+            </AppBar>
+            <Map center={center} zoom={13} className='isochrone-map'
                 minZoom={11}
                 maxZoom={18}
                 onClick={this.handleMapClick}
@@ -616,26 +676,9 @@ class Isochrone extends React.Component {
                   attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
                   url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
                 /> {/* see http://maps.stamen.com for details */}
+                {instructionsMarker}
                 <Control position="topleft">
                     <div className="isochrone-controls">
-                        <div>
-                            date:
-                            <select value={this.state.dateStr} onChange={this.handleDateChange} className='isochrone-control-select'>
-                                {dateStrs.map(dateStr => (<option key={dateStr} value={dateStr}>{dateStr}</option>))}
-                            </select>
-                        </div>
-                        <div>
-                            time range:
-                            <select value={this.state.timeStr} onChange={this.handleTimeChange} className='isochrone-control-select'>
-                                <option value=''>All day</option>
-                                <option value='07:00-19:00'>Daytime</option>
-                                <option value='03:00-07:00'>Early Morning</option>
-                                <option value='07:00-10:00'>AM Peak</option>
-                                <option value='10:00-16:00'>Midday</option>
-                                <option value='16:00-19:00'>PM Peak</option>
-                                <option value='19:00-03:00+1'>Late Evening</option>
-                            </select>
-                        </div>
                         <div>
                             stat:
                             <select value={this.state.stat} onChange={this.handleStatChange} className='isochrone-control-select'>
@@ -681,12 +724,15 @@ class Isochrone extends React.Component {
                     </div>
                 </Control>
             </Map>
-        </Fragment>;
+        </div>;
     }
 }
 
 const mapStateToProps = state => ({
     routes: state.routes.routes,
+    date: state.routes.graphParams.date,
+    start_time: state.routes.graphParams.start_time,
+    end_time: state.routes.graphParams.end_time
 });
 
 const mapDispatchToProps = dispatch => ({
