@@ -75,7 +75,8 @@ function TravelTimeChart(props) {
 
             <Typography variant="h5">Travel time along route</Typography>
 
-            Full travel time: { tripTimeForDirection } minutes &nbsp;&nbsp; Stops: {tripData[tripData.length-1].stopIndex + 1 }<br/>
+            
+            Full travel time: { tripTimeForDirection } minutes &nbsp;&nbsp; Stops: {tripData[tripData.length-1] ? tripData[tripData.length-1].stopIndex + 1 : '?' }<br/>
             
             {/* set the y domain to start at zero and end at highest value (which is not always
              the end to end travel time due to spikes in the data) */}
