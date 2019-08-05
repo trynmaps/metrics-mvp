@@ -36,3 +36,15 @@
 .largeMarginTop {
   margin-top:4rem;
 }
+
+.page-title
+{
+    flex-grow:1;
+}
+
+.flex-screen
+{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+}

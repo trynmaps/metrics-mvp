@@ -19,33 +19,24 @@ import {
   resetIntervalData,
 } from '../actions';
 
-const useStyles = makeStyles({
-  title: {
-    flexGrow: 1,
-  },
-});
-
 function Dashboard(props) {
-  
+
   useEffect(() => {
     if (!props.routes) {
       props.fetchRoutes();
     }
-  }, []);  // like componentDidMount, this runs only on first render     
-  
-  const classes = useStyles();
-  
+  }, []);  // like componentDidMount, this runs only on first render
+
   const { routes } = props;
   return (
-    <Fragment>
+    <div className='flex-screen'>
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className={classes.title}>Muni</div>
+          <div className='page-title'>Muni</div>
           <DateTimePanel/>
         </Toolbar>
       </AppBar>
-
       <Grid container spacing={0}>
         {' '}
         {/* Using spacing causes horizontal scrolling, see https://material-ui.com/components/grid/#negative-margin */}
@@ -58,7 +49,7 @@ function Dashboard(props) {
           <RouteTable routes={routes} />
         </Grid>
       </Grid>
-    </Fragment>
+    </div>
   );
 }
 
