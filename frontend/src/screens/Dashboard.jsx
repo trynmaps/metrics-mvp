@@ -1,4 +1,4 @@
-import React, { useEffect, Fragment } from 'react';
+import React, { useEffect } from 'react';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
@@ -8,7 +8,6 @@ import MapSpider from '../components/MapSpider';
 import RouteTable from '../components/RouteTable';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
-import { makeStyles } from '@material-ui/core/styles';
 
 import {
   fetchData,
