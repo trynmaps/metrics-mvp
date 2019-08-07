@@ -12,6 +12,7 @@ import Control from 'react-leaflet-control';
 import * as d3 from "d3";
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
 import { handleSpiderMapClick, handleGraphParams } from '../actions';
+import { getTripPoints } from '../helpers/mapGeometry';
 
 import { push } from 'redux-first-router'
 
@@ -29,9 +30,10 @@ class MapSpider extends Component {
     this.mapRef = createRef(); // used for geolocating
   }
 
-  // TODO: Needs fixing. This sets height to that of the window, not remaining space.
+  // TODO: Needs optimizing. This sets height to that of the window, not remaining space, which
+  // has to be adjusted for by hand.
   updateDimensions() {
-    const height = (window.innerWidth >= 992 ? window.innerHeight : 500) - 64 /* blue header */ - 29 /* buttons at top */;
+    const height = (window.innerWidth >= 992 ? window.innerHeight : 500) - 64 /* blue app bar */;
     this.setState({ height: height })
   }
 
@@ -125,6 +127,7 @@ class MapSpider extends Component {
           nearest.routeIndex = i;
           nearest.routeTitle = route.title;
           nearest.direction = direction;
+          nearest.routeInfo = route;
           stopsByRouteAndDir.push(nearest);
         }
       }
@@ -249,8 +252,6 @@ class MapSpider extends Component {
   generatePolyline = (startMarker, waitScaled, i) => {
 
     const downstreamStops = startMarker.downstreamStops;
-    const latLngs = [[ downstreamStops[i].lat, downstreamStops[i].lon ],
-      [ downstreamStops[i+1].lat, downstreamStops[i+1].lon ]];
 
     const computedWeight = waitScaled * 1.5 + 3;
 
@@ -258,7 +259,7 @@ class MapSpider extends Component {
 
     return <Polyline
           key={"poly-" + startMarker.routeID + "-" + downstreamStops[i].stopID}
-          positions = { latLngs }
+          positions = { getTripPoints(startMarker.routeInfo, startMarker.direction, downstreamStops[i].stopID, downstreamStops[i+1].stopID) }
           color = { routeColor }
           opacity = { 0.5 }
           weight = { computedWeight }
@@ -278,13 +279,6 @@ class MapSpider extends Component {
             e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
             // Fire events that select a route, direction, first stop, and second stop.
-
-            /* If this code was integrated with ControlPanel, we would do:
-             *
-             * this.setRouteId(startMarker.routeID);
-             * this.setDirectionId(startMarker.direction.id);
-             * this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
-             */
 
             const {onGraphParams} = this.props;
             onGraphParams({
@@ -370,6 +364,23 @@ class MapSpider extends Component {
     </Marker>;
   }
 
+  
+  /**  
+   * Places a Leaflet Marker (blue pin) at the clicked or geolocated map location.
+   * Like the isochrone, the marker can be dragged to get new results. 
+   */
+  SpiderOriginMarker = (props) => {
+    
+    let latlng = null;
+    
+    return props.spiderLatLng ? <Marker
+      position={ props.spiderLatLng }
+      draggable={true}
+      onMove={ (e) => { latlng = e.latlng; } }
+      onMoveEnd={ (e) => { this.handleLocationFound({latlng: latlng})}}
+      /> : null;
+  }
+  
   /**
    * Main React render method.
    */
@@ -393,7 +404,8 @@ class MapSpider extends Component {
         /> {/* see http://maps.stamen.com for details */}
         <this.DownstreamLines/>
         <this.StartMarkers/>
-
+        <this.SpiderOriginMarker spiderLatLng={this.props.spiderLatLng}/>
+          
         <Control position="bottomleft" >
           <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
             <GpsIcon/>&nbsp;
