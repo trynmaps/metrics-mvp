@@ -76,25 +76,25 @@ function RouteSummary(props) {
   
   const useStyles = makeStyles(theme => ({
     grade: {
-      background: grades ? quartileBackgroundColor(grades.totalScore/grades.highestPossibleScore) : null,
-      color: grades ? quartileForegroundColor(grades.totalScore/grades.highestPossibleScore) : null,
+      background: wait && speed ? quartileBackgroundColor(grades.totalScore/grades.highestPossibleScore) : "gray",
+      color: wait && speed ? quartileForegroundColor(grades.totalScore/grades.highestPossibleScore) : "black",
       padding: theme.spacing(2)
     },
     wait: {
-      background: grades ? quartileBackgroundColor(grades.medianWaitScore/100.0) : null,
-      color: grades ? quartileForegroundColor(grades.medianWaitScore/100.0) : null,
+      background: wait && grades ? quartileBackgroundColor(grades.medianWaitScore/100.0) : "gray",
+      color: wait && grades ? quartileForegroundColor(grades.medianWaitScore/100.0) : "black",
       padding: theme.spacing(2)
     },
     trip: { 
-      background: grades ? quartileBackgroundColor(grades.speedScore/100.0) : null,
-      color: grades ? quartileForegroundColor(grades.speedScore/100.0) : null,
+      background: speed && grades ? quartileBackgroundColor(grades.speedScore/100.0) : "gray",
+      color: speed && grades ? quartileForegroundColor(grades.speedScore/100.0) : "black",
       padding: theme.spacing(2)
     },
   }));
   
   const classes = useStyles();
   
-  return grades ? (<Fragment>
+  return <Fragment>
       
       <div style={{ padding: 12 }}>
       <Grid container spacing={3}>
@@ -103,7 +103,7 @@ function RouteSummary(props) {
           <Paper className={classes.grade}>
           <Typography variant="overline">Route score</Typography><br/>
 
-          <Typography variant="h3" display="inline">{grades.totalScore}</Typography>
+          <Typography variant="h3" display="inline">{ wait && speed ? grades.totalScore : '--'}</Typography>
           <Typography variant="h5" display="inline">/{grades.highestPossibleScore}</Typography>
 
           <Box pt={2}>
@@ -116,7 +116,7 @@ function RouteSummary(props) {
         </Grid>
 
         <Grid item xs>            
-          <Tooltip title={ waitRanking ? 'Subscore: ' + grades.medianWaitScore + '/100' : ''}>
+          <Tooltip title={ wait ? 'Subscore: ' + grades.medianWaitScore + '/100' : ''}>
           <Paper className={classes.wait}>
 
             <Typography variant="overline">Median wait</Typography>
@@ -140,7 +140,7 @@ function RouteSummary(props) {
             
         <Grid item xs>            
 
-          <Tooltip title={ speedRanking ? 'Subscore: ' + grades.speedScore + '/100' : ''}>
+          <Tooltip title={ speed ? 'Subscore: ' + grades.speedScore + '/100' : ''}>
           <Paper className={classes.trip}>
 
             <Typography variant="overline">Median speed</Typography>
@@ -170,8 +170,7 @@ function RouteSummary(props) {
       </Grid>
       </div>
       </Fragment>
-
-     ) : null;
+     ;
   }
 
 const mapStateToProps = state => ({
