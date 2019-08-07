@@ -52,12 +52,12 @@ function RouteSummary(props) {
 
     allWaits = getAllWaits(props);
     
-    const allDistances = getAllDistances();
+    const allDistances = getAllDistances(props);
     allSpeeds = getAllSpeeds(props, allDistances);
     allScores = getAllScores(routes, allWaits, allSpeeds);
     
     const route_id = graphParams.route_id;
-    const distObj = allDistances.find(distObj => distObj.routeID === route_id);
+    const distObj = allDistances ? allDistances.find(distObj => distObj.routeID === route_id) : null;
     dist = distObj ? distObj.distance : null;
 
     waitObj = allWaits ? allWaits.find(obj => obj.routeID === route_id) : null;

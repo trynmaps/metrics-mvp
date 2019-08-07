@@ -193,7 +193,7 @@ function RouteTable(props) {
   }
 
   const allWaits = getAllWaits(props);
-  const allDistances = getAllDistances();
+  const allDistances = getAllDistances(props);
   const allSpeeds = getAllSpeeds(props, allDistances);
   const allScores = getAllScores(routes, allWaits, allSpeeds);
   

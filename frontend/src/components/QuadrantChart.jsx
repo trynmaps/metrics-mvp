@@ -15,7 +15,7 @@ import { XYPlot, HorizontalGridLines, VerticalGridLines, XAxis, YAxis,
 function QuadrantChart(props) {
 
   const allWaits = getAllWaits(props);
-  const allDistances = getAllDistances();
+  const allDistances = getAllDistances(props);
   const allSpeeds = getAllSpeeds(props, allDistances);
   
   const quadrantData = allSpeeds ? allSpeeds.map(speed => {
