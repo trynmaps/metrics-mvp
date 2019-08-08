@@ -2,7 +2,6 @@ import React, { useEffect, Fragment } from 'react';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
-import { makeStyles } from '@material-ui/core/styles';
 
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
