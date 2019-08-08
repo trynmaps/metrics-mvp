@@ -10,6 +10,7 @@ import { connect } from 'react-redux';
 
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
+import { Card, CardContent } from '@material-ui/core';
 
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.
@@ -66,87 +67,88 @@ function TravelTimeChart(props) {
 
   
   const legendItems = [
-                       //{ title: 'Scheduled', color: "#a4a6a9", strokeWidth: 10 },  
-                       { title: 'Actual',   color: "#aa82c5", strokeWidth: 10 }
-                       ];
+    //{ title: 'Scheduled', color: "#a4a6a9", strokeWidth: 10 },  
+    { title: 'Actual',   color: "#aa82c5", strokeWidth: 10 }
+  ];
   
   
-  return direction_id ? <Grid item xs={12}>
+  return direction_id ? 
+  <Grid item xs={12}>
+    <Card>
+      <CardContent>
+      
+        <Typography variant="h5">Travel time along route</Typography>
 
-            <Typography variant="h5">Travel time along route</Typography>
+        Full travel time: { tripTimeForDirection } minutes &nbsp;&nbsp; Stops: {tripData[tripData.length-1] ? tripData[tripData.length-1].stopIndex + 1 : '?' }<br/>
 
-            
-            Full travel time: { tripTimeForDirection } minutes &nbsp;&nbsp; Stops: {tripData[tripData.length-1] ? tripData[tripData.length-1].stopIndex + 1 : '?' }<br/>
-            
-            {/* set the y domain to start at zero and end at highest value (which is not always
-             the end to end travel time due to spikes in the data) */}
-            
-            <XYPlot height={300} width={400}
-              xDomain={[0, tripData.reduce((max, coord) => coord.x > max ? coord.x : max, 0)]}
-              yDomain={[0, tripData.reduce((max, coord) => coord.y > max ? coord.y : max, 0)]}
-              onMouseLeave={_onMouseLeave}>
-            <HorizontalGridLines />
-            <VerticalGridLines />
-            <XAxis tickPadding={4} />
-            <YAxis hideLine={true} tickPadding={4} />
+        {/* set the y domain to start at zero and end at highest value (which is not always
+         the end to end travel time due to spikes in the data) */}
 
-            <LineMarkSeries data={ tripData }
-               stroke="#aa82c5"
-               color="aa82c5"              
-               style={{
-                 strokeWidth: '3px'
-               }}              
-               size="1"
-               onNearestX={_onNearestTripX} />
-            {/*<LineSeries data={ scheduleData }
-               stroke="#a4a6a9"
-               strokeWidth="4"
-               style={{
-                 strokeDasharray: '2 2'
-               }}             
-            />*/}
+        <XYPlot height={300} width={400}
+          xDomain={[0, tripData.reduce((max, coord) => coord.x > max ? coord.x : max, 0)]}
+          yDomain={[0, tripData.reduce((max, coord) => coord.y > max ? coord.y : max, 0)]}
+          onMouseLeave={_onMouseLeave}>
+        <HorizontalGridLines />
+        <VerticalGridLines />
+        <XAxis tickPadding={4} />
+        <YAxis hideLine={true} tickPadding={4} />
 
-            <ChartLabel 
-              text="Minutes"
-              className="alt-y-label"
-              includeMargin={true}
-              xPercent={0.02}
-              yPercent={0.2}
-              style={{
-                transform: 'rotate(-90)',
-                textAnchor: 'end'
-              }}       
-            />       
+        <LineMarkSeries data={ tripData }
+           stroke="#aa82c5"
+           color="aa82c5"              
+           style={{
+             strokeWidth: '3px'
+           }}              
+           size="1"
+           onNearestX={_onNearestTripX} />
+        {/*<LineSeries data={ scheduleData }
+           stroke="#a4a6a9"
+           strokeWidth="4"
+           style={{
+             strokeDasharray: '2 2'
+           }}             
+        />*/}
 
-            <ChartLabel 
-            text="Distance Along Route (miles)"
-            className="alt-x-label"
-            includeMargin={true}
-            xPercent={0.7}
-            yPercent={0.86}
-            style={{
-              textAnchor: 'end'
-            }}       
-          />       
-            
-            
-            { crosshairValues.length > 0 && (
-             <Crosshair values={crosshairValues}
-               style={{line:{background: 'none'}}} >
-                    <div className= 'rv-crosshair__inner__content'>
-                      <p>{ Math.round(crosshairValues[0].y)} min</p>
-                      {/*<p>Scheduled: { Math.round(crosshairValues[1].y)} min</p>*/}
-                      <p>{crosshairValues[0].title}</p>
-                      <p>(Stop #{crosshairValues[0].stopIndex + 1})</p>
-                    </div>                 
-            </Crosshair>)}
+        <ChartLabel 
+          text="Minutes"
+          className="alt-y-label"
+          includeMargin={true}
+          xPercent={0.02}
+          yPercent={0.2}
+          style={{
+            transform: 'rotate(-90)',
+            textAnchor: 'end'
+          }}       
+        />       
 
-          </XYPlot>
-          <DiscreteColorLegend orientation="horizontal" width={300} items={legendItems}/>
-          </Grid>
-            
-            : null
-            
+        <ChartLabel 
+          text="Distance Along Route (miles)"
+          className="alt-x-label"
+          includeMargin={true}
+          xPercent={0.7}
+          yPercent={0.86}
+          style={{
+            textAnchor: 'end'
+          }}       
+        />       
+          
+        { crosshairValues.length > 0 && (
+         <Crosshair values={crosshairValues}
+           style={{line:{background: 'none'}}} >
+                <div className= 'rv-crosshair__inner__content'>
+                  <p>{ Math.round(crosshairValues[0].y)} min</p>
+                  {/*<p>Scheduled: { Math.round(crosshairValues[1].y)} min</p>*/}
+                  <p>{crosshairValues[0].title}</p>
+                  <p>(Stop #{crosshairValues[0].stopIndex + 1})</p>
+                </div>                 
+        </Crosshair>)}
+
+      </XYPlot>
+      <DiscreteColorLegend orientation="horizontal" width={300} items={legendItems}/>
+      </CardContent>
+    </Card>
+  </Grid>
+  : null
 }
 
 const mapStateToProps = state => ({

@@ -37,10 +37,12 @@
     padding:4px 4px;
 }
 
-.isochrone-select-all a
+.isochrone-select-all span
 {
+    color:#0078A8;
     padding-right:2px;
     text-decoration:none;
+    cursor:pointer;
 }
 
 .isochrone-legend-colors

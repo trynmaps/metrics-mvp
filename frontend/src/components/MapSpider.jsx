@@ -11,8 +11,12 @@ import MapShield from './MapShield'
 import Control from 'react-leaflet-control';
 import * as d3 from "d3";
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
+<<<<<<< HEAD
 import { handleSpiderMapClick, handleGraphParams } from '../actions';
 import { getTripPoints } from '../helpers/mapGeometry';
+=======
+import { handleSpiderMapClick } from '../actions';
+>>>>>>> master
 
 import { push } from 'redux-first-router'
 
@@ -278,16 +282,7 @@ class MapSpider extends Component {
 
             e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
-            // Fire events that select a route, direction, first stop, and second stop.
-
-            const {onGraphParams} = this.props;
-            onGraphParams({
-              route_id: startMarker.routeID,
-              direction_id: startMarker.direction.id,
-              start_stop_id: startMarker.stopID,
-              end_stop_id: downstreamStops[i+1].stopID,
-            });
-            push('/route');
+            push(`/route/${startMarker.routeID}/direction/${startMarker.direction.id}/start_stop/${startMarker.stopID}/end_stop/${downstreamStops[i+1].stopID}`);
           }}
         >
           <Tooltip> {/* should this hover text be a leaflet control in a fixed position? */}
@@ -342,22 +337,7 @@ class MapSpider extends Component {
 
         e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
-        /* Fire events that select this route and direction.
-         *
-         * If this code was integrated with ControlPanel, we would do:
-         *
-         * this.setRouteId(startMarker.routeID);
-         * this.setDirectionId(startMarker.direction.id);
-         */
-
-        const {onGraphParams} = this.props;
-        onGraphParams({
-          route_id: startMarker.routeID,
-          direction_id: startMarker.direction.id,
-          start_stop_id: startMarker.stopID,
-          end_stop_id: lastStop.stopID,
-        });
-        push('/route');
+        push(`/route/${startMarker.routeID}/direction/${startMarker.direction.id}/start_stop/${startMarker.stopID}/end_stop/${lastStop.stopID}`);
       }}
 
       >
@@ -483,7 +463,6 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => {
   return ({
     onSpiderMapClick: (stops, latLng) => dispatch(handleSpiderMapClick(stops, latLng)),
-    onGraphParams: params => dispatch(handleGraphParams(params))
   })
 }
 

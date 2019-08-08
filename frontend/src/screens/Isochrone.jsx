@@ -1,6 +1,6 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
-import { Map, TileLayer, Polyline, Marker } from 'react-leaflet';
+import { Map, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as turf from '@turf/turf';
@@ -174,12 +174,12 @@ class Isochrone extends React.Component {
         let reachableCircles = data.circles;
         let geoJson = data.geoJson;
 
-        if (this.state.computeId != data.computeId)
+        if (this.state.computeId !== data.computeId)
         {
             return;
         }
 
-        if (this.state.computing && tripMin == this.state.maxTripMin)
+        if (this.state.computing && tripMin === this.state.maxTripMin)
         {
             this.setState({computing: false});
         }
@@ -590,8 +590,6 @@ class Isochrone extends React.Component {
 
         colors.push(<div key='default' style={{backgroundColor: defaultLayerOptions.color}}></div>);
 
-        const dateStrs = ['2019-06-06', '2019-06-07', '2019-06-08', '2019-06-09'];
-
         let tripMins = [];
         for (let tripMin = 15; tripMin <= maxColoredTripMin; tripMin += 15)
         {
@@ -640,9 +638,9 @@ class Isochrone extends React.Component {
                         <div>
                             routes:
                             <div className='isochrone-select-all'>
-                                <a href='javascript:void(0)' onClick={this.selectAllRoutesClicked}>all</a>
+                                <span onClick={this.selectAllRoutesClicked}>all</span>
                                 {" / "}
-                                <a href='javascript:void(0)' onClick={this.selectNoRoutesClicked}>none</a>
+                                <span onClick={this.selectNoRoutesClicked}>none</span>
                             </div>
                             <div className='isochrone-routes'>
                                 {(routes || []).map(route => this.makeRouteToggle(route))}

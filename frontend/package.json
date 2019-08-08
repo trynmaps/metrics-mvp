@@ -21,8 +21,6 @@
     "prop-types": "^15.6.2",
     "rc-time-picker": "^3.6.2",
     "react": "^16.8.6",
-    "react-bootstrap": "^1.0.0-beta.5",
-    "react-bootstrap-datetimepicker": "^0.0.22",
     "react-date-picker": "^7.2.0",
     "react-dom": "^16.8.6",
     "react-gradient-timepicker": "^0.0.3",
