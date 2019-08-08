@@ -354,68 +354,73 @@ class Info extends Component {
             />
 
             <p />
-            {isSufficientData ? 
-            (<div>
-              <h4>Headways</h4>
-              <p>
-                {`${headwayMin.count + 1} arrivals, average headway ${Math.round(
-                  headwayMin.avg,
-                )} minutes, max headway ${Math.round(headwayMin.max)} minutes`}
-              </p>
-              <XYPlot
-                xDomain={[0, Math.max(60, Math.round(headwayMin.max) + 5)]}
-                height={200}
-                width={400}
-                onMouseLeave={this._onMouseLeave}
-              >
-                <HorizontalGridLines />
-                <XAxis />
-                <YAxis hideLine />
+            {isSufficientData ? (
+              <div>
+                <h4>Headways</h4>
+                <p>
+                  {`${headwayMin.count +
+                    1} arrivals, average headway ${Math.round(
+                    headwayMin.avg,
+                  )} minutes, max headway ${Math.round(
+                    headwayMin.max,
+                  )} minutes`}
+                </p>
+                <XYPlot
+                  xDomain={[0, Math.max(60, Math.round(headwayMin.max) + 5)]}
+                  height={200}
+                  width={400}
+                  onMouseLeave={this._onMouseLeave}
+                >
+                  <HorizontalGridLines />
+                  <XAxis />
+                  <YAxis hideLine />
 
-                <VerticalRectSeries
-                  data={this.headwayData}
-                  onNearestX={this._onNearestXHeadway}
-                  stroke="white"
-                  fill={CHART_COLORS[0]}
-                  style={{ strokeWidth: 2 }}
-                />
+                  <VerticalRectSeries
+                    data={this.headwayData}
+                    onNearestX={this._onNearestXHeadway}
+                    stroke="white"
+                    fill={CHART_COLORS[0]}
+                    style={{ strokeWidth: 2 }}
+                  />
 
-                <ChartLabel
-                  text="arrivals"
-                  className="alt-y-label"
-                  includeMargin={false}
-                  xPercent={0.06}
-                  yPercent={0.06}
-                  style={{
-                    transform: 'rotate(-90)',
-                    textAnchor: 'end',
-                  }}
-                />
+                  <ChartLabel
+                    text="arrivals"
+                    className="alt-y-label"
+                    includeMargin={false}
+                    xPercent={0.06}
+                    yPercent={0.06}
+                    style={{
+                      transform: 'rotate(-90)',
+                      textAnchor: 'end',
+                    }}
+                  />
 
-                <ChartLabel
-                  text="minutes"
-                  className="alt-x-label"
-                  includeMargin={false}
-                  xPercent={0.9}
-                  yPercent={0.94}
-                />
+                  <ChartLabel
+                    text="minutes"
+                    className="alt-x-label"
+                    includeMargin={false}
+                    xPercent={0.9}
+                    yPercent={0.94}
+                  />
 
-                {this.state.crosshairValues.headway && (
-                  <Crosshair
-                    values={this.state.crosshairValues.headway}
-                    style={REACT_VIS_CROSSHAIR_NO_LINE}
-                  >
-                    <div className="rv-crosshair__inner__content">
-                      Arrivals:{' '}
-                      {Math.round(this.state.crosshairValues.headway[0].y)}
-                    </div>
-                  </Crosshair>
-                )}
-              </XYPlot>)
-            </div>) : (<div></div>)}
+                  {this.state.crosshairValues.headway && (
+                    <Crosshair
+                      values={this.state.crosshairValues.headway}
+                      style={REACT_VIS_CROSSHAIR_NO_LINE}
+                    >
+                      <div className="rv-crosshair__inner__content">
+                        Arrivals:{' '}
+                        {Math.round(this.state.crosshairValues.headway[0].y)}
+                      </div>
+                    </Crosshair>
+                  )}
+                </XYPlot>
+                )
+              </div>
+            ) : null}
           </div>
         ) : null}
-        {waitTimes ? (
+        {isSufficientData ? (
           <div>
             <h4>Wait Times</h4>
             <p>
@@ -473,7 +478,7 @@ class Info extends Component {
             </XYPlot>
           </div>
         ) : null}
-        {tripTimes ? (
+        {isSufficientData ? (
           <div>
             <h4>Trip Times</h4>
             <p>
@@ -539,7 +544,3 @@ class Info extends Component {
 }
 
 export default Info;
-
-
-
-  
