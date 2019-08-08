@@ -2,7 +2,7 @@
      You need to have a separate "Fixes #xyz" sentence for each issue you fix.
      Of course, erase issue numbers you don't need.
 -->
-<--
+<!--
 Fixes #1234. Fixes #2345. Fixes #3456.
 -->
 
