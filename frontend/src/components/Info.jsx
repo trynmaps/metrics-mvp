@@ -7,7 +7,7 @@ import { PLANNING_PERCENTILE, CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '
 import * as d3 from 'd3';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
   ChartLabel, Crosshair } from 'react-vis';
-import { Card } from '@material-ui/core';
+import { Card, CardContent, Divider } from '@material-ui/core';
 
 
 class Info extends Component {
@@ -212,28 +212,28 @@ class Info extends Component {
     return (
       <div
         className={css`
-         grid-column: col3-start ;
-         grid-row: row1-start / row2-end;
-        `
-        }
+          grid-column: col3-start ;
+          grid-row: row1-start / row2-end;
+          padding: 4px;
+        `}
       >
         {headwayMin
           ? (
             <div>
               <Card>
+                <CardContent>
                   <span className="h4">Overall Grade: </span>
                   <span className="h1">{grades.totalGrade}</span>
                   {' '}
-(
+                  (
                   {' '}
                   {grades.totalScore}
                   {' '}
-/
+                  /
                   {' '}
                   {grades.highestPossibleScore}
                   {' '}
-)
-
+                  )
                   <table className="table table-borderless">
                     <tbody>
                       <tr>
@@ -322,173 +322,188 @@ minutes
                       </tr>
                     </tbody>
                   </table>
+                </CardContent>
               </Card>
-
+              <Divider />
               <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />
+              <Divider />
+              <Card>
+                <CardContent>
 
-              <p />
+                  <h4>Headways</h4>
+                  <p>
+                    {headwayMin.count + 1}
+                    {' '}
+    arrivals, average headway
+                    {' '}
+                    {Math.round(headwayMin.avg)}
+                    {' '}
+    minutes, max headway
+                    {' '}
+                    {Math.round(headwayMin.max)}
+                    {' '}
+    minutes
+                  </p>
+                  <XYPlot xDomain={[0, Math.max(60, Math.round(headwayMin.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
+                    <HorizontalGridLines />
+                    <XAxis />
+                    <YAxis hideLine />
 
-              <h4>Headways</h4>
-              <p>
-                {headwayMin.count + 1}
-                {' '}
-arrivals, average headway
-                {' '}
-                {Math.round(headwayMin.avg)}
-                {' '}
-minutes, max headway
-                {' '}
-                {Math.round(headwayMin.max)}
-                {' '}
-minutes
-              </p>
-              <XYPlot xDomain={[0, Math.max(60, Math.round(headwayMin.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
+                    <VerticalRectSeries data={ this.headwayData } onNearestX={this._onNearestXHeadway} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
+
+                    <ChartLabel
+                    text="arrivals"
+                    className="alt-y-label"
+                    includeMargin={false}
+                    xPercent={0.06}
+                    yPercent={0.06}
+                    style={{
+                      transform: 'rotate(-90)',
+                      textAnchor: 'end'
+                    }}
+                    />
+
+                    <ChartLabel
+                    text="minutes"
+                    className="alt-x-label"
+                    includeMargin={false}
+                    xPercent={0.90}
+                    yPercent={0.94}
+                    />
+
+                    { this.state.crosshairValues.headway && (
+                        <Crosshair values={this.state.crosshairValues.headway}
+                          style={REACT_VIS_CROSSHAIR_NO_LINE}
+                        >
+                          <div className= 'rv-crosshair__inner__content'>
+                            Arrivals: { Math.round(this.state.crosshairValues.headway[0].y)}
+                          </div>
+                      </Crosshair>)}
+
+                  </XYPlot>
+              </CardContent>
+            </Card>
+          </div>
+          ) : null }
+        {waitTimes
+          ? (
+          <div>
+            <Divider />
+            <Card>
+              <CardContent>
+                <h4>Wait Times</h4>
+                <p>
+  average wait time
+                  {' '}
+                  {Math.round(waitTimes.avg)}
+                  {' '}
+  minutes, max wait time
+                  {Math.round(waitTimes.max)}
+                  {' '}
+  minutes
+                </p>
+                <XYPlot xDomain={[0, Math.max(60, Math.round(waitTimes.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
+
+                  <HorizontalGridLines />
+                  <XAxis />
+                  <YAxis hideLine tickFormat={v => `${v}%`} />
+
+                  <VerticalRectSeries data={ this.waitData } onNearestX={this._onNearestXWaitTimes} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
+
+                  <ChartLabel
+                  text="chance"
+                  className="alt-y-label"
+                  includeMargin={false}
+                  xPercent={0.06}
+                  yPercent={0.06}
+                  style={{
+                    transform: 'rotate(-90)',
+                    textAnchor: 'end'
+                  }}
+                  />
+
+                  <ChartLabel
+                  text="minutes"
+                  className="alt-x-label"
+                  includeMargin={false}
+                  xPercent={0.90}
+                  yPercent={0.94}
+                  />
+
+                  { this.state.crosshairValues.wait && (
+                    <Crosshair values={this.state.crosshairValues.wait}
+                      style={REACT_VIS_CROSSHAIR_NO_LINE} >
+                        <div className= 'rv-crosshair__inner__content'>
+                          Chance: { Math.round(this.state.crosshairValues.wait[0].y)}%
+                        </div>
+                    </Crosshair>)
+                  }
+
+                </XYPlot>
+              </CardContent>
+            </Card>
+          </div>
+          ) : null }
+        {tripTimes
+          ? (
+          <div>
+            <Divider />
+            <Card>
+              <CardContent>
+                <h4>Trip Times</h4>
+                <p>
+                  {tripTimes.count}
+                  {' '}
+  trips, average
+                  {' '}
+                  {Math.round(tripTimes.avg)}
+                  {' '}
+  minutes, max
+                  {' '}
+                  {Math.round(tripTimes.max)}
+                  {' '}
+  minutes
+                </p>
+                <XYPlot xDomain={[0, Math.max(60, Math.round(tripTimes.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
 
                 <HorizontalGridLines />
                 <XAxis />
                 <YAxis hideLine />
 
-                <VerticalRectSeries data={ this.headwayData } onNearestX={this._onNearestXHeadway} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
+                <VerticalRectSeries data={ this.tripData } onNearestX={this._onNearestXTripTimes} stroke="white" fill={CHART_COLORS[1]} style={{strokeWidth: 2}}/>
 
-                <ChartLabel
-                text="arrivals"
-                className="alt-y-label"
-                includeMargin={false}
-                xPercent={0.06}
-                yPercent={0.06}
-                style={{
-                  transform: 'rotate(-90)',
-                  textAnchor: 'end'
-                }}
-                />
+                  <ChartLabel
+                  text="trips"
+                  className="alt-y-label"
+                  includeMargin={false}
+                  xPercent={0.06}
+                  yPercent={0.06}
+                  style={{
+                    transform: 'rotate(-90)',
+                    textAnchor: 'end'
+                  }}
+                  />
 
-                <ChartLabel
-                text="minutes"
-                className="alt-x-label"
-                includeMargin={false}
-                xPercent={0.90}
-                yPercent={0.94}
-                />
+                  <ChartLabel
+                  text="minutes"
+                  className="alt-x-label"
+                  includeMargin={false}
+                  xPercent={0.90}
+                  yPercent={0.94}
+                  />
 
-                { this.state.crosshairValues.headway && (
-                    <Crosshair values={this.state.crosshairValues.headway}
-                      style={REACT_VIS_CROSSHAIR_NO_LINE} >
-                           <div className= 'rv-crosshair__inner__content'>
-                             Arrivals: { Math.round(this.state.crosshairValues.headway[0].y)}
-                           </div>
-                   </Crosshair>)}
-
-              </XYPlot>
-            </div>
-          ) : null }
-        {waitTimes
-          ? (
-            <div>
-              <h4>Wait Times</h4>
-              <p>
-average wait time
-                {' '}
-                {Math.round(waitTimes.avg)}
-                {' '}
-minutes, max wait time
-                {Math.round(waitTimes.max)}
-                {' '}
-minutes
-              </p>
-              <XYPlot xDomain={[0, Math.max(60, Math.round(waitTimes.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
-
-                <HorizontalGridLines />
-                <XAxis />
-                <YAxis hideLine tickFormat={v => `${v}%`} />
-
-                <VerticalRectSeries data={ this.waitData } onNearestX={this._onNearestXWaitTimes} stroke="white" fill={CHART_COLORS[0]} style={{strokeWidth: 2}}/>
-
-                <ChartLabel
-                text="chance"
-                className="alt-y-label"
-                includeMargin={false}
-                xPercent={0.06}
-                yPercent={0.06}
-                style={{
-                  transform: 'rotate(-90)',
-                  textAnchor: 'end'
-                }}
-                />
-
-                <ChartLabel
-                text="minutes"
-                className="alt-x-label"
-                includeMargin={false}
-                xPercent={0.90}
-                yPercent={0.94}
-                />
-
-                { this.state.crosshairValues.wait && (
-                    <Crosshair values={this.state.crosshairValues.wait}
-                      style={REACT_VIS_CROSSHAIR_NO_LINE} >
-                           <div className= 'rv-crosshair__inner__content'>
-                             Chance: { Math.round(this.state.crosshairValues.wait[0].y)}%
-                           </div>
-                   </Crosshair>)}
-
-              </XYPlot>
-            </div>
-          ) : null }
-        {tripTimes
-          ? (
-            <div>
-              <h4>Trip Times</h4>
-              <p>
-                {tripTimes.count}
-                {' '}
-trips, average
-                {' '}
-                {Math.round(tripTimes.avg)}
-                {' '}
-minutes, max
-                {' '}
-                {Math.round(tripTimes.max)}
-                {' '}
-minutes
-              </p>
-              <XYPlot xDomain={[0, Math.max(60, Math.round(tripTimes.max)+5)]} height={200} width={400} onMouseLeave={this._onMouseLeave}>
-
-              <HorizontalGridLines />
-              <XAxis />
-              <YAxis hideLine />
-
-              <VerticalRectSeries data={ this.tripData } onNearestX={this._onNearestXTripTimes} stroke="white" fill={CHART_COLORS[1]} style={{strokeWidth: 2}}/>
-
-                <ChartLabel
-                text="trips"
-                className="alt-y-label"
-                includeMargin={false}
-                xPercent={0.06}
-                yPercent={0.06}
-                style={{
-                  transform: 'rotate(-90)',
-                  textAnchor: 'end'
-                }}
-                />
-
-                <ChartLabel
-                text="minutes"
-                className="alt-x-label"
-                includeMargin={false}
-                xPercent={0.90}
-                yPercent={0.94}
-                />
-
-                { this.state.crosshairValues.trip && (
-                  <Crosshair values={this.state.crosshairValues.trip}
-                    style={REACT_VIS_CROSSHAIR_NO_LINE} >
-                         <div className= 'rv-crosshair__inner__content'>
-                           Trips: { Math.round(this.state.crosshairValues.trip[0].y)}
-                         </div>
-                 </Crosshair>)}
-
-              </XYPlot>
-            </div>
+                  { this.state.crosshairValues.trip && (
+                    <Crosshair values={this.state.crosshairValues.trip}
+                      style={REACT_VIS_CROSSHAIR_NO_LINE}
+                    >
+                      <div className= 'rv-crosshair__inner__content'>
+                        Trips: { Math.round(this.state.crosshairValues.trip[0].y)}
+                      </div>
+                  </Crosshair>)}
+                </XYPlot>
+              </CardContent>
+            </Card>
+          </div>
           ) : null }
         <code>
           {graphError || ''}
