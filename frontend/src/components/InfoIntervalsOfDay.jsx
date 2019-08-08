@@ -11,10 +11,10 @@ import { Card, CardContent, CardHeader, FormControl, FormControlLabel, Checkbox 
  * Bar chart of average and planning percentile wait and time across the day.
  */
 class InfoIntervalsOfDay extends Component {
-                 
-    static AVERAGE_TIME = "average_time";
-    static PLANNING_TIME = "planning_time";
-    
+  
+  static AVERAGE_TIME = "average_time";
+  static PLANNING_TIME = "planning_time";
+  
   constructor(props) {
     super(props);
     

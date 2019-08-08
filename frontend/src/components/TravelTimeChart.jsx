@@ -10,7 +10,7 @@ import { connect } from 'react-redux';
 
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import { Card } from '@material-ui/core';
+import { Card, CardContent } from '@material-ui/core';
 
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.

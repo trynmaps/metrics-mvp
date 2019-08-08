@@ -7,7 +7,7 @@ import { PLANNING_PERCENTILE, CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '
 import * as d3 from 'd3';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
   ChartLabel, Crosshair } from 'react-vis';
-import { Card, CardContent, Divider } from '@material-ui/core';
+import { Card, CardContent } from '@material-ui/core';
 
 
 class Info extends Component {
@@ -324,9 +324,9 @@ minutes
                   </table>
                 </CardContent>
               </Card>
-              <Divider />
+              <br />
               <InfoIntervalsOfDay intervalData={intervalData} intervalError={intervalError} />
-              <Divider />
+              <br />
               <Card>
                 <CardContent>
 
@@ -388,7 +388,7 @@ minutes
         {waitTimes
           ? (
           <div>
-            <Divider />
+            <br />
             <Card>
               <CardContent>
                 <h4>Wait Times</h4>
@@ -447,7 +447,7 @@ minutes
         {tripTimes
           ? (
           <div>
-            <Divider />
+            <br />
             <Card>
               <CardContent>
                 <h4>Trip Times</h4>
