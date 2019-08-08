@@ -7,7 +7,7 @@ const components = {
   LANDING: 'Landing',
   DASHBOARD: 'Dashboard',
   ROUTESCREEN: 'Route',
-  RECEIVED_GRAPH_PARAMS: 'Route',
+  DATADIAGNOSTIC: 'DataDiagnostic',
   [NOT_FOUND]: 'NotFound',
 };
 

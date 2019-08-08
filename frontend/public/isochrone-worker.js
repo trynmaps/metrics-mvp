@@ -129,7 +129,7 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, 
 
         let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
-            '/trip-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz?v2';
+            '/trip-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
         tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
             sendError("error loading trip times: " + e);
@@ -203,7 +203,7 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
 
         let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
-            '/wait-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz?v2';
+            '/wait-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
         //console.log(s3Url);
 

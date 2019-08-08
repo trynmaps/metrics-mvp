@@ -1,18 +1,14 @@
-import React, { Fragment } from 'react';
+import React, { useEffect, Fragment } from 'react';
 import Grid from '@material-ui/core/Grid';
-import Drawer from '@material-ui/core/Drawer';
 import Toolbar from '@material-ui/core/Toolbar';
-import IconButton from '@material-ui/core/IconButton';
-import MenuIcon from '@material-ui/icons/Menu';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import AppBar from '@material-ui/core/AppBar';
 
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
+import SidebarButton from '../components/SidebarButton';
+import DateTimePanel from '../components/DateTimePanel';
 
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
@@ -26,28 +22,14 @@ import {
   resetIntervalData,
 } from '../actions';
 
-class RouteScreen extends React.Component {
-  componentDidMount() {
-    if (!this.props.routes) {
-      this.props.fetchRoutes();
+function RouteScreen(props) {
+
+  useEffect(() => {
+    if (!props.routes) {
+      props.fetchRoutes();
     }
-  }
+  }, []);  // like componentDidMount, this runs only on first render
 
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      drawerOpen: false,
-    };
-
-    this.handleToggleDrawer = this.handleToggleDrawer.bind(this);
-  }
-
-  handleToggleDrawer() {
-    this.setState({ drawerOpen: !this.state.drawerOpen });
-  }
-
-  render() {
     const {
       graphData,
       graphError,
@@ -55,7 +37,7 @@ class RouteScreen extends React.Component {
       intervalData,
       intervalError,
       routes,
-    } = this.props;
+    } = props;
 
     const selectedRoute =
       routes && graphParams && graphParams.route_id
@@ -80,54 +62,28 @@ class RouteScreen extends React.Component {
       <Fragment>
         <AppBar position="relative">
           <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="Open drawer"
-              onClick={this.handleToggleDrawer}
-              edge="start"
-            >
-              <MenuIcon />
-            </IconButton>
-            Muni
-            {selectedRoute ? ` > ${selectedRoute.title}` : null}
-            {direction ? ` > ${direction.title}` : null}
-            &nbsp;
-            {startStopInfo ? `(from ${startStopInfo.title}` : null}
-            {endStopInfo ? ` to ${endStopInfo.title})` : null}
+            <SidebarButton />
+            <div className='page-title'>
+              Muni
+              {selectedRoute ? ` > ${selectedRoute.title}` : null}
+              {direction ? ` > ${direction.title}` : null}
+              &nbsp;
+              {startStopInfo ? `(from ${startStopInfo.title}` : null}
+              {endStopInfo ? ` to ${endStopInfo.title})` : null}
+            </div>
+            <DateTimePanel/>
           </Toolbar>
         </AppBar>
-
-        <Drawer
-          variant="persistent"
-          anchor="left"
-          open={this.state.drawerOpen}
-          style={{ width: 500 }}
-        >
-          <div style={{ width: 250 }}>
-            <IconButton
-              color="inherit"
-              aria-label="Open drawer"
-              onClick={this.handleToggleDrawer}
-              edge="start"
-            >
-              <ChevronLeftIcon />
-            </IconButton>
-            <List>
-              <ListItem>Test</ListItem>
-              <ListItem>Test</ListItem>
-            </List>
-          </div>
-        </Drawer>
 
         <Grid container spacing={0}>
           <Grid item xs={6}>
             <ControlPanel
               routes={routes}
-              resetGraphData={this.props.resetGraphData}
-              fetchGraphData={this.props.fetchGraphData}
-              resetIntervalData={this.props.resetIntervalData}
-              fetchIntervalData={this.props.fetchIntervalData}
-              fetchData={this.props.fetchData}
+              resetGraphData={props.resetGraphData}
+              fetchGraphData={props.fetchGraphData}
+              resetIntervalData={props.resetIntervalData}
+              fetchIntervalData={props.fetchIntervalData}
+              fetchData={props.fetchData}
             />
             <MapStops routes={routes} />
           </Grid>
@@ -150,7 +106,6 @@ class RouteScreen extends React.Component {
         </Grid>
       </Fragment>
     );
-  }
 }
 
 const mapStateToProps = state => ({

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import { XYPlot, HorizontalGridLines, VerticalGridLines,
-  XAxis, YAxis, LineSeries, ChartLabel, Crosshair } from 'react-vis';
+  XAxis, YAxis, LineMarkSeries, ChartLabel, Crosshair } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import '../../node_modules/react-vis/dist/style.css';
 import { getEndToEndTripTime, getTripDataSeries } from '../helpers/routeCalculations'
@@ -45,10 +45,10 @@ function TravelTimeChart(props) {
   let direction_id = null;
   let tripTimeForDirection = null;
   
-  if (graphParams.route_id) {
+  if (props.route_id || graphParams.route_id) { // take route id from props if given, else use redux graphParams
     
-    const route_id = graphParams.route_id;
-    direction_id = graphParams.direction_id;
+    const route_id = props.route_id || graphParams.route_id;
+    direction_id = props.direction_id || graphParams.direction_id; // also take direction_id from props if given
     
     if (direction_id) {
       tripTimeForDirection = getEndToEndTripTime(props, route_id, direction_id);
@@ -76,30 +76,37 @@ function TravelTimeChart(props) {
   <Grid item xs={12}>
     <Card>
       <CardContent>
-        <Typography variant="h5">Travel time across stops</Typography>
+      
+        <Typography variant="h5">Travel time along route</Typography>
 
-        Full travel time: { tripTimeForDirection } minutes<br/>
-        
+        Full travel time: { tripTimeForDirection } minutes &nbsp;&nbsp; Stops: {tripData[tripData.length-1] ? tripData[tripData.length-1].stopIndex + 1 : '?' }<br/>
+
         {/* set the y domain to start at zero and end at highest value (which is not always
-          the end to end travel time due to spikes in the data) */}
-        
-        <XYPlot height={300} width={400} yDomain={[0, tripData.reduce((max, coord) => coord.y > max ? coord.y : max, 0)]}
+         the end to end travel time due to spikes in the data) */}
+
+        <XYPlot height={300} width={400}
+          xDomain={[0, tripData.reduce((max, coord) => coord.x > max ? coord.x : max, 0)]}
+          yDomain={[0, tripData.reduce((max, coord) => coord.y > max ? coord.y : max, 0)]}
           onMouseLeave={_onMouseLeave}>
         <HorizontalGridLines />
         <VerticalGridLines />
         <XAxis tickPadding={4} />
         <YAxis hideLine={true} tickPadding={4} />
 
-        <LineSeries data={ tripData }
-            stroke="#aa82c5"
-            strokeWidth="4"
-            onNearestX={_onNearestTripX} />
+        <LineMarkSeries data={ tripData }
+           stroke="#aa82c5"
+           color="aa82c5"              
+           style={{
+             strokeWidth: '3px'
+           }}              
+           size="1"
+           onNearestX={_onNearestTripX} />
         {/*<LineSeries data={ scheduleData }
-            stroke="#a4a6a9"
-            strokeWidth="4"
-            style={{
-              strokeDasharray: '2 2'
-            }}             
+           stroke="#a4a6a9"
+           strokeWidth="4"
+           style={{
+             strokeDasharray: '2 2'
+           }}             
         />*/}
 
         <ChartLabel 
@@ -115,24 +122,24 @@ function TravelTimeChart(props) {
         />       
 
         <ChartLabel 
-        text="Stop Number"
-        className="alt-x-label"
-        includeMargin={true}
-        xPercent={0.6}
-        yPercent={0.86}
-        style={{
-          textAnchor: 'end'
-        }}       
-      />       
-        
-        
+          text="Distance Along Route (miles)"
+          className="alt-x-label"
+          includeMargin={true}
+          xPercent={0.7}
+          yPercent={0.86}
+          style={{
+            textAnchor: 'end'
+          }}       
+        />       
+          
         { crosshairValues.length > 0 && (
-          <Crosshair values={crosshairValues}
-            style={{line:{background: 'none'}}} >
+         <Crosshair values={crosshairValues}
+           style={{line:{background: 'none'}}} >
                 <div className= 'rv-crosshair__inner__content'>
                   <p>{ Math.round(crosshairValues[0].y)} min</p>
                   {/*<p>Scheduled: { Math.round(crosshairValues[1].y)} min</p>*/}
                   <p>{crosshairValues[0].title}</p>
+                  <p>(Stop #{crosshairValues[0].stopIndex + 1})</p>
                 </div>                 
         </Crosshair>)}
 

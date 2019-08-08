@@ -57,19 +57,18 @@ function RouteSummary(props) {
     allScores = getAllScores(routes, allWaits, allSpeeds);
     
     const route_id = graphParams.route_id;
-    
     const distObj = allDistances.find(distObj => distObj.routeID === route_id);
     dist = distObj ? distObj.distance : null;
 
-    waitObj = allWaits.find(obj => obj.routeID === route_id);
+    waitObj = allWaits ? allWaits.find(obj => obj.routeID === route_id) : null;
     waitRanking = waitObj ? allWaits.length - allWaits.indexOf(waitObj) : null; // invert wait ranking to for shortest wait time
     wait = waitObj ? waitObj.wait : null;
     
-    speedObj = allSpeeds.find(obj => obj.routeID === route_id);
+    speedObj = allSpeeds ? allSpeeds.find(obj => obj.routeID === route_id) : null;
     speedRanking = speedObj ? allSpeeds.indexOf(speedObj) + 1 : null;
     speed = speedObj ? speedObj.speed : null;
     
-    scoreObj = allScores.find(obj => obj.routeID === route_id);
+    scoreObj = allScores ? allScores.find(obj => obj.routeID === route_id) : null;
     scoreRanking = scoreObj ? allScores.indexOf(scoreObj) + 1 : null;
     
     grades = computeGrades(wait, speed);
@@ -117,7 +116,7 @@ function RouteSummary(props) {
         </Grid>
 
         <Grid item xs>            
-          <Tooltip title={ waitRanking ? 'Subscore: ' + grades.medianWaitScore + '/100' : null}>
+          <Tooltip title={ waitRanking ? 'Subscore: ' + grades.medianWaitScore + '/100' : ''}>
           <Paper className={classes.wait}>
 
             <Typography variant="overline">Median wait</Typography>
@@ -141,7 +140,7 @@ function RouteSummary(props) {
             
         <Grid item xs>            
 
-          <Tooltip title={ speedRanking ? 'Subscore: ' + grades.speedScore + '/100' : null}>
+          <Tooltip title={ speedRanking ? 'Subscore: ' + grades.speedScore + '/100' : ''}>
           <Paper className={classes.trip}>
 
             <Typography variant="overline">Median speed</Typography>

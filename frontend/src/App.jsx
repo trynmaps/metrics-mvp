@@ -8,6 +8,7 @@ import Landing from './components/Landing';
 import NotFound from './components/NotFound';
 import Dashboard from './screens/Dashboard';
 import RouteScreen from './screens/RouteScreen';
+import DataDiagnostic from './screens/DataDiagnostic';
 import Isochrone from './screens/Isochrone';
 
 const App = ({ page }) => {
@@ -18,6 +19,7 @@ const App = ({ page }) => {
     Landing: <Landing />,
     Dashboard: <Dashboard />,
     Route: <RouteScreen />,
+    DataDiagnostic: <DataDiagnostic />,
     NotFound: <NotFound />,
   };
   return <Fragment>{components[page]}</Fragment>;
