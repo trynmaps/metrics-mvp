@@ -353,88 +353,22 @@ export function getAllWaits(props) {
 }
 
 /**
- * Precalculated route distances are used instead of trying to extract route lengths
- * from GTFS data on the fly.  This is the average route distance across all directions for a route.
+ * GTFS route distances.  This is the average route distance across all directions for a route.
+ *
+ * @param {any} props
  */
-export function getAllDistances() {
-  const allDistances = [
-    { routeID: 'KT', distance: 23428.5 },
-    { routeID: '29', distance: 21773 },
-    { routeID: '43', distance: 19751.5 },
-    { routeID: '28', distance: 18832 },
-    { routeID: '8BX', distance: 18042 },
-    { routeID: '8', distance: 17935 },
-    { routeID: '54', distance: 16818 },
-    { routeID: '44', distance: 16617.5 },
-    { routeID: '57', distance: 15346 },
-    { routeID: '48', distance: 15314.333333333334 },
-    { routeID: 'M', distance: 15072.5 },
-    { routeID: 'N', distance: 14551.5 },
-    { routeID: '9R', distance: 14407 },
-    { routeID: '14X', distance: 14402.5 },
-    { routeID: '23', distance: 14192.5 },
-    { routeID: '14R', distance: 13741 },
-    { routeID: '714', distance: 13623.5 },
-    { routeID: 'L', distance: 13437.5 },
-    { routeID: '7X', distance: 13373.5 },
-    { routeID: '7', distance: 13193 },
-    { routeID: '28R', distance: 12828.5 },
-    { routeID: '19', distance: 12758.5 },
-    { routeID: '14', distance: 12536 },
-    { routeID: '9', distance: 12524 },
-    { routeID: '8AX', distance: 12330.5 },
-    { routeID: 'NX', distance: 12086.5 },
-    { routeID: '10', distance: 11986 },
-    { routeID: '36', distance: 11702.5 },
-    { routeID: '18', distance: 11665 },
-    { routeID: 'J', distance: 11443 },
-    { routeID: '5', distance: 11400 },
-    { routeID: '5R', distance: 11400 },
-    { routeID: '31', distance: 11369.5 },
-    { routeID: '49', distance: 11233 },
-    { routeID: '31AX', distance: 11212.5 },
-    { routeID: '38', distance: 11122.5 },
-    { routeID: '24', distance: 11057.5 },
-    { routeID: '38R', distance: 10782 },
-    { routeID: '38AX', distance: 10544 },
-    { routeID: '33', distance: 10414.5 },
-    { routeID: '12', distance: 10315 },
-    { routeID: '6', distance: 10139 },
-    { routeID: '22', distance: 9305 },
-    { routeID: '1AX', distance: 9271 },
-    { routeID: '1', distance: 9255.5 },
-    { routeID: '37', distance: 8477 },
-    { routeID: '38BX', distance: 8392.5 },
-    { routeID: '2', distance: 8315 },
-    { routeID: '25', distance: 8219 },
-    { routeID: 'F', distance: 8206.5 },
-    { routeID: '27', distance: 8177 },
-    { routeID: '47', distance: 7845.5 },
-    { routeID: '31BX', distance: 7649 },
-    { routeID: '30', distance: 7628 },
-    { routeID: '21', distance: 7185 },
-    { routeID: '45', distance: 6827.5 },
-    { routeID: '52', distance: 6766 },
-    { routeID: '30X', distance: 6642.5 },
-    { routeID: '1BX', distance: 6334.5 },
-    { routeID: 'E', distance: 5735 },
-    { routeID: '41', distance: 5656 },
-    { routeID: '3', distance: 5548 },
-    { routeID: '66', distance: 4929 },
-    { routeID: '35', distance: 4831.5 },
-    { routeID: '56', distance: 4527.5 },
-    { routeID: '82X', distance: 4162.5 },
-    { routeID: '67', distance: 3977.5 },
-    { routeID: '55', distance: 3693 },
-    { routeID: 'PH', distance: 3359.3333333333335 },
-    { routeID: '81X', distance: 3274 },
-    { routeID: '39', distance: 2902 },
-    { routeID: '83X', distance: 2622.5 },
-    { routeID: 'PM', distance: 2607 },
-    { routeID: 'C', distance: 2302 },
-    { routeID: '88', distance: 2258 },
-  ];
-
+export function getAllDistances(props) {
+  let allDistances = null;
+  if (props.routes) {
+    allDistances = props.routes.map(route => {
+      const totalDistance = route.directions.reduce((total, direction) => { return total + direction.distance; }, 0);
+      return {
+        routeID: route.id,
+        distance: totalDistance/route.directions.length,
+      }
+    })
+  }
+  //console.log(JSON.stringify(allDistances));
   return allDistances;
 }
 
