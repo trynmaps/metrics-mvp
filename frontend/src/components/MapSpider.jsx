@@ -11,13 +11,8 @@ import MapShield from './MapShield'
 import Control from 'react-leaflet-control';
 import * as d3 from "d3";
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
-<<<<<<< HEAD
 import { handleSpiderMapClick, handleGraphParams } from '../actions';
 import { getTripPoints } from '../helpers/mapGeometry';
-=======
-import { handleSpiderMapClick } from '../actions';
->>>>>>> master
-
 import { push } from 'redux-first-router'
 
 const SF_COORDINATES = {lat : 37.7793, lng: -122.4193}; // city hall
@@ -344,15 +339,15 @@ class MapSpider extends Component {
     </Marker>;
   }
 
-  
-  /**  
+
+  /**
    * Places a Leaflet Marker (blue pin) at the clicked or geolocated map location.
-   * Like the isochrone, the marker can be dragged to get new results. 
+   * Like the isochrone, the marker can be dragged to get new results.
    */
   SpiderOriginMarker = (props) => {
-    
+
     let latlng = null;
-    
+
     return props.spiderLatLng ? <Marker
       position={ props.spiderLatLng }
       draggable={true}
@@ -360,7 +355,7 @@ class MapSpider extends Component {
       onMoveEnd={ (e) => { this.handleLocationFound({latlng: latlng})}}
       /> : null;
   }
-  
+
   /**
    * Main React render method.
    */
@@ -385,7 +380,7 @@ class MapSpider extends Component {
         <this.DownstreamLines/>
         <this.StartMarkers/>
         <this.SpiderOriginMarker spiderLatLng={this.props.spiderLatLng}/>
-          
+
         <Control position="bottomleft" >
           <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
             <GpsIcon/>&nbsp;
