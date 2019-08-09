@@ -158,7 +158,10 @@ def add_trip_time_stats_for_stop_pair(
             stat_value = get_stat_value(stat_id, all_stat_values)
             interval_trip_time_stats[stat_id][route_id][dir_id][s1][s2] = stat_value
 
-def compute_trip_times(agency_id, d: date, routes, tz, stat_ids, save_to_s3 = False):
+def compute_trip_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids=None):
+    if stat_ids is None:
+        stat_ids = stat_groups.keys()
+
     print(d)
     time_str_intervals = constants.DEFAULT_TIME_STR_INTERVALS.copy()
     time_str_intervals.append(('07:00','19:00'))
@@ -263,8 +266,6 @@ if __name__ == '__main__':
         raise Exception('missing date, start-date, or end-date')
 
     stat_ids = args.stat
-    if stat_ids is None:
-        stat_ids = stat_groups.keys()
 
     for d in dates:
-        compute_trip_times(agency_id, d, routes, tz, stat_ids, save_to_s3=args.s3)
+        compute_trip_times(d, tz, agency_id, routes, save_to_s3=args.s3, stat_ids=stat_ids)
