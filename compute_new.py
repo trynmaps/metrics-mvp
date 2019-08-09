@@ -43,8 +43,6 @@ if __name__ == '__main__':
     else:
         state = json.loads(r.text)
 
-    print(state)
-
     if args.start_date is not None:
         d = util.parse_date(args.start_date)
     elif 'last_complete_date' in state:
@@ -64,7 +62,6 @@ if __name__ == '__main__':
         today -= timedelta(days=1)
 
     while d <= today:
-
         compute_start_time = datetime.now(tz)
 
         print(f'computing arrivals for {d}')
