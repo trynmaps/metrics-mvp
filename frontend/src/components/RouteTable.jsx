@@ -14,12 +14,9 @@ import Paper from '@material-ui/core/Paper';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
-
+import { filterRoutes, getAllWaits, getAllDistances, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
-import { push } from 'redux-first-router';
 import Link from 'redux-first-router-link';
-import { getWaitTimeForDirection } from '../helpers/precomputed';
-import { filterRoutes } from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
@@ -53,7 +50,7 @@ const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'wait', numeric: true, disablePadding: false, label: 'Wait (min)' },
   { id: 'speed', numeric: true, disablePadding: false, label: 'Speed (mph)' },
-  { id: 'score', numeric: true, disablePadding: false, label: 'Score' },
+  { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
 ];
 
 function EnhancedTableHead(props) {
@@ -164,9 +161,6 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     marginBottom: theme.spacing(2),
   },
-  table: {
-    minWidth: 750,
-  },
   tableWrapper: {
     overflowX: 'auto',
   },
@@ -176,7 +170,6 @@ function RouteTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
-  const [selected, setSelected] = React.useState([]);
   const dense = true;
 
   useEffect(() => {
@@ -188,61 +181,7 @@ function RouteTable(props) {
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
   }
-
-  function handleClick(event, route) {
-    const selectedIndex = selected.indexOf(route.title);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = [route.title]; // newSelected.concat(selected, name);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-
-    setSelected(newSelected);
-
-    props.handleGraphParams({
-      route_id: route.id,
-      direction_id: null,
-      start_stop_id: null,
-      end_stop_id: null,
-    });
-    push('/route');
-  }
-
-  /**
-   * Averages together the median wait in all directions for a route.
-   *
-   * @param {any} waitTimesCache
-   * @param {any} graphParams
-   * @param {any} route
-   */
-  function getAverageOfMedianWait(waitTimesCache, graphParams, route) {
-    const directions = route.directions;
-    const sumOfMedians = directions.reduce((total, direction) => {
-      const waitForDir = getWaitTimeForDirection(
-        waitTimesCache,
-        graphParams,
-        route.id,
-        direction.id,
-      );
-      if (!waitForDir) {
-        return NaN;
-      }
-      return total + waitForDir.median;
-    }, 0);
-    return sumOfMedians / directions.length;
-  }
-
-  const isSelected = name => selected.indexOf(name) !== -1;
-
+  
   let routes = props.routes ? filterRoutes(props.routes) : [];
   const spiderSelection = props.spiderSelection;
 
@@ -253,27 +192,35 @@ function RouteTable(props) {
     routes = routes.filter(route => spiderRouteIDs.includes(route.id));
   }
 
+  const allWaits = getAllWaits(props);
+  const allDistances = getAllDistances(props);
+  const allSpeeds = getAllSpeeds(props, allDistances);
+  const allScores = getAllScores(routes, allWaits, allSpeeds);
+  
   routes = routes.map(route => {
-    route.wait = getAverageOfMedianWait(
-      props.waitTimesCache,
-      props.graphParams,
-      route,
-    );
+    
+    const waitObj = allWaits.find(waitObj => waitObj.routeID === route.id);
+    route.wait = waitObj ? waitObj.wait : NaN;
+    
+    const speedObj = allSpeeds.find(speedObj => speedObj.routeID === route.id);
+    route.speed = speedObj ? speedObj.speed : NaN;
+    
+    const scoreObj = allScores.find(scoreObj => scoreObj.routeID === route.id);
+    route.totalScore = scoreObj ? scoreObj.totalScore : NaN
+    
     return route;
   });
 
   return (
     <div className={classes.root}>
       <Paper className={classes.paper}>
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <EnhancedTableToolbar numSelected={0}/>
         <div className={classes.tableWrapper}>
           <Table
-            className={classes.table}
             aria-labelledby="tableTitle"
             size={dense ? 'small' : 'medium'}
           >
             <EnhancedTableHead
-              numSelected={selected.length}
               order={order}
               orderBy={orderBy}
               onRequestSort={handleRequestSort}
@@ -282,18 +229,14 @@ function RouteTable(props) {
             <TableBody>
               {stableSort(routes, getSorting(order, orderBy)).map(
                 (row, index) => {
-                  const isItemSelected = isSelected(row.title);
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
                     <TableRow
                       hover
-                      onClick={event => handleClick(event, row)}
                       role="checkbox"
-                      aria-checked={isItemSelected}
                       tabIndex={-1}
                       key={row.id}
-                      selected={isItemSelected}
                     >
                       <TableCell
                         component="th"
@@ -303,24 +246,29 @@ function RouteTable(props) {
                       >
                         <Link
                           to={{
-                            type: 'RECEIVED_GRAPH_PARAMS',
+                            type: 'ROUTESCREEN',
                             payload: {
                               route_id: row.id,
                               direction_id: null,
                               start_stop_id: null,
-                              end_stop_id: null,
-                            },
-                            query: { route_id: row.id },
+                              end_stop_id: null
+                            }
+                            
                           }}
                         >
                           {row.title}
                         </Link>
+                        
                       </TableCell>
                       <TableCell align="right">
                         {isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
                       </TableCell>
-                      <TableCell align="right">{row.speed}</TableCell>
-                      <TableCell align="right">{row.score}</TableCell>
+                      <TableCell align="right">
+                        {isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {isNaN(row.totalScore) ? '--' : row.totalScore}
+                      </TableCell>
                     </TableRow>
                   );
                 },
@@ -337,6 +285,7 @@ const mapStateToProps = state => ({
   graphParams: state.routes.graphParams,
   spiderSelection: state.routes.spiderSelection,
   waitTimesCache: state.routes.waitTimesCache,
+  tripTimesCache: state.routes.tripTimesCache,
 });
 
 const mapDispatchToProps = dispatch => {

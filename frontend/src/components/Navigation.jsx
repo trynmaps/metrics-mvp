@@ -7,9 +7,9 @@ export default props => {
       <button>
         <NavLink
           to={{ type: 'HOME' }}
-          activeStyle={{ fontWeight: "bold", color: 'purple' }}
-          exact={true}
-          strict={true}
+          activeStyle={{ fontWeight: 'bold', color: 'purple' }}
+          exact
+          strict
         >
           Home
         </NavLink>
@@ -17,9 +17,9 @@ export default props => {
       <button>
         <NavLink
           to={{ type: 'ABOUT' }}
-          activeStyle={{ fontWeight: "bold", color: 'purple' }}
-          exact={true}
-          strict={true}
+          activeStyle={{ fontWeight: 'bold', color: 'purple' }}
+          exact
+          strict
         >
           About
         </NavLink>
@@ -27,9 +27,9 @@ export default props => {
       <button>
         <NavLink
           to={{ type: 'LANDING' }}
-          activeStyle={{ fontWeight: "bold", color: 'purple' }}
-          exact={true}
-          strict={true}
+          activeStyle={{ fontWeight: 'bold', color: 'purple' }}
+          exact
+          strict
         >
           Landing
         </NavLink>
@@ -37,24 +37,23 @@ export default props => {
       <button>
         <NavLink
           to={{ type: 'DASHBOARD' }}
-          activeStyle={{ fontWeight: "bold", color: 'purple' }}
-          exact={true}
-          strict={true}
+          activeStyle={{ fontWeight: 'bold', color: 'purple' }}
+          exact
+          strict
         >
           Dashboard
-          </NavLink>
+        </NavLink>
       </button>
       <button>
-      <NavLink
-        to={{ type: 'ROUTESCREEN' }}
-        activeStyle={{ fontWeight: "bold", color: 'purple' }}
-        exact={true}
-        strict={true}
-      >
-        Route
+        <NavLink
+          to={{ type: 'ROUTESCREEN' }}
+          activeStyle={{ fontWeight: 'bold', color: 'purple' }}
+          exact
+          strict
+        >
+          Route
         </NavLink>
-    </button>
-          
+      </button>
     </Fragment>
-  )
-}
+  );
+};

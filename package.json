@@ -14,6 +14,10 @@
     "yarn": "NO LONGER USED - Please use npm"
   },
   "dependencies": {
-    "@material-ui/core": "^4.1.0"
+    "@material-ui/core": "^4.3.0",
+    "@material-ui/lab": "^4.0.0-alpha.21"
+  },
+  "devDependencies": {
+    "husky": "^3.0.2"
   }
 }

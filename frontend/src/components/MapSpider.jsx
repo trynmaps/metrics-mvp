@@ -16,8 +16,8 @@ import Control from 'react-leaflet-control';
 import * as d3 from 'd3';
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
 import { handleSpiderMapClick, handleGraphParams } from '../actions';
-
-import { push } from 'redux-first-router';
+import { getTripPoints } from '../helpers/mapGeometry';
+import { push } from 'redux-first-router'
 
 const SF_COORDINATES = { lat: 37.7793, lng: -122.4193 }; // city hall
 const ZOOM = 13;
@@ -31,13 +31,11 @@ class MapSpider extends Component {
     this.mapRef = createRef(); // used for geolocating
   }
 
-  // TODO: Needs fixing. This sets height to that of the window, not remaining space.
+  // TODO: Needs optimizing. This sets height to that of the window, not remaining space, which
+  // has to be adjusted for by hand.
   updateDimensions() {
-    const height =
-      (window.innerWidth >= 992 ? window.innerHeight : 500) -
-      64 /* blue header */ -
-      29; /* buttons at top */
-    this.setState({ height: height });
+    const height = (window.innerWidth >= 992 ? window.innerHeight : 500) - 64 /* blue app bar */;
+    this.setState({ height: height })
   }
 
   componentWillMount() {
@@ -137,6 +135,7 @@ class MapSpider extends Component {
           nearest.routeIndex = i;
           nearest.routeTitle = route.title;
           nearest.direction = direction;
+          nearest.routeInfo = route;
           stopsByRouteAndDir.push(nearest);
         }
       }
@@ -262,69 +261,43 @@ class MapSpider extends Component {
    */
   generatePolyline = (startMarker, waitScaled, i) => {
     const downstreamStops = startMarker.downstreamStops;
-    const latLngs = [
-      [downstreamStops[i].lat, downstreamStops[i].lon],
-      [downstreamStops[i + 1].lat, downstreamStops[i + 1].lon],
-    ];
 
     const computedWeight = waitScaled * 1.5 + 3;
 
     const routeColor = this.routeColor(startMarker.routeIndex % 10);
 
-    return (
-      <Polyline
-        key={'poly-' + startMarker.routeID + '-' + downstreamStops[i].stopID}
-        positions={latLngs}
-        color={routeColor}
-        opacity={0.5}
-        weight={computedWeight}
-        onMouseOver={e => {
-          // on hover, draw segment wider
-          e.target.setStyle({ opacity: 1, weight: computedWeight + 4 });
-          return true;
-        }}
-        onMouseOut={e => {
-          e.target.setStyle({ opacity: 0.5, weight: computedWeight });
-          return true;
-        }}
-        // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
+    return <Polyline
+          key={"poly-" + startMarker.routeID + "-" + downstreamStops[i].stopID}
+          positions = { getTripPoints(startMarker.routeInfo, startMarker.direction, downstreamStops[i].stopID, downstreamStops[i+1].stopID) }
+          color = { routeColor }
+          opacity = { 0.5 }
+          weight = { computedWeight }
+          onMouseOver = { e => { // on hover, draw segment wider
+            e.target.setStyle({opacity:1, weight: computedWeight+4});
+            return true;
+          }}
+          onMouseOut = { e => {
+            e.target.setStyle({opacity:0.5, weight:computedWeight});
+            return true;
+          }}
 
-        onClick={e => {
-          e.originalEvent.view.L.DomEvent.stopPropagation(e);
+          // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
 
-          // Fire events that select a route, direction, first stop, and second stop.
+          onClick = {e => {
 
-          /* If this code was integrated with ControlPanel, we would do:
-           *
-           * this.setRouteId(startMarker.routeID);
-           * this.setDirectionId(startMarker.direction.id);
-           * this.onSelectFirstStop(startMarker.stopID, downstreamStops[i+1].stopID);
-           */
+            e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
-          const { onGraphParams } = this.props;
-          onGraphParams({
-            route_id: startMarker.routeID,
-            direction_id: startMarker.direction.id,
-            start_stop_id: startMarker.stopID,
-            end_stop_id: downstreamStops[i + 1].stopID,
-          });
-          push('/route');
-        }}
-      >
-        <Tooltip>
-          {' '}
-          {/* should this hover text be a leaflet control in a fixed position? */}
-          {startMarker.routeTitle}
-          <br />
-          {startMarker.direction.title}
-          <br />
-          {downstreamStops[i + 1].title}
-          <br />
-        </Tooltip>
-      </Polyline>
-    );
-  };
-
+            push(`/route/${startMarker.routeID}/direction/${startMarker.direction.id}/start_stop/${startMarker.stopID}/end_stop/${downstreamStops[i+1].stopID}`);
+          }}
+        >
+          <Tooltip> {/* should this hover text be a leaflet control in a fixed position? */}
+           {startMarker.routeTitle}<br/>
+           {startMarker.direction.title}<br/>
+           {downstreamStops[i+1].title}<br/>
+          </Tooltip>
+        </Polyline>;
+  }
+  
   /**
    * Creates a circle at the terminal of a route.
    */
@@ -369,35 +342,37 @@ class MapSpider extends Component {
       }),
     });
 
-    return (
-      <Marker
-        key={startMarker.routeID + '-' + startMarker.direction.id + '-Shield'}
-        position={shieldPosition}
-        icon={icon}
-        riseOnHover={true}
-        onClick={e => {
-          e.originalEvent.view.L.DomEvent.stopPropagation(e);
+    return <Marker
+      key={startMarker.routeID + "-" + startMarker.direction.id + "-Shield"} position={shieldPosition}
+      icon={icon}
+      riseOnHover={true}
+      onClick = {e => {
 
-          /* Fire events that select this route and direction.
-           *
-           * If this code was integrated with ControlPanel, we would do:
-           *
-           * this.setRouteId(startMarker.routeID);
-           * this.setDirectionId(startMarker.direction.id);
-           */
+        e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
-          const { onGraphParams } = this.props;
-          onGraphParams({
-            route_id: startMarker.routeID,
-            direction_id: startMarker.direction.id,
-            start_stop_id: startMarker.stopID,
-            end_stop_id: lastStop.stopID,
-          });
-          push('/route');
-        }}
-      ></Marker>
-    );
-  };
+        push(`/route/${startMarker.routeID}/direction/${startMarker.direction.id}/start_stop/${startMarker.stopID}/end_stop/${lastStop.stopID}`);
+      }}
+
+      >
+    </Marker>;
+  }
+
+
+  /**
+   * Places a Leaflet Marker (blue pin) at the clicked or geolocated map location.
+   * Like the isochrone, the marker can be dragged to get new results.
+   */
+  SpiderOriginMarker = (props) => {
+
+    let latlng = null;
+
+    return props.spiderLatLng ? <Marker
+      position={ props.spiderLatLng }
+      draggable={true}
+      onMove={ (e) => { latlng = e.latlng; } }
+      onMoveEnd={ (e) => { this.handleLocationFound({latlng: latlng})}}
+      /> : null;
+  }
 
   /**
    * Main React render method.
@@ -422,17 +397,14 @@ class MapSpider extends Component {
           attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
           url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
           opacity={0.3}
-        />{' '}
-        {/* see http://maps.stamen.com for details */}
-        <this.DownstreamLines />
-        <this.StartMarkers />
-        <Control position="bottomleft">
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={this.handleGeoLocate}
-          >
-            <GpsIcon />
+        /> {/* see http://maps.stamen.com for details */}
+        <this.DownstreamLines/>
+        <this.StartMarkers/>
+        <this.SpiderOriginMarker spiderLatLng={this.props.spiderLatLng}/>
+
+        <Control position="bottomleft" >
+          <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
+            <GpsIcon/>&nbsp;
             Routes near me
           </Button>
           &nbsp;
@@ -544,14 +516,9 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => {
-  return {
-    onSpiderMapClick: (stops, latLng) =>
-      dispatch(handleSpiderMapClick(stops, latLng)),
-    onGraphParams: params => dispatch(handleGraphParams(params)),
-  };
-};
+  return ({
+    onSpiderMapClick: (stops, latLng) => dispatch(handleSpiderMapClick(stops, latLng)),
+  })
+}
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(MapSpider);
+export default connect(mapStateToProps, mapDispatchToProps)(MapSpider);

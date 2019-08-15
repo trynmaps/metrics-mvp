@@ -1,11 +1,24 @@
+.isochrone-map
+{
+    flex-grow:1;
+}
+
 .isochrone-controls,
 .isochrone-legend,
+.isochrone-instructions,
 .isochrone-trip-info
 {
     border:1px solid #ccc;
     background-color:#fff;
     border-radius:5px;
     opacity:0.9;
+}
+
+.isochrone-instructions
+{
+    max-width:180px;
+    padding:8px;
+    opacity:1.0;
 }
 
 .isochrone-controls
@@ -16,6 +29,7 @@
 .isochrone-legend
 {
     padding:2px 4px;
+    white-space:nowrap;
 }
 
 .isochrone-trip
@@ -23,10 +37,12 @@
     padding:4px 4px;
 }
 
-.isochrone-select-all a
+.isochrone-select-all span
 {
+    color:#0078A8;
     padding-right:2px;
     text-decoration:none;
+    cursor:pointer;
 }
 
 .isochrone-legend-colors

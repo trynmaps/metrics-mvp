@@ -3,9 +3,9 @@ import { connect } from 'react-redux';
 import { Map, TileLayer, CircleMarker, Tooltip, Polyline } from 'react-leaflet';
 import { handleGraphParams } from '../actions';
 import * as d3 from 'd3';
-import { milesBetween } from '../helpers/routeCalculations';
 import Control from 'react-leaflet-control';
 import { getTripTimesFromStop } from '../helpers/precomputed';
+import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 
 const RADIUS = 6;
 const STOP_COLORS = ['blue', 'red', 'green', 'purple'];
@@ -19,6 +19,7 @@ class MapStops extends Component {
     color,
     radius,
     direction,
+    routeInfo
   ) => {
     let route = null;
 
@@ -47,39 +48,40 @@ class MapStops extends Component {
           </CircleMarker>
         );
       });
-      route.unshift(this.populateSpeed(routeStops, direction_id));
-
-      // put polyline first so clickable markers are drawn on top of it
-      route.unshift(
-        <Polyline
-          key={'polyline-' + direction_id}
-          color="white"
-          weight={10}
-          positions={routeStops[direction_id]}
-          opacity={1}
-        />,
-      );
+      route.unshift(this.populateSpeed(routeInfo, direction, routeStops, direction_id));
     }
     return route;
   };
 
   // plot speed along a route
 
-  populateSpeed = (routeStops, direction_id) => {
+  populateSpeed = (routeInfo, direction, routeStops, direction_id,) => {
     const downstreamStops = routeStops[direction_id];
     let polylines = [];
 
     for (let i = 0; i < downstreamStops.length - 1; i++) {
-      const latLngs = [
-        [downstreamStops[i].lat, downstreamStops[i].lon],
-        [downstreamStops[i + 1].lat, downstreamStops[i + 1].lon],
-      ];
 
-      const speed = this.getSpeed(downstreamStops, i, direction_id);
+      const speed = this.getSpeed(routeInfo, direction, downstreamStops, i, direction_id);
+      
+      // draw a wide white polyline as a background for the speed polyline 
+      
+      polylines.push(
+          <Polyline
+            key={'poly-speed-white-' + direction_id + '-' + downstreamStops[i].sid}
+            positions={ getTripPoints(routeInfo, direction, downstreamStops[i].sid, downstreamStops[i+1].sid) }
+            color="white"
+            opacity={1}
+            weight={10}
+          >      
+          </Polyline>
+      );
+      
+      // then the speed polyline on top of the white polyline
+      
       polylines.push(
         <Polyline
           key={'poly-speed-' + direction_id + '-' + downstreamStops[i].sid}
-          positions={latLngs}
+          positions={ getTripPoints(routeInfo, direction, downstreamStops[i].sid, downstreamStops[i+1].sid) }
           color={speed < 0 ? 'white' : this.speedColor(speed)}
           opacity={1}
           weight={5}
@@ -88,7 +90,9 @@ class MapStops extends Component {
 
             e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
-            /* TODO: decide if clicking on segments changes the stop selection */
+            /* TODO: decide if clicking on segments changes the stop selection.  Right now no, because
+             * the stop markers are fairly prominent at the moment.  If we make them smaller, then
+             * reconsider. */
           }}
         >
           <Tooltip>
@@ -115,7 +119,7 @@ class MapStops extends Component {
    * Speed from index to index+1
    * Using haversine distance for now.
    */
-  getSpeed = (downstreamStops, index, directionID) => {
+  getSpeed = (routeInfo, direction, downstreamStops, index, directionID) => {
     const graphParams = this.props.graphParams;
     const routeID = graphParams.route_id;
 
@@ -138,8 +142,8 @@ class MapStops extends Component {
     } else {
       return -1; // speed not available;
     }
-
-    const distance = milesBetween(firstStop, nextStop);
+    
+    const distance = getDistanceInMiles(routeInfo, direction, firstStopID, nextStopID);
 
     return (distance / time) * 60; // miles per minute -> mph
   };
@@ -286,6 +290,7 @@ class MapStops extends Component {
                 STOP_COLORS[index % STOP_COLORS.length],
                 radius ? radius : RADIUS,
                 direction,
+                selectedRoute
               ),
             );
           }
@@ -297,6 +302,7 @@ class MapStops extends Component {
     return (
       <Map
         center={position || SF_COORDINATES}
+        bounds={routeStops ? routeStops[selectedRoute.directions[0].id] : null}
         zoom={zoom || ZOOM}
         style={mapClass}
       >

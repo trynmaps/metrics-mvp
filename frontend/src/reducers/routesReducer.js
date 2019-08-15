@@ -1,5 +1,7 @@
 /* eslint-disable no-case-declarations */
-const initialState = {
+
+// Make the initialState available to the rest of the app when resetting to default values.
+export const initialState = {
   routes: null,
   spiderSelection: [],
   graphParams: {
@@ -9,7 +11,7 @@ const initialState = {
     end_stop_id: null,
     start_time: null,
     end_time: null,
-    date: '2019-06-06',
+    date: '2019-07-01',
   },
   spiderLatLng: null,
   tripTimesCache: {},

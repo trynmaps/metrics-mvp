@@ -2,20 +2,19 @@ import React, { Component } from 'react';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis,
     VerticalBarSeries, ChartLabel, Crosshair } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
-import Form from 'react-bootstrap/Form';
-import Card from 'react-bootstrap/Card';
 import { getPercentileValue } from '../helpers/graphData';
 import { CHART_COLORS, PLANNING_PERCENTILE, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 import '../../node_modules/react-vis/dist/style.css'
+import { Card, CardContent, CardHeader, FormControl, FormControlLabel, Checkbox } from '@material-ui/core';
 
 /**
  * Bar chart of average and planning percentile wait and time across the day.
  */
 class InfoIntervalsOfDay extends Component {
-                 
-    static AVERAGE_TIME = "average_time";
-    static PLANNING_TIME = "planning_time";
-    
+  
+  static AVERAGE_TIME = "average_time";
+  static PLANNING_TIME = "planning_time";
+  
   constructor(props) {
     super(props);
     
@@ -102,68 +101,70 @@ class InfoIntervalsOfDay extends Component {
         {intervals
           ? (<div>
             <Card>
-              <Card.Body>
-              <Card.Title>Performance by Time of Day</Card.Title>
-
-              <Form>
-              <div className="controls">
-                <Form.Check inline
-                  id="average_time"
-                  type="radio"
-                  label="Average"
-                  value={InfoIntervalsOfDay.AVERAGE_TIME}
-                  checked={this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME}
-                  onChange={this.handleOptionChange} 
+              <CardContent>
+                <CardHeader>Performance by Time of Day</CardHeader>
+                <FormControl>
+                <div className="controls">
+                  <FormControlLabel
+                    control={<Checkbox 
+                      id="average_time"
+                      type="radio"
+                      value={InfoIntervalsOfDay.AVERAGE_TIME}
+                      checked={this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME}
+                      onChange={this.handleOptionChange} 
+                    />}
+                    label="Average"
                   />
-                  
-                <Form.Check inline
-                  id="planning_time"
-                  type="radio"
-                  label={'Planning (' + PLANNING_PERCENTILE + 'th percentile)'}
-                  value={InfoIntervalsOfDay.PLANNING_TIME}
-                  checked={this.state.selectedOption === InfoIntervalsOfDay.PLANNING_TIME}
-                  onChange={this.handleOptionChange}
+                    
+                  <FormControlLabel
+                    control={<Checkbox 
+                      id="planning_time"
+                      type="radio"
+                      value={InfoIntervalsOfDay.PLANNING_TIME}
+                      checked={this.state.selectedOption === InfoIntervalsOfDay.PLANNING_TIME}
+                      onChange={this.handleOptionChange}
+                    />}
+                    label={'Planning (' + PLANNING_PERCENTILE + 'th percentile)'}
                   /> 
-              </div>
-              </Form>
+                </div>
+                </FormControl>
 
-            <XYPlot xType="ordinal" height={300} width={400} stackBy="y" onMouseLeave={this._onMouseLeave} >
-              <HorizontalGridLines />
-              <XAxis />
-              <YAxis hideLine />
-              
-              <VerticalBarSeries data={ this.waitData }
-                 color={CHART_COLORS[0]}
-                 onNearestX={this._onNearestX} />
-              <VerticalBarSeries data={ this.tripData }
-                 color={CHART_COLORS[1]} />
-                 
-              <ChartLabel 
-                text="minutes"
-                className="alt-y-label"
-                includeMargin={false}
-                xPercent={0.06}
-                yPercent={0.06}
-                style={{
-                  transform: 'rotate(-90)',
-                  textAnchor: 'end'
-                }}       
-              />       
-                 
-              { this.state.crosshairValues.length > 0 && (
-               <Crosshair values={this.state.crosshairValues}
-                 style={REACT_VIS_CROSSHAIR_NO_LINE} >
-                      <div className= 'rv-crosshair__inner__content'>
-                        <p>Onboard time: { Math.round(this.state.crosshairValues[1].y)}</p>
-                        <p>Wait time: { Math.round(this.state.crosshairValues[0].y)}</p>
-                      </div>                 
-              </Crosshair>)}
-                 
-            </XYPlot>
-            <DiscreteColorLegend orientation="horizontal" width={300} items={legendItems}/>
-
-
-            </Card.Body></Card>
+                <XYPlot xType="ordinal" height={300} width={400} stackBy="y" onMouseLeave={this._onMouseLeave} >
+                  <HorizontalGridLines />
+                  <XAxis />
+                  <YAxis hideLine />
+                  
+                  <VerticalBarSeries data={ this.waitData }
+                    color={CHART_COLORS[0]}
+                    onNearestX={this._onNearestX} />
+                  <VerticalBarSeries data={ this.tripData }
+                    color={CHART_COLORS[1]} />
+                    
+                  <ChartLabel 
+                    text="minutes"
+                    className="alt-y-label"
+                    includeMargin={false}
+                    xPercent={0.06}
+                    yPercent={0.06}
+                    style={{
+                      transform: 'rotate(-90)',
+                      textAnchor: 'end'
+                    }}       
+                  />       
+                    
+                  { this.state.crosshairValues.length > 0 && (
+                  <Crosshair values={this.state.crosshairValues}
+                    style={REACT_VIS_CROSSHAIR_NO_LINE} >
+                          <div className= 'rv-crosshair__inner__content'>
+                            <p>Onboard time: { Math.round(this.state.crosshairValues[1].y)}</p>
+                            <p>Wait time: { Math.round(this.state.crosshairValues[0].y)}</p>
+                          </div>                 
+                  </Crosshair>)}
+                    
+                </XYPlot>
+                <DiscreteColorLegend orientation="horizontal" width={300} items={legendItems}/>
+              </CardContent>
+            </Card>
             </div>
           ) : null }
         <code>
