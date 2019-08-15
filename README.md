@@ -6,6 +6,8 @@ public transit systems around the world, starting with San Francisco.
 This app uses historical transit data to help riders understand
 the quality of SF Muni bus and subway lines. [Check out the app!](http://muni.opentransit.city/)
 
+If you're visiting this repo and looking to contribute, [check out our onboarding doc!](http://bit.ly/opentransit-onboarding)
+
 ## Building the app
 
 To start, you'll need to get Docker. Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
@@ -68,31 +70,35 @@ The build steps are defined in `cloudbuild.yaml`.
 
 ## Our tech stack
 
-Overall:
+###Overall
 
-- **Docker**, to ensure a consistent environment across machines.
-- **Docker Compose**, to run multiple containers at once.
+- **Docker** - to ensure a consistent environment across machines.
+- **Docker Compose** - to run multiple containers at once.
 
-Frontend:
+###Frontend
 
-- **React**; code lives in the `/frontend` directory.  It was built using
+- **React** - code lives in the `/frontend` directory.  It was built using
 [Create React App](https://facebook.github.io/create-react-app/docs/folder-structure).
-- **NPM** for package management. We explicitly decided to *not* use Yarn, because both
+- **NPM** - for package management. We explicitly decided to *not* use Yarn, because both
 package managers offer similar performance, we were already using NPM for backend
 package management, and the Yarn roadmap did not offer compelling
 improvements going forward.
-- **React**, which was inherited from an older OpenTransit Map app.
-- **Material UI**, which we use over Bootstrap since MUI doesn't rely on jQuery. It has a
+- **React** -  which was inherited from an older OpenTransit Map app.
+- **Material UI** - which we use over Bootstrap since MUI doesn't rely on jQuery. It has a
 popular React framework and looks great on mobile.
-- **Functional Components** for React; we migrated away from ES6 React Components and toward
-[Functional Components](https://reactjs.org/docs/components-and-props.html) due to the
 simpler component logic and the ability to use React Hooks that Functional Components offer.
-- **Redux** for state management and to simplify our application and component interaction.
-- **Redux Thunk** as middleware for Thunk.
+- **Redux** - for state management and to simplify our application and component interaction.
+- **Redux Thunk** - as middleware for Thunk.
 - **React Hooks** - to manage interactions with state management.
+- **Functional Components** - for React; we migrated away from ES6 React Components and toward
+[Functional Components](https://reactjs.org/docs/components-and-props.html) due to the
+- **ESLint** - Linting set in the format of AirBNB Style
+- **Prettier** - Code formatter to maintain standard code format for the frontend code
+- **Husky** - Pre-commit hook to trigger Prettier auto formatting before pushing to Github
+ 
+###Backend
 
-Backend:
-- **Flask**, because our data science work was already done in iPython and using
+- **Flask** - because our data science work was already done in iPython and using
 Python for the backend would ease the migration from experimentation to production.
 
 ## Notes for developers
