@@ -172,7 +172,7 @@ class MapSpider extends Component {
   /**
    * Rendering of stops nearest to click or current location
    */
-  StartMarkers = () => {
+  getStartMarkers = () => {
 
     let items = null;
 
@@ -195,9 +195,9 @@ class MapSpider extends Component {
             {Math.round(startMarker.miles * 5280)} feet
           </Tooltip>
         </CircleMarker>
-    });
+      });
     }
-    return <Fragment>{items}</Fragment>
+    return items;
   }
 
   /**
@@ -364,6 +364,8 @@ class MapSpider extends Component {
 
     const mapClass = { width: '100%', height: this.state.height };
 
+    let startMarkers = this.getStartMarkers();
+
     return (
       <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}
         minZoom={11}
@@ -378,9 +380,16 @@ class MapSpider extends Component {
           opacity={0.3}
         /> {/* see http://maps.stamen.com for details */}
         <this.DownstreamLines/>
-        <this.StartMarkers/>
+        {startMarkers}
         <this.SpiderOriginMarker spiderLatLng={this.props.spiderLatLng}/>
 
+        <Control position="topright">
+          <div className='map-instructions'>{
+            this.props.spiderLatLng && startMarkers && startMarkers.length ?
+              'Click anywhere along a route to see statistics for trips between the two stops.'
+              : 'Click anywhere in the city to see the routes near that point.'
+          }</div>
+        </Control>
         <Control position="bottomleft" >
           <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
             <GpsIcon/>&nbsp;
