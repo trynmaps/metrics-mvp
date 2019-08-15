@@ -328,7 +328,7 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
     possible_arrivals = concat_possible_arrivals()
 
     if possible_arrivals.empty:
-        arrivals = possible_arrivals
+        arrivals, num_trips = possible_arrivals, 0
     else:
         print(f'{route_id}: {round(time.time() - t0, 1)} cleaning arrivals')
 
