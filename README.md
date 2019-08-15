@@ -70,12 +70,12 @@ The build steps are defined in `cloudbuild.yaml`.
 
 ## Our tech stack
 
-###Overall
+### Overall
 
 - **Docker** - to ensure a consistent environment across machines.
 - **Docker Compose** - to run multiple containers at once.
 
-###Frontend
+### Frontend
 
 - **React** - code lives in the `/frontend` directory.  It was built using
 [Create React App](https://facebook.github.io/create-react-app/docs/folder-structure).
@@ -86,17 +86,16 @@ improvements going forward.
 - **React** -  which was inherited from an older OpenTransit Map app.
 - **Material UI** - which we use over Bootstrap since MUI doesn't rely on jQuery. It has a
 popular React framework and looks great on mobile.
-simpler component logic and the ability to use React Hooks that Functional Components offer.
 - **Redux** - for state management and to simplify our application and component interaction.
 - **Redux Thunk** - as middleware for Thunk.
 - **React Hooks** - to manage interactions with state management.
-- **Functional Components** - for React; we migrated away from ES6 React Components and toward
-[Functional Components](https://reactjs.org/docs/components-and-props.html) due to the
-- **ESLint** - Linting set in the format of AirBNB Style
-- **Prettier** - Code formatter to maintain standard code format for the frontend code
-- **Husky** - Pre-commit hook to trigger Prettier auto formatting before pushing to Github
+- **Functional Components** - We migrated away from ES6 React Components and toward React
+[Functional Components](https://reactjs.org/docs/components-and-props.html) due to the simpler component logic and the ability to use React Hooks that Functional Components offer.
+- **ESLint** - Linting set in the format of AirBNB Style.
+- **Prettier** - Code formatter to maintain standard code format for the frontend code.
+- **Husky** - Pre-commit hook to trigger Prettier auto formatting before pushing to Github.
  
-###Backend
+### Backend
 
 - **Flask** - because our data science work was already done in iPython and using
 Python for the backend would ease the migration from experimentation to production.
