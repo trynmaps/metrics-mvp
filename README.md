@@ -6,6 +6,8 @@ public transit systems around the world, starting with San Francisco.
 This app uses historical transit data to help riders understand
 the quality of SF Muni bus and subway lines. [Check out the app!](http://muni.opentransit.city/)
 
+If you're visiting this repo and looking to contribute, [check out our onboarding doc!](http://bit.ly/opentransit-onboarding)
+
 ## Building the app
 
 To start, you'll need to get Docker. Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
