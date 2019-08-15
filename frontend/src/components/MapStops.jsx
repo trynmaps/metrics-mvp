@@ -62,9 +62,9 @@ class MapStops extends Component {
     for (let i = 0; i < downstreamStops.length - 1; i++) {
 
       const speed = this.getSpeed(routeInfo, direction, downstreamStops, i, direction_id);
-      
-      // draw a wide white polyline as a background for the speed polyline 
-      
+
+      // draw a wide white polyline as a background for the speed polyline
+
       polylines.push(
           <Polyline
             key={'poly-speed-white-' + direction_id + '-' + downstreamStops[i].sid}
@@ -72,12 +72,12 @@ class MapStops extends Component {
             color="white"
             opacity={1}
             weight={10}
-          >      
+          >
           </Polyline>
       );
-      
+
       // then the speed polyline on top of the white polyline
-      
+
       polylines.push(
         <Polyline
           key={'poly-speed-' + direction_id + '-' + downstreamStops[i].sid}
@@ -142,7 +142,7 @@ class MapStops extends Component {
     } else {
       return -1; // speed not available;
     }
-    
+
     const distance = getDistanceInMiles(routeInfo, direction, firstStopID, nextStopID);
 
     return (distance / time) * 60; // miles per minute -> mph
@@ -175,7 +175,7 @@ class MapStops extends Component {
     }
 
     return (
-      <Control position="topright">
+      <Control position="bottomright">
         <div
           style={{
             backgroundColor: 'white',
@@ -313,6 +313,14 @@ class MapStops extends Component {
         />
         {populatedRoutes}
         <this.SpeedLegend />
+        <Control position="topright">
+        {!graphParams.start_stop_id || !graphParams.end_stop_id ?
+          <div className='map-instructions'>
+            {!graphParams.direction_id ? "Select a direction to see stops in that direction." :
+            !graphParams.start_stop_id ? "Click an origin stop." :
+            !graphParams.end_stop_id ? "Click a destination stop." : ""}
+          </div> : null}
+        </Control>
       </Map>
     );
   }

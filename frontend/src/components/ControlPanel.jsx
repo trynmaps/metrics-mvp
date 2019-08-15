@@ -65,27 +65,9 @@ function ControlPanel(props) {
       stopId.target.value,
     );
 
-    let newSecondStopId = secondStopId;
-
-    // If the "to stop" is not set or is not valid for
-    // the current "from stop", set a default "to stop" that
-    // is some number of stops down.  If there aren't
-    // enough stops, use the end of the line.
-
-    const nStops = 5;
-
-    if (secondStopId == null || !secondStopList.includes(secondStopId)) {
-      newSecondStopId =
-        secondStopList.length >= nStops
-          ? secondStopList[nStops - 1]
-          : secondStopList[secondStopList.length - 1];
-    }
-
-    //console.log(stopId, stopId.target.value, newSecondStopId);
-
     props.onGraphParams({
       start_stop_id: stopId.target.value,
-      end_stop_id: newSecondStopId,
+      end_stop_id: secondStopId,
     });
   };
 
