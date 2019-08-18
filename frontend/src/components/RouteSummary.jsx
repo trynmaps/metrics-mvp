@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect } from 'react';
 
-import { filterRoutes, getAllWaits, getAllDistances, getAllSpeeds, getAllScores,
+import { filterRoutes, getAllWaits, getAllSpeeds, getAllScores,
   computeGrades, quartileBackgroundColor, quartileForegroundColor,
   metersToMiles } from '../helpers/routeCalculations'
 
@@ -50,15 +50,16 @@ function RouteSummary(props) {
 
     routes = props.routes ? filterRoutes(props.routes) : [];
 
-    allWaits = getAllWaits(props);
-
-    const allDistances = getAllDistances(props);
-    allSpeeds = getAllSpeeds(props, allDistances);
+    allWaits = getAllWaits(props.waitTimesCache, graphParams, routes);
+    allSpeeds = getAllSpeeds(props.tripTimesCache, graphParams, routes);
     allScores = getAllScores(routes, allWaits, allSpeeds);
 
     const route_id = graphParams.route_id;
-    const distObj = allDistances ? allDistances.find(distObj => distObj.routeID === route_id) : null;
-    dist = distObj ? distObj.distance : null;
+    const route = routes.find(route => route.id === route_id);
+    if (route) {
+      const sumOfDistances = route.directions.reduce((total, value) => total + value.distance, 0);
+      dist = sumOfDistances / route.directions.length;
+    }
 
     waitObj = allWaits ? allWaits.find(obj => obj.routeID === route_id) : null;
     waitRanking = waitObj ? allWaits.length - allWaits.indexOf(waitObj) : null; // invert wait ranking to for shortest wait time

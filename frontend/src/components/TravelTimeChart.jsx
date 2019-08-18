@@ -51,7 +51,7 @@ function TravelTimeChart(props) {
     direction_id = props.direction_id || graphParams.direction_id; // also take direction_id from props if given
     
     if (direction_id) {
-      tripTimeForDirection = getEndToEndTripTime(props, route_id, direction_id);
+      tripTimeForDirection = getEndToEndTripTime(props.tripCacheTimes, graphParams, props.routes, route_id, direction_id);
     
     /* this is the end-to-end speed in the selected direction, not currently used
     if (dist <= 0 || isNaN(tripTime)) { speed = "?"; } // something wrong with the data here

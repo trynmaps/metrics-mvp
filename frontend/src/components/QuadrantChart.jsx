@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { getAllWaits, getAllDistances, getAllSpeeds } from '../helpers/routeCalculations';
+import { getAllWaits, getAllSpeeds } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
 import { XYPlot, HorizontalGridLines, VerticalGridLines, XAxis, YAxis,
   ChartLabel, CustomSVGSeries } from 'react-vis';
@@ -14,9 +14,8 @@ import { XYPlot, HorizontalGridLines, VerticalGridLines, XAxis, YAxis,
  */
 function QuadrantChart(props) {
 
-  const allWaits = getAllWaits(props);
-  const allDistances = getAllDistances(props);
-  const allSpeeds = getAllSpeeds(props, allDistances);
+  const allWaits = getAllWaits(props.waitTimesCache, props.graphParams, props.routes);
+  const allSpeeds = getAllSpeeds(props.tripTimesCache, props.graphParams, props.routes);
   
   const quadrantData = allSpeeds ? allSpeeds.map(speed => {
     const waitObj = allWaits.find(waitObj => waitObj.routeID === speed.routeID);

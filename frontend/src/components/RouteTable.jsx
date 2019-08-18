@@ -14,7 +14,7 @@ import Paper from '@material-ui/core/Paper';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
-import { filterRoutes, getAllWaits, getAllDistances, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
+import { filterRoutes, getAllWaits, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
 import Link from 'redux-first-router-link';
 
@@ -192,9 +192,8 @@ function RouteTable(props) {
     routes = routes.filter(route => spiderRouteIDs.includes(route.id));
   }
 
-  const allWaits = getAllWaits(props);
-  const allDistances = getAllDistances(props);
-  const allSpeeds = getAllSpeeds(props, allDistances);
+  const allWaits = getAllWaits(props.waitTimesCache, props.graphParams, routes);
+  const allSpeeds = getAllSpeeds(props.tripTimesCache, props.graphParams, routes);
   const allScores = getAllScores(routes, allWaits, allSpeeds);
   
   routes = routes.map(route => {

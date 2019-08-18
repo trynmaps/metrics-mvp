@@ -182,15 +182,15 @@ export function ignoreFlag(routeID, directionID, flagName) {
  * Get precomputed trip times for the first stop, then apply heuristic rules
  * to trim off the first stop or first stops if needed.
  */
-function getTripTimesUsingHeuristics(props, routeID, directionID) {
+function getTripTimesUsingHeuristics(tripTimesCache, graphParams, routes, routeID, directionID) {
   const tripTimesForDir = getTripTimesForDirection(
-    props.tripTimesCache,
-    props.graphParams,
+    tripTimesCache,
+    graphParams,
     routeID,
     directionID,
   );
 
-  if (!tripTimesForDir || !props.routes) {
+  if (!tripTimesForDir || !routes) {
     // console.log("No trip times found at all for " + directionID + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
     return { tripTimesForFirstStop: null, directionInfo: null };
@@ -200,7 +200,7 @@ function getTripTimesUsingHeuristics(props, routeID, directionID) {
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
 
-  const route = props.routes.find(route => route.id === routeID);
+  const route = routes.find(route => route.id === routeID);
   const directionInfo = route.directions.find(
     direction => direction.id === directionID,
   );
@@ -238,9 +238,11 @@ function getTripTimesUsingHeuristics(props, routeID, directionID) {
  * Returns trip time across the full route, applying heuristic rules to ignore
  * the last stop or stops as needed.
  */
-export function getEndToEndTripTime(props, routeID, directionID) {
+export function getEndToEndTripTime(tripTimesCache, graphParams, routes, routeID, directionID) {
   const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
-    props,
+    tripTimesCache,
+    graphParams,
+    routes,
     routeID,
     directionID,
   );
@@ -290,7 +292,9 @@ export function getEndToEndTripTime(props, routeID, directionID) {
  */
 export function getTripDataSeries(props, routeID, directionID) {
   const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
-    props,
+    props.tripTimesCache,
+    props.graphParams,
+    props.routes,
     routeID,
     directionID,
   );
@@ -330,15 +334,15 @@ export function getTripDataSeries(props, routeID, directionID) {
  *
  * @param {any} props
  */
-export function getAllWaits(props) {
+export function getAllWaits(waitTimesCache, graphParams, routes) {
   let allWaits = null;
-  if (props.routes) {
-    allWaits = filterRoutes(props.routes).map(route => {
+  if (routes) {
+    allWaits = filterRoutes(routes).map(route => {
       return {
         routeID: route.id,
         wait: getAverageOfMedianWait(
-          props.waitTimesCache,
-          props.graphParams,
+          waitTimesCache,
+          graphParams,
           route,
         ),
       };
@@ -353,40 +357,18 @@ export function getAllWaits(props) {
 }
 
 /**
- * GTFS route distances.  This is the average route distance across all directions for a route.
- *
- * @param {any} props
- */
-export function getAllDistances(props) {
-  let allDistances = null;
-  if (props.routes) {
-    allDistances = props.routes.map(route => {
-      const totalDistance = route.directions.reduce((total, direction) => { return total + direction.distance; }, 0);
-      return {
-        routeID: route.id,
-        distance: totalDistance/route.directions.length,
-      }
-    })
-  }
-  //console.log(JSON.stringify(allDistances));
-  return allDistances;
-}
-
-/**
  * Computes the end to end speed for a route.
  *
- * @param {any} props
+ * @param {any} routes
  * @param {any} route_id
- * @param {any} allDistances
  */
-function getSpeedForRoute(props, route_id, allDistances) {
-  const route = props.routes.find(route => route.id === route_id);
+function getSpeedForRoute(tripTimesCache, graphParams, routes, route_id) {
+  const route = routes.find(route => route.id === route_id);
 
   const filteredDirections = filterDirections(route.directions, route_id);
   let speeds = filteredDirections.map(direction => {
-    const distObj = allDistances.find(distObj => distObj.routeID === route_id);
-    const dist = distObj ? distObj.distance : null;
-    const tripTime = getEndToEndTripTime(props, route.id, direction.id);
+    const dist = direction.distance;
+    const tripTime = getEndToEndTripTime(tripTimesCache, graphParams, routes, route.id, direction.id);
 
     if (dist <= 0 || isNaN(tripTime)) {
       // something wrong with the data here
@@ -414,13 +396,13 @@ function getSpeedForRoute(props, route_id, allDistances) {
  * @param {any} routes
  * @param {any} allDistances
  */
-export function getAllSpeeds(props, allDistances) {
+export function getAllSpeeds(tripTimesCache, graphParams, routes) {
   let allSpeeds = null;
-  if (props.routes) {
-    allSpeeds = filterRoutes(props.routes).map(route => {
+  if (routes) {
+    allSpeeds = filterRoutes(routes).map(route => {
       return {
         routeID: route.id,
-        speed: getSpeedForRoute(props, route.id, allDistances),
+        speed: getSpeedForRoute(tripTimesCache, graphParams, routes, route.id),
       };
     });
     allSpeeds = allSpeeds.filter(speedObj => speedObj.speed > 0); // not needed?
