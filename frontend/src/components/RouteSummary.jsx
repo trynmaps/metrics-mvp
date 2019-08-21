@@ -9,6 +9,7 @@ import { connect } from 'react-redux';
 import { fetchPrecomputedWaitAndTripData } from '../actions';
 
 import TravelTimeChart from './TravelTimeChart';
+import MareyChart from './MareyChart';
 import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -166,6 +167,7 @@ function RouteSummary(props) {
 
 
         <TravelTimeChart/>
+        <MareyChart/>
 
       </Grid>
       </div>

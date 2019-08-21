@@ -51,6 +51,11 @@ export default (state = initialState, action) => {
           [action.payload[1]]: action.payload[0],
         },
       }; // add new dictionary entry into waitTimesCache
+    case 'RECEIVED_ARRIVALS':
+      return {
+        ...state,
+        arrivals: action.payload[0],
+      };
     default:
       return state;
   }
