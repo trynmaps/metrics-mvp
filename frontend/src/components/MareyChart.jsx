@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { XYPlot, HorizontalGridLines, VerticalGridLines,
-  XAxis, YAxis, LineMarkSeries, ChartLabel /*, Hint */ } from 'react-vis';
+  XAxis, YAxis, LineMarkSeries, ChartLabel, Hint } from 'react-vis';
 import '../../node_modules/react-vis/dist/style.css';
 import { metersToMiles } from '../helpers/routeCalculations'
 
@@ -58,7 +58,7 @@ function MareyChart(props) {
     }
   }, [props.arrivals, props.routes]);
   
-  // const [hintValue, setHintValue] = useState(); not working
+   const [hintValue, setHintValue] = useState(); /* not working */
   const [processedArrivals, setProcessedArrivals] = useState();
   
   /**
@@ -89,7 +89,7 @@ function MareyChart(props) {
         for (let index in dataArray) {
           const arrival = dataArray[index];
           
-          addArrival(tripData, arrival, stopID, directionInfo, start_time);
+          addArrival(tripData, arrival, stopID, route, directionInfo, start_time);
         }
       }
     }
@@ -110,7 +110,7 @@ function MareyChart(props) {
    * @param {Object} directionInfo
    * @param {Number} start_time
    */
-  const addArrival = (tripData, arrival, stopID, directionInfo, start_time) => {
+  const addArrival = (tripData, arrival, stopID, route, directionInfo, start_time) => {
     const tripID = arrival.i;
     const vehicleID = arrival.v;
     if (tripData[tripID] === undefined) {
@@ -135,6 +135,8 @@ function MareyChart(props) {
       distance = metersToMiles(distance);
       tripData[tripID].series.push({
         stopID: stopID,
+        title: route.stops[stopID].title,
+        minutes: (arrival.t - start_time)/60,
         x: distance,
         y: (arrival.t - start_time)/60/60 + 3.0, // convert to number of hours since midnight, assume 3am start time for now
       });
@@ -167,14 +169,12 @@ function MareyChart(props) {
           strokeWidth: '1px'
         }}              
         size="1"
-        onNearestXY={ null /* doesn't select the correct point value => setHintValue(value) */ }          
+        onValueMouseOver={ value => setHintValue(value) /* bug with onNearestXY requires use of onValue */ }          
         />);
     }
     return tripSeriesArray;
   }
 
-  let tripSeriesArray = [];
-  
   return processedArrivals ? 
   <Grid item xs={12}>
     <Card>
@@ -217,7 +217,15 @@ function MareyChart(props) {
             textAnchor: 'end'
           }}       
         />
-        {/*hintValue ? <Hint value={hintValue} /> : null not working*/}
+        {hintValue ?
+          <Hint
+            value={hintValue}
+            format={ hintValue => [{title: 'Stop', value: hintValue.title },
+                                   {title: 'Time', value: `${(Math.floor(hintValue.minutes / 60) + 3)}:${Math.round(hintValue.minutes % 60).toString().padStart(2, '0')}`}
+            ] }
+          />
+         : 
+         null }
 
       </XYPlot>
       </CardContent>
