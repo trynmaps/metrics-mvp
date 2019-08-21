@@ -137,6 +137,7 @@ function MareyChart(props) {
         stopID: stopID,
         title: route.stops[stopID].title,
         minutes: (arrival.t - start_time)/60,
+        vehicleID: vehicleID,
         x: distance,
         y: (arrival.t - start_time)/60/60 + 3.0, // convert to number of hours since midnight, assume 3am start time for now
       });
@@ -221,7 +222,8 @@ function MareyChart(props) {
           <Hint
             value={hintValue}
             format={ hintValue => [{title: 'Stop', value: hintValue.title },
-                                   {title: 'Time', value: `${(Math.floor(hintValue.minutes / 60) + 3)}:${Math.round(hintValue.minutes % 60).toString().padStart(2, '0')}`}
+                                   {title: 'Time', value: `${(Math.floor(hintValue.minutes / 60) + 3)}:${Math.round(hintValue.minutes % 60).toString().padStart(2, '0')}`},
+                                   {title: 'Vehicle ID', value: hintValue.vehicleID }
             ] }
           />
          : 
