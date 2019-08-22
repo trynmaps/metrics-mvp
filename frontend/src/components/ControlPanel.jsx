@@ -15,8 +15,8 @@ import Grid from '@material-ui/core/Grid';
 //URL constants
 const ROUTE = 'route';
 const DIRECTION = 'direction';
-const START_STOP = 'start_stop';
-const END_STOP = 'end_stop';
+const START_STOP = 'from_stop';
+const END_STOP = 'to_stop';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -36,7 +36,6 @@ function ControlPanel(props) {
   let secondStopList = [];
 
   const setDirectionId = directionId => {
-    debugger; 
     setURL(DIRECTION, directionId.target.value);
     return (props.onGraphParams({
       direction_id: directionId.target.value,
@@ -64,23 +63,32 @@ function ControlPanel(props) {
       : 0;
     return secondStopInfo.stops.slice(secondStopListIndex + 1);
   }
-
+  
+  /*
+    sets the URL based on dropDown values
+  */
   const setURL = (urlParam,id,stopIds=null) => {
     let currentURL = document.location.pathname;
     if(currentURL.lastIndexOf('/') === currentURL.length-1) {
       currentURL= currentURL.substring(0,currentURL.length-1);
     }
-    debugger;
-    if(stopIds !== null) {
-       push(`${currentURL}/${START_STOP}/${stopIds[0]}/${END_STOP}/${stopIds[1]}`);
-       return;
-    }
     let currentURLArray = currentURL.split('/');
     const endingURLIndex = currentURLArray.indexOf(urlParam);
+    //stopIds is an array of both from and to stop ids
+    //if we have them, we need to set both params
+    if(stopIds !== null) {
+        const endingPath = `${START_STOP}/${stopIds[0]}/${END_STOP}/${stopIds[1]}`;
+        currentURL.indexOf(START_STOP) === - 1
+        ? push(`${currentURL}/${endingPath}`)
+        : push(`${currentURLArray.slice(0,endingURLIndex).join('/')}/${endingPath}`);
+       return;
+    }
+    //if we don't have the value of the URL yet, then just append it
     if(endingURLIndex === -1){
        push(`${currentURL}/${urlParam}/${id}`);
        return;
     }
+    //otherwise, we need to cut off the URL and add latest parameter
     currentURLArray[endingURLIndex+1]=id;
     push(currentURLArray.slice(0,endingURLIndex+2).join('/'));
 
@@ -110,9 +118,9 @@ function ControlPanel(props) {
           ? secondStopList[nStops - 1]
           : secondStopList[secondStopList.length - 1];
     }
-    secondStopId === null
-      ? setURL(null,null,[stopId.target.value,newSecondStopId])
-      : setURL(START_STOP,stopId.target.value);
+    secondStopId == null || !secondStopList.includes(secondStopId)
+      ? setURL(START_STOP,null,[stopId.target.value,newSecondStopId])
+      : setURL(START_STOP,null,[stopId.target.value,secondStopId]);
     
     //console.log(stopId, stopId.target.value, newSecondStopId);
 
