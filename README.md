@@ -26,7 +26,7 @@ When you edit files in your local directory, the React and Flask containers shou
 
 To start a shell within the Flask Docker container, run `./docker-shell.sh` (Linux/Mac) or `docker-shell` (Windows).
 
-You can run command line scripts like `compute_arrivals.py` and `headways.py` from the shell in the Docker container.
+You can run command line scripts like `backend/compute_arrivals.py` and `backend/headways.py` from the shell in the Docker container.
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
 

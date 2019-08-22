@@ -1,8 +1,13 @@
-# Global / Backend reviewer suggestions
-*               @hathix @youngj @exxonvaldez
+# Global
+*               @hathix
 
-# Frontend reviewer suggestions (overrides global)
+# Folder Specific Overrides 
+
+# Frontend
 /frontend/      @exxonvaldez @akgupta89
+
+# Backend
+/backend/ 	@youngj @jtanquil
 
 # Kubernetes reviewer suggestions
 /kubernetes/    @youngj
