@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { connect } from 'react-redux';
+import { history, prevPath} from 'redux-first-router';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Input from '@material-ui/core/Input';
@@ -9,7 +10,13 @@ import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { handleGraphParams } from '../actions';
+import { push } from 'redux-first-router';
 import Grid from '@material-ui/core/Grid';
+//URL constants
+const ROUTE = 'route';
+const DIRECTION = 'direction';
+const START_STOP = 'start_stop';
+const END_STOP = 'end_stop';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -28,12 +35,15 @@ function ControlPanel(props) {
   const selectedRoute = getSelectedRouteInfo();
   let secondStopList = [];
 
-  const setDirectionId = directionId =>
-    props.onGraphParams({
+  const setDirectionId = directionId => {
+    debugger; 
+    setURL(DIRECTION, directionId.target.value);
+    return (props.onGraphParams({
       direction_id: directionId.target.value,
       start_stop_id: null,
       end_stop_id: null,
-    });
+    }));
+  }
 
   function getSelectedRouteInfo() {
     const routeId = props.graphParams.route_id;
@@ -55,6 +65,26 @@ function ControlPanel(props) {
     return secondStopInfo.stops.slice(secondStopListIndex + 1);
   }
 
+  const setURL = (urlParam,id,stopIds=null) => {
+    let currentURL = document.location.pathname;
+    if(currentURL.lastIndexOf('/') === currentURL.length-1) {
+      currentURL= currentURL.substring(0,currentURL.length-1);
+    }
+    debugger;
+    if(stopIds !== null) {
+       push(`${currentURL}/${START_STOP}/${stopIds[0]}/${END_STOP}/${stopIds[1]}`);
+       return;
+    }
+    let currentURLArray = currentURL.split('/');
+    const endingURLIndex = currentURLArray.indexOf(urlParam);
+    if(endingURLIndex === -1){
+       push(`${currentURL}/${urlParam}/${id}`);
+       return;
+    }
+    currentURLArray[endingURLIndex+1]=id;
+    push(currentURLArray.slice(0,endingURLIndex+2).join('/'));
+
+  }
   const onSelectFirstStop = stopId => {
     const directionId = props.graphParams.direction_id;
     const secondStopId = props.graphParams.end_stop_id;
@@ -80,7 +110,10 @@ function ControlPanel(props) {
           ? secondStopList[nStops - 1]
           : secondStopList[secondStopList.length - 1];
     }
-
+    secondStopId === null
+      ? setURL(null,null,[stopId.target.value,newSecondStopId])
+      : setURL(START_STOP,stopId.target.value);
+    
     //console.log(stopId, stopId.target.value, newSecondStopId);
 
     props.onGraphParams({
@@ -90,10 +123,13 @@ function ControlPanel(props) {
   };
 
   const onSelectSecondStop = stopId => {
+    setURL(END_STOP,stopId.target.value);
     props.onGraphParams({ end_stop_id: stopId.target.value });
   };
 
   const setRouteId = routeId => {
+    debugger;
+    setURL(ROUTE, routeId.target.value);
     const mySelectedRoute = props.routes
       ? props.routes.find(route => route.id === routeId.target.value)
       : null;
