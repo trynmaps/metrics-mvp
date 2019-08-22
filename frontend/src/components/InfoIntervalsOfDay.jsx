@@ -5,7 +5,7 @@ import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import { getPercentileValue } from '../helpers/graphData';
 import { CHART_COLORS, PLANNING_PERCENTILE, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 import '../../node_modules/react-vis/dist/style.css'
-import { Card, CardContent, CardHeader, FormControl, FormControlLabel, Checkbox } from '@material-ui/core';
+import { Card, CardContent, CardHeader, FormControl, FormControlLabel, Radio } from '@material-ui/core';
 
 /**
  * Bar chart of average and planning percentile wait and time across the day.
@@ -106,7 +106,7 @@ class InfoIntervalsOfDay extends Component {
                 <FormControl>
                 <div className="controls">
                   <FormControlLabel
-                    control={<Checkbox 
+                    control={<Radio 
                       id="average_time"
                       type="radio"
                       value={InfoIntervalsOfDay.AVERAGE_TIME}
@@ -117,7 +117,7 @@ class InfoIntervalsOfDay extends Component {
                   />
                     
                   <FormControlLabel
-                    control={<Checkbox 
+                    control={<Radio 
                       id="planning_time"
                       type="radio"
                       value={InfoIntervalsOfDay.PLANNING_TIME}

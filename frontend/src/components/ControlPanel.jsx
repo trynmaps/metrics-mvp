@@ -15,8 +15,8 @@ import Grid from '@material-ui/core/Grid';
 //URL constants
 const ROUTE = 'route';
 const DIRECTION = 'direction';
-const START_STOP = 'from_stop';
-const END_STOP = 'to_stop';
+const FROM_STOP = 'from_stop';
+const TO_STOP = 'to_stop';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -36,7 +36,8 @@ function ControlPanel(props) {
   let secondStopList = [];
 
   const setDirectionId = directionId => {
-    setURL(DIRECTION, directionId.target.value);
+    let path = setPath(DIRECTION, directionId.target.value);
+    commitPath(path);
     return (props.onGraphParams({
       direction_id: directionId.target.value,
       start_stop_id: null,
@@ -67,32 +68,26 @@ function ControlPanel(props) {
   /*
     sets the URL based on dropDown values
   */
-  const setURL = (urlParam,id,stopIds=null) => {
-    let currentURL = document.location.pathname;
-    if(currentURL.lastIndexOf('/') === currentURL.length-1) {
-      currentURL= currentURL.substring(0,currentURL.length-1);
+  const setPath = (pathParam,id,path = document.location.pathname) => {
+    //account for trailing / if there is one
+    if(path.lastIndexOf('/') === path.length-1) {
+      path = path.substring(0,path.length-1);
     }
-    let currentURLArray = currentURL.split('/');
-    const endingURLIndex = currentURLArray.indexOf(urlParam);
-    //stopIds is an array of both from and to stop ids
-    //if we have them, we need to set both params
-    if(stopIds !== null) {
-        const endingPath = `${START_STOP}/${stopIds[0]}/${END_STOP}/${stopIds[1]}`;
-        currentURL.indexOf(START_STOP) === - 1
-        ? push(`${currentURL}/${endingPath}`)
-        : push(`${currentURLArray.slice(0,endingURLIndex).join('/')}/${endingPath}`);
-       return;
-    }
-    //if we don't have the value of the URL yet, then just append it
-    if(endingURLIndex === -1){
-       push(`${currentURL}/${urlParam}/${id}`);
-       return;
+
+    let pathArray = path.split('/');
+    const endingPathIndex = pathArray.indexOf(pathParam);
+    //if we don't have the value of the last param yet in the URL, then just append it
+    if(endingPathIndex === -1){
+      return `${path}/${pathParam}/${id}`;
+       
     }
     //otherwise, we need to cut off the URL and add latest parameter
-    currentURLArray[endingURLIndex+1]=id;
-    push(currentURLArray.slice(0,endingURLIndex+2).join('/'));
+    pathArray[endingPathIndex+1]=id;
+    return pathArray.slice(0,endingPathIndex+2).join('/');
 
   }
+  const commitPath = path => push(path);
+
   const onSelectFirstStop = stopId => {
     const directionId = props.graphParams.direction_id;
     const secondStopId = props.graphParams.end_stop_id;
@@ -102,42 +97,26 @@ function ControlPanel(props) {
       directionId,
       stopId.target.value,
     );
+    let path = setPath(FROM_STOP, stopId.target.value);
 
-    let newSecondStopId = secondStopId;
-
-    // If the "to stop" is not set or is not valid for
-    // the current "from stop", set a default "to stop" that
-    // is some number of stops down.  If there aren't
-    // enough stops, use the end of the line.
-
-    const nStops = 5;
-
-    if (secondStopId == null || !secondStopList.includes(secondStopId)) {
-      newSecondStopId =
-        secondStopList.length >= nStops
-          ? secondStopList[nStops - 1]
-          : secondStopList[secondStopList.length - 1];
+    if(secondStopId){
+      path = setPath(TO_STOP, secondStopId, path);
     }
-    secondStopId == null || !secondStopList.includes(secondStopId)
-      ? setURL(START_STOP,null,[stopId.target.value,newSecondStopId])
-      : setURL(START_STOP,null,[stopId.target.value,secondStopId]);
-    
-    //console.log(stopId, stopId.target.value, newSecondStopId);
-
+    commitPath(path);
     props.onGraphParams({
       start_stop_id: stopId.target.value,
-      end_stop_id: newSecondStopId,
+      end_stop_id: secondStopId,
     });
   };
 
   const onSelectSecondStop = stopId => {
-    setURL(END_STOP,stopId.target.value);
+    let path = setPath(TO_STOP,stopId.target.value);
+    commitPath(path);
     props.onGraphParams({ end_stop_id: stopId.target.value });
   };
 
   const setRouteId = routeId => {
-    debugger;
-    setURL(ROUTE, routeId.target.value);
+    let path = setPath(ROUTE, routeId.target.value);
     const mySelectedRoute = props.routes
       ? props.routes.find(route => route.id === routeId.target.value)
       : null;
@@ -151,7 +130,8 @@ function ControlPanel(props) {
         ? mySelectedRoute.directions[0].id
         : null;
     // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
-
+    path = setPath(DIRECTION, directionId, path);
+    commitPath(path);
     props.onGraphParams({
       route_id: routeId.target.value,
       direction_id: directionId,

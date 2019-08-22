@@ -19,7 +19,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - .:/app
+      - ./backend:/app/backend
     environment:
       FLASK_DEBUG: 1
   react-dev:
