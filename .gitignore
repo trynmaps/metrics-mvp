@@ -97,7 +97,7 @@ backend/*$py.class
 *.so
 
 # Distribution / packaging
-.backend/Python
+backend/.Python
 backend/build/
 develop-eggs/
 backend/dist/
