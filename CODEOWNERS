@@ -1,0 +1,8 @@
+# Global / Backend reviewer suggestions
+*               @hathix @youngj @exxonvaldez
+
+# Frontend reviewer suggestions (overrides global)
+/frontend/      @exxonvaldez @akgupta89
+
+# Kubernetes reviewer suggestions
+/kubernetes/    @youngj
