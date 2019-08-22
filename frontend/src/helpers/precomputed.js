@@ -42,6 +42,10 @@ export function getTripTimesForDirection(
 ) {
   const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
 
+  if (!tripTimesCache) {
+    return null;
+  }
+
   const tripTimes = tripTimesCache[dateStr + timeStr + stat];
 
   if (!tripTimes) {

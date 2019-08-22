@@ -40,7 +40,7 @@ function Dashboard(props) {
         {' '}
         {/* Using spacing causes horizontal scrolling, see https://material-ui.com/components/grid/#negative-margin */}
         <Grid item xs={6}>
-          <MapSpider routes={routes} />
+          <MapSpider />
         </Grid>
         <Grid item xs={6} style={{ padding: 12 }}>
           {' '}
