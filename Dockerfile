@@ -8,15 +8,15 @@ WORKDIR /app/frontend
 CMD ["npm","start"]
 
 FROM python:3.7.2-slim-stretch AS flask-dev
-RUN mkdir /app && \
+RUN mkdir -p /app/backend && \
     apt-get update && \
     apt-get install -y curl nano less sudo
-COPY ./requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
-COPY . /app
-RUN mkdir /app/data
-WORKDIR /app
-ENV FLASK_APP=metrics-api.py
+COPY ./backend/requirements.txt /app/backend/requirements.txt
+RUN pip install -r /app/backend/requirements.txt
+COPY ./backend /app/backend
+RUN mkdir -p /app/backend/data
+WORKDIR /app/backend
+ENV FLASK_APP=backend/metrics-api.py
 CMD ["flask", "run", "--host", "0.0.0.0"]
 
 FROM flask-dev as flask
