@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { connect } from 'react-redux';
-import { history, prevPath} from 'redux-first-router';
+import { push } from 'redux-first-router';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Input from '@material-ui/core/Input';
@@ -10,9 +10,9 @@ import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { handleGraphParams } from '../actions';
-import { push } from 'redux-first-router';
 import Grid from '@material-ui/core/Grid';
-//URL constants
+
+//path constants
 const ROUTE = 'route';
 const DIRECTION = 'direction';
 const FROM_STOP = 'from_stop';
