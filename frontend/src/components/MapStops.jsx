@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import {DIRECTION, FROM_STOP, TO_STOP, setPath, commitPath} from '../routeUtil';
 import { connect } from 'react-redux';
 import { Map, TileLayer, CircleMarker, Tooltip, Polyline } from 'react-leaflet';
 import { handleGraphParams } from '../actions';
@@ -232,7 +233,12 @@ class MapStops extends Component {
       end_stop_id = null;
       direction_id = new_direction_id;
     }
-
+    let path = setPath(DIRECTION, direction_id);
+    path = setPath(FROM_STOP, start_stop_id);
+    if(end_stop_id) {
+      path = setPath(TO_STOP, end_stop_id, path);
+    }
+    commitPath(path);
     const { onGraphParams } = this.props;
     // for debugging
     //console.log("end state is: start: " + start_stop_id + " end: " + end_stop_id + " dir: " + direction_id);

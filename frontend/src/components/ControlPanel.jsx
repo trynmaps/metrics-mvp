@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { connect } from 'react-redux';
-import { push } from 'redux-first-router';
+import {ROUTE, DIRECTION, FROM_STOP, TO_STOP, setPath, commitPath} from '../routeUtil';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Input from '@material-ui/core/Input';
@@ -12,11 +12,6 @@ import Select from '@material-ui/core/Select';
 import { handleGraphParams } from '../actions';
 import Grid from '@material-ui/core/Grid';
 
-//path constants
-const ROUTE = 'route';
-const DIRECTION = 'direction';
-const FROM_STOP = 'from_stop';
-const TO_STOP = 'to_stop';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -65,28 +60,7 @@ function ControlPanel(props) {
     return secondStopInfo.stops.slice(secondStopListIndex + 1);
   }
   
-  /*
-    sets the URL based on dropDown values
-  */
-  const setPath = (pathParam,id,path = document.location.pathname) => {
-    //account for trailing / if there is one
-    if(path.lastIndexOf('/') === path.length-1) {
-      path = path.substring(0,path.length-1);
-    }
-
-    let pathArray = path.split('/');
-    const endingPathIndex = pathArray.indexOf(pathParam);
-    //if we don't have the value of the last param yet in the URL, then just append it
-    if(endingPathIndex === -1){
-      return `${path}/${pathParam}/${id}`;
-       
-    }
-    //otherwise, we need to cut off the URL and add latest parameter
-    pathArray[endingPathIndex+1]=id;
-    return pathArray.slice(0,endingPathIndex+2).join('/');
-
-  }
-  const commitPath = path => push(path);
+  
 
   const onSelectFirstStop = stopId => {
     const directionId = props.graphParams.direction_id;
