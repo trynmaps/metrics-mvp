@@ -209,16 +209,11 @@ class Info extends Component {
     const speed = tripTimes && distance ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = speed ? this.computeGrades(headwayMin, waitTimes, tripTimes, speed) : null;
 
-    
-    const addNewRow = (metric, value, grade, score) =>{ 
-      return {metric, value, grade, score}
-    };
-
     const tableRows = !grades && [] || [
-      addNewRow('Average Wait', (`${Math.round(waitTimes.avg)} minutes`), grades.averageWaitGrade, grades.averageWaitScore),
-      addNewRow('20 min wait probability', `${Math.round(grades.longWaitProbability * 100)}% ${ grades.longWaitProbability > 0 ? `(1 time out of ${Math.round(1 / grades.longWaitProbability)})` : ''}`, grades.longWaitGrade, grades.longWaitScore),
-      addNewRow('Travel Time', `Average time ${Math.round(tripTimes.avg)} minutes (${ speed } mph)`, grades.speedGrade, grades.speedScore),
-      addNewRow('Travel Variability', `${PLANNING_PERCENTILE}% of trips take ${ Math.round(getPercentileValue(tripTimes, PLANNING_PERCENTILE)) } minutes`, grades.travelVarianceGrade, grades.travelVarianceScore)
+      {metric: 'Average Wait', value: `${Math.round(waitTimes.avg)} minutes`, grade: grades.averageWaitGrade, score: grades.averageWaitScore},
+      {metric: '20 min wait probability', value: `${Math.round(grades.longWaitProbability * 100)}% ${ grades.longWaitProbability > 0 ? `(1 time out of ${Math.round(1 / grades.longWaitProbability)})` : ''}`, grade: grades.longWaitGrade, score: grades.longWaitScore},
+      {metric: 'Travel Time', value: `Average time ${Math.round(tripTimes.avg)} minutes (${ speed } mph)`, grade: grades.speedGrade, score: grades.speedScore},
+      {metric: 'Travel Variability', value: `${PLANNING_PERCENTILE}% of trips take ${ Math.round(getPercentileValue(tripTimes, PLANNING_PERCENTILE)) } minutes`, grade: grades.travelVarianceGrade, score: grades.travelVarianceScore}
     ]
 
     return (
