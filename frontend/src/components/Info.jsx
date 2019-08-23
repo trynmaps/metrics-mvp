@@ -210,15 +210,15 @@ class Info extends Component {
     const grades = speed ? this.computeGrades(headwayMin, waitTimes, tripTimes, speed) : null;
 
     
-    const addNewRow = (metric, value, grade, score) => {  
+    const addNewRow = (metric, value, grade, score) =>{ 
       return {metric, value, grade, score}
-    }
+    };
 
-    const tableRows = [
-      grades && addNewRow('Average Wait', (<><div>{`${Math.round(waitTimes.avg)} minutes`}</div><div>{`${PLANNING_PERCENTILE}% of waits under ${ Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE)) } minutes`}</div></>), grades.averageWaitGrade, grades.averageWaitScore),
-      grades && addNewRow('20 min wait probability', `${Math.round(grades.longWaitProbability * 100)}% ${ grades.longWaitProbability > 0 ? `(1 time out of ${Math.round(1 / grades.longWaitProbability)})` : ''}`, grades.longWaitGrade, grades.longWaitScore),
-      grades && addNewRow('Travel Time', `Average time ${Math.round(tripTimes.avg)} minutes (${ speed } mph)`, grades.speedGrade, grades.speedScore),
-      grades && addNewRow('Travel Variability', `${PLANNING_PERCENTILE}% of trips take ${ Math.round(getPercentileValue(tripTimes, PLANNING_PERCENTILE)) } minutes`, grades.travelVarianceGrade, grades.travelVarianceScore)
+    const tableRows = !grades && [] || [
+      addNewRow('Average Wait', (`${Math.round(waitTimes.avg)} minutes`), grades.averageWaitGrade, grades.averageWaitScore),
+      addNewRow('20 min wait probability', `${Math.round(grades.longWaitProbability * 100)}% ${ grades.longWaitProbability > 0 ? `(1 time out of ${Math.round(1 / grades.longWaitProbability)})` : ''}`, grades.longWaitGrade, grades.longWaitScore),
+      addNewRow('Travel Time', `Average time ${Math.round(tripTimes.avg)} minutes (${ speed } mph)`, grades.speedGrade, grades.speedScore),
+      addNewRow('Travel Variability', `${PLANNING_PERCENTILE}% of trips take ${ Math.round(getPercentileValue(tripTimes, PLANNING_PERCENTILE)) } minutes`, grades.travelVarianceGrade, grades.travelVarianceScore)
     ]
 
     return (
@@ -246,6 +246,9 @@ class Info extends Component {
                   {grades.highestPossibleScore}
                   {' '}
                   )
+                  <div>
+                    {`${PLANNING_PERCENTILE}% of waits under ${ Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE)) } minutes`}
+                  </div>
                   <Table>
                     <TableHead>
                       <TableRow>
