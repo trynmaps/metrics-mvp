@@ -7,7 +7,7 @@ import { PLANNING_PERCENTILE, CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '
 import * as d3 from 'd3';
 import { XYPlot, HorizontalGridLines, XAxis, YAxis, VerticalRectSeries,
   ChartLabel, Crosshair } from 'react-vis';
-import { Card, CardContent } from '@material-ui/core';
+import { Card, CardContent, Table, TableBody, TableCell, TableHead, TableRow } from '@material-ui/core';
 
 
 class Info extends Component {
@@ -209,6 +209,13 @@ class Info extends Component {
     const speed = tripTimes && distance ? (distance / (tripTimes.avg / 60.0)).toFixed(1) : 0; // convert avg trip time to hours for mph
     const grades = speed ? this.computeGrades(headwayMin, waitTimes, tripTimes, speed) : null;
 
+    const tableRows = !grades && [] || [
+      {metric: 'Average Wait', value: `${Math.round(waitTimes.avg)} minutes`, grade: grades.averageWaitGrade, score: grades.averageWaitScore},
+      {metric: '20 min wait probability', value: `${Math.round(grades.longWaitProbability * 100)}% ${ grades.longWaitProbability > 0 ? `(1 time out of ${Math.round(1 / grades.longWaitProbability)})` : ''}`, grade: grades.longWaitGrade, score: grades.longWaitScore},
+      {metric: 'Travel Time', value: `Average time ${Math.round(tripTimes.avg)} minutes (${ speed } mph)`, grade: grades.speedGrade, score: grades.speedScore},
+      {metric: 'Travel Variability', value: `${PLANNING_PERCENTILE}% of trips take ${ Math.round(getPercentileValue(tripTimes, PLANNING_PERCENTILE)) } minutes`, grade: grades.travelVarianceGrade, score: grades.travelVarianceScore}
+    ]
+
     return (
       <div
         className={css`
@@ -234,94 +241,29 @@ class Info extends Component {
                   {grades.highestPossibleScore}
                   {' '}
                   )
-                  <table className="table table-borderless">
-                    <tbody>
-                      <tr>
-                        <th>Metric</th>
-                        <th>Value</th>
-                        <th>Grade</th>
-                        <th>Score</th>
-                      </tr>
-                      <tr>
-                        <td>Average wait</td>
-                        <td>
-                          {Math.round(waitTimes.avg)}
-                          {' '}
-minutes
-                          <br />
-                          {PLANNING_PERCENTILE}% of waits under
-                          {' '}
-                          { Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE)) }
-                          {' '}
-minutes
-                        </td>
-                        <td>{grades.averageWaitGrade}</td>
-                        <td>
-                          {' '}
-                          {grades.averageWaitScore}
-                          {' '}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>20 min wait probability</td>
-                        <td>
-                          {' '}
-                          {Math.round(grades.longWaitProbability * 100)}
-%
-                          {' '}
-                          { grades.longWaitProbability > 0 ? `(1 time out of ${Math.round(1 / grades.longWaitProbability)})` : ''}
-                          {' '}
-                          <br />
-                        </td>
-                        <td>
-                          {' '}
-                          { grades.longWaitGrade }
-                          {' '}
-                        </td>
-                        <td>
-                          {' '}
-                          { grades.longWaitScore }
-                          {' '}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Travel time</td>
-                        <td>
-Average time
-                          {' '}
-                          {Math.round(tripTimes.avg)}
-                          {' '}
-minutes (
-                          { speed }
-                          {' '}
-mph)
-                        </td>
-                        <td>{grades.speedGrade}</td>
-                        <td>{grades.speedScore}</td>
-                      </tr>
-                      <tr>
-                        <td>Travel variability</td>
-                        <td>
-            {PLANNING_PERCENTILE}% of trips take
-                          {' '}
-                          { Math.round(getPercentileValue(tripTimes, PLANNING_PERCENTILE)) }
-                          {' '}
-minutes
-
-                        </td>
-                        <td>
-                          {' '}
-                          {grades.travelVarianceGrade}
-                          {' '}
-                        </td>
-                        <td>
-                          {' '}
-                          {grades.travelVarianceScore}
-                          {' '}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div>
+                    {`${PLANNING_PERCENTILE}% of waits under ${ Math.round(getPercentileValue(waitTimes, PLANNING_PERCENTILE)) } minutes`}
+                  </div>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell align="right">Metric</TableCell>
+                        <TableCell align="right">Value</TableCell>
+                        <TableCell align="right">Grade</TableCell>
+                        <TableCell align="right">Score</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      { tableRows.map(row=> (
+                        <TableRow key="{row.metric}">
+                          <TableCell component="th" scope="row">{row.metric}</TableCell>
+                          <TableCell align="right">{row.value}</TableCell>
+                          <TableCell align="right">{row.grade}</TableCell>
+                          <TableCell align="right">{row.score}</TableCell>
+                        </TableRow>
+                      )) }
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
               <br />
