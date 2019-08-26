@@ -12,8 +12,10 @@ import Control from 'react-leaflet-control';
 import * as d3 from "d3";
 import { getAllWaits, filterRoutes, milesBetween } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
-import { getTripPoints } from '../helpers/mapGeometry';
+import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 import { push } from 'redux-first-router'
+import { Snackbar } from '@material-ui/core';
+import autobind from 'autobind-decorator';
 
 const SF_COORDINATES = {lat : 37.7793, lng: -122.4193}; // city hall
 const ZOOM = 13;
@@ -73,8 +75,17 @@ class MapSpider extends Component {
    * Handles events with a location (either click, or geolocation call).
    * Find nearby stops for each route/direction and plot the rest of the route to its terminal.
    */
-  handleLocationFound = e => {
-    const stops = this.findStops(e.latlng); // note: all lowercase name in event.
+  @autobind
+  handleLocationFound(e) {
+
+    const {latlng} = e;
+
+    if (!isInServiceArea(latlng)) {
+      alert('Location is not in service area.');
+      return;
+    }
+
+    const stops = this.findStops(latlng); // note: all lowercase name in event.
 
     // Add the downstream stops to the terminal.
 
@@ -86,7 +97,7 @@ class MapSpider extends Component {
     // routes corresponding to "stops".
 
     const {onSpiderMapClick} = this.props;
-    onSpiderMapClick(stops, e.latlng);
+    onSpiderMapClick(stops, latlng);
   }
 
   /**
@@ -411,7 +422,7 @@ class MapSpider extends Component {
 const mapStateToProps = state => ({
   routes: state.routes.routes,
   graphParams: state.routes.graphParams,
-  waitTimesCache: state.routes.waitTimesCache,  
+  waitTimesCache: state.routes.waitTimesCache,
   spiderLatLng: state.routes.spiderLatLng,
   spiderSelection: state.routes.spiderSelection,
 });
