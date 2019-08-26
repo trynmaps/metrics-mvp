@@ -19,6 +19,7 @@
       "enforceForRenamedProperties": false
     }],
     "no-underscore-dangle": "warn",
-    "react/prop-types": "warn"
+    "react/prop-types": "warn",
+    "allowForLoopAfterthoughts": true
   }
 }
