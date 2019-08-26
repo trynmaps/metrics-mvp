@@ -144,6 +144,18 @@ export function handleSpiderMapClick(stops, latLng) {
   };
 }
 
+/**
+ * This is an action creator where the action calls two actions.
+ * Basically this a way of calling two APIs at once, where two APIs
+ * have no interactions with each other.
+ */
+export function fetchData(graphParams, intervalParams) {
+  return function(dispatch) {
+    dispatch(fetchGraphData(graphParams));
+    dispatch(fetchIntervalData(intervalParams));
+  };
+}
+
 export function handleGraphParams(params) {
   return function(dispatch, getState) {
     dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
@@ -174,17 +186,5 @@ export function handleGraphParams(params) {
       dispatch(resetGraphData());
       dispatch(resetIntervalData());
     }
-  };
-}
-
-/**
- * This is an action creator where the action calls two actions.
- * Basically this a way of calling two APIs at once, where two APIs
- * have no interactions with each other.
- */
-export function fetchData(graphParams, intervalParams) {
-  return function(dispatch) {
-    dispatch(fetchGraphData(graphParams));
-    dispatch(fetchIntervalData(intervalParams));
   };
 }

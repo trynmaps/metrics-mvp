@@ -154,15 +154,6 @@ export function filterDirections(directions, routeID) {
  * M's actually go to that stop.  For better end to end calculations, need to disregard
  * the first stop.
  */
-
-export function ignoreFirstStop(routeID, directionID) {
-  return ignoreFlag(routeID, directionID, 'ignoreFirstStop');
-}
-
-export function ignoreLastStop(routeID, directionID) {
-  return ignoreFlag(routeID, directionID, 'ignoreLastStop');
-}
-
 export function ignoreFlag(routeID, directionID, flagName) {
   const heuristics = getRouteHeuristics();
   if (!heuristics[routeID]) {
@@ -178,11 +169,25 @@ export function ignoreFlag(routeID, directionID, flagName) {
   return false;
 }
 
+export function ignoreFirstStop(routeID, directionID) {
+  return ignoreFlag(routeID, directionID, 'ignoreFirstStop');
+}
+
+export function ignoreLastStop(routeID, directionID) {
+  return ignoreFlag(routeID, directionID, 'ignoreLastStop');
+}
+
 /**
  * Get precomputed trip times for the first stop, then apply heuristic rules
  * to trim off the first stop or first stops if needed.
  */
-function getTripTimesUsingHeuristics(tripTimesCache, graphParams, routes, routeID, directionID) {
+function getTripTimesUsingHeuristics(
+  tripTimesCache,
+  graphParams,
+  routes,
+  routeID,
+  directionID,
+) {
   const tripTimesForDir = getTripTimesForDirection(
     tripTimesCache,
     graphParams,
@@ -238,7 +243,13 @@ function getTripTimesUsingHeuristics(tripTimesCache, graphParams, routes, routeI
  * Returns trip time across the full route, applying heuristic rules to ignore
  * the last stop or stops as needed.
  */
-export function getEndToEndTripTime(tripTimesCache, graphParams, routes, routeID, directionID) {
+export function getEndToEndTripTime(
+  tripTimesCache,
+  graphParams,
+  routes,
+  routeID,
+  directionID,
+) {
   const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
     tripTimesCache,
     graphParams,
@@ -287,6 +298,15 @@ export function getEndToEndTripTime(tripTimesCache, graphParams, routes, routeID
 }
 
 /**
+ *
+ * @param meters
+ * @returns Conversion from meters to miles.
+ */
+export function metersToMiles(meters) {
+  return meters / 1609.344;
+}
+
+/**
  * Returns an array of {x: stop index, y: time} objects for
  * plotting on a chart.
  */
@@ -313,7 +333,7 @@ export function getTripDataSeries(props, routeID, directionID) {
 
   directionInfo.stops.slice(1).map((stop, index) => {
     if (!directionInfo.stop_geometry[stop]) {
-      //console.log('no geometry for ' + routeID + ' ' + directionID + ' ' + stop);
+      // console.log('no geometry for ' + routeID + ' ' + directionID + ' ' + stop);
     }
     if (tripTimesForFirstStop[stop] && directionInfo.stop_geometry[stop]) {
       dataSeries.push({
@@ -340,11 +360,7 @@ export function getAllWaits(waitTimesCache, graphParams, routes) {
     allWaits = filterRoutes(routes).map(route => {
       return {
         routeID: route.id,
-        wait: getAverageOfMedianWait(
-          waitTimesCache,
-          graphParams,
-          route,
-        ),
+        wait: getAverageOfMedianWait(waitTimesCache, graphParams, route),
       };
     });
     allWaits = allWaits.filter(waitObj => !isNaN(waitObj.wait));
@@ -368,7 +384,13 @@ function getSpeedForRoute(tripTimesCache, graphParams, routes, route_id) {
   const filteredDirections = filterDirections(route.directions, route_id);
   let speeds = filteredDirections.map(direction => {
     const dist = direction.distance;
-    const tripTime = getEndToEndTripTime(tripTimesCache, graphParams, routes, route.id, direction.id);
+    const tripTime = getEndToEndTripTime(
+      tripTimesCache,
+      graphParams,
+      routes,
+      route.id,
+      direction.id,
+    );
 
     if (dist <= 0 || isNaN(tripTime)) {
       // something wrong with the data here
@@ -414,31 +436,6 @@ export function getAllSpeeds(tripTimesCache, graphParams, routes) {
   }
 
   return allSpeeds;
-}
-
-/**
- * Computes scores of all routes.
- *
- * @param {any} routes
- * @param {any} speeds
- */
-export function getAllScores(routes, waits, speeds) {
-  const allScores = [];
-  for (const route of routes) {
-    const speedObj = speeds.find(speed => speed.routeID === route.id);
-    const waitObj = waits.find(wait => wait.routeID === route.id);
-    if (waitObj && speedObj) {
-      const grades = computeGrades(waitObj.wait, speedObj.speed);
-      allScores.push({ routeID: route.id, totalScore: grades.totalScore });
-    }
-  }
-  allScores.sort((a, b) => {
-    return b.totalScore - a.totalScore;
-  });
-
-  // console.log(JSON.stringify(allScores));
-
-  return allScores;
 }
 
 /**
@@ -512,6 +509,31 @@ export function computeGrades(medianWait, speed) {
   };
 }
 
+/**
+ * Computes scores of all routes.
+ *
+ * @param {any} routes
+ * @param {any} speeds
+ */
+export function getAllScores(routes, waits, speeds) {
+  const allScores = [];
+  for (const route of routes) {
+    const speedObj = speeds.find(speed => speed.routeID === route.id);
+    const waitObj = waits.find(wait => wait.routeID === route.id);
+    if (waitObj && speedObj) {
+      const grades = computeGrades(waitObj.wait, speedObj.speed);
+      allScores.push({ routeID: route.id, totalScore: grades.totalScore });
+    }
+  }
+  allScores.sort((a, b) => {
+    return b.totalScore - a.totalScore;
+  });
+
+  // console.log(JSON.stringify(allScores));
+
+  return allScores;
+}
+
 export const quartileBackgroundColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
@@ -523,23 +545,6 @@ export const quartileForegroundColor = d3
   .range(['black', 'black', 'black', 'white']);
 
 /**
- * Returns the distance between two stops in miles.
- */
-export function milesBetween(p1, p2) {
-  const meters = haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
-  return metersToMiles(meters);
-}
-
-/**
- *
- * @param meters
- * @returns Conversion from meters to miles.
- */
-export function metersToMiles(meters) {
-  return meters / 1609.344;
-}
-
-/**
  * Haversine formula for calcuating distance between two coordinates in lat lon
  * from bird eye view; seems to be +- 8 meters difference from geopy distance.
  *
@@ -547,11 +552,11 @@ export function metersToMiles(meters) {
  */
 export function haverDistance(latstop, lonstop, latbus, lonbus) {
   const deg2rad = x => (x * Math.PI) / 180;
+  const eradius = 6371000;
 
   [latstop, lonstop, latbus, lonbus] = [latstop, lonstop, latbus, lonbus].map(
     deg2rad,
   );
-  const eradius = 6371000;
 
   const latdiff = latbus - latstop;
   const londiff = lonbus - lonstop;
@@ -563,4 +568,12 @@ export function haverDistance(latstop, lonstop, latbus, lonbus) {
 
   const distance = eradius * c;
   return distance;
+}
+
+/**
+ * Returns the distance between two stops in miles.
+ */
+export function milesBetween(p1, p2) {
+  const meters = haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
+  return metersToMiles(meters);
 }

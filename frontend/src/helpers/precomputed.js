@@ -1,4 +1,30 @@
 /**
+ * Pulls a data series from a collection by index.
+ */
+function getTripTimeStat(tripTimeValues, index) {
+  if (!tripTimeValues) {
+    return null;
+  }
+
+  const statValues = {};
+  for (const endStopId in tripTimeValues) {
+    statValues[endStopId] = tripTimeValues[endStopId][index];
+  }
+  return statValues;
+}
+
+/**
+ * Utility method to pull time and date out of graphParams as strings
+ */
+export function getTimeStrAndDateStr(graphParams) {
+  const timeStr = graphParams.start_time
+    ? `${graphParams.start_time}-${graphParams.end_time}`
+    : '';
+  const dateStr = graphParams.date;
+  return [timeStr, dateStr];
+}
+
+/**
  * Access of precomputed wait and trip times.
  *
  * See https://github.com/trynmaps/metrics-mvp/pull/143 for an overview of the file structure and
@@ -106,21 +132,6 @@ export function getTripTimesFromStop(
 }
 
 /**
- * Pulls a data series from a collection by index.
- */
-function getTripTimeStat(tripTimeValues, index) {
-  if (!tripTimeValues) {
-    return null;
-  }
-
-  const statValues = {};
-  for (const endStopId in tripTimeValues) {
-    statValues[endStopId] = tripTimeValues[endStopId][index];
-  }
-  return statValues;
-}
-
-/**
  * Maps the given stat to a stat group (part of the file path).  Example stat groups are
  * "median" and "p10-median-p90".  When fetching an individual stat, this function returns
  * which group should be used, favoring more compact groups over larger ones.
@@ -137,17 +148,6 @@ export function getStatPath(stat) {
     default:
       throw new Error(`unknown stat ${stat}`);
   }
-}
-
-/**
- * Utility method to pull time and date out of graphParams as strings
- */
-export function getTimeStrAndDateStr(graphParams) {
-  const timeStr = graphParams.start_time
-    ? `${graphParams.start_time}-${graphParams.end_time}`
-    : '';
-  const dateStr = graphParams.date;
-  return [timeStr, dateStr];
 }
 
 /**

@@ -29,9 +29,17 @@ export const TIME_RANGE_ALL_DAY = 'allday';
 export const TIME_RANGES = [
   { value: TIME_RANGE_ALL_DAY, shortLabel: 'All Day', restOfLabel: '' },
   { value: '07:00-19:00', shortLabel: 'Daytime', restOfLabel: ' (7AM - 7PM)' },
-  { value: '03:00-07:00', shortLabel: 'Early Morning', restOfLabel: ' (3AM - 7AM)' },
+  {
+    value: '03:00-07:00',
+    shortLabel: 'Early Morning',
+    restOfLabel: ' (3AM - 7AM)',
+  },
   { value: '07:00-10:00', shortLabel: 'AM Peak', restOfLabel: ' (7AM - 10AM)' },
   { value: '10:00-16:00', shortLabel: 'Midday', restOfLabel: ' (10AM - 4PM)' },
   { value: '16:00-19:00', shortLabel: 'PM Peak', restOfLabel: ' (4PM - 7PM)' },
-  { value: '19:00-03:00+1', shortLabel: 'Late Evening', restOfLabel: ' (7PM - 3AM)' },
-]
+  {
+    value: '19:00-03:00+1',
+    shortLabel: 'Late Evening',
+    restOfLabel: ' (7PM - 3AM)',
+  },
+];
