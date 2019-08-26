@@ -3,16 +3,15 @@ import { connect } from 'react-redux';
 import { Map, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
-import * as turf from '@turf/turf';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 
 import { fetchRoutes, routesUrl } from '../actions';
-import { ServiceArea, DefaultDisabledRoutes } from '../agencies/sf-muni';
+import { DefaultDisabledRoutes } from '../agencies/sf-muni';
 import { metricsBaseURL } from '../config';
-import { getTripPoints } from '../helpers/mapGeometry'
+import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 
 import './Isochrone.css';
 
@@ -327,23 +326,9 @@ class Isochrone extends React.Component {
         }
     }
 
-    isInServiceArea(latLng)
-    {
-        const point = turf.point([latLng.lng, latLng.lat]);
-
-        for (let feature of ServiceArea.features)
-        {
-            if (turf.booleanWithin(point, feature))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     computeIsochrones(latLng, endLatLng)
     {
-        if (!this.isInServiceArea(latLng))
+        if (!isInServiceArea(latLng))
         {
             return;
         }
