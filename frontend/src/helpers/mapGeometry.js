@@ -16,16 +16,9 @@ import { milesBetween, metersToMiles } from './routeCalculations';
 export function getTripPoints(
   routeInfo,
   dirInfo,
-  fromStop = null,
-  toStop = null,
+  fromStop = dirInfo.stops[0],
+  toStop = dirInfo.stops[dirInfo.stops.length - 1],
 ) {
-  if (fromStop === null) {
-    fromStop = dirInfo.stops[0];
-  }
-  if (toStop === null) {
-    toStop = dirInfo.stops[dirInfo.stops.length - 1];
-  }
-
   const fromStopInfo = routeInfo.stops[fromStop];
   const toStopInfo = routeInfo.stops[toStop];
 
@@ -69,16 +62,9 @@ export function getTripPoints(
 export function getDistanceInMiles(
   routeInfo,
   dirInfo,
-  fromStop = null,
-  toStop = null,
+  fromStop = dirInfo.stops[0],
+  toStop = dirInfo.stops[dirInfo.stops.length - 1],
 ) {
-  if (fromStop === null) {
-    fromStop = dirInfo.stops[0];
-  }
-  if (toStop === null) {
-    toStop = dirInfo.stops[dirInfo.stops.length - 1];
-  }
-
   const fromStopInfo = routeInfo.stops[fromStop];
   const toStopInfo = routeInfo.stops[toStop];
 
