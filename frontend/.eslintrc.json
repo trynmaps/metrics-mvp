@@ -7,6 +7,13 @@
     "browser": true,
     "jest": true
   },
+  "parserOptions": {
+    "ecmaVersion": 9,
+    "sourceType": "module",
+    "ecmaFeatures": {
+        "jsx": true
+    }
+  },
   "rules": {
     "class-methods-use-this": "off",
     "react/jsx-filename-extension": [
