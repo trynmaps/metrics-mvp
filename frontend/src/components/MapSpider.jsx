@@ -15,20 +15,36 @@ import { handleSpiderMapClick } from '../actions';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 import { push } from 'redux-first-router'
 import { Snackbar } from '@material-ui/core';
-import autobind from 'autobind-decorator';
+import * as PropTypes from 'prop-types';
 
 const SF_COORDINATES = {lat : 37.7793, lng: -122.4193}; // city hall
 const ZOOM = 13;
 const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
+
+
+// Displays alert when an invalid location is set
+function ValidLocationAlert(props) {
+  return <Snackbar
+    message={'Location is not in service area'}
+    open={props.showAlert}
+  />;
+}
+
+ValidLocationAlert.propTypes = { showAlert: PropTypes.bool };
+
 
 class MapSpider extends Component {
 
   constructor(props) {
     super(props);
     this.state = {
-    }
+      // Should be true by default, so that we don't display the snackbar
+      isValidLocation: true,
+    };
 
     this.mapRef = createRef(); // used for geolocating
+
+    this.handleLocationFound = this.handleLocationFound.bind(this);
   }
 
   // TODO: Needs optimizing. This sets height to that of the window, not remaining space, which
@@ -59,7 +75,7 @@ class MapSpider extends Component {
     if (map != null) {
       map.leafletElement.locate(); // this is for geolocation, see https://leafletjs.com/examples/mobile/
     }
-  }
+  };
 
   /**
    * When the map is clicked on, pass the event on to the location handler.
@@ -75,15 +91,12 @@ class MapSpider extends Component {
    * Handles events with a location (either click, or geolocation call).
    * Find nearby stops for each route/direction and plot the rest of the route to its terminal.
    */
-  @autobind
   handleLocationFound(e) {
 
     const {latlng} = e;
 
-    if (!isInServiceArea(latlng)) {
-      alert('Location is not in service area.');
-      return;
-    }
+    // Set whether the location is valid
+    this.setState({isValidLocation: isInServiceArea(latlng)});
 
     const stops = this.findStops(latlng); // note: all lowercase name in event.
 
@@ -372,48 +385,52 @@ class MapSpider extends Component {
    */
   render() {
     const { position, zoom } = this.props;
+    const { isValidLocation } = this.state;
 
     const mapClass = { width: '100%', height: this.state.height };
 
     let startMarkers = this.getStartMarkers();
 
     return (
-      <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}
-        minZoom={11}
-        maxZoom={18}
-        onClick={this.handleMapClick}
-        onLocationfound={this.handleLocationFound}
-        ref={this.mapRef}
+      <div>
+        <ValidLocationAlert showAlert={!isValidLocation}/>
+        <Map center={position || SF_COORDINATES} zoom={zoom || ZOOM} style={mapClass}
+             minZoom={11}
+             maxZoom={18}
+             onClick={this.handleMapClick}
+             onLocationfound={this.handleLocationFound}
+             ref={this.mapRef}
         >
-        <TileLayer
-          attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
-          url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
-          opacity={0.3}
-        /> {/* see http://maps.stamen.com for details */}
-        <this.DownstreamLines/>
-        {startMarkers}
-        <this.SpiderOriginMarker spiderLatLng={this.props.spiderLatLng}/>
+          <TileLayer
+            attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+            url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
+            opacity={0.3}
+          /> {/* see http://maps.stamen.com for details */}
+          <this.DownstreamLines/>
+          {startMarkers}
+          <this.SpiderOriginMarker spiderLatLng={this.props.spiderLatLng}/>
 
-        <Control position="topright">
-          <div className='map-instructions'>{
-            this.props.spiderLatLng && startMarkers && startMarkers.length ?
-              'Click anywhere along a route to see statistics for trips between the two stops.'
-              : 'Click anywhere in the city to see the routes near that point.'
-          }</div>
-        </Control>
-        <Control position="bottomleft" >
-          <Button variant="contained" color="primary" onClick={ this.handleGeoLocate }>
-            <GpsIcon/>&nbsp;
-            Routes near me
-          </Button>
-          &nbsp;
-          <Button variant="contained" color="secondary" onClick={ e => this.props.onSpiderMapClick([], null) }>
-            Clear map
-          </Button> <br/><br/>
+          <Control position="topright">
+            <div className='map-instructions'>{
+              this.props.spiderLatLng && startMarkers && startMarkers.length ?
+                'Click anywhere along a route to see statistics for trips between the two stops.'
+                : 'Click anywhere in the city to see the routes near that point.'
+            }</div>
+          </Control>
+          <Control position="bottomleft">
+            <Button variant="contained" color="primary" onClick={this.handleGeoLocate}>
+              <GpsIcon/>&nbsp;
+              Routes near me
+            </Button>
+            &nbsp;
+            <Button variant="contained" color="secondary" onClick={e => this.props.onSpiderMapClick([], null)}>
+              Clear map
+            </Button> <br/><br/>
 
-        </Control>
+          </Control>
 
-      </Map>
+        </Map>
+      </div>
     );
   } // end render
 
