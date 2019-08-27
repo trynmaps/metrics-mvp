@@ -138,7 +138,7 @@ export function filterDirections(directions, routeID) {
     return directions;
   }
 
-  const directionsToIgnore = heuristics[routeID].directionsToIgnore;
+  const { directionsToIgnore } = heuristics[routeID].directionsToIgnore;
   if (!directionsToIgnore) {
     return directions;
   }

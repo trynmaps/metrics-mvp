@@ -1,12 +1,11 @@
 {
   "extends": ["airbnb", "prettier", "prettier/react"],
   "plugins": ["react", "prettier"],
-  "parser": "babel-eslint",
   "env": {
-    "es6": true,
     "browser": true,
     "jest": true
   },
+  "parser": "babel-eslint",
   "parserOptions": {
     "ecmaVersion": 9,
     "sourceType": "module",
@@ -16,26 +15,33 @@
   },
   "rules": {
     "class-methods-use-this": "off",
-    "react/jsx-filename-extension": [
-      1,
-      { "extensions": [".js", ".jsx"] }
-    ],
     "jsx-a11y/label-has-for": "off",
     "prettier/prettier": "error",
     "max-len": [
-      "warn", 80,
-      { "ignoreComments": true }
+      "warn", 120,
+      {
+        "ignoreComments": true,
+        "ignoreUrls": true
+      }
     ],
-    "prefer-destructuring": [
-      "warn",
-      { "array": true, "object": true },
-      { "enforceForRenamedProperties": false }
-    ],
+    "func-names": "off",
+    "prefer-destructuring": "off",
     "no-plusplus": [
       "error",
       { "allowForLoopAfterthoughts": true } 
     ],
     "no-underscore-dangle": "warn",
-    "react/prop-types": "warn"
+    "react/destructuring-assignment": "off",
+    "react/jsx-filename-extension": [
+      1,
+      { "extensions": [".js", ".jsx"] }
+    ],
+    "react/prop-types": "off"
+  },
+  "settings": {
+      "react": {
+          "pragma": "React",
+          "version": "16.8.6"
+      }
   }
 }

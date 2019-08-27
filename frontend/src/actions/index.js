@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
-import { getTimePath, getStatPath } from '../helpers/precomputed.js';
+import { getTimePath, getStatPath } from '../helpers/precomputed';
 
 export const routesUrl =
   'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
@@ -106,7 +106,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
             payload: [response.data, `${dateStr + timeStr}median`],
           });
         })
-        .catch(err => {
+        .catch(() => {
           /* do something? */
         });
     }
@@ -131,7 +131,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
             payload: [response.data, `${dateStr + timeStr}median`],
           });
         })
-        .catch(err => {
+        .catch(() => {
           /* do something? */
         });
     }
