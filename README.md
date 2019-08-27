@@ -81,7 +81,7 @@ The build steps are defined in `cloudbuild.yaml`.
 package managers offer similar performance, we were already using NPM for backend
 package management, and the Yarn roadmap did not offer compelling
 improvements going forward.
-- **React** - Selected for same tech stack as we migrated from older OpenTransit Map app. Code lives in the `/frontend` directory.  It was built using
+- **React** - Selected for popularity, simple view, and speedy virutal DOM. Code lives in the `/frontend` directory.  It was built using
 [Create React App](https://facebook.github.io/create-react-app/docs/folder-structure).
 - **Material UI** - which we use over Bootstrap since MUI doesn't rely on jQuery. It has a
 popular React framework and looks great on mobile.
