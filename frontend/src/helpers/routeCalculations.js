@@ -205,7 +205,7 @@ function getTripTimesUsingHeuristics(
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
 
-  const route = routes.find(route => route.id === routeID);
+  const route = routes.find(thisRoute => thisRoute.id === routeID);
   const directionInfo = route.directions.find(
     direction => direction.id === directionID,
   );
@@ -323,7 +323,7 @@ export function getTripDataSeries(props, routeID, directionID) {
     return [];
   } // no precomputed times
 
-  const route = props.routes.find(route => route.id === routeID);
+  const route = props.routes.find(thisRoute => thisRoute.id === routeID);
 
   const dataSeries = [];
 
@@ -363,7 +363,7 @@ export function getAllWaits(waitTimesCache, graphParams, routes) {
         wait: getAverageOfMedianWait(waitTimesCache, graphParams, route),
       };
     });
-    allWaits = allWaits.filter(waitObj => !isNaN(waitObj.wait));
+    allWaits = allWaits.filter(waitObj => !Number.isNaN(waitObj.wait));
     allWaits.sort((a, b) => {
       return b.wait - a.wait;
     });
@@ -379,7 +379,7 @@ export function getAllWaits(waitTimesCache, graphParams, routes) {
  * @param {any} route_id
  */
 function getSpeedForRoute(tripTimesCache, graphParams, routes, route_id) {
-  const route = routes.find(route => route.id === route_id);
+  const route = routes.find(thisRoute => thisRoute.id === route_id);
 
   const filteredDirections = filterDirections(route.directions, route_id);
   let speeds = filteredDirections.map(direction => {
@@ -392,7 +392,7 @@ function getSpeedForRoute(tripTimesCache, graphParams, routes, route_id) {
       direction.id,
     );
 
-    if (dist <= 0 || isNaN(tripTime)) {
+    if (dist <= 0 || Number.isNaN(tripTime)) {
       // something wrong with the data here
       // console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + route_id + ' ' + direction.id);
       return -1;
@@ -550,23 +550,27 @@ export const quartileForegroundColor = d3
  *
  * From eclipses.py.  Returns distance in meters.
  */
-export function haverDistance(latstop, lonstop, latbus, lonbus) {
+export function haverDistance(degLatStop, degLonStop, degLatBus, degLonBus) {
   const deg2rad = x => (x * Math.PI) / 180;
   const eradius = 6371000;
 
-  [latstop, lonstop, latbus, lonbus] = [latstop, lonstop, latbus, lonbus].map(
-    deg2rad,
-  );
+  const [radLatStop, radLonStop, radLatBus, radLonBus] = [
+    degLatStop,
+    degLonStop,
+    degLatBus,
+    degLonBus,
+  ].map(deg2rad);
 
-  const latdiff = latbus - latstop;
-  const londiff = lonbus - lonstop;
+  const latDiff = radLatBus - radLatStop;
+  const lonDiff = radLonBus - radLonStop;
 
   const a =
-    Math.sin(latdiff / 2) ** 2 +
-    Math.cos(latstop) * Math.cos(latbus) * Math.sin(londiff / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    Math.sin(latDiff / 2) ** 2 +
+    Math.cos(radLatStop) * Math.cos(radLatBus) * Math.sin(lonDiff / 2) ** 2;
+  const hypotenuse = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  const distance = eradius * c;
+  const distance = eradius * hypotenuse;
+
   return distance;
 }
 
