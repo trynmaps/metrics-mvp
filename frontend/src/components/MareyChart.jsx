@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { XYPlot, HorizontalGridLines, VerticalGridLines,
-  XAxis, YAxis, LineMarkSeries, ChartLabel, Hint } from 'react-vis';
+  XAxis, YAxis, LineMarkSeries, ChartLabel, Hint, Borders } from 'react-vis';
 import '../../node_modules/react-vis/dist/style.css';
 import { metersToMiles } from '../helpers/routeCalculations'
 
@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import { Card, CardContent } from '@material-ui/core';
+import { Card, CardContent, Radio, FormControl, FormControlLabel } from '@material-ui/core';
 
 import { fetchArrivals } from '../actions';
 
@@ -36,10 +36,15 @@ import * as d3 from "d3";
  * Note: In our travel time chart, x axis is distance along route, y axis is time taken, so this is
  * consistent.
  * 
+ * TODO: marey chart respects time picker? respects stop picker (but then how do you see it?)
  * @param {Object} props
  */
 function MareyChart(props) {
-
+  
+  const INBOUND_AND_OUTBOUND = "Inbound_and_outbound";
+  const INBOUND = "Inbound"; // same as directionInfo name
+  const OUTBOUND = "Outbound"; // same as directionInfo name
+    
   // On first load, get the raw arrival history corresponding to graphParams.
   
   useEffect(() => {
@@ -54,15 +59,18 @@ function MareyChart(props) {
     if (props.arrivals && props.routes) {
       //console.log("Processing arrival data.");
       const tripData = processArrivals(props.arrivals, props.routes);
-      setProcessedArrivals(createSeries(tripData));
+      setProcessedArrivals(tripData);
     }
   }, [props.arrivals, props.routes]);
   
-   const [hintValue, setHintValue] = useState(); /* not working */
+  const [hintValue, setHintValue] = useState();
+  const [tripHighlight, setTripHighlight] = useState();
   const [processedArrivals, setProcessedArrivals] = useState();
+  const [selectedOption, setSelectedOption] = useState(INBOUND_AND_OUTBOUND)
   
   /**
-   * This method traverses the arrival history (by stop, then by direction, then the contained array).
+   * This method is called when we get arrival data via Redux.  The method traverses the arrival
+   * history (by stop, then by direction, then the contained array).
    * 
    * Each arrival is bucketed by trip ID.
    * 
@@ -118,6 +126,7 @@ function MareyChart(props) {
         tripID: tripID,
         vehicleID: vehicleID,
         series: [],
+        directionInfo: directionInfo,
       };
     }
     
@@ -145,6 +154,8 @@ function MareyChart(props) {
   }
   
   /**
+   * This is a render-time helper function.
+   * 
    * Generates per trip react-vis Series objects from the reorganized tripData.
    * We sort each bucket by "x" value (distance along route) to get plots pointed in the
    * correct order.
@@ -153,29 +164,67 @@ function MareyChart(props) {
    * repeat, so using 9 instead of 10).
    * 
    * @param {object} tripData
+   * @return {Array} Series objects for plotting
    */
   const createSeries = (tripData) => {
     const routeColor = d3.scaleQuantize([0,9], d3.schemeCategory10);
   
     let tripSeriesArray = [];
     for (let tripDataKey in tripData) {
-      const dataSeries = tripData[tripDataKey].series.sort((a, b) => {
-        return b.x - a.x;
-      });
-      tripSeriesArray.push(<LineMarkSeries
-        key={ tripDataKey }
-        data={ dataSeries }
-        stroke={ routeColor(tripData[tripDataKey].vehicleID % 9) }
-        style={{
-          strokeWidth: '1px'
-        }}              
-        size="1"
-        onValueMouseOver={ value => setHintValue(value) /* bug with onNearestXY requires use of onValue */ }          
+      
+      const trip = tripData[tripDataKey];
+      
+      if ((selectedOption === INBOUND_AND_OUTBOUND) ||
+          (trip.directionInfo.name === selectedOption)) {
+        
+        const dataSeries = trip.series.sort((a, b) => {
+          return b.x - a.x;
+        });
+      
+        tripSeriesArray.push(<LineMarkSeries
+          key={ tripDataKey }
+          data={ dataSeries }
+          stroke={ routeColor(trip.vehicleID % 9) }
+          style={{
+            strokeWidth: tripHighlight === tripDataKey ? '3px' : '1px' // draw a thicker line for the series being moused over
+          }}              
+          size="1"
+          onValueMouseOver={ value => setHintValue(value) /* onNearestXY seems buggy, so next best is onValue */ }
+          onSeriesMouseOver={(event) => { setTripHighlight(tripDataKey) }}    
         />);
+      }
     }
     return tripSeriesArray;
   }
 
+  let series = null;
+  if (processedArrivals) {
+    series = createSeries(processedArrivals);
+  }
+  
+  const graphParams = props.graphParams;
+  const startHour = graphParams.start_time ? parseInt(graphParams.start_time) : 3;
+  let endHour;
+  
+  if (graphParams.end_time) {
+    endHour = parseInt(graphParams.end_time);
+    if (graphParams.end_time.endsWith('+1')) {
+      endHour += 24;
+    }
+  } else {
+    endHour = 27;
+  }
+  
+  const hourFormatter = (v) => {
+    let suffix = '';
+    if (v >= 24) {
+      v = v-24;
+      suffix = '+1';
+    }
+    const time = parseInt(v) + ':' + ((v-parseInt(v))*60).toString().padStart(2, '0');
+    return time+suffix;
+  }
+  
   return processedArrivals ? 
   <Grid item xs={12}>
     <Card>
@@ -183,53 +232,98 @@ function MareyChart(props) {
       
         <Typography variant="h5">Marey chart</Typography>
 
-        Vehicle runs: { processedArrivals.length } <br/>
+        Vehicle runs: { series.length } <br/>
 
-        <XYPlot height={2500} width={600}
-          yDomain={[27, 3] /* 3am the next day at the bottom, 3am for this day at the top */}
+        <FormControl>
+        <div className="controls">
+          <FormControlLabel
+            control={<Radio 
+              id="inbound_and_outbound"
+              type="radio"
+              value={INBOUND_AND_OUTBOUND}
+              checked={selectedOption === INBOUND_AND_OUTBOUND}
+              onChange={ (changeEvent) => setSelectedOption(changeEvent.target.value) } 
+            />}
+            label="Inbound and Outbound"
+          />
+            
+          <FormControlLabel
+            control={<Radio 
+              id="inbound"
+              type="radio"
+              value={INBOUND}
+              checked={selectedOption === INBOUND}
+              onChange={ (changeEvent) => setSelectedOption(changeEvent.target.value) }
+            />}
+            label={'Inbound only'}
+          />
+          
+          <FormControlLabel
+            control={<Radio 
+              id="outbound"
+              type="radio"
+              value={OUTBOUND}
+              checked={selectedOption === OUTBOUND}
+              onChange={ (changeEvent) => setSelectedOption(changeEvent.target.value) }
+            />}
+            label={'Outbound only'}
+          /> 
+          
+            
+        </div>
+        </FormControl>  
+  
+        <XYPlot height={(endHour-startHour) * 100} width={600}
+          yDomain={[endHour, startHour] /* 3am the next day at the bottom, 3am for this day at the top */}
           margin={{left:80}}
         >
-        <HorizontalGridLines />
-        <VerticalGridLines />
-        <XAxis tickPadding={4} />
-        <YAxis hideLine={true} tickPadding={4} tickFormat={v => v > 24 ? `${v-24}:00+1` : `${v}:00`} />
+            
+          { series }
+          <Borders style={{
+              bottom: {fill: '#fff'},
+              left: {fill: '#fff'},
+              right: {fill: '#fff'},
+              top: {fill: '#fff'}
+            }}/>
+            
+          <HorizontalGridLines />
+          <VerticalGridLines />
+          <XAxis tickPadding={4} />
+          <YAxis hideLine={true} tickPadding={4} tickFormat={hourFormatter} />
         
-        { processedArrivals }
+          <ChartLabel 
+            text="Time (24h)"
+            className="alt-y-label"
+            includeMargin={true}
+            xPercent={0.02}
+            yPercent={0.3}
+            style={{
+              transform: 'rotate(-90)',
+            }}       
+          />       
 
-        <ChartLabel 
-          text="Time (24h)"
-          className="alt-y-label"
-          includeMargin={true}
-          xPercent={0.02}
-          yPercent={0.2}
-          style={{
-            transform: 'rotate(-90)',
-            textAnchor: 'end'
-          }}       
-        />       
-
-        <ChartLabel 
-          text="Inbound Distance Along Route (miles)"
-          className="alt-x-label"
-          includeMargin={true}
-          xPercent={0.7}
-          yPercent={0.965}
-          style={{
-            textAnchor: 'end'
-          }}       
-        />
-        {hintValue ?
-          <Hint
-            value={hintValue}
-            format={ hintValue => [{title: 'Stop', value: hintValue.title },
-                                   {title: 'Time', value: `${(Math.floor(hintValue.minutes / 60) + 3)}:${Math.round(hintValue.minutes % 60).toString().padStart(2, '0')}`},
-                                   {title: 'Vehicle ID', value: hintValue.vehicleID }
-            ] }
+          <ChartLabel 
+            text="Inbound Distance Along Route (miles)"
+            className="alt-x-label"
+            includeMargin={true}
+            xPercent={0.7}
+            yPercent={1.0 - 85.0/((endHour-startHour)*100.0) }
+            style={{
+              textAnchor: 'end'
+            }}       
           />
-         : 
-         null }
+          {hintValue ?
+            <Hint
+              value={hintValue}
+              format={ hintValue => [{title: 'Stop', value: hintValue.title },
+                                     {title: 'Time', value: `${(Math.floor(hintValue.minutes / 60) + 3)}:${Math.round(hintValue.minutes % 60).toString().padStart(2, '0')}`},
+                                     {title: 'Vehicle ID', value: hintValue.vehicleID }
+              ] }
+            />
+           : 
+           null }
 
-      </XYPlot>
+        </XYPlot>
       </CardContent>
     </Card>
   </Grid>
