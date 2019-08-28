@@ -38,93 +38,90 @@ import {
  *   - The 9 has multiple terminals so use the last common stop.
  *   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
  */
-export function getRouteHeuristics() {
-  return {
-    J: {
-      directionsToIgnore: ['J____I_D10'], // this is to 23rd and 3rd
+export const routeHeuristics = {
+  J: {
+    directionsToIgnore: ['J____I_D10'], // this is to 23rd and 3rd
+  },
+  L: {
+    directionsToIgnore: ['L____I_U53'],
+  },
+  M: {
+    M____O_D00: {
+      ignoreFirstStop: true, // Embarcadero & Folsom is not a real stop
     },
-    L: {
-      directionsToIgnore: ['L____I_U53'],
+  },
+  N: {
+    N____O_F10: {
+      ignoreFirstStop: true, // 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
     },
-    M: {
-      M____O_D00: {
-        ignoreFirstStop: true, // Embarcadero & Folsom is not a real stop
-      },
+  },
+  S: {
+    ignoreRoute: true,
+  },
+  '5': {
+    '5____I_F00': {
+      ignoreFirstStop: '4218', // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
     },
-    N: {
-      N____O_F10: {
-        ignoreFirstStop: true, // 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
-      },
+  },
+  '9': {
+    '9____I_N00': {
+      ignoreFirstStop: '7297', // use Bayshore as actual first stop (daytime)
     },
-    S: {
-      ignoreRoute: true,
+    '9____O_N00': {
+      ignoreLastStop: '7297', // use Bayshore as actual terminal (daytime)
     },
-    '5': {
-      '5____I_F00': {
-        ignoreFirstStop: '4218', // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
-      },
+  },
+  '24': {
+    directionsToIgnore: ['24___I_D10'],
+  },
+  '90': {
+    ignoreRoute: true,
+  },
+  '91': {
+    ignoreRoute: true,
+  },
+  K_OWL: {
+    ignoreRoute: true,
+  },
+  L_OWL: {
+    ignoreRoute: true,
+  },
+  M_OWL: {
+    ignoreRoute: true,
+  },
+  N_OWL: {
+    ignoreRoute: true,
+  },
+  T_OWL: {
+    ignoreRoute: true,
+  },
+  PM: {
+    PM___O_F00: {
+      ignoreLastStop: true, // long time to Taylor and Bay (probably in holding area)
     },
-    '9': {
-      '9____I_N00': {
-        ignoreFirstStop: '7297', // use Bayshore as actual first stop (daytime)
-      },
-      '9____O_N00': {
-        ignoreLastStop: '7297', // use Bayshore as actual terminal (daytime)
-      },
+    PM___I_F00: {
+      ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
     },
-    '24': {
-      directionsToIgnore: ['24___I_D10'],
+  },
+  PH: {
+    PH___I_F00: {
+      ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
     },
-    '90': {
-      ignoreRoute: true,
+  },
+  C: {
+    C____I_F00: {
+      ignoreLastStop: true, // long time to California & Drumm (probably in holding area)
     },
-    '91': {
-      ignoreRoute: true,
-    },
-    K_OWL: {
-      ignoreRoute: true,
-    },
-    L_OWL: {
-      ignoreRoute: true,
-    },
-    M_OWL: {
-      ignoreRoute: true,
-    },
-    N_OWL: {
-      ignoreRoute: true,
-    },
-    T_OWL: {
-      ignoreRoute: true,
-    },
-    PM: {
-      PM___O_F00: {
-        ignoreLastStop: true, // long time to Taylor and Bay (probably in holding area)
-      },
-      PM___I_F00: {
-        ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
-      },
-    },
-    PH: {
-      PH___I_F00: {
-        ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
-      },
-    },
-    C: {
-      C____I_F00: {
-        ignoreLastStop: true, // long time to California & Drumm (probably in holding area)
-      },
-    },
-  };
-}
+  },
+};
 
 /**
  * Given an array of routes, return only the routes we want to show.
  */
 export function filterRoutes(routes) {
-  const heuristics = getRouteHeuristics();
-
   return routes.filter(
-    route => !heuristics[route.id] || !heuristics[route.id].ignoreRoute,
+    route =>
+      !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute,
   );
 }
 
@@ -132,13 +129,11 @@ export function filterRoutes(routes) {
  * Given directions array for a route and corresponding route ID, return only the valid directions.
  */
 export function filterDirections(directions, routeID) {
-  const heuristics = getRouteHeuristics();
-
-  if (!heuristics[routeID]) {
+  if (!routeHeuristics[routeID]) {
     return directions;
   }
 
-  const directionsToIgnore = heuristics[routeID].directionsToIgnore;
+  const directionsToIgnore = routeHeuristics[routeID].directionsToIgnore;
   if (!directionsToIgnore) {
     return directions;
   }
@@ -155,11 +150,10 @@ export function filterDirections(directions, routeID) {
  * the first stop.
  */
 export function ignoreFlag(routeID, directionID, flagName) {
-  const heuristics = getRouteHeuristics();
-  if (!heuristics[routeID]) {
+  if (!routeHeuristics[routeID]) {
     return false;
   }
-  const direction = heuristics[routeID][directionID];
+  const direction = routeHeuristics[routeID][directionID];
   if (!direction) {
     return false;
   }

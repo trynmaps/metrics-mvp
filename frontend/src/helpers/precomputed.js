@@ -129,6 +129,7 @@ export function getTripTimesFromStop(
     // using the p10-median-p90 stat group (see getStatPath)
     return getTripTimeStat(tripTimeValues, 2);
   }
+  return null;
 }
 
 /**

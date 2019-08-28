@@ -29,11 +29,14 @@ import {
  * @param {any} props
  */
 function TravelTimeChart(props) {
+  const [crosshairValues, setCrosshairValues] = useState([]);
+  const { graphParams } = props;
+
   /**
    * Event handler for onMouseLeave.
    * @private
    */
-  const _onMouseLeave = () => {
+  const onMouseLeave = () => {
     setCrosshairValues([]);
   };
 
@@ -43,13 +46,9 @@ function TravelTimeChart(props) {
    * @param {index} index Index of the value in the data array.
    * @private
    */
-  const _onNearestTripX = (value, { index }) => {
+  const onNearestTripX = (value, { index }) => {
     setCrosshairValues([value /* future:  how to add scheduleData[index] ? */]);
   };
-
-  const [crosshairValues, setCrosshairValues] = useState([]);
-
-  const { graphParams } = props;
 
   let tripData = null;
   let direction_id = null;
@@ -115,7 +114,7 @@ function TravelTimeChart(props) {
                 0,
               ),
             ]}
-            onMouseLeave={_onMouseLeave}
+            onMouseLeave={onMouseLeave}
           >
             <HorizontalGridLines />
             <VerticalGridLines />
@@ -130,15 +129,15 @@ function TravelTimeChart(props) {
                 strokeWidth: '3px',
               }}
               size="1"
-              onNearestX={_onNearestTripX}
+              onNearestX={onNearestTripX}
             />
             {/* <LineSeries data={ scheduleData }
-           stroke="#a4a6a9"
-           strokeWidth="4"
-           style={{
-             strokeDasharray: '2 2'
-           }}             
-        /> */}
+              stroke="#a4a6a9"
+              strokeWidth="4"
+              style={{
+                strokeDasharray: '2 2'
+              }}             
+            /> */}
 
             <ChartLabel
               text="Minutes"
