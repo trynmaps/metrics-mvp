@@ -218,37 +218,7 @@ function RouteSummary(props) {
           </Grid>
 
           <TravelTimeChart />
-        </Grid>
-
-        <Grid item xs>
-
-          <Tooltip title={ speed ? 'Subscore: ' + grades.speedScore + '/100' : ''}>
-          <Paper className={classes.trip}>
-
-            <Typography variant="overline">Median speed</Typography>
-            <br/>
-            <Typography variant="h3" display="inline">{ speed === null || isNaN(speed) ? "--" : speed.toFixed(1) }</Typography>
-            <Typography variant="h5" display="inline">&nbsp;mph</Typography>
-
-            <Rating
-            readOnly
-            size="small"
-            value={ grades ? Math.round( grades.speedScore / 10.0 ) / 2.0 : 0 }
-            precision={0.5} />
-
-            <Box pt={2}>
-              { speedRanking ? `#${speedRanking} of ${allSpeeds.length} for fastest` : null }
-            </Box>
-
-            Length: { metersToMiles(dist).toFixed(1) } miles
-
-          </Paper>
-          </Tooltip>
-        </Grid>
-
-
-        <TravelTimeChart/>
-        <MareyChart/>
+          <MareyChart/>
 
       </Grid>
 
