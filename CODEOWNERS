@@ -1,0 +1,13 @@
+# Global
+*               @hathix
+
+# Folder Specific Overrides 
+
+# Frontend
+/frontend/      @exxonvaldez @akgupta89 @ckrajewski
+
+# Backend
+/backend/ 	 @youngj @jtanquil @vicky11z
+
+# Kubernetes reviewer suggestions
+/kubernetes/    @youngj

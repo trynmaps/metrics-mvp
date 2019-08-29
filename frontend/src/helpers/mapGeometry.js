@@ -13,39 +13,36 @@ import { milesBetween, metersToMiles } from './routeCalculations';
  *  @param fromStop stop id (defaults to first stop)
  *  @param toStop stop id (defaults to last stop)
  */
-export function getTripPoints(routeInfo, dirInfo, fromStop=null, toStop=null) {
+export function getTripPoints(
+  routeInfo,
+  dirInfo,
+  fromStop = dirInfo.stops[0],
+  toStop = dirInfo.stops[dirInfo.stops.length - 1],
+) {
+  const fromStopInfo = routeInfo.stops[fromStop];
+  const toStopInfo = routeInfo.stops[toStop];
 
-  if (fromStop === null) {
-    fromStop = dirInfo.stops[0];
-  }
-  if (toStop === null) {
-    toStop = dirInfo.stops[dirInfo.stops.length-1];
-  }
+  const fromStopGeometry = dirInfo.stop_geometry[fromStop];
+  const toStopGeometry = dirInfo.stop_geometry[toStop];
+  const tripPoints = [];
 
-  let fromStopInfo = routeInfo.stops[fromStop];
-  let toStopInfo = routeInfo.stops[toStop];
-
-  let fromStopGeometry = dirInfo.stop_geometry[fromStop];
-  let toStopGeometry = dirInfo.stop_geometry[toStop];
-  let tripPoints = [];
-
-  if (fromStopGeometry && toStopGeometry)
-  {
+  if (fromStopGeometry && toStopGeometry) {
     tripPoints.push(fromStopInfo);
-    for (let i = fromStopGeometry.after_index + 1; i <= toStopGeometry.after_index; i++) {
+    for (
+      let i = fromStopGeometry.after_index + 1;
+      i <= toStopGeometry.after_index;
+      i++
+    ) {
       tripPoints.push(dirInfo.coords[i]);
     }
     tripPoints.push(toStopInfo);
-  }
-  else // if unknown geometry, draw straight lines between stops
-  {
-    let fromStopIndex = dirInfo.stops.indexOf(fromStop);
-    let toStopIndex = dirInfo.stops.indexOf(toStop);
-    if (fromStopIndex !== -1 && toStopIndex !== -1)
-    {
-      for (let i = fromStopIndex; i <= toStopIndex; i++)
-      {
-        let stopInfo = routeInfo.stops[dirInfo.stops[i]];
+  } // if unknown geometry, draw straight lines between stops
+  else {
+    const fromStopIndex = dirInfo.stops.indexOf(fromStop);
+    const toStopIndex = dirInfo.stops.indexOf(toStop);
+    if (fromStopIndex !== -1 && toStopIndex !== -1) {
+      for (let i = fromStopIndex; i <= toStopIndex; i++) {
+        const stopInfo = routeInfo.stops[dirInfo.stops[i]];
         tripPoints.push(stopInfo);
       }
     }
@@ -62,30 +59,27 @@ export function getTripPoints(routeInfo, dirInfo, fromStop=null, toStop=null) {
  *  @param fromStop stop id (defaults to first stop)
  *  @param toStop stop id (defaults to last stop)
  */
-export function getDistanceInMiles(routeInfo, dirInfo, fromStop=null, toStop=null) {
+export function getDistanceInMiles(
+  routeInfo,
+  dirInfo,
+  fromStop = dirInfo.stops[0],
+  toStop = dirInfo.stops[dirInfo.stops.length - 1],
+) {
+  const fromStopInfo = routeInfo.stops[fromStop];
+  const toStopInfo = routeInfo.stops[toStop];
 
-  if (fromStop === null) {
-    fromStop = dirInfo.stops[0];
-  }
-  if (toStop === null) {
-    toStop = dirInfo.stops[dirInfo.stops.length-1];
-  }
-
-  let fromStopInfo = routeInfo.stops[fromStop];
-  let toStopInfo = routeInfo.stops[toStop];
-
-  let fromStopGeometry = dirInfo.stop_geometry[fromStop];
-  let toStopGeometry = dirInfo.stop_geometry[toStop];
-  let distance = null;;
+  const fromStopGeometry = dirInfo.stop_geometry[fromStop];
+  const toStopGeometry = dirInfo.stop_geometry[toStop];
+  let distance = null;
 
   if (fromStopGeometry && toStopGeometry) {
-
-    distance = metersToMiles(toStopGeometry.distance - fromStopGeometry.distance);
-
-  } else { // if unknown geometry, draw straight lines between stops
+    distance = metersToMiles(
+      toStopGeometry.distance - fromStopGeometry.distance,
+    );
+  } else {
+    // if unknown geometry, draw straight lines between stops
 
     distance = milesBetween(fromStopInfo, toStopInfo);
-
   }
   return distance;
 }

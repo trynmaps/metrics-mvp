@@ -1,17 +1,29 @@
+## CUSTOM GITIGNORE STUFF ##
+
+# test notebook
+/backend/models/test.ipynb
+# locally cached timetable/routeconfig data
+/backend/data/**/*.csv
+/backend/data/**/*.json
+
+# local cache
+backend/data/*.json
+backend/data/*.csv
+backend/data/arrivals_*
+backend/data/state_*
+backend/data/wait-times_*
+backend/data/trip-times_*
+
+docker-compose.override.yml
+
+.aws/
+
+
+
+
 
 # Created by https://www.gitignore.io/api/node,macos,flask,python,eclipse,intellij
 # Edit at https://www.gitignore.io/?templates=node,macos,flask,python,eclipse,intellij
-
-# local cache
-data/*.json
-data/*.csv
-data/arrivals_*
-data/state_*
-data/wait-times_*
-data/trip-times_*
-
-docker-compose.override.yml
-.aws/
 
 ### Eclipse ###
 .metadata
@@ -462,13 +474,3 @@ typings/
 # Pyre type checker
 
 # End of https://www.gitignore.io/api/node,macos,flask,python,eclipse,intellij
-
-
-
-## CUSTOM GITIGNORE STUFF ##
-
-# test notebook
-/models/test.ipynb
-# locally cached timetable/routeconfig data
-/data/**/*.csv
-/data/**/*.json

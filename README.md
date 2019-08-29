@@ -26,7 +26,7 @@ When you edit files in your local directory, the React and Flask containers shou
 
 To start a shell within the Flask Docker container, run `./docker-shell.sh` (Linux/Mac) or `docker-shell` (Windows).
 
-You can run command line scripts like `compute_arrivals.py` and `headways.py` from the shell in the Docker container.
+You can run command line scripts like `backend/compute_arrivals.py` and `backend/headways.py` from the shell in the Docker container.
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
 
@@ -77,17 +77,16 @@ The build steps are defined in `cloudbuild.yaml`.
 
 ### Frontend
 
-- **React** - code lives in the `/frontend` directory.  It was built using
-[Create React App](https://facebook.github.io/create-react-app/docs/folder-structure).
 - **NPM** - for package management. We explicitly decided to *not* use Yarn, because both
 package managers offer similar performance, we were already using NPM for backend
 package management, and the Yarn roadmap did not offer compelling
 improvements going forward.
-- **React** -  which was inherited from an older OpenTransit Map app.
+- **React** - Selected for popularity, simple view, and speedy virutal DOM. Code lives in the `/frontend` directory.  It was built using
+[Create React App](https://facebook.github.io/create-react-app/docs/folder-structure).
 - **Material UI** - which we use over Bootstrap since MUI doesn't rely on jQuery. It has a
 popular React framework and looks great on mobile.
 - **Redux** - for state management and to simplify our application and component interaction.
-- **Redux Thunk** - as middleware for Thunk.
+- **Redux Thunk** - as middleware for Redux.
 - **React Hooks** - to manage interactions with state management.
 - **Functional Components** - We migrated away from ES6 React Components and toward React
 [Functional Components](https://reactjs.org/docs/components-and-props.html) due to the simpler component logic and the ability to use React Hooks that Functional Components offer.

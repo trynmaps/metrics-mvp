@@ -38,93 +38,90 @@ import {
  *   - The 9 has multiple terminals so use the last common stop.
  *   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
  */
-export function getRouteHeuristics() {
-  return {
-    J: {
-      directionsToIgnore: ['J____I_D10'], // this is to 23rd and 3rd
+export const routeHeuristics = {
+  J: {
+    directionsToIgnore: ['J____I_D10'], // this is to 23rd and 3rd
+  },
+  L: {
+    directionsToIgnore: ['L____I_U53'],
+  },
+  M: {
+    M____O_D00: {
+      ignoreFirstStop: true, // Embarcadero & Folsom is not a real stop
     },
-    L: {
-      directionsToIgnore: ['L____I_U53'],
+  },
+  N: {
+    N____O_F10: {
+      ignoreFirstStop: true, // 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
     },
-    M: {
-      M____O_D00: {
-        ignoreFirstStop: true, // Embarcadero & Folsom is not a real stop
-      },
+  },
+  S: {
+    ignoreRoute: true,
+  },
+  '5': {
+    '5____I_F00': {
+      ignoreFirstStop: '4218', // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
     },
-    N: {
-      N____O_F10: {
-        ignoreFirstStop: true, // 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
-      },
+  },
+  '9': {
+    '9____I_N00': {
+      ignoreFirstStop: '7297', // use Bayshore as actual first stop (daytime)
     },
-    S: {
-      ignoreRoute: true,
+    '9____O_N00': {
+      ignoreLastStop: '7297', // use Bayshore as actual terminal (daytime)
     },
-    '5': {
-      '5____I_F00': {
-        ignoreFirstStop: '4218', // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
-      },
+  },
+  '24': {
+    directionsToIgnore: ['24___I_D10'],
+  },
+  '90': {
+    ignoreRoute: true,
+  },
+  '91': {
+    ignoreRoute: true,
+  },
+  K_OWL: {
+    ignoreRoute: true,
+  },
+  L_OWL: {
+    ignoreRoute: true,
+  },
+  M_OWL: {
+    ignoreRoute: true,
+  },
+  N_OWL: {
+    ignoreRoute: true,
+  },
+  T_OWL: {
+    ignoreRoute: true,
+  },
+  PM: {
+    PM___O_F00: {
+      ignoreLastStop: true, // long time to Taylor and Bay (probably in holding area)
     },
-    '9': {
-      '9____I_N00': {
-        ignoreFirstStop: '7297', // use Bayshore as actual first stop (daytime)
-      },
-      '9____O_N00': {
-        ignoreLastStop: '7297', // use Bayshore as actual terminal (daytime)
-      },
+    PM___I_F00: {
+      ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
     },
-    '24': {
-      directionsToIgnore: ['24___I_D10'],
+  },
+  PH: {
+    PH___I_F00: {
+      ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
     },
-    '90': {
-      ignoreRoute: true,
+  },
+  C: {
+    C____I_F00: {
+      ignoreLastStop: true, // long time to California & Drumm (probably in holding area)
     },
-    '91': {
-      ignoreRoute: true,
-    },
-    K_OWL: {
-      ignoreRoute: true,
-    },
-    L_OWL: {
-      ignoreRoute: true,
-    },
-    M_OWL: {
-      ignoreRoute: true,
-    },
-    N_OWL: {
-      ignoreRoute: true,
-    },
-    T_OWL: {
-      ignoreRoute: true,
-    },
-    PM: {
-      PM___O_F00: {
-        ignoreLastStop: true, // long time to Taylor and Bay (probably in holding area)
-      },
-      PM___I_F00: {
-        ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
-      },
-    },
-    PH: {
-      PH___I_F00: {
-        ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
-      },
-    },
-    C: {
-      C____I_F00: {
-        ignoreLastStop: true, // long time to California & Drumm (probably in holding area)
-      },
-    },
-  };
-}
+  },
+};
 
 /**
  * Given an array of routes, return only the routes we want to show.
  */
 export function filterRoutes(routes) {
-  const heuristics = getRouteHeuristics();
-
   return routes.filter(
-    route => !heuristics[route.id] || !heuristics[route.id].ignoreRoute,
+    route =>
+      !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute,
   );
 }
 
@@ -132,13 +129,11 @@ export function filterRoutes(routes) {
  * Given directions array for a route and corresponding route ID, return only the valid directions.
  */
 export function filterDirections(directions, routeID) {
-  const heuristics = getRouteHeuristics();
-
-  if (!heuristics[routeID]) {
+  if (!routeHeuristics[routeID]) {
     return directions;
   }
 
-  const directionsToIgnore = heuristics[routeID].directionsToIgnore;
+  const directionsToIgnore = routeHeuristics[routeID].directionsToIgnore;
   if (!directionsToIgnore) {
     return directions;
   }
@@ -154,21 +149,11 @@ export function filterDirections(directions, routeID) {
  * M's actually go to that stop.  For better end to end calculations, need to disregard
  * the first stop.
  */
-
-export function ignoreFirstStop(routeID, directionID) {
-  return ignoreFlag(routeID, directionID, 'ignoreFirstStop');
-}
-
-export function ignoreLastStop(routeID, directionID) {
-  return ignoreFlag(routeID, directionID, 'ignoreLastStop');
-}
-
 export function ignoreFlag(routeID, directionID, flagName) {
-  const heuristics = getRouteHeuristics();
-  if (!heuristics[routeID]) {
+  if (!routeHeuristics[routeID]) {
     return false;
   }
-  const direction = heuristics[routeID][directionID];
+  const direction = routeHeuristics[routeID][directionID];
   if (!direction) {
     return false;
   }
@@ -178,19 +163,33 @@ export function ignoreFlag(routeID, directionID, flagName) {
   return false;
 }
 
+export function ignoreFirstStop(routeID, directionID) {
+  return ignoreFlag(routeID, directionID, 'ignoreFirstStop');
+}
+
+export function ignoreLastStop(routeID, directionID) {
+  return ignoreFlag(routeID, directionID, 'ignoreLastStop');
+}
+
 /**
  * Get precomputed trip times for the first stop, then apply heuristic rules
  * to trim off the first stop or first stops if needed.
  */
-function getTripTimesUsingHeuristics(props, routeID, directionID) {
+function getTripTimesUsingHeuristics(
+  tripTimesCache,
+  graphParams,
+  routes,
+  routeID,
+  directionID,
+) {
   const tripTimesForDir = getTripTimesForDirection(
-    props.tripTimesCache,
-    props.graphParams,
+    tripTimesCache,
+    graphParams,
     routeID,
     directionID,
   );
 
-  if (!tripTimesForDir || !props.routes) {
+  if (!tripTimesForDir || !routes) {
     // console.log("No trip times found at all for " + directionID + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
     return { tripTimesForFirstStop: null, directionInfo: null };
@@ -200,7 +199,7 @@ function getTripTimesUsingHeuristics(props, routeID, directionID) {
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
 
-  const route = props.routes.find(route => route.id === routeID);
+  const route = routes.find(thisRoute => thisRoute.id === routeID);
   const directionInfo = route.directions.find(
     direction => direction.id === directionID,
   );
@@ -238,9 +237,17 @@ function getTripTimesUsingHeuristics(props, routeID, directionID) {
  * Returns trip time across the full route, applying heuristic rules to ignore
  * the last stop or stops as needed.
  */
-export function getEndToEndTripTime(props, routeID, directionID) {
+export function getEndToEndTripTime(
+  tripTimesCache,
+  graphParams,
+  routes,
+  routeID,
+  directionID,
+) {
   const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
-    props,
+    tripTimesCache,
+    graphParams,
+    routes,
     routeID,
     directionID,
   );
@@ -285,12 +292,23 @@ export function getEndToEndTripTime(props, routeID, directionID) {
 }
 
 /**
+ *
+ * @param meters
+ * @returns Conversion from meters to miles.
+ */
+export function metersToMiles(meters) {
+  return meters / 1609.344;
+}
+
+/**
  * Returns an array of {x: stop index, y: time} objects for
  * plotting on a chart.
  */
 export function getTripDataSeries(props, routeID, directionID) {
   const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
-    props,
+    props.tripTimesCache,
+    props.graphParams,
+    props.routes,
     routeID,
     directionID,
   );
@@ -299,7 +317,7 @@ export function getTripDataSeries(props, routeID, directionID) {
     return [];
   } // no precomputed times
 
-  const route = props.routes.find(route => route.id === routeID);
+  const route = props.routes.find(thisRoute => thisRoute.id === routeID);
 
   const dataSeries = [];
 
@@ -309,7 +327,7 @@ export function getTripDataSeries(props, routeID, directionID) {
 
   directionInfo.stops.slice(1).map((stop, index) => {
     if (!directionInfo.stop_geometry[stop]) {
-      //console.log('no geometry for ' + routeID + ' ' + directionID + ' ' + stop);
+      // console.log('no geometry for ' + routeID + ' ' + directionID + ' ' + stop);
     }
     if (tripTimesForFirstStop[stop] && directionInfo.stop_geometry[stop]) {
       dataSeries.push({
@@ -330,20 +348,16 @@ export function getTripDataSeries(props, routeID, directionID) {
  *
  * @param {any} props
  */
-export function getAllWaits(props) {
+export function getAllWaits(waitTimesCache, graphParams, routes) {
   let allWaits = null;
-  if (props.routes) {
-    allWaits = filterRoutes(props.routes).map(route => {
+  if (routes) {
+    allWaits = filterRoutes(routes).map(route => {
       return {
         routeID: route.id,
-        wait: getAverageOfMedianWait(
-          props.waitTimesCache,
-          props.graphParams,
-          route,
-        ),
+        wait: getAverageOfMedianWait(waitTimesCache, graphParams, route),
       };
     });
-    allWaits = allWaits.filter(waitObj => !isNaN(waitObj.wait));
+    allWaits = allWaits.filter(waitObj => !Number.isNaN(waitObj.wait));
     allWaits.sort((a, b) => {
       return b.wait - a.wait;
     });
@@ -353,42 +367,26 @@ export function getAllWaits(props) {
 }
 
 /**
- * GTFS route distances.  This is the average route distance across all directions for a route.
- *
- * @param {any} props
- */
-export function getAllDistances(props) {
-  let allDistances = null;
-  if (props.routes) {
-    allDistances = props.routes.map(route => {
-      const totalDistance = route.directions.reduce((total, direction) => { return total + direction.distance; }, 0);
-      return {
-        routeID: route.id,
-        distance: totalDistance/route.directions.length,
-      }
-    })
-  }
-  //console.log(JSON.stringify(allDistances));
-  return allDistances;
-}
-
-/**
  * Computes the end to end speed for a route.
  *
- * @param {any} props
+ * @param {any} routes
  * @param {any} route_id
- * @param {any} allDistances
  */
-function getSpeedForRoute(props, route_id, allDistances) {
-  const route = props.routes.find(route => route.id === route_id);
+function getSpeedForRoute(tripTimesCache, graphParams, routes, route_id) {
+  const route = routes.find(thisRoute => thisRoute.id === route_id);
 
   const filteredDirections = filterDirections(route.directions, route_id);
   let speeds = filteredDirections.map(direction => {
-    const distObj = allDistances.find(distObj => distObj.routeID === route_id);
-    const dist = distObj ? distObj.distance : null;
-    const tripTime = getEndToEndTripTime(props, route.id, direction.id);
+    const dist = direction.distance;
+    const tripTime = getEndToEndTripTime(
+      tripTimesCache,
+      graphParams,
+      routes,
+      route.id,
+      direction.id,
+    );
 
-    if (dist <= 0 || isNaN(tripTime)) {
+    if (dist <= 0 || Number.isNaN(tripTime)) {
       // something wrong with the data here
       // console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + route_id + ' ' + direction.id);
       return -1;
@@ -414,13 +412,13 @@ function getSpeedForRoute(props, route_id, allDistances) {
  * @param {any} routes
  * @param {any} allDistances
  */
-export function getAllSpeeds(props, allDistances) {
+export function getAllSpeeds(tripTimesCache, graphParams, routes) {
   let allSpeeds = null;
-  if (props.routes) {
-    allSpeeds = filterRoutes(props.routes).map(route => {
+  if (routes) {
+    allSpeeds = filterRoutes(routes).map(route => {
       return {
         routeID: route.id,
-        speed: getSpeedForRoute(props, route.id, allDistances),
+        speed: getSpeedForRoute(tripTimesCache, graphParams, routes, route.id),
       };
     });
     allSpeeds = allSpeeds.filter(speedObj => speedObj.speed > 0); // not needed?
@@ -432,31 +430,6 @@ export function getAllSpeeds(props, allDistances) {
   }
 
   return allSpeeds;
-}
-
-/**
- * Computes scores of all routes.
- *
- * @param {any} routes
- * @param {any} speeds
- */
-export function getAllScores(routes, waits, speeds) {
-  const allScores = [];
-  for (const route of routes) {
-    const speedObj = speeds.find(speed => speed.routeID === route.id);
-    const waitObj = waits.find(wait => wait.routeID === route.id);
-    if (waitObj && speedObj) {
-      const grades = computeGrades(waitObj.wait, speedObj.speed);
-      allScores.push({ routeID: route.id, totalScore: grades.totalScore });
-    }
-  }
-  allScores.sort((a, b) => {
-    return b.totalScore - a.totalScore;
-  });
-
-  // console.log(JSON.stringify(allScores));
-
-  return allScores;
 }
 
 /**
@@ -530,6 +503,31 @@ export function computeGrades(medianWait, speed) {
   };
 }
 
+/**
+ * Computes scores of all routes.
+ *
+ * @param {any} routes
+ * @param {any} speeds
+ */
+export function getAllScores(routes, waits, speeds) {
+  const allScores = [];
+  for (const route of routes) {
+    const speedObj = speeds.find(speed => speed.routeID === route.id);
+    const waitObj = waits.find(wait => wait.routeID === route.id);
+    if (waitObj && speedObj) {
+      const grades = computeGrades(waitObj.wait, speedObj.speed);
+      allScores.push({ routeID: route.id, totalScore: grades.totalScore });
+    }
+  }
+  allScores.sort((a, b) => {
+    return b.totalScore - a.totalScore;
+  });
+
+  // console.log(JSON.stringify(allScores));
+
+  return allScores;
+}
+
 export const quartileBackgroundColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
@@ -541,44 +539,39 @@ export const quartileForegroundColor = d3
   .range(['black', 'black', 'black', 'white']);
 
 /**
- * Returns the distance between two stops in miles.
- */
-export function milesBetween(p1, p2) {
-  const meters = haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
-  return metersToMiles(meters);
-}
-
-/**
- *
- * @param meters
- * @returns Conversion from meters to miles.
- */
-export function metersToMiles(meters) {
-  return meters / 1609.344;
-}
-
-/**
  * Haversine formula for calcuating distance between two coordinates in lat lon
  * from bird eye view; seems to be +- 8 meters difference from geopy distance.
  *
  * From eclipses.py.  Returns distance in meters.
  */
-export function haverDistance(latstop, lonstop, latbus, lonbus) {
+export function haverDistance(degLatStop, degLonStop, degLatBus, degLonBus) {
   const deg2rad = x => (x * Math.PI) / 180;
-
-  [latstop, lonstop, latbus, lonbus] = [latstop, lonstop, latbus, lonbus].map(
-    deg2rad,
-  );
   const eradius = 6371000;
 
-  const latdiff = latbus - latstop;
-  const londiff = lonbus - lonstop;
+  const [radLatStop, radLonStop, radLatBus, radLonBus] = [
+    degLatStop,
+    degLonStop,
+    degLatBus,
+    degLonBus,
+  ].map(deg2rad);
+
+  const latDiff = radLatBus - radLatStop;
+  const lonDiff = radLonBus - radLonStop;
 
   const a =
-    Math.sin(latdiff / 2) ** 2 +
-    Math.cos(latstop) * Math.cos(latbus) * Math.sin(londiff / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    Math.sin(latDiff / 2) ** 2 +
+    Math.cos(radLatStop) * Math.cos(radLatBus) * Math.sin(lonDiff / 2) ** 2;
+  const hypotenuse = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  const distance = eradius * c;
+  const distance = eradius * hypotenuse;
+
   return distance;
+}
+
+/**
+ * Returns the distance between two stops in miles.
+ */
+export function milesBetween(p1, p2) {
+  const meters = haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
+  return metersToMiles(meters);
 }
