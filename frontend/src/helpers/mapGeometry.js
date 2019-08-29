@@ -2,7 +2,9 @@
  * Helper functions for plotting on maps.
  */
 
+import * as turf from '@turf/turf';
 import { milesBetween, metersToMiles } from './routeCalculations';
+import { ServiceArea } from '../agencies/sf-muni';
 
 /**
  * Gets coordinates that can be consumed by a Leaflet Polyline.  Uses
@@ -82,4 +84,17 @@ export function getDistanceInMiles(
     distance = milesBetween(fromStopInfo, toStopInfo);
   }
   return distance;
+}
+
+/**
+ * Determines whether a given coordinate is within our service area
+ * @param latLng - coordinate as latitude and longitude
+ * @returns {boolean} - true if the coordinate is in the service area
+ */
+export function isInServiceArea(latLng) {
+  const point = turf.point([latLng.lng, latLng.lat]);
+
+  return ServiceArea.features.some(feature => {
+    return turf.booleanWithin(point, feature);
+  });
 }
