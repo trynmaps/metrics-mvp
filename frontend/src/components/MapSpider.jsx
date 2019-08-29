@@ -29,10 +29,16 @@ class MapSpider extends Component {
     this.mapRef = createRef(); // used for geolocating
   }
 
-  // TODO: Needs optimizing. This sets height to that of the window, not remaining space, which
-  // has to be adjusted for by hand.
+  // Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
+  // case make the map half height.
+  //
+  // TODO: Need to convert this component to a functional component.  Then we can use the useTheme
+  // hook to programatically access the breakpoint widths.
+  //
+  // Note: This code has to be adjusted to be kept in sync with the UI layout.
+  //
   updateDimensions() {
-    const height = (window.innerWidth >= 992 ? window.innerHeight : 500) - 64 /* blue app bar */;
+    const height = (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight/2) - 64 /* blue app bar */;
     this.setState({ height: height })
   }
 
