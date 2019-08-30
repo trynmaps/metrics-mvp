@@ -158,3 +158,6 @@ export function generateWaitTimeURL(dateStr, statPath, timePath) {
     '/',
   )}/wait-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
 }
+
+// Name of the transit agency
+export const transitName = 'SF Muni';
