@@ -39,10 +39,11 @@ function Dashboard(props) {
       <Grid container spacing={0}>
         {' '}
         {/* Using spacing causes horizontal scrolling, see https://material-ui.com/components/grid/#negative-margin */}
-        <Grid item xs={6}>
+        
+        <Grid item xs={12} sm={6}> {/* map and table are both full width for 640px windows or smaller, else half width */}
           <MapSpider />
         </Grid>
-        <Grid item xs={6} style={{ padding: 12 }}>
+        <Grid item xs={12} sm={6} style={{ padding: 12 }}>
           {' '}
           {/* Doing the spacing between Grid items ourselves.  See previous comment. */}
           <RouteTable routes={routes} />
