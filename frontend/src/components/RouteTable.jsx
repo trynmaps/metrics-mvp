@@ -26,6 +26,20 @@ import {
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
 function desc(a, b, orderBy) {
+  
+  // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
+  // NaN needs special handling because NaN < 3 is false as is Nan > 3.
+  
+  if (Number.isNaN(a[orderBy]) && Number.isNaN(b[orderBy])) {
+    return 0;
+  }
+  if (Number.isNaN(a[orderBy])) {
+    return -1;
+  }
+  if (Number.isNaN(b[orderBy])) {
+    return 1;
+  }
+  
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
