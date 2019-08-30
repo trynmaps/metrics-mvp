@@ -20,7 +20,7 @@ This is the app's main file!
 DEBUG = os.environ.get('FLASK_DEBUG') == '1'
 
 # Create the app
-app = Flask(__name__, static_folder='frontend/build')
+app = Flask(__name__, static_folder='../frontend/build')
 CORS(app)
 
 # Test endpoint
@@ -240,12 +240,12 @@ def config():
 if os.environ.get('METRICS_ALL_IN_ONE') == '1':
     @app.route('/frontend/build/<path:path>')
     def frontend_build(path):
-        return send_from_directory('frontend/build', path)
+        return send_from_directory('../frontend/build', path)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def wildcard(path):
-        return send_from_directory('frontend/build', 'index.html')
+        return send_from_directory('../frontend/build', 'index.html')
 else:
     @app.route('/')
     def root():
