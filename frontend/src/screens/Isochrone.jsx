@@ -667,7 +667,8 @@ class Isochrone extends React.Component {
             ) : (
               <div className="isochrone-instructions">
                 {!this.state.latLng
-                  ? 'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.'
+                  ? 'Click anywhere in the city to see the trip times from' +
+                  ' that point to the rest of the city via transit and walking.'
                   : this.state.computing
                   ? 'Computing...'
                   : 'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.'}
