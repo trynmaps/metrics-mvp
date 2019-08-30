@@ -9,7 +9,7 @@ import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { fetchRoutes, routesUrl } from '../actions';
-import { DefaultDisabledRoutes } from '../agencies/sf-muni';
+import { DefaultDisabledRoutes } from '../locationConstants';
 import { metricsBaseURL } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 
