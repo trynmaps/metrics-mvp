@@ -21,7 +21,7 @@ CMD ["flask", "run", "--host", "0.0.0.0"]
 
 FROM flask-dev as flask
 ENV PORT 5000
-CMD gunicorn --bind 0.0.0.0:$PORT metrics-api:app
+CMD gunicorn --bind 0.0.0.0:$PORT metrics-api:app --chdir /app/backend
 
 FROM react-dev as react-build
 RUN cd /app/frontend && npm run build
