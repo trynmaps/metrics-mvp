@@ -1,3 +1,4 @@
+// List routes to not search for by default
 export const DefaultDisabledRoutes = [
   'PH',
   'C',
@@ -30,6 +31,7 @@ export const DefaultDisabledRoutes = [
   '83X',
 ];
 
+// GeoJSON feature collection of the area serviced by the transportation agency
 export const ServiceArea = {
   type: 'FeatureCollection',
   features: [
@@ -124,3 +126,35 @@ export const ServiceArea = {
     },
   ],
 };
+
+// S3 link to routes
+export const routesUrl =
+  'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
+
+/**
+ * Generate S3 url for trips
+ * @param dateStr - date
+ * @param statPath - the statistical measure (e.g. median)
+ * @param timePath - the time of day
+ * @returns {string} S3 url
+ */
+export function generateTripURL(dateStr, statPath, timePath) {
+  return `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/${dateStr.replace(
+    /-/g,
+    '/',
+  )}/trip-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
+}
+
+/**
+ * Generate S3 url for wait times
+ * @param dateStr - date
+ * @param statPath - the statistical measure (e.g. median)
+ * @param timePath - the time of day
+ * @returns {string} S3 url
+ */
+export function generateWaitTimeURL(dateStr, statPath, timePath) {
+  return `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/${dateStr.replace(
+    /-/g,
+    '/',
+  )}/wait-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
+}

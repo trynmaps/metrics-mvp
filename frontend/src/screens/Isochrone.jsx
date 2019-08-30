@@ -8,8 +8,8 @@ import AppBar from '@material-ui/core/AppBar';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { fetchRoutes, routesUrl } from '../actions';
-import { DefaultDisabledRoutes } from '../locationConstants';
+import { fetchRoutes} from '../actions';
+import { DefaultDisabledRoutes, routesUrl } from '../locationConstants';
 import { metricsBaseURL } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 
