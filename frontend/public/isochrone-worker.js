@@ -198,8 +198,8 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
 
     if (!waitTimes)
     {
-        var timePath = getTimePath(timeStr);
-        let statPath = getStatPath(stat);
+      const timePath = getTimePath(timeStr);
+      let statPath = getStatPath(stat);
 
         let s3Url = generateWaitTimeURL(dateStr, statPath, timePath);
 
