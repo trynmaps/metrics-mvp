@@ -13,7 +13,7 @@ import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 
 import { fetchRoutes } from '../actions';
-import { transitName } from '../locationConstants';
+import { agencyTitle } from '../locationConstants';
 
 function RouteScreen(props) {
   useEffect(() => {
@@ -56,7 +56,7 @@ function RouteScreen(props) {
         <Toolbar>
           <SidebarButton />
           <div className="page-title">
-            {transitName}
+            {agencyTitle}
             {selectedRoute ? ` > ${selectedRoute.title}` : null}
             {direction ? ` > ${direction.title}` : null}
             &nbsp;

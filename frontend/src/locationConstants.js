@@ -1,3 +1,7 @@
+// Name of the transit agency
+export const agencyTitle = 'SF Muni';
+export const agencyName = 'sf-muni';
+
 // List routes to not search for by default
 export const DefaultDisabledRoutes = [
   'PH',
@@ -158,9 +162,6 @@ export function generateWaitTimeURL(dateStr, statPath, timePath) {
     '/',
   )}/wait-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
 }
-
-// Name of the transit agency
-export const transitName = 'SF Muni';
 
 /**
  * Returns a data object with centralized declarations of "per route" heuristic rules
