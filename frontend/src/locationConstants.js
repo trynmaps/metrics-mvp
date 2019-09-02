@@ -2,6 +2,9 @@
 export const agencyTitle = 'SF Muni';
 export const agencyName = 'sf-muni';
 
+// Default starting coordinates
+export const STARTING_COORDINATES = { lat: 37.7793, lng: -122.4193 };
+
 // List routes to not search for by default
 export const DefaultDisabledRoutes = [
   'PH',

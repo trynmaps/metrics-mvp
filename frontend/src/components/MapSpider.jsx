@@ -1,4 +1,4 @@
-import React, { Fragment, Component, createRef } from 'react';
+import React, { Component, createRef, Fragment } from 'react';
 import Button from '@material-ui/core/Button';
 import GpsIcon from '@material-ui/icons/GpsFixed';
 import { connect } from 'react-redux';
@@ -24,7 +24,8 @@ import { handleSpiderMapClick } from '../actions';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 import MapShield from './MapShield';
 
-const SF_COORDINATES = { lat: 37.7793, lng: -122.4193 }; // city hall
+import { STARTING_COORDINATES } from '../locationConstants';
+
 const ZOOM = 13;
 const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
 
@@ -449,7 +450,7 @@ class MapSpider extends Component {
       <div>
         <ValidLocationAlert showAlert={!isValidLocation} />
         <Map
-          center={position || SF_COORDINATES}
+          center={position || STARTING_COORDINATES}
           zoom={zoom || ZOOM}
           style={mapClass}
           minZoom={11}
