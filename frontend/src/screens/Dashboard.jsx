@@ -19,28 +19,28 @@ import {
 } from '../actions';
 
 function Dashboard(props) {
-
   useEffect(() => {
     if (!props.routes) {
       props.fetchRoutes();
     }
-  }, []);  // like componentDidMount, this runs only on first render
+  }, []); // like componentDidMount, this runs only on first render
 
   const { routes } = props;
   return (
-    <div className='flex-screen'>
+    <div className="flex-screen">
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className='page-title'>Muni</div>
-          <DateTimePanel/>
+          <div className="page-title">Muni</div>
+          <DateTimePanel />
         </Toolbar>
       </AppBar>
       <Grid container spacing={0}>
         {' '}
         {/* Using spacing causes horizontal scrolling, see https://material-ui.com/components/grid/#negative-margin */}
-        
-        <Grid item xs={12} sm={6}> {/* map and table are both full width for 640px windows or smaller, else half width */}
+        <Grid item xs={12} sm={6}>
+          {' '}
+          {/* map and table are both full width for 640px windows or smaller, else half width */}
           <MapSpider />
         </Grid>
         <Grid item xs={12} sm={6} style={{ padding: 12 }}>

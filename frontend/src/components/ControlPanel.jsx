@@ -8,8 +8,8 @@ import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
-import { handleGraphParams } from '../actions';
 import Grid from '@material-ui/core/Grid';
+import { handleGraphParams } from '../actions';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -30,13 +30,13 @@ function ControlPanel(props) {
 
   const setDirectionId = directionId =>
     props.onGraphParams({
-      direction_id: directionId.target.value,
-      start_stop_id: null,
-      end_stop_id: null,
+      directionId: directionId.target.value,
+      startStopId: null,
+      endStopId: null,
     });
 
   function getSelectedRouteInfo() {
-    const routeId = props.graphParams.route_id;
+    const routeId = props.graphParams.routeId;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
 
@@ -56,8 +56,8 @@ function ControlPanel(props) {
   }
 
   const onSelectFirstStop = stopId => {
-    const directionId = props.graphParams.direction_id;
-    const secondStopId = props.graphParams.end_stop_id;
+    const directionId = props.graphParams.directionId;
+    const secondStopId = props.graphParams.endStopId;
     const mySelectedRoute = { ...getSelectedRouteInfo() };
     secondStopList = generateSecondStopList(
       mySelectedRoute,
@@ -66,13 +66,13 @@ function ControlPanel(props) {
     );
 
     props.onGraphParams({
-      start_stop_id: stopId.target.value,
-      end_stop_id: secondStopId,
+      startStopId: stopId.target.value,
+      endStopId: secondStopId,
     });
   };
 
   const onSelectSecondStop = stopId => {
-    props.onGraphParams({ end_stop_id: stopId.target.value });
+    props.onGraphParams({ endStopId: stopId.target.value });
   };
 
   const setRouteId = routeId => {
@@ -91,25 +91,25 @@ function ControlPanel(props) {
     // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
 
     props.onGraphParams({
-      route_id: routeId.target.value,
-      direction_id: directionId,
-      start_stop_id: null,
-      end_stop_id: null,
+      routeId: routeId.target.value,
+      directionId: directionId,
+      startStopId: null,
+      endStopId: null,
     });
   };
 
   let selectedDirection = null;
-  if (selectedRoute && selectedRoute.directions && graphParams.direction_id) {
+  if (selectedRoute && selectedRoute.directions && graphParams.directionId) {
     selectedDirection = selectedRoute.directions.find(
-      dir => dir.id === graphParams.direction_id,
+      dir => dir.id === graphParams.directionId,
     );
   }
 
   if (selectedDirection) {
     secondStopList = generateSecondStopList(
       selectedRoute,
-      graphParams.direction_id,
-      graphParams.start_stop_id,
+      graphParams.directionId,
+      graphParams.startStopId,
     );
   }
 
@@ -119,27 +119,27 @@ function ControlPanel(props) {
     <div className="ControlPanel">
       <Grid container>
         <Grid item xs>
-            <FormControl className={classes.formControl}>
-              <InputLabel htmlFor="route">Route</InputLabel>
-              <Select
-                value={graphParams.route_id || 0}
-                onChange={setRouteId}
-                input={<Input name="route" id="route" />}
-              >
-                {(routes || []).map(route => (
-                  <MenuItem key={route.id} value={route.id}>
-                    {route.title}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+          <FormControl className={classes.formControl}>
+            <InputLabel htmlFor="route">Route</InputLabel>
+            <Select
+              value={graphParams.routeId || 0}
+              onChange={setRouteId}
+              input={<Input name="route" id="route" />}
+            >
+              {(routes || []).map(route => (
+                <MenuItem key={route.id} value={route.id}>
+                  {route.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Grid>
         {selectedRoute ? (
-        <Grid item xs>
+          <Grid item xs>
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.direction_id || 1}
+                value={graphParams.directionId || 1}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >
@@ -150,15 +150,15 @@ function ControlPanel(props) {
                 ))}
               </Select>
             </FormControl>
-        </Grid>
+          </Grid>
         ) : null}
         {selectedDirection ? (
-        <Grid container>
-          <Grid item xs>
+          <Grid container>
+            <Grid item xs>
               <FormControl className={classes.formControl}>
                 <InputLabel htmlFor="fromstop">From Stop</InputLabel>
                 <Select
-                  value={graphParams.start_stop_id || 1}
+                  value={graphParams.startStopId || 1}
                   onChange={onSelectFirstStop}
                   input={<Input name="stop" id="fromstop" />}
                 >
@@ -175,12 +175,12 @@ function ControlPanel(props) {
                   ))}
                 </Select>
               </FormControl>
-          </Grid>
-          <Grid item xs>
+            </Grid>
+            <Grid item xs>
               <FormControl className={classes.formControl}>
                 <InputLabel htmlFor="tostop">To Stop</InputLabel>
                 <Select
-                  value={graphParams.end_stop_id || 1}
+                  value={graphParams.endStopId || 1}
                   onChange={onSelectSecondStop}
                   input={<Input name="stop" id="tostop" />}
                 >
@@ -197,11 +197,11 @@ function ControlPanel(props) {
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
           </Grid>
-        </Grid>
         ) : null}
       </Grid>
-   </div>
+    </div>
   );
 }
 

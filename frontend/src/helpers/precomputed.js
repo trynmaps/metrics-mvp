@@ -19,8 +19,8 @@ function getTripTimeStat(tripTimeValues, index) {
  * Utility method to pull time and date out of graphParams as strings
  */
 export function getTimeStrAndDateStr(graphParams) {
-  const timeStr = graphParams.start_time
-    ? `${graphParams.start_time}-${graphParams.end_time}`
+  const timeStr = graphParams.startTime
+    ? `${graphParams.startTime}-${graphParams.endTime}`
     : '';
   const dateStr = graphParams.date;
   return [timeStr, dateStr];

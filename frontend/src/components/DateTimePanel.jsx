@@ -81,8 +81,8 @@ function DateTimePanel(props) {
     const initialParams = initialState.graphParams;
     props.handleGraphParams({
       date: initialParams.date,
-      start_time: initialParams.start_time,
-      end_time: initialParams.end_time,
+      startTime: initialParams.startTime,
+      endTime: initialParams.endTime,
     });
     handleClose(); // this forces the native date picker to reset, otherwise it doesn't stay in sync
   }
@@ -100,8 +100,8 @@ function DateTimePanel(props) {
 
   // convert the state's current time range to a string or the sentinel value
   const timeRange =
-    graphParams.start_time && graphParams.end_time
-      ? `${graphParams.start_time}-${graphParams.end_time}`
+    graphParams.startTime && graphParams.endTime
+      ? `${graphParams.startTime}-${graphParams.endTime}`
       : TIME_RANGE_ALL_DAY;
 
   // these are the read-only representations of the date and time range
@@ -117,12 +117,12 @@ function DateTimePanel(props) {
    */
   const setTimeRange = myTimeRange => {
     if (myTimeRange.target.value === TIME_RANGE_ALL_DAY) {
-      props.handleGraphParams({ start_time: null, end_time: null });
+      props.handleGraphParams({ startTime: null, endTime: null });
     } else {
       const timeRangeParts = myTimeRange.target.value.split('-');
       props.handleGraphParams({
-        start_time: timeRangeParts[0],
-        end_time: timeRangeParts[1],
+        startTime: timeRangeParts[0],
+        endTime: timeRangeParts[1],
       });
     }
   };

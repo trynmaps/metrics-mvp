@@ -7,12 +7,17 @@ export const routesUrl =
 
 export function fetchGraphData(params) {
   return function(dispatch) {
+
+    console.log("params", params);
+
     axios
       .get('/api/metrics', {
         params,
         baseURL: metricsBaseURL,
       })
       .then(response => {
+
+        console.log(params);
         dispatch({
           type: 'RECEIVED_GRAPH_DATA',
           payload: response.data,
@@ -80,8 +85,8 @@ export function fetchRoutes() {
 
 export function fetchPrecomputedWaitAndTripData(params) {
   return function(dispatch, getState) {
-    const timeStr = params.start_time
-      ? `${params.start_time}-${params.end_time}`
+    const timeStr = params.startTime
+      ? `${params.startTime}-${params.endTime}`
       : '';
     const dateStr = params.date;
 
@@ -161,23 +166,23 @@ export function handleGraphParams(params) {
     dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
     const graphParams = getState().routes.graphParams;
 
-    // for debugging: console.log('hGP: ' + graphParams.route_id + ' dirid: ' + graphParams.direction_id + " start: " + graphParams.start_stop_id + " end: " + graphParams.end_stop_id);
+    // for debugging: console.log('hGP: ' + graphParams.routeId + ' dirid: ' + graphParams.directionId + " start: " + graphParams.startStopId + " end: " + graphParams.endStopId);
     // fetch graph data if all params provided
-    // TODO: fetch route summary data if all we have is a route ID.
+    // TODO: fetch route summary data if all we have is a route Id.
 
     if (graphParams.date) {
       dispatch(fetchPrecomputedWaitAndTripData(graphParams));
     }
 
     if (
-      graphParams.route_id &&
-      graphParams.direction_id &&
-      graphParams.start_stop_id &&
-      graphParams.end_stop_id
+      graphParams.routeId &&
+      graphParams.directionId &&
+      graphParams.startStopId &&
+      graphParams.endStopId
     ) {
       const intervalParams = Object.assign({}, graphParams);
-      delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.end_time; // because the hourly graph is spiky and can trigger panda "empty axes" errors.
+      delete intervalParams.startTime; // for interval api, clear out start/end time and use defaults for now
+      delete intervalParams.endTime; // because the hourly graph is spiky and can trigger panda "empty axes" errors.
 
       dispatch(fetchData(graphParams, intervalParams));
     } else {
