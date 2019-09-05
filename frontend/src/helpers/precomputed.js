@@ -7,9 +7,11 @@ function getTripTimeStat(tripTimeValues, index) {
   }
 
   const statValues = {};
-  for (const endStopId in tripTimeValues) {
+
+  Object.keys(tripTimeValues).forEach(endStopId => {
     statValues[endStopId] = tripTimeValues[endStopId][index];
-  }
+  });
+
   return statValues;
 }
 

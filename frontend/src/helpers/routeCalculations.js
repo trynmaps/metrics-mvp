@@ -372,10 +372,10 @@ export function getAllWaits(waitTimesCache, graphParams, routes) {
  * @param {any} routes
  * @param {any} route_id
  */
-function getSpeedForRoute(tripTimesCache, graphParams, routes, route_id) {
-  const route = routes.find(thisRoute => thisRoute.id === route_id);
+function getSpeedForRoute(tripTimesCache, graphParams, routes, routeId) {
+  const route = routes.find(thisRoute => thisRoute.id === routeId);
 
-  const filteredDirections = filterDirections(route.directions, route_id);
+  const filteredDirections = filterDirections(route.directions, routeId);
   let speeds = filteredDirections.map(direction => {
     const dist = direction.distance;
     const tripTime = getEndToEndTripTime(
@@ -511,14 +511,16 @@ export function computeGrades(medianWait, speed) {
  */
 export function getAllScores(routes, waits, speeds) {
   const allScores = [];
-  for (const route of routes) {
+
+  routes.forEach(route => {
     const speedObj = speeds.find(speed => speed.routeID === route.id);
     const waitObj = waits.find(wait => wait.routeID === route.id);
     if (waitObj && speedObj) {
       const grades = computeGrades(waitObj.wait, speedObj.speed);
       allScores.push({ routeID: route.id, totalScore: grades.totalScore });
     }
-  }
+  });
+
   allScores.sort((a, b) => {
     return b.totalScore - a.totalScore;
   });

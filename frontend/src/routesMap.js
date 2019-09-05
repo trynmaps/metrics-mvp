@@ -19,19 +19,14 @@ export default {
       '/route/:route_id/(direction)*/:direction_id?/(start_stop)*/:start_stop_id?/(end_stop)*/:end_stop_id?',
     thunk: async (dispatch, getState) => {
       const { location } = getState();
-      const {
-        route_id,
-        direction_id,
-        start_stop_id,
-        end_stop_id,
-      } = location.payload;
+      const { routeId, directionId, startStopId, endStopId } = location.payload;
 
       dispatch(
         handleGraphParams({
-          route_id,
-          direction_id,
-          start_stop_id,
-          end_stop_id,
+          routeId,
+          directionId,
+          startStopId,
+          endStopId,
         }),
       );
     },
