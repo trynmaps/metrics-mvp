@@ -40,6 +40,7 @@ class MapSpider extends Component {
     this.state = {
       // Should be true by default, so that we don't display the snackbar
       isValidLocation: true,
+      height: this.computeHeight(),
     };
 
     this.mapRef = createRef(); // used for geolocating
@@ -55,17 +56,19 @@ class MapSpider extends Component {
   //
   // Note: This code has to be adjusted to be kept in sync with the UI layout.
   //
+  
+  computeHeight() {
+    return (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight/2) - 64 /* blue app bar */;
+  }
+
   updateDimensions() {
-    const height = (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight/2) - 64 /* blue app bar */;
+    const height = this.computeHeight(); 
     this.setState({ height: height })
   }
 
-  componentWillMount() {
-    this.updateDimensions()
-  }
-
   componentDidMount() {
-    window.addEventListener("resize", this.updateDimensions.bind(this))
+    this.boundUpdate = this.updateDimensions.bind(this);
+    window.addEventListener("resize", this.boundUpdate);
   }
 
   componentWillUnmount() {

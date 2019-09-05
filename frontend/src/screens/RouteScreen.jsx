@@ -77,6 +77,9 @@ function RouteScreen(props) {
 
         <Grid container spacing={0}>
           <Grid item xs={12} sm={6}> {/* control panel and map are full width for 640px windows or smaller, else half width */}
+            <MapStops routes={routes} />
+          </Grid>
+          <Grid item xs={12} sm={6}>
             <ControlPanel
               routes={routes}
               resetGraphData={props.resetGraphData}
@@ -85,9 +88,6 @@ function RouteScreen(props) {
               fetchIntervalData={props.fetchIntervalData}
               fetchData={props.fetchData}
             />
-            <MapStops routes={routes} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
             {graphData /* if we have graph data, then show the info component */ ? (
               <Info
                 graphData={graphData}

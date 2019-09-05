@@ -100,6 +100,7 @@ function RouteSummary(props) {
             )
           : 'black',
       padding: theme.spacing(2),
+      margin: theme.spacing(1),
     },
     wait: {
       background:
@@ -111,6 +112,7 @@ function RouteSummary(props) {
           ? quartileForegroundColor(grades.medianWaitScore / 100.0)
           : 'black',
       padding: theme.spacing(2),
+      margin: theme.spacing(1),
     },
     trip: {
       background:
@@ -122,6 +124,7 @@ function RouteSummary(props) {
           ? quartileForegroundColor(grades.speedScore / 100.0)
           : 'black',
       padding: theme.spacing(2),
+      margin: theme.spacing(1),
     },
   }));
 
@@ -129,10 +132,9 @@ function RouteSummary(props) {
 
   return (
     <Fragment>
-      <div style={{ padding: 12 }}>
-        <Grid container spacing={3}>
-          <Grid item xs>
-            <Paper className={classes.grade}>
+      <div style={{ padding: 8 }}>
+        <Grid container>
+          <Grid item xs component={Paper} className={classes.grade}>
               <Typography variant="overline">Route score</Typography>
               <br />
 
@@ -150,14 +152,12 @@ function RouteSummary(props) {
                     : 'No data'}
                 </Typography>
               </Box>
-            </Paper>
           </Grid>
 
-          <Grid item xs>
-            <Tooltip
-              title={wait ? `Subscore: ${grades.medianWaitScore}/100` : ''}
-            >
-              <Paper className={classes.wait}>
+          <Tooltip
+             title={wait ? `Subscore: ${grades.medianWaitScore}/100` : ''}
+          >
+            <Grid item xs component={Paper} className={classes.wait}>
                 <Typography variant="overline">Median wait</Typography>
                 <br />
                 <Typography variant="h3" display="inline">
@@ -181,13 +181,11 @@ function RouteSummary(props) {
                     ? `#${waitRanking} of ${allWaits.length} for shortest wait`
                     : null}
                 </Box>
-              </Paper>
-            </Tooltip>
-          </Grid>
+            </Grid>
+          </Tooltip>
 
-          <Grid item xs>
-            <Tooltip title={speed ? `Subscore: ${grades.speedScore}/100` : ''}>
-              <Paper className={classes.trip}>
+          <Tooltip title={speed ? `Subscore: ${grades.speedScore}/100` : ''}>
+            <Grid item xs component={Paper} className={classes.trip}>                  
                 <Typography variant="overline">Median speed</Typography>
                 <br />
                 <Typography variant="h3" display="inline">
@@ -212,9 +210,8 @@ function RouteSummary(props) {
                     : null}
                 </Box>
                 Length: {metersToMiles(dist).toFixed(1)} miles
-              </Paper>
-            </Tooltip>
-          </Grid>
+            </Grid>
+          </Tooltip>
 
           <TravelTimeChart />
         </Grid>
