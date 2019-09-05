@@ -92,7 +92,7 @@ function ControlPanel(props) {
 
     props.onGraphParams({
       routeId: routeId.target.value,
-      directionId: directionId,
+      directionId,
       startStopId: null,
       endStopId: null,
     });

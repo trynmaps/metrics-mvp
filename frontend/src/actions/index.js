@@ -8,16 +8,12 @@ export const routesUrl =
 export function fetchGraphData(params) {
   return function(dispatch) {
 
-    console.log("params", params);
-
     axios
       .get('/api/metrics', {
         params,
         baseURL: metricsBaseURL,
       })
       .then(response => {
-
-        console.log(params);
         dispatch({
           type: 'RECEIVED_GRAPH_DATA',
           payload: response.data,
