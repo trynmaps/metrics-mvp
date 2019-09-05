@@ -12,8 +12,6 @@ import {
 import {
   AppBar,
   Box,
-  Card,
-  CardContent,
   Tab,
   Table,
   TableBody,
@@ -23,7 +21,6 @@ import {
   Tabs,
   Typography,
 } from '@material-ui/core';
-import { css } from 'emotion';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData';
 import { milesBetween } from '../helpers/routeCalculations';
