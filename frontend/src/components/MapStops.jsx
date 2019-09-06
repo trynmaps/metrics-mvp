@@ -13,14 +13,13 @@ const SF_COORDINATES = { lat: 37.7793, lng: -122.419 };
 const ZOOM = 13;
 
 class MapStops extends Component {
-
   constructor(props) {
     super(props);
     this.state = {
       height: this.computeHeight(),
     };
   }
-  
+
   // Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
   // case make the map half height.
   //
@@ -29,25 +28,28 @@ class MapStops extends Component {
   //
   // Note: This code has to be adjusted to be kept in sync with the UI layout.
   //
-  
+
   computeHeight() {
-    return (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight/2) - 64 /* blue app bar */;
+    return (
+      (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
+      64 /* blue app bar */
+    );
   }
-  
+
   updateDimensions() {
     const height = this.computeHeight();
-    this.setState({ height: height })
+    this.setState({ height });
   }
 
   componentDidMount() {
     this.boundUpdate = this.updateDimensions.bind(this);
-    window.addEventListener("resize", this.boundUpdate);
+    window.addEventListener('resize', this.boundUpdate);
   }
 
   componentWillUnmount() {
-    window.removeEventListener("resize", this.updateDimensions.bind(this))
+    window.removeEventListener('resize', this.updateDimensions.bind(this));
   }
-  
+
   populateRouteDirection = (
     routeStops,
     directionId,

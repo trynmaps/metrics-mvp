@@ -48,7 +48,7 @@ export const TIME_RANGES = [
 //
 // Time zone names can be found at:
 // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-export const TIME_ZONE_NAME = "America/Los_Angeles";
+export const TIME_ZONE_NAME = 'America/Los_Angeles';
 
 // Marey chart:  how long of a dwell at a stop results in a second data point for exit.
 export const DWELL_THRESHOLD_SECS = 120;

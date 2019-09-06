@@ -66,19 +66,22 @@ class MapSpider extends Component {
   //
   // Note: This code has to be adjusted to be kept in sync with the UI layout.
   //
-  
+
   computeHeight() {
-    return (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight/2) - 64 /* blue app bar */;
+    return (
+      (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
+      64 /* blue app bar */
+    );
   }
 
   updateDimensions() {
-    const height = this.computeHeight(); 
-    this.setState({ height: height })
+    const height = this.computeHeight();
+    this.setState({ height });
   }
 
   componentDidMount() {
     this.boundUpdate = this.updateDimensions.bind(this);
-    window.addEventListener("resize", this.boundUpdate);
+    window.addEventListener('resize', this.boundUpdate);
   }
 
   componentWillUnmount() {
