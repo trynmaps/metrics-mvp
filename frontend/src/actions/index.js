@@ -7,7 +7,6 @@ export const routesUrl =
 
 export function fetchGraphData(params) {
   return function(dispatch) {
-
     axios
       .get('/api/metrics', {
         params,
