@@ -76,7 +76,6 @@ function RouteScreen(props) {
 
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
-          {' '}
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
           <ControlPanel
             routes={routes}

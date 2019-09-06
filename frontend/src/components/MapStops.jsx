@@ -203,7 +203,6 @@ class MapStops extends Component {
             padding: '5px',
           }}
         >
-          {' '}
           Speed (mph)
           {items}
         </div>
