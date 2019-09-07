@@ -388,7 +388,7 @@ class MapSpider extends Component {
       html: MapShield({
         waitScaled,
         color: routeColor,
-        routeText: startMarker.routed,
+        routeText: startMarker.routeId,
       }),
     });
 
