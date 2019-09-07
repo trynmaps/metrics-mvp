@@ -126,7 +126,7 @@ export function filterRoutes(routes) {
 }
 
 /**
- * Given directions array for a route and corresponding route Id, return only the valid directions.
+ * Given directions array for a route and corresponding route ID, return only the valid directions.
  */
 export function filterDirections(directions, routeId) {
   if (!routeHeuristics[routeId]) {

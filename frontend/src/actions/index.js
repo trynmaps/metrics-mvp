@@ -163,7 +163,7 @@ export function handleGraphParams(params) {
 
     // for debugging: console.log('hGP: ' + graphParams.routeId + ' dirid: ' + graphParams.directionId + " start: " + graphParams.startStopId + " end: " + graphParams.endStopId);
     // fetch graph data if all params provided
-    // TODO: fetch route summary data if all we have is a route Id.
+    // TODO: fetch route summary data if all we have is a route ID.
 
     if (graphParams.date) {
       dispatch(fetchPrecomputedWaitAndTripData(graphParams));
