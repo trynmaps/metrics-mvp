@@ -29,8 +29,7 @@ export function fetchGraphData(params) {
   };
 }
 
-// eslint-disable-next-line no-unused-vars
-export function resetGraphData(params) {
+export function resetGraphData() {
   return function(dispatch) {
     dispatch({ type: 'RESET_GRAPH_DATA', payload: null });
   };
@@ -60,8 +59,7 @@ export function fetchIntervalData(params) {
   };
 }
 
-// eslint-disable-next-line no-unused-vars
-export function resetIntervalData(params) {
+export function resetIntervalData() {
   return function(dispatch) {
     dispatch({ type: 'RESET_INTERVAL_DATA', payload: null });
   };

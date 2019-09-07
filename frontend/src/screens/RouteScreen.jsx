@@ -109,9 +109,9 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
   fetchData: (graphParams, intervalParams) =>
     dispatch(fetchData(graphParams, intervalParams)),
-  resetGraphData: params => dispatch(resetGraphData(params)),
+  resetGraphData: () => dispatch(resetGraphData()),
   fetchGraphData: params => dispatch(fetchGraphData(params)),
-  resetIntervalData: params => dispatch(resetIntervalData(params)),
+  resetIntervalData: () => dispatch(resetIntervalData()),
   fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });
