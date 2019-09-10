@@ -349,10 +349,8 @@ class MapStops extends Component {
               ),
             );
           }
-
         });
       }
-      
     }
 
     return (
