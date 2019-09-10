@@ -96,7 +96,7 @@ class InfoIntervalsOfDay extends Component {
       }
 
       return {
-        x: `${interval.start_time} - ${interval.end_time}`,
+        x: `${interval.startTime} - ${interval.endTime}`,
         y,
       };
     };
@@ -107,10 +107,10 @@ class InfoIntervalsOfDay extends Component {
 
     const intervals = intervalData ? intervalData.intervals : null;
     this.waitData = intervals
-      ? intervals.map(this.mapInterval('wait_times'))
+      ? intervals.map(this.mapInterval('waitTimes'))
       : null;
     this.tripData = intervals
-      ? intervals.map(this.mapInterval('trip_times'))
+      ? intervals.map(this.mapInterval('tripTimes'))
       : null;
 
     const legendItems = [

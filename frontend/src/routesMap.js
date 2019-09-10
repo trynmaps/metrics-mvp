@@ -16,22 +16,17 @@ export default {
     ()* shows am optional parameter label
     */
     path:
-      '/route/:route_id/(direction)*/:direction_id?/(start_stop)*/:start_stop_id?/(end_stop)*/:end_stop_id?',
+      '/route/:routeId/(direction)*/:directionId?/(startStop)*/:startStopId?/(endStop)*/:endStopId?',
     thunk: async (dispatch, getState) => {
       const { location } = getState();
-      const {
-        route_id,
-        direction_id,
-        start_stop_id,
-        end_stop_id,
-      } = location.payload;
+      const { routeId, directionId, startStopId, endStopId } = location.payload;
 
       dispatch(
         handleGraphParams({
-          route_id,
-          direction_id,
-          start_stop_id,
-          end_stop_id,
+          routeId,
+          directionId,
+          startStopId,
+          endStopId,
         }),
       );
     },
