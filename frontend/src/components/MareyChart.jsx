@@ -1,3 +1,7 @@
+/* eslint no-unused-vars: ["warn", { "varsIgnorePattern": "MomentTZ" }] */
+
+/* Note: Importing MomentTZ adds new methods to Moment.  MomentTZ is not meant to be used directly. */
+
 import React, { useState, useEffect } from 'react';
 
 import { XYPlot, HorizontalGridLines, VerticalGridLines,
@@ -11,7 +15,12 @@ import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import { Card, CardContent, Radio, FormControl, FormControlLabel } from '@material-ui/core';
 
+import Moment from "moment";
+import MomentTZ from "moment-timezone/builds/moment-timezone-with-data-10-year-range"; // this augments Moment
+
+
 import { fetchArrivals } from '../actions';
+import { TIME_ZONE_NAME, DWELL_THRESHOLD_SECS } from '../UIConstants';
 
 import * as d3 from "d3";
 
@@ -26,17 +35,18 @@ import * as d3 from "d3";
  * the data on the client side.  Goal is to create the following structure:
  * 
  * Dictionary of objects keyed by trip id
- *   - tripID
- *   - vehicleID (for coloring)
+ *   - tripId
+ *   - vehicleId (for coloring)
  *   - series: array of objects (eventually sorted by distance along route) containing:
- *     - stopID: the stop ID for this arrival (also can add any other desired stop metadata like title) 
+ *     - stopId: the stop ID for this arrival (also can add any other desired stop metadata like title) 
  *     - x: distance along route (currently x-axis value, could be flipped)
  *     - y: arrival times in hours since midnight (currently the y-axis value, could be flipped)
  * 
  * Note: In our travel time chart, x axis is distance along route, y axis is time taken, so this is
  * consistent.
  * 
- * TODO: marey chart respects time picker? respects stop picker (but then how do you see it?)
+ * TODO: Respects stop picker? (but then how do you see it?)
+ * 
  * @param {Object} props
  */
 function MareyChart(props) {
@@ -44,121 +54,158 @@ function MareyChart(props) {
   const INBOUND_AND_OUTBOUND = "Inbound_and_outbound";
   const INBOUND = "Inbound"; // same as directionInfo name
   const OUTBOUND = "Outbound"; // same as directionInfo name
+  
+  const { graphParams, fetchArrivals, arrivals, routes } = props;
     
   // On first load, get the raw arrival history corresponding to graphParams.
   
   useEffect(() => {
-    props.fetchArrivals(props.graphParams);
-  }, [props.graphParams]);
+    fetchArrivals(graphParams);
+  }, [graphParams, fetchArrivals]);
   
   // When both the raw arrival history and route configs have loaded, first
   // rebucket the data by trip ID.  Then create react-vis Series objects for
   // each bucket, and store the Series in the state to trigger the final render.
   
   useEffect(() => {
-    if (props.arrivals && props.routes) {
-      //console.log("Processing arrival data.");
-      const tripData = processArrivals(props.arrivals, props.routes);
-      setProcessedArrivals(tripData);
-    }
-  }, [props.arrivals, props.routes]);
-  
-  const [hintValue, setHintValue] = useState();
-  const [tripHighlight, setTripHighlight] = useState();
-  const [processedArrivals, setProcessedArrivals] = useState();
-  const [selectedOption, setSelectedOption] = useState(INBOUND_AND_OUTBOUND)
-  
-  /**
-   * This method is called when we get arrival data via Redux.  The method traverses the arrival
-   * history (by stop, then by direction, then the contained array).
-   * 
-   * Each arrival is bucketed by trip ID.
-   * 
-   * @param {any} arrivals
-   * @param {any} routes
-   */
-  const processArrivals = (arrivals, routes) => {
     
-    const tripData = {}; // The dictionary by trip ID where arrivals are bucketed.
-    
-    const stops = arrivals.stops;
-    const start_time = arrivals.start_time;
-    const routeID = arrivals.route_id;
-    const route = routes.find(route => route.id === routeID);
-    
-    for (let stopID in stops) {
-      //console.log("Starting " + stopID);
-      const stopsByDirection = stops[stopID].arrivals;
-      for (let directionID in stopsByDirection) {
-        
-        const directionInfo = route.directions.find(direction => direction.id === directionID);
-        
-        const dataArray = stopsByDirection[directionID];
-        for (let index in dataArray) {
-          const arrival = dataArray[index];
+    /**
+     * This method is called when we get arrival data via Redux.  The method traverses the arrival
+     * history (by stop, then by direction, then the contained array).
+     * 
+     * Each arrival is bucketed by trip ID.
+     * 
+     * @param {any} arrivals
+     * @param {any} routes
+     */
+    const processArrivals = (arrivals, routes) => {
+      
+      const tripData = {
+        byTripId: {}, // The dictionary by trip ID where arrivals are bucketed.
+        earliestArrivalTime: null, // time in fractional hours
+        latestArrivalTime: null, // time in fractional hours
+      };
+      
+      const stops = arrivals.stops;
+      const startTime = arrivals.start_time;
+      const startHourOfDay = Moment.unix(startTime).tz(TIME_ZONE_NAME).hour();
+      
+      const routeId = arrivals.route_id;
+      const route = routes.find(route => route.id === routeId);
+      
+      Object.keys(stops).forEach(stopId => {
+        //console.log("Starting " + stopId);
+        const stopsByDirection = stops[stopId].arrivals;
+        Object.keys(stopsByDirection).forEach(directionId => {
           
-          addArrival(tripData, arrival, stopID, route, directionInfo, start_time);
+          const directionInfo = route.directions.find(direction => direction.id === directionId);
+          
+          const dataArray = stopsByDirection[directionId];
+          dataArray.forEach(arrival => {
+            addArrival(tripData, arrival, stopId, route, directionInfo, startTime, startHourOfDay);
+          });
+        });
+      });
+      
+      return tripData;
+    }
+
+    /**
+     * Helper method to take a single arrival and add it to the right per-trip bucket
+     * (creating it if needed).
+     * 
+     * We also convert the stop ID to a distance along the route, and convert the
+     * arrival timestamp to hours since 3am.
+     *  
+     * @param {Object} tripData
+     * @param {Object} arrival
+     * @param {String} stopId
+     * @param {Object} directionInfo
+     * @param {Number} startTime
+     * @param {Number} startHourOfDay Offset to add for arrival in fractional hours (time of day)
+     */
+    const addArrival = (tripData, arrival, stopId, route, directionInfo, startTime, startHourOfDay) => {
+      const tripId = arrival.i;
+      const vehicleId = arrival.v;
+      if (tripData.byTripId[tripId] === undefined) {
+        tripData.byTripId[tripId] = {
+          tripId: tripId,
+          vehicleId: vehicleId,
+          series: [],
+          directionInfo: directionInfo,
+        };
+      }
+      
+      if (directionInfo.stop_geometry[stopId]) {
+        let distance = directionInfo.stop_geometry[stopId].distance;
+      
+        // This is a little clunky -- for all outbound routes, we restate the distance
+        // as distance in the inbound direction by subtracting the stop's distance from
+        // the length of the outbound direction.  This does not line up exactly with the
+        // inbound direction length.
+        
+        if (directionInfo.name === 'Outbound') {
+          distance = directionInfo.distance - distance;
+        }
+        distance = metersToMiles(distance);
+        
+        const arrivalMoment = Moment.unix(arrival.t).tz(TIME_ZONE_NAME);
+        const yValue = (arrival.t - startTime)/60/60 + startHourOfDay; // time of arrival in fractional hours
+        
+        tripData.byTripId[tripId].series.push({
+          stopId: stopId,
+          title: route.stops[stopId].title,
+          arrivalTimeString: arrivalMoment.format('h:mm a'),
+          vehicleId: vehicleId,
+          x: distance,
+          y: yValue,
+        });
+        
+        if ((tripData.earliestArrivalTime === null) || (yValue < tripData.earliestArrivalTime)) {
+          tripData.earliestArrivalTime = yValue;
+        }
+        
+        if ((tripData.latestArrivalTime === null) || (yValue > tripData.latestArrivalTime)) {
+          tripData.latestArrivalTime = yValue;
+        }
+        
+        // If the exit time arrival.e is more than a certain amount of time, add a data point
+        // so we can see the vehicle's exit in the data series.
+
+        if (arrival.e - arrival.t > DWELL_THRESHOLD_SECS) {
+          const exitMoment = Moment.unix(arrival.e).tz(TIME_ZONE_NAME);
+          const exitYValue = (arrival.e - startTime)/60/60 + startHourOfDay; // time of arrival in fractional hours
+        
+          tripData.byTripId[tripId].series.push({
+            stopId: stopId,
+            title: route.stops[stopId].title,
+            arrivalTimeString: exitMoment.format('h:mm a'),
+            vehicleId: vehicleId,
+            x: distance,
+            y: exitYValue,
+          });        
         }
       }
     }
     
-    return tripData;
-  }
-
-  /**
-   * Helper method to take a single arrival and add it to the right per-trip bucket
-   * (creating it if needed).
-   * 
-   * We also convert the stop ID to a distance along the route, and convert the
-   * arrival timestamp to hours since 3am.
-   *  
-   * @param {Object} tripData
-   * @param {Object} arrival
-   * @param {String} stopID
-   * @param {Object} directionInfo
-   * @param {Number} start_time
-   */
-  const addArrival = (tripData, arrival, stopID, route, directionInfo, start_time) => {
-    const tripID = arrival.i;
-    const vehicleID = arrival.v;
-    if (tripData[tripID] === undefined) {
-      tripData[tripID] = {
-        tripID: tripID,
-        vehicleID: vehicleID,
-        series: [],
-        directionInfo: directionInfo,
-      };
-    }
     
-    if (directionInfo.stop_geometry[stopID]) {
-      let distance = directionInfo.stop_geometry[stopID].distance;
-    
-      // This is a little clunky -- for all outbound routes, we restate the distance
-      // as distance in the inbound direction by subtracting the stop's distance from
-      // the length of the outbound direction.  This does not line up exactly with the
-      // inbound direction length.
-      
-      if (directionInfo.name === 'Outbound') {
-        distance = directionInfo.distance - distance;
-      }
-      distance = metersToMiles(distance);
-      tripData[tripID].series.push({
-        stopID: stopID,
-        title: route.stops[stopID].title,
-        minutes: (arrival.t - start_time)/60,
-        vehicleID: vehicleID,
-        x: distance,
-        y: (arrival.t - start_time)/60/60 + 3.0, // convert to number of hours since midnight, assume 3am start time for now
-      });
+    if (arrivals && routes) {
+      //console.log("Processing arrival data.");
+      const tripData = processArrivals(arrivals, routes);
+      setProcessedArrivals(tripData);
     }
-  }
+  }, [arrivals, routes]);
+  
+  const [hintValue, setHintValue] = useState();
+  const [tripHighlight, setTripHighlight] = useState();
+  const [processedArrivals, setProcessedArrivals] = useState(); // where the tripData gets stored
+  const [selectedOption, setSelectedOption] = useState(INBOUND_AND_OUTBOUND)
   
   /**
    * This is a render-time helper function.
    * 
    * Generates per trip react-vis Series objects from the reorganized tripData.
-   * We sort each bucket by "x" value (distance along route) to get plots pointed in the
-   * correct order.
+   * We sort each bucket by "y" value (then by distance) to get plots pointed in the correct order.
    * 
    * Series are colored by vehicle ID modulo 9 (the last digit of the vehicle ID tends to
    * repeat, so using 9 instead of 10).
@@ -170,59 +217,82 @@ function MareyChart(props) {
     const routeColor = d3.scaleQuantize([0,9], d3.schemeCategory10);
   
     let tripSeriesArray = [];
-    for (let tripDataKey in tripData) {
+    Object.keys(tripData.byTripId).forEach(tripDataKey => {
       
-      const trip = tripData[tripDataKey];
+      const trip = tripData.byTripId[tripDataKey];
       
       if ((selectedOption === INBOUND_AND_OUTBOUND) ||
           (trip.directionInfo.name === selectedOption)) {
         
         const dataSeries = trip.series.sort((a, b) => {
-          return b.x - a.x;
+          const deltaY = b.y - a.y;
+          return deltaY !== 0 ? deltaY : b.x - a.x; 
         });
       
         tripSeriesArray.push(<LineMarkSeries
           key={ tripDataKey }
           data={ dataSeries }
-          stroke={ routeColor(trip.vehicleID % 9) }
+          stroke={ routeColor(trip.vehicleId % 9) }
           style={{
             strokeWidth: tripHighlight === tripDataKey ? '3px' : '1px' // draw a thicker line for the series being moused over
           }}              
           size="1"
           onValueMouseOver={ value => setHintValue(value) /* onNearestXY seems buggy, so next best is onValue */ }
-          onSeriesMouseOver={(event) => { setTripHighlight(tripDataKey) }}    
+          onSeriesMouseOver={ () => { setTripHighlight(tripDataKey) }}    
         />);
-      }
-    }
+      };
+    });
     return tripSeriesArray;
   }
 
   let series = null;
+  let startHour = 0; // arbitrary value when no data and no time range
+  let endHour = 12; // arbitrary value when no data and no time range
+
+  // if we have data, generate the series and initial domain of hours
   if (processedArrivals) {
     series = createSeries(processedArrivals);
+    startHour = Math.floor(processedArrivals.earliestArrivalTime);
+    endHour = Math.ceil(processedArrivals.latestArrivalTime);
   }
-  
-  const graphParams = props.graphParams;
-  const startHour = graphParams.start_time ? parseInt(graphParams.start_time) : 3;
-  let endHour;
+
+  // if there's a time range, that takes priority over the automatic domain
+  if (graphParams.start_time) {
+    startHour = parseInt(graphParams.start_time);
+  }
   
   if (graphParams.end_time) {
     endHour = parseInt(graphParams.end_time);
     if (graphParams.end_time.endsWith('+1')) {
       endHour += 24;
     }
-  } else {
-    endHour = 27;
   }
   
+  /**
+   * Formats fractional hours into time of day.
+   * 
+   * @param {any} v Time of day as fractional hours
+   */
   const hourFormatter = (v) => {
     let suffix = '';
     if (v >= 24) {
-      v = v-24;
+      v = v - 24;
       suffix = '+1';
     }
+    
+    let amPm = "am";
+    
+    if (v >= 12) {
+      amPm = "pm";
+    }
+    
+    if (v >= 13) {
+      v = v - 12;
+    }
+    
+    if (v === 0) { v = 12; }
     const time = parseInt(v) + ':' + ((v-parseInt(v))*60).toString().padStart(2, '0');
-    return time+suffix;
+    return time + ' ' + amPm + suffix;
   }
   
   return processedArrivals ? 
@@ -292,7 +362,7 @@ function MareyChart(props) {
           <YAxis hideLine={true} tickPadding={4} tickFormat={hourFormatter} />
         
           <ChartLabel 
-            text="Time (24h)"
+            text="Time"
             className="alt-y-label"
             includeMargin={true}
             xPercent={0.02}
@@ -315,9 +385,9 @@ function MareyChart(props) {
           {hintValue ?
             <Hint
               value={hintValue}
-              format={ hintValue => [{title: 'Stop', value: hintValue.title },
-                                     {title: 'Time', value: `${(Math.floor(hintValue.minutes / 60) + 3)}:${Math.round(hintValue.minutes % 60).toString().padStart(2, '0')}`},
-                                     {title: 'Vehicle ID', value: hintValue.vehicleID }
+              format={ hintValue => [{ title: 'Stop', value: hintValue.title },
+                                     { title: 'Time', value: hintValue.arrivalTimeString },
+                                     { title: 'Vehicle ID', value: hintValue.vehicleId }
               ] }
             />
            : 
