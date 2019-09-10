@@ -338,8 +338,8 @@ class Info extends Component {
             <Tab style={{ minWidth: 72 }} label="Summary" {...a11yProps(SUMMARY)} />
             <Tab style={{ minWidth: 72 }} label="Time of Day" {...a11yProps(TIME_OF_DAY)} />
             <Tab style={{ minWidth: 72 }} label="Headways" {...a11yProps(HEADWAYS)} />
-            <Tab style={{ minWidth: 72 }} label="Waits" {...a11yProps(WAITS)} />
-            <Tab style={{ minWidth: 72 }} label="Trips" {...a11yProps(TRIPS)} />
+            <Tab style={{ minWidth: 72 }} label="Wait Times" {...a11yProps(WAITS)} />
+            <Tab style={{ minWidth: 72 }} label="Trip Times" {...a11yProps(TRIPS)} />
           </Tabs>
         </AppBar>
         
