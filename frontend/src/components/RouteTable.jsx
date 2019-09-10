@@ -26,6 +26,19 @@ import {
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
 function desc(a, b, orderBy) {
+  // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
+  // NaN needs special handling because NaN < 3 is false as is Nan > 3.
+
+  if (Number.isNaN(a[orderBy]) && Number.isNaN(b[orderBy])) {
+    return 0;
+  }
+  if (Number.isNaN(a[orderBy])) {
+    return -1;
+  }
+  if (Number.isNaN(b[orderBy])) {
+    return 1;
+  }
+
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -193,8 +206,8 @@ function RouteTable(props) {
   // filter the route list down to the spider routes if needed
 
   if (spiderSelection && spiderSelection.length > 0) {
-    const spiderRouteIDs = spiderSelection.map(spider => spider.routeID);
-    routes = routes.filter(thisRoute => spiderRouteIDs.includes(thisRoute.id));
+    const spiderRouteIds = spiderSelection.map(spider => spider.routeId);
+    routes = routes.filter(thisRoute => spiderRouteIds.includes(thisRoute.id));
   }
 
   const allWaits = getAllWaits(props.waitTimesCache, props.graphParams, routes);
@@ -207,13 +220,13 @@ function RouteTable(props) {
 
   routes = routes.map(route => {
     const waitObj = allWaits.find(
-      thisWaitObj => thisWaitObj.routeID === route.id,
+      thisWaitObj => thisWaitObj.routeId === route.id,
     );
     const speedObj = allSpeeds.find(
-      thisSpeedObj => thisSpeedObj.routeID === route.id,
+      thisSpeedObj => thisSpeedObj.routeId === route.id,
     );
     const scoreObj = allScores.find(
-      thisScoreObj => thisScoreObj.routeID === route.id,
+      thisScoreObj => thisScoreObj.routeId === route.id,
     );
 
     return {
@@ -253,10 +266,10 @@ function RouteTable(props) {
                           to={{
                             type: 'ROUTESCREEN',
                             payload: {
-                              route_id: row.id,
-                              direction_id: null,
-                              start_stop_id: null,
-                              end_stop_id: null,
+                              routeId: row.id,
+                              directionId: null,
+                              startStopId: null,
+                              endStopId: null,
                             },
                           }}
                         >

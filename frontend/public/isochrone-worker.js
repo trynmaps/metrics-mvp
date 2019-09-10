@@ -498,7 +498,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
             if (reachedLocation.walked)
             {
                 let promises = reachedLocation.loc.stops.map(function(stop) {
-                    let routeId = stop.route_id;
+                    let routeId = stop.routeId;
                     if (!enabledRoutesMap[routeId])
                     {
                         return null;
@@ -576,7 +576,7 @@ function makeLocations(routes)
                 locations.push(locInfo);
             }
             locationsMap[locationKey].stops.push({
-                route_id: route.id,
+                routeId: route.id,
                 id: stopId
             });
         }

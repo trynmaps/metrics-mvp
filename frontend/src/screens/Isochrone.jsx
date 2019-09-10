@@ -3,10 +3,10 @@ import { connect } from 'react-redux';
 import { Map, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
-import SidebarButton from '../components/SidebarButton';
-import DateTimePanel from '../components/DateTimePanel';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import SidebarButton from '../components/SidebarButton';
+import DateTimePanel from '../components/DateTimePanel';
 
 import { fetchRoutes, routesUrl } from '../actions';
 import { DefaultDisabledRoutes } from '../agencies/sf-muni';
@@ -21,657 +21,682 @@ const maxColoredTripMin = 60;
 const WalkMetersPerMinute = 1.0 * 60;
 
 const tripMinOptions = {
-    5: {color:'#057F79'},
-    10: {color:'#02BB0F'},
-    15: {color:'#3ae100'},
-    20: {color:'#83dd00'},
-    25: {color:'#cad900'},
-    30: {color:'#d59d00'},
-    35: {color:'#d25400'},
-    40: {color:'#ce0d00'},
-    45: {color:'#c200b6'},
-    50: {color:'#8b00bf'},
-    55: {color:'#4900bf'},
-    60: {color:'#220D3B'},
+  5: { color: '#057F79' },
+  10: { color: '#02BB0F' },
+  15: { color: '#3ae100' },
+  20: { color: '#83dd00' },
+  25: { color: '#cad900' },
+  30: { color: '#d59d00' },
+  35: { color: '#d25400' },
+  40: { color: '#ce0d00' },
+  45: { color: '#c200b6' },
+  50: { color: '#8b00bf' },
+  55: { color: '#4900bf' },
+  60: { color: '#220D3B' },
 };
 
-const defaultLayerOptions = {color:'#666'};
+const defaultLayerOptions = { color: '#666' };
 
-let redIcon = new L.Icon({
-  iconUrl: process.env.PUBLIC_URL + '/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+const redIcon = new L.Icon({
+  iconUrl: `${process.env.PUBLIC_URL}/marker-icon-2x-red.png`,
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  shadowSize: [41, 41],
 });
 
-let computeCache = {};
+const computeCache = {};
 
-function getDirectionInfo(directionId, routeInfo)
-{
-    for (let dirInfo of routeInfo.directions)
-    {
-        if (dirInfo.id === directionId)
-        {
-            return dirInfo;
-        }
+function getDirectionInfo(directionId, routeInfo) {
+  for (const dirInfo of routeInfo.directions) {
+    if (dirInfo.id === directionId) {
+      return dirInfo;
     }
-    return null;
+  }
+  return null;
 }
 
 class Isochrone extends React.Component {
+  componentDidMount() {
+    if (!this.props.routes) {
+      this.props.fetchRoutes();
+    }
+  }
 
-    componentDidMount() {
-        if (!this.props.routes) {
-            this.props.fetchRoutes();
-        }
+  componentDidUpdate(prevProps) {
+    if (
+      this.props.date !== prevProps.date ||
+      this.props.startTime !== prevProps.startTime ||
+      this.props.endTime !== prevProps.endTime
+    ) {
+      this.recomputeIsochrones();
+    }
+  }
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      stat: 'median',
+      maxTripMin: 90,
+      computedMaxTripMin: null,
+      computeId: null,
+      computing: false,
+      latLng: null,
+      endLatLng: null,
+      tripInfo: null,
+      enabledRoutes: {},
+    };
+
+    let workerUrl = `${
+      process.env.PUBLIC_URL
+    }/isochrone-worker.js?v=${Math.random()}`;
+    if (metricsBaseURL) {
+      workerUrl += `&base=${encodeURIComponent(metricsBaseURL)}`;
     }
 
-    componentDidUpdate(prevProps) {
-        if (this.props.date !== prevProps.date ||
-            this.props.start_time !== prevProps.start_time ||
-            this.props.end_time !== prevProps.end_time) {
-            this.recomputeIsochrones();
-        }
+    workerUrl += `&routes_url=${encodeURIComponent(routesUrl)}`;
+
+    const isochroneWorker = new Worker(workerUrl);
+
+    this.isochroneWorker = isochroneWorker;
+
+    this.layers = [];
+    this.isochroneLayers = [];
+    this.tripLayers = [];
+    this.mapRef = React.createRef();
+
+    for (const routeId of DefaultDisabledRoutes) {
+      this.state.enabledRoutes[routeId] = false;
     }
 
-    constructor(props) {
-        super(props);
+    this.handleMapClick = this.handleMapClick.bind(this);
+    this.handleStatChange = this.handleStatChange.bind(this);
+    this.handleToggleRoute = this.handleToggleRoute.bind(this);
+    this.handleMaxTripMinChange = this.handleMaxTripMinChange.bind(this);
+    this.selectAllRoutesClicked = this.selectAllRoutesClicked.bind(this);
+    this.selectNoRoutesClicked = this.selectNoRoutesClicked.bind(this);
+    this.resetMapClicked = this.resetMapClicked.bind(this);
+    this.onWorkerMessage = this.onWorkerMessage.bind(this);
+    this.recomputeIsochrones = this.recomputeIsochrones.bind(this);
+    this.maxTripMinChanged = this.maxTripMinChanged.bind(this);
 
-        this.state = {
-            stat: 'median',
-            maxTripMin: 90,
-            computedMaxTripMin: null,
-            computeId: null,
-            computing: false,
-            latLng: null,
-            endLatLng: null,
-            tripInfo: null,
-            enabledRoutes: {}
-        };
+    isochroneWorker.onmessage = this.onWorkerMessage;
+  }
 
-        var workerUrl = process.env.PUBLIC_URL + '/isochrone-worker.js?v=' + Math.random();
-        if (metricsBaseURL)
-        {
-            workerUrl += '&base=' + encodeURIComponent(metricsBaseURL);
-        }
+  onWorkerMessage(e) {
+    const data = e.data;
+    if (data.type === 'reachableLocations') {
+      const computeId = data.computeId;
+      if (computeCache[computeId]) {
+        computeCache[computeId][data.tripMin] = data;
+      }
+      if (computeId === this.state.computeId) {
+        this.addReachableLocationsLayer(data);
+      }
+    } else if (data.type === 'error') {
+      this.showError(data.error);
+    } else {
+      console.log(e.data);
+    }
+  }
 
-        workerUrl += '&routes_url=' + encodeURIComponent(routesUrl);
+  showError(message) {
+    alert(message);
+  }
 
-        let isochroneWorker = new Worker(workerUrl);
+  handleMapClick(event) {
+    if (this.state.computeId) {
+      return;
+    }
+    this.resetMap();
+    this.computeIsochrones(event.latlng, null);
+  }
 
-        this.isochroneWorker = isochroneWorker;
+  addReachableLocationsLayer(data) {
+    const tripMin = data.tripMin;
+    const reachableCircles = data.circles;
+    const geoJson = data.geoJson;
 
-        this.layers = [];
-        this.isochroneLayers = [];
-        this.tripLayers = [];
-        this.mapRef = React.createRef();
-
-        for (let routeId of DefaultDisabledRoutes)
-        {
-            this.state.enabledRoutes[routeId] = false;
-        }
-
-        this.handleMapClick = this.handleMapClick.bind(this);
-        this.handleStatChange = this.handleStatChange.bind(this);
-        this.handleToggleRoute = this.handleToggleRoute.bind(this);
-        this.handleMaxTripMinChange = this.handleMaxTripMinChange.bind(this);
-        this.selectAllRoutesClicked = this.selectAllRoutesClicked.bind(this);
-        this.selectNoRoutesClicked = this.selectNoRoutesClicked.bind(this);
-        this.resetMapClicked = this.resetMapClicked.bind(this);
-        this.onWorkerMessage = this.onWorkerMessage.bind(this);
-        this.recomputeIsochrones = this.recomputeIsochrones.bind(this);
-        this.maxTripMinChanged = this.maxTripMinChanged.bind(this);
-
-        isochroneWorker.onmessage = this.onWorkerMessage;
+    if (this.state.computeId !== data.computeId) {
+      return;
     }
 
-    onWorkerMessage(e)
-    {
-        let data = e.data;
-        if (data.type === 'reachableLocations')
-        {
-            let computeId = data.computeId;
-            if (computeCache[computeId])
-            {
-                computeCache[computeId][data.tripMin] = data;
-            }
-            if (computeId === this.state.computeId)
-            {
-                this.addReachableLocationsLayer(data);
-            }
-        }
-        else if (data.type === 'error')
-        {
-            this.showError(data.error);
-        }
-        else
-        {
-            console.log(e.data);
-        }
+    if (this.state.computing && tripMin === this.state.maxTripMin) {
+      this.setState({ computing: false });
     }
 
-    showError(message)
-    {
-        alert(message);
+    const layerOptions = tripMinOptions[`${tripMin}`] || defaultLayerOptions;
+
+    const diffLayer = L.geoJson(
+      geoJson,
+      Object.assign(
+        { bubblingMouseEvents: false, fillOpacity: 0.4, stroke: false },
+        layerOptions,
+      ),
+    );
+
+    const map = this.mapRef.current.leafletElement;
+
+    diffLayer.addTo(map);
+
+    diffLayer.on('click', e => {
+      const endLatLng = e.latlng;
+      this.showTripInfo(endLatLng, reachableCircles);
+    });
+
+    diffLayer.on('dblclick', e => {
+      this.resetMap();
+      this.computeIsochrones(e.latlng);
+    });
+
+    this.isochroneLayers.push({ tripMin, layer: diffLayer });
+
+    const curEndLatLng = this.state.endLatLng;
+
+    // restore end latlng from previous view
+    if (curEndLatLng && !this.tripLayers.length) {
+      for (const circle of reachableCircles) {
+        const dist = map.distance(circle, curEndLatLng);
+        if (dist <= circle.radius) {
+          this.showTripInfo(curEndLatLng, reachableCircles);
+          break;
+        }
+      }
     }
+  }
 
-    handleMapClick(event)
-    {
-        if (this.state.computeId)
-        {
-            return;
-        }
-        this.resetMap();
-        this.computeIsochrones(event.latlng, null);
-    }
+  showTripInfo(endLatLng, reachableCircles) {
+    this.setState({ endLatLng });
 
-    addReachableLocationsLayer(data)
-    {
-        let tripMin = data.tripMin;
-        let reachableCircles = data.circles;
-        let geoJson = data.geoJson;
+    const map = this.mapRef.current.leafletElement;
 
-        if (this.state.computeId !== data.computeId)
-        {
-            return;
-        }
+    let allOptions = [];
+    for (const circle of reachableCircles) {
+      const dist = map.distance(circle, endLatLng);
+      if (dist <= circle.radius) {
+        const walkMin = dist / WalkMetersPerMinute;
+        const tripMin = walkMin + circle.tripMin;
 
-        if (this.state.computing && tripMin === this.state.maxTripMin)
-        {
-            this.setState({computing: false});
-        }
-
-        let layerOptions = tripMinOptions['' + tripMin] || defaultLayerOptions;
-
-        let diffLayer = L.geoJson(geoJson, Object.assign({bubblingMouseEvents: false, fillOpacity:0.4, stroke:false}, layerOptions));
-
-        let map = this.mapRef.current.leafletElement;
-
-        diffLayer.addTo(map);
-
-        diffLayer.on('click', e => {
-            let endLatLng = e.latlng;
-            this.showTripInfo(endLatLng, reachableCircles);
+        allOptions.push({
+          tripMin,
+          walkMin,
+          circle,
         });
+      }
+    }
 
-        diffLayer.on('dblclick', e => {
-            this.resetMap();
-            this.computeIsochrones(e.latlng);
-        });
+    this.clearTripLayers(false);
 
-        this.isochroneLayers.push({tripMin: tripMin, layer: diffLayer});
+    if (allOptions.length) {
+      allOptions = allOptions.sort(function(o1, o2) {
+        return o1.tripMin - o2.tripMin;
+      });
 
-        let curEndLatLng = this.state.endLatLng;
+      const seenRoutes = {};
+      let numOptions = 0;
 
-        // restore end latlng from previous view
-        if (curEndLatLng && !this.tripLayers.length)
-        {
-            for (let circle of reachableCircles)
-            {
-                let dist = map.distance(circle, curEndLatLng);
-                if (dist <= circle.radius)
-                {
-                    this.showTripInfo(curEndLatLng, reachableCircles);
-                    break;
+      const tripInfo = [];
+      for (const option of allOptions) {
+        const circle = option.circle;
+
+        if (seenRoutes[circle.routes]) {
+          continue;
+        }
+
+        seenRoutes[circle.routes] = true;
+
+        if (numOptions < 2 || !circle.tripItems.length) {
+          numOptions++;
+
+          for (const tripItem of circle.tripItems) {
+            if (tripItem.route) {
+              const routeInfo = this.props.routes.find(
+                route => route.id === tripItem.route,
+              );
+
+              if (routeInfo) {
+                const dirInfo = getDirectionInfo(tripItem.direction, routeInfo);
+
+                const fromStop = tripItem.fromStop;
+                const toStop = tripItem.toStop;
+
+                const fromStopInfo = routeInfo.stops[fromStop];
+                const toStopInfo = routeInfo.stops[toStop];
+
+                const tripPoints = getTripPoints(
+                  routeInfo,
+                  dirInfo,
+                  fromStop,
+                  toStop,
+                );
+
+                if (tripPoints.length) {
+                  // draw line segments along the route between fromStop and toStop
+                  const polyLine = L.polyline(tripPoints).addTo(map);
+                  polyLine.bindTooltip(routeInfo.id, {
+                    direction: 'center',
+                    opacity: 0.9,
+                    permanent: true,
+                  });
+
+                  this.tripLayers.push(polyLine);
+
+                  // draw small circles at fromStop and toStop
+                  this.tripLayers.push(
+                    L.circle(fromStopInfo, 40, {
+                      color: '#090',
+                      fillOpacity: 0.8,
+                      stroke: false,
+                    }).addTo(map),
+                  );
+                  this.tripLayers.push(
+                    L.circle(toStopInfo, 40, {
+                      color: '#900',
+                      fillOpacity: 0.8,
+                      stroke: false,
+                    }).addTo(map),
+                  );
                 }
+              }
             }
-        }
-    }
-
-    showTripInfo(endLatLng, reachableCircles)
-    {
-        this.setState({endLatLng: endLatLng});
-
-        let map = this.mapRef.current.leafletElement;
-
-        let allOptions = [];
-        for (let circle of reachableCircles)
-        {
-            let dist = map.distance(circle, endLatLng);
-            if (dist <= circle.radius)
-            {
-                let walkMin = dist / WalkMetersPerMinute;
-                let tripMin = walkMin + circle.tripMin;
-
-                allOptions.push({
-                    tripMin: tripMin,
-                    walkMin: walkMin,
-                    circle: circle,
-                });
-            }
-        }
-
-        this.clearTripLayers(false);
-
-        if (allOptions.length)
-        {
-            allOptions = allOptions.sort(function(o1, o2) {
-                return o1.tripMin - o2.tripMin;
-            });
-
-            let seenRoutes = {};
-            let numOptions = 0;
-
-            let tripInfo = [];
-            for (let option of allOptions)
-            {
-                let circle = option.circle;
-
-                if (seenRoutes[circle.routes])
-                {
-                    continue;
-                }
-
-                seenRoutes[circle.routes] = true;
-
-                if (numOptions < 2 || !circle.tripItems.length)
-                {
-                    numOptions++;
-
-                    for (let tripItem of circle.tripItems)
-                    {
-                        if (tripItem.route)
-                        {
-                            const routeInfo = this.props.routes.find(route => route.id === tripItem.route);
-
-                            if (routeInfo)
-                            {
-                                let dirInfo = getDirectionInfo(tripItem.direction, routeInfo);
-
-                                let fromStop = tripItem.fromStop;
-                                let toStop = tripItem.toStop;
-
-                                let fromStopInfo = routeInfo.stops[fromStop];
-                                let toStopInfo = routeInfo.stops[toStop];
-
-                                const tripPoints = getTripPoints(routeInfo, dirInfo, fromStop, toStop);
-
-                                if (tripPoints.length)
-                                {
-                                    // draw line segments along the route between fromStop and toStop
-                                    let polyLine = L.polyline(tripPoints).addTo(map);
-                                    polyLine.bindTooltip(routeInfo.id, {direction:'center', opacity:0.9, permanent:true});
-
-                                    this.tripLayers.push(polyLine);
-
-                                    // draw small circles at fromStop and toStop
-                                    this.tripLayers.push(L.circle(fromStopInfo, 40, {color:'#090', fillOpacity:0.8, stroke:false}).addTo(map));
-                                    this.tripLayers.push(L.circle(toStopInfo, 40, {color:'#900', fillOpacity: 0.8, stroke:false}).addTo(map));
-                                }
-                            }
-                        }
-                    }
-
-                    tripInfo.push(
-                        <div key={numOptions} className='isochrone-trip'>
-                            <div><strong>{option.tripMin.toFixed(1) + ' min ['+(circle.routes || 'walk')+']'}</strong></div>
-                            {circle.tripItems.map((item, index) => (
-                                <div key={index}><em>{item.t.toFixed(1)} min</em>: {item.desc}</div>
-                            ))}
-                            {option.walkMin > 0.05 && circle.tripItems.length ?
-                                (<div><em>{option.walkMin.toFixed(1)} min</em>: walk to destination</div>)
-                                : null}
-                        </div>
-                    );
-                }
-            }
-
-            let marker = L.marker(endLatLng, {icon:redIcon}).addTo(map);
-
-            this.tripLayers.push(marker);
-
-            this.setState({tripInfo: tripInfo});
-        }
-    }
-
-    computeIsochrones(latLng, endLatLng)
-    {
-        if (!isInServiceArea(latLng))
-        {
-            return;
-        }
-
-        const dateStr = this.props.date;
-        const startTimeStr = this.props.start_time;
-        const endTimeStr = this.props.end_time;
-        const timeStr = (startTimeStr && endTimeStr) ? `${startTimeStr}-${endTimeStr}` : "";
-
-        const {maxTripMin, stat, enabledRoutes} = this.state;
-
-        let enabledRoutesArr = [];
-
-        for (var route of this.props.routes)
-        {
-            if (enabledRoutes[route.id] !== false)
-            {
-                enabledRoutesArr.push(route.id);
-            }
-        }
-
-        let computeId = [
-            latLng.lat,
-            latLng.lng,
-            dateStr,
-            timeStr,
-            stat,
-            maxTripMin,
-            enabledRoutesArr.join(',')
-        ].join(',');
-
-        this.setState({
-            latLng: latLng,
-            endLatLng: endLatLng,
-            computedMaxTripMin: maxTripMin,
-            computeId: computeId
-        });
-
-        let map = this.mapRef.current.leafletElement;
-
-        let newLatLng;
-        let marker = L.marker(latLng, {draggable: true}).addTo(map);
-        marker.on('move', function(e) {
-            newLatLng = e.latlng;
-        });
-        marker.on('moveend', e => {
-            if (newLatLng)
-            {
-                this.resetMap();
-                this.computeIsochrones(newLatLng);
-            }
-        });
-        this.layers.push(marker);
-
-        if (computeCache[computeId] && computeCache[computeId][maxTripMin])
-        {
-            for (let tripMin = isochroneMinutes; tripMin <= maxTripMin; tripMin += isochroneMinutes)
-            {
-                let cachedLayer = computeCache[computeId][tripMin];
-                if (cachedLayer)
-                {
-                    this.addReachableLocationsLayer(cachedLayer);
-                }
-            }
-            return;
-        }
-
-        computeCache[computeId] = {};
-
-        let tripMins = [];
-        for (let m = isochroneMinutes; m <= maxTripMin && m <= maxColoredTripMin; m += isochroneMinutes)
-        {
-            tripMins.push(m);
-        }
-        if (maxTripMin > maxColoredTripMin)
-        {
-            tripMins.push(maxTripMin);
-        }
-
-        this.setState({
-            computing: true
-        });
-
-        this.isochroneWorker.postMessage({
-            action:'computeIsochrones',
-            latlng: latLng,
-            routes: enabledRoutesArr,
-            dateStr: dateStr,
-            timeStr: timeStr,
-            tripMins: tripMins,
-            stat: stat,
-            computeId: computeId
-        });
-    }
-
-    handleStatChange(event)
-    {
-        this.setState({stat: event.target.value}, this.recomputeIsochrones);
-    }
-
-    handleMaxTripMinChange(event)
-    {
-        this.setState({maxTripMin: parseInt(event.target.value, 10)}, this.maxTripMinChanged);
-    }
-
-    maxTripMinChanged()
-    {
-        let { maxTripMin, computedMaxTripMin } = this.state;
-
-        if (computedMaxTripMin &&
-            (maxTripMin > computedMaxTripMin || !this.isochroneLayers.find(iso => iso.tripMin === maxTripMin)))
-        {
-            this.recomputeIsochrones();
-        }
-        else
-        {
-            let map = this.mapRef.current.leafletElement;
-
-            for (let isochroneLayer of this.isochroneLayers)
-            {
-                if (isochroneLayer.tripMin <= maxTripMin)
-                {
-                    isochroneLayer.layer.addTo(map);
-                }
-                else
-                {
-                    isochroneLayer.layer.remove();
-                }
-            }
-        }
-    }
-
-    handleToggleRoute(event)
-    {
-        const routeId = event.target.value;
-        const checked = event.target.checked;
-
-        this.setState({enabledRoutes: {...this.state.enabledRoutes, [routeId]: checked}}, this.recomputeIsochrones);
-    }
-
-    selectAllRoutesClicked(event)
-    {
-        this.selectAllRoutes(true);
-    }
-
-    selectNoRoutesClicked(event)
-    {
-        this.selectAllRoutes(false);
-    }
-
-    resetMapClicked(event)
-    {
-        this.resetMap();
-    }
-
-    recomputeIsochrones()
-    {
-        let {latLng, endLatLng} = this.state;
-        if (latLng)
-        {
-            this.resetMap();
-            this.computeIsochrones(latLng, endLatLng);
-        }
-    }
-
-    resetMap()
-    {
-        let map = this.mapRef.current.leafletElement;
-
-        map.closePopup();
-
-        this.setState({computeId: null, latLng: null, endLatLng: null});
-
-        for (let isochroneLayer of this.isochroneLayers)
-        {
-            isochroneLayer.layer.remove();
-        }
-        for (let layer of this.layers)
-        {
-            layer.remove();
-        }
-        this.layers = [];
-        this.isochroneLayers = [];
-        this.clearTripLayers();
-    }
-
-    clearTripLayers(clearTripInfo)
-    {
-        for (let layer of this.tripLayers)
-        {
-            layer.remove();
-        }
-        this.tripLayers = [];
-
-        if (clearTripInfo !== false)
-        {
-            this.setState({tripInfo: null});
-        }
-    }
-
-    selectAllRoutes(enabled)
-    {
-        var {routes} = this.props;
-        if (!routes)
-        {
-            return;
-        }
-
-        var enabledRoutes = {};
-        for (let route of routes)
-        {
-            enabledRoutes[route.id] = enabled;
-        }
-
-        this.setState({enabledRoutes: enabledRoutes}, this.recomputeIsochrones);
-    }
-
-    makeRouteToggle(route)
-    {
-        let enabled = this.state.enabledRoutes[route.id];
-        if (enabled == null)
-        {
-            enabled = true;
-        }
-
-        return <div key={route.id}>
-            <label>
-                <input type="checkbox" checked={enabled} onChange={this.handleToggleRoute} value={route.id} /> {route.id}
-            </label>
-        </div>;
-    }
-
-    render() {
-        const {routes} = this.props;
-
-        let colors = [];
-        let times = [];
-
-        for (let endTime = isochroneMinutes; endTime <= maxColoredTripMin; endTime += isochroneMinutes)
-        {
-            colors.push(<div key={endTime} style={{backgroundColor: tripMinOptions[endTime].color}}></div>);
-            times.push(<div key={endTime}>{endTime}</div>);
-        }
-
-        colors.push(<div key='default' style={{backgroundColor: defaultLayerOptions.color}}></div>);
-
-        let tripMins = [];
-        for (let tripMin = 15; tripMin <= maxColoredTripMin; tripMin += 15)
-        {
-            tripMins.push(tripMin);
-        }
-        tripMins.push(90);
-
-        const center = {lat: 37.772, lng: -122.442};
-
-        return <div className='flex-screen'>
-            <AppBar position="relative">
-              <Toolbar>
-                <SidebarButton />
-                <div className='page-title'>
-                  Isochrone
+          }
+
+          tripInfo.push(
+            <div key={numOptions} className="isochrone-trip">
+              <div>
+                <strong>
+                  {`${option.tripMin.toFixed(1)} min [${circle.routes ||
+                    'walk'}]`}
+                </strong>
+              </div>
+              {circle.tripItems.map((item, index) => (
+                <div key={index}>
+                  <em>{item.t.toFixed(1)} min</em>: {item.desc}
                 </div>
-                <DateTimePanel/>
-              </Toolbar>
-            </AppBar>
-            <Map center={center} zoom={13} className='isochrone-map'
-                minZoom={11}
-                maxZoom={18}
-                onClick={this.handleMapClick}
-                ref={this.mapRef}
-                >
-                <TileLayer
-                  attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
-                  url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
-                /> {/* see http://maps.stamen.com for details */}
-                <Control position="topleft">
-                    <div className="isochrone-controls">
-                        <div>
-                            stat:
-                            <select value={this.state.stat} onChange={this.handleStatChange} className='isochrone-control-select'>
-                                <option value='p10'>10th percentile</option>
-                                <option value='median'>median</option>
-                                <option value='p90'>90th percentile</option>
-                            </select>
-                        </div>
-                        <div>
-                            max trip time:
-                            <select value={this.state.maxTripMin} onChange={this.handleMaxTripMinChange} className='isochrone-control-select'>
-                                {tripMins.map(tripMin => (<option key={tripMin} value={tripMin}>{tripMin} minutes</option>))}
-                            </select>
-                        </div>
-                        <div>
-                            routes:
-                            <div className='isochrone-select-all'>
-                                <span onClick={this.selectAllRoutesClicked}>all</span>
-                                {" / "}
-                                <span onClick={this.selectNoRoutesClicked}>none</span>
-                            </div>
-                            <div className='isochrone-routes'>
-                                {(routes || []).map(route => this.makeRouteToggle(route))}
-                            </div>
-                        </div>
-                        <button onClick={this.resetMapClicked}>Clear</button>
-                    </div>
-                </Control>
-                <Control position="topright">
-                    {this.state.tripInfo ?
-                        <div className="isochrone-trip-info">{this.state.tripInfo}</div>
-                        : <div className='isochrone-instructions'>{
-                            !this.state.latLng ? 'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.' :
-                            this.state.computing ? 'Computing...' :
-                            'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.'
-                        }</div>
-                    }
-                </Control>
-                <Control position="bottomright">
-                    <div className="isochrone-legend">
-                        trip times (minutes)
-                        <div className="isochrone-legend-colors">
-                            {colors}
-                        </div>
-                        <div className="isochrone-legend-times">
-                            {times}
-                        </div>
-                    </div>
-                </Control>
-            </Map>
-        </div>;
+              ))}
+              {option.walkMin > 0.05 && circle.tripItems.length ? (
+                <div>
+                  <em>{option.walkMin.toFixed(1)} min</em>: walk to destination
+                </div>
+              ) : null}
+            </div>,
+          );
+        }
+      }
+
+      const marker = L.marker(endLatLng, { icon: redIcon }).addTo(map);
+
+      this.tripLayers.push(marker);
+
+      this.setState({ tripInfo });
     }
+  }
+
+  computeIsochrones(latLng, endLatLng) {
+    if (!isInServiceArea(latLng)) {
+      return;
+    }
+
+    const dateStr = this.props.date;
+    const startTimeStr = this.props.startTime;
+    const endTimeStr = this.props.endTime;
+    const timeStr =
+      startTimeStr && endTimeStr ? `${startTimeStr}-${endTimeStr}` : '';
+
+    const { maxTripMin, stat, enabledRoutes } = this.state;
+
+    const enabledRoutesArr = [];
+
+    for (const route of this.props.routes) {
+      if (enabledRoutes[route.id] !== false) {
+        enabledRoutesArr.push(route.id);
+      }
+    }
+
+    const computeId = [
+      latLng.lat,
+      latLng.lng,
+      dateStr,
+      timeStr,
+      stat,
+      maxTripMin,
+      enabledRoutesArr.join(','),
+    ].join(',');
+
+    this.setState({
+      latLng,
+      endLatLng,
+      computedMaxTripMin: maxTripMin,
+      computeId,
+    });
+
+    const map = this.mapRef.current.leafletElement;
+
+    let newLatLng;
+    const marker = L.marker(latLng, { draggable: true }).addTo(map);
+    marker.on('move', function(e) {
+      newLatLng = e.latlng;
+    });
+    marker.on('moveend', e => {
+      if (newLatLng) {
+        this.resetMap();
+        this.computeIsochrones(newLatLng);
+      }
+    });
+    this.layers.push(marker);
+
+    if (computeCache[computeId] && computeCache[computeId][maxTripMin]) {
+      for (
+        let tripMin = isochroneMinutes;
+        tripMin <= maxTripMin;
+        tripMin += isochroneMinutes
+      ) {
+        const cachedLayer = computeCache[computeId][tripMin];
+        if (cachedLayer) {
+          this.addReachableLocationsLayer(cachedLayer);
+        }
+      }
+      return;
+    }
+
+    computeCache[computeId] = {};
+
+    const tripMins = [];
+    for (
+      let m = isochroneMinutes;
+      m <= maxTripMin && m <= maxColoredTripMin;
+      m += isochroneMinutes
+    ) {
+      tripMins.push(m);
+    }
+    if (maxTripMin > maxColoredTripMin) {
+      tripMins.push(maxTripMin);
+    }
+
+    this.setState({
+      computing: true,
+    });
+
+    this.isochroneWorker.postMessage({
+      action: 'computeIsochrones',
+      latlng: latLng,
+      routes: enabledRoutesArr,
+      dateStr,
+      timeStr,
+      tripMins,
+      stat,
+      computeId,
+    });
+  }
+
+  handleStatChange(event) {
+    this.setState({ stat: event.target.value }, this.recomputeIsochrones);
+  }
+
+  handleMaxTripMinChange(event) {
+    this.setState(
+      { maxTripMin: parseInt(event.target.value, 10) },
+      this.maxTripMinChanged,
+    );
+  }
+
+  maxTripMinChanged() {
+    const { maxTripMin, computedMaxTripMin } = this.state;
+
+    if (
+      computedMaxTripMin &&
+      (maxTripMin > computedMaxTripMin ||
+        !this.isochroneLayers.find(iso => iso.tripMin === maxTripMin))
+    ) {
+      this.recomputeIsochrones();
+    } else {
+      const map = this.mapRef.current.leafletElement;
+
+      for (const isochroneLayer of this.isochroneLayers) {
+        if (isochroneLayer.tripMin <= maxTripMin) {
+          isochroneLayer.layer.addTo(map);
+        } else {
+          isochroneLayer.layer.remove();
+        }
+      }
+    }
+  }
+
+  handleToggleRoute(event) {
+    const routeId = event.target.value;
+    const checked = event.target.checked;
+
+    this.setState(
+      { enabledRoutes: { ...this.state.enabledRoutes, [routeId]: checked } },
+      this.recomputeIsochrones,
+    );
+  }
+
+  selectAllRoutesClicked(event) {
+    this.selectAllRoutes(true);
+  }
+
+  selectNoRoutesClicked(event) {
+    this.selectAllRoutes(false);
+  }
+
+  resetMapClicked(event) {
+    this.resetMap();
+  }
+
+  recomputeIsochrones() {
+    const { latLng, endLatLng } = this.state;
+    if (latLng) {
+      this.resetMap();
+      this.computeIsochrones(latLng, endLatLng);
+    }
+  }
+
+  resetMap() {
+    const map = this.mapRef.current.leafletElement;
+
+    map.closePopup();
+
+    this.setState({ computeId: null, latLng: null, endLatLng: null });
+
+    for (const isochroneLayer of this.isochroneLayers) {
+      isochroneLayer.layer.remove();
+    }
+    for (const layer of this.layers) {
+      layer.remove();
+    }
+    this.layers = [];
+    this.isochroneLayers = [];
+    this.clearTripLayers();
+  }
+
+  clearTripLayers(clearTripInfo) {
+    for (const layer of this.tripLayers) {
+      layer.remove();
+    }
+    this.tripLayers = [];
+
+    if (clearTripInfo !== false) {
+      this.setState({ tripInfo: null });
+    }
+  }
+
+  selectAllRoutes(enabled) {
+    const { routes } = this.props;
+    if (!routes) {
+      return;
+    }
+
+    const enabledRoutes = {};
+    for (const route of routes) {
+      enabledRoutes[route.id] = enabled;
+    }
+
+    this.setState({ enabledRoutes }, this.recomputeIsochrones);
+  }
+
+  makeRouteToggle(route) {
+    let enabled = this.state.enabledRoutes[route.id];
+    if (enabled == null) {
+      enabled = true;
+    }
+
+    return (
+      <div key={route.id}>
+        <label>
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={this.handleToggleRoute}
+            value={route.id}
+          />{' '}
+          {route.id}
+        </label>
+      </div>
+    );
+  }
+
+  render() {
+    const { routes } = this.props;
+
+    const colors = [];
+    const times = [];
+
+    for (
+      let endTime = isochroneMinutes;
+      endTime <= maxColoredTripMin;
+      endTime += isochroneMinutes
+    ) {
+      colors.push(
+        <div
+          key={endTime}
+          style={{ backgroundColor: tripMinOptions[endTime].color }}
+        ></div>,
+      );
+      times.push(<div key={endTime}>{endTime}</div>);
+    }
+
+    colors.push(
+      <div
+        key="default"
+        style={{ backgroundColor: defaultLayerOptions.color }}
+      ></div>,
+    );
+
+    const tripMins = [];
+    for (let tripMin = 15; tripMin <= maxColoredTripMin; tripMin += 15) {
+      tripMins.push(tripMin);
+    }
+    tripMins.push(90);
+
+    const center = { lat: 37.772, lng: -122.442 };
+
+    return (
+      <div className="flex-screen">
+        <AppBar position="relative">
+          <Toolbar>
+            <SidebarButton />
+            <div className="page-title">Isochrone</div>
+            <DateTimePanel />
+          </Toolbar>
+        </AppBar>
+        <Map
+          center={center}
+          zoom={13}
+          className="isochrone-map"
+          minZoom={11}
+          maxZoom={18}
+          onClick={this.handleMapClick}
+          ref={this.mapRef}
+        >
+          <TileLayer
+            attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+            url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
+          />
+          {/* see http://maps.stamen.com for details */}
+          <Control position="topleft">
+            <div className="isochrone-controls">
+              <div>
+                stat:
+                <select
+                  value={this.state.stat}
+                  onChange={this.handleStatChange}
+                  className="isochrone-control-select"
+                >
+                  <option value="p10">10th percentile</option>
+                  <option value="median">median</option>
+                  <option value="p90">90th percentile</option>
+                </select>
+              </div>
+              <div>
+                max trip time:
+                <select
+                  value={this.state.maxTripMin}
+                  onChange={this.handleMaxTripMinChange}
+                  className="isochrone-control-select"
+                >
+                  {tripMins.map(tripMin => (
+                    <option key={tripMin} value={tripMin}>
+                      {tripMin} minutes
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                routes:
+                <div className="isochrone-select-all">
+                  <span onClick={this.selectAllRoutesClicked}>all</span>
+                  {' / '}
+                  <span onClick={this.selectNoRoutesClicked}>none</span>
+                </div>
+                <div className="isochrone-routes">
+                  {(routes || []).map(route => this.makeRouteToggle(route))}
+                </div>
+              </div>
+              <button onClick={this.resetMapClicked}>Clear</button>
+            </div>
+          </Control>
+          <Control position="topright">
+            {this.state.tripInfo ? (
+              <div className="isochrone-trip-info">{this.state.tripInfo}</div>
+            ) : (
+              <div className="isochrone-instructions">
+                {!this.state.latLng
+                  ? 'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.'
+                  : this.state.computing
+                  ? 'Computing...'
+                  : 'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.'}
+              </div>
+            )}
+          </Control>
+          <Control position="bottomright">
+            <div className="isochrone-legend">
+              trip times (minutes)
+              <div className="isochrone-legend-colors">{colors}</div>
+              <div className="isochrone-legend-times">{times}</div>
+            </div>
+          </Control>
+        </Map>
+      </div>
+    );
+  }
 }
 
 const mapStateToProps = state => ({
-    routes: state.routes.routes,
-    date: state.routes.graphParams.date,
-    start_time: state.routes.graphParams.start_time,
-    end_time: state.routes.graphParams.end_time
+  routes: state.routes.routes,
+  date: state.routes.graphParams.date,
+  startTime: state.routes.graphParams.startTime,
+  endTime: state.routes.graphParams.endTime,
 });
 
 const mapDispatchToProps = dispatch => ({
-    fetchRoutes: () => dispatch(fetchRoutes()),
+  fetchRoutes: () => dispatch(fetchRoutes()),
 });
 
 export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
+  mapStateToProps,
+  mapDispatchToProps,
 )(Isochrone);

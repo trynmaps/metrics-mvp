@@ -199,15 +199,15 @@ class Info extends Component {
   computeDistance(graphParams, routes) {
     let miles = 0;
 
-    if (graphParams && graphParams.end_stop_id) {
-      const directionId = graphParams.direction_id;
-      const routeId = graphParams.route_id;
+    if (graphParams && graphParams.endStopId) {
+      const directionId = graphParams.directionId;
+      const routeId = graphParams.routeId;
 
       const route = routes.find(thisRoute => thisRoute.id === routeId);
       const stopSequence = route.directions.find(dir => dir.id === directionId)
         .stops;
-      const startIndex = stopSequence.indexOf(graphParams.start_stop_id);
-      const endIndex = stopSequence.indexOf(graphParams.end_stop_id);
+      const startIndex = stopSequence.indexOf(graphParams.startStopId);
+      const endIndex = stopSequence.indexOf(graphParams.endStopId);
 
       for (let i = startIndex; i < endIndex; i++) {
         const fromStopInfo = route.stops[stopSequence[i]];
@@ -229,9 +229,9 @@ class Info extends Component {
       routes,
     } = this.props;
 
-    const headwayMin = graphData ? graphData.headway_min : null;
-    const waitTimes = graphData ? graphData.wait_times : null;
-    const tripTimes = graphData ? graphData.trip_times : null;
+    const headwayMin = graphData ? graphData.headwayMin : null;
+    const waitTimes = graphData ? graphData.waitTimes : null;
+    const tripTimes = graphData ? graphData.tripTimes : null;
 
     this.headwayData =
       headwayMin && headwayMin.histogram
@@ -338,7 +338,7 @@ class Info extends Component {
                   </TableHead>
                   <TableBody>
                     {tableRows.map(row => (
-                      <TableRow key="{row.metric}">
+                      <TableRow key={row.metric}>
                         <TableCell component="th" scope="row">
                           {row.metric}
                         </TableCell>
