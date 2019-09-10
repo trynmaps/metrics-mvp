@@ -23,89 +23,89 @@ import {
 } from '../actions';
 
 function RouteScreen(props) {
-
   useEffect(() => {
     if (!props.routes) {
       props.fetchRoutes();
     }
-  }, []);  // like componentDidMount, this runs only on first render
+  }, []); // like componentDidMount, this runs only on first render
 
-    const {
-      graphData,
-      graphError,
-      graphParams,
-      intervalData,
-      intervalError,
-      routes,
-    } = props;
+  const {
+    graphData,
+    graphError,
+    graphParams,
+    intervalData,
+    intervalError,
+    routes,
+  } = props;
 
-    const selectedRoute =
-      routes && graphParams && graphParams.route_id
-        ? routes.find(route => route.id === graphParams.route_id)
-        : null;
-    const direction =
-      selectedRoute && graphParams.direction_id
-        ? selectedRoute.directions.find(
-            direction => direction.id === graphParams.direction_id,
-          )
-        : null;
-    const startStopInfo =
-      direction && graphParams.start_stop_id
-        ? selectedRoute.stops[graphParams.start_stop_id]
-        : null;
-    const endStopInfo =
-      direction && graphParams.end_stop_id
-        ? selectedRoute.stops[graphParams.end_stop_id]
-        : null;
+  const selectedRoute =
+    routes && graphParams && graphParams.routeId
+      ? routes.find(route => route.id === graphParams.routeId)
+      : null;
+  const direction =
+    selectedRoute && graphParams.directionId
+      ? selectedRoute.directions.find(
+          direction => direction.id === graphParams.directionId,
+        )
+      : null;
+  const startStopInfo =
+    direction && graphParams.startStopId
+      ? selectedRoute.stops[graphParams.startStopId]
+      : null;
+  const endStopInfo =
+    direction && graphParams.endStopId
+      ? selectedRoute.stops[graphParams.endStopId]
+      : null;
 
-    return (
-      <Fragment>
-        <AppBar position="relative">
-          <Toolbar>
-            <SidebarButton />
-            <div className='page-title'>
-              Muni
-              {selectedRoute ? ` > ${selectedRoute.title}` : null}
-              {direction ? ` > ${direction.title}` : null}
-              &nbsp;
-              {startStopInfo ? `(from ${startStopInfo.title}` : null}
-              {endStopInfo ? ` to ${endStopInfo.title})` : null}
-            </div>
-            <DateTimePanel/>
-          </Toolbar>
-        </AppBar>
+  return (
+    <Fragment>
+      <AppBar position="relative">
+        <Toolbar>
+          <SidebarButton />
+          <div className="page-title">
+            Muni
+            {selectedRoute ? ` > ${selectedRoute.title}` : null}
+            {direction ? ` > ${direction.title}` : null}
+            &nbsp;
+            {startStopInfo ? `(from ${startStopInfo.title}` : null}
+            {endStopInfo ? ` to ${endStopInfo.title})` : null}
+          </div>
+          <DateTimePanel />
+        </Toolbar>
+      </AppBar>
 
-        <Grid container spacing={0}>
-          <Grid item xs={12} sm={6}> {/* control panel and map are full width for 640px windows or smaller, else half width */}
-            <MapStops routes={routes} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <ControlPanel
-              routes={routes}
-              resetGraphData={props.resetGraphData}
-              fetchGraphData={props.fetchGraphData}
-              resetIntervalData={props.resetIntervalData}
-              fetchIntervalData={props.fetchIntervalData}
-              fetchData={props.fetchData}
-            />
-            {graphData /* if we have graph data, then show the info component */ ? (
-              <Info
-                graphData={graphData}
-                graphError={graphError}
-                graphParams={graphParams}
-                routes={routes}
-                intervalData={intervalData}
-                intervalError={intervalError}
-              />
-            ) : (
-              /* if no graph data, show the info summary component */
-
-                <RouteSummary/>
-            )}
-          </Grid>
+      <Grid container spacing={0}>
+        <Grid item xs={12} sm={6}>
+          <MapStops routes={routes} />
         </Grid>
-      </Fragment>
-    );
+        <Grid item xs={12} sm={6}>
+          {/* control panel and map are full width for 640px windows or smaller, else half width */}
+          <ControlPanel
+            routes={routes}
+            resetGraphData={props.resetGraphData}
+            fetchGraphData={props.fetchGraphData}
+            resetIntervalData={props.resetIntervalData}
+            fetchIntervalData={props.fetchIntervalData}
+            fetchData={props.fetchData}
+          />
+          {graphData /* if we have graph data, then show the info component */ ? (
+            <Info
+              graphData={graphData}
+              graphError={graphError}
+              graphParams={graphParams}
+              routes={routes}
+              intervalData={intervalData}
+              intervalError={intervalError}
+            />
+          ) : (
+            /* if no graph data, show the info summary component */
+
+            <RouteSummary />
+          )}
+        </Grid>
+      </Grid>
+    </Fragment>
+  );
 }
 
 const mapStateToProps = state => ({

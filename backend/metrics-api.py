@@ -31,18 +31,18 @@ def ping():
 @app.route('/api/metrics', methods=['GET'])
 def metrics_page():
     metrics_start = time.time()
-    route_id = request.args.get('route_id')
+    route_id = request.args.get('routeId')
     if route_id is None:
         route_id = '12'
-    start_stop_id = request.args.get('start_stop_id')
+    start_stop_id = request.args.get('startStopId')
     if start_stop_id is None:
         start_stop_id = '3476'
-    end_stop_id = request.args.get('end_stop_id')
+    end_stop_id = request.args.get('endStopId')
 
-    direction_id = request.args.get('direction_id')
+    direction_id = request.args.get('directionId')
 
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
+    start_date_str = request.args.get('startDate')
+    end_date_str = request.args.get('endDate')
     date_str = request.args.get('date')
 
     if date_str is not None:
@@ -53,18 +53,18 @@ def metrics_page():
         if end_date_str is None:
             end_date_str = start_date_str
 
-    start_time_str = request.args.get('start_time') # e.g. "14:00" (24h time of day)
-    end_time_str = request.args.get('end_time') # e.g. "18:00" or "03:00+1" (24h time of day)
+    start_time_str = request.args.get('startTime') # e.g. "14:00" (24h time of day)
+    end_time_str = request.args.get('endTime') # e.g. "18:00" or "03:00+1" (24h time of day)
 
     params = {
-        'start_stop_id': start_stop_id,
-        'end_stop_id': end_stop_id,
-        'route_id': route_id,
-        'direction_id': direction_id,
-        'start_date': start_date_str,
-        'end_date': end_date_str,
-        'start_time': start_time_str,
-        'end_time': end_time_str,
+        'startStopId': start_stop_id,
+        'endStopId': end_stop_id,
+        'routeId': route_id,
+        'directionId': direction_id,
+        'startDate': start_date_str,
+        'endDate': end_date_str,
+        'startTime': start_time_str,
+        'endTime': end_time_str,
     }
 
     data = {
@@ -78,13 +78,13 @@ def metrics_page():
         if start_stop_info is None:
             raise errors.ValidationError(f"Stop {start_stop_id} is not on route {route_id}")
 
-        data['start_stop_title'] = start_stop_info.title
+        data['startStopTitle'] = start_stop_info.title
 
         if end_stop_id:
             end_stop_info = route_config.get_stop_info(end_stop_id)
             if end_stop_info is None:
                 raise errors.ValidationError(f"Stop {end_stop_id} is not on route {route_id}")
-            data['end_stop_title'] = end_stop_info.title
+            data['endStopTitle'] = end_stop_info.title
 
         rng = metrics.Range(
             util.get_dates_in_range(start_date_str, end_date_str),
@@ -97,17 +97,17 @@ def metrics_page():
 
         keys = ['count','avg','min','median','max','percentiles','histogram']
 
-        data['wait_times'] = route_metrics.get_wait_time_stats(
+        data['waitTimes'] = route_metrics.get_wait_time_stats(
             direction_id, start_stop_id,
             rng, keys
         )
 
-        data['trip_times'] = route_metrics.get_trip_time_stats(
+        data['tripTimes'] = route_metrics.get_trip_time_stats(
             direction_id, start_stop_id, end_stop_id,
             rng, keys
         )
 
-        data['headway_min'] = route_metrics.get_headway_min_stats(
+        data['headwayMin'] = route_metrics.get_headway_min_stats(
             direction_id, start_stop_id,
             rng, keys
         )
@@ -118,7 +118,7 @@ def metrics_page():
         return make_error_response(params, str(ex), 400)
 
     metrics_end = time.time()
-    data['processing_time'] = (metrics_end - metrics_start)
+    data['processingTime'] = (metrics_end - metrics_start)
 
     res = Response(json.dumps(data, indent=2), mimetype='application/json')
     if not DEBUG:
@@ -134,18 +134,18 @@ def make_error_response(params, error, status):
 
 @app.route('/api/metrics_by_interval', methods=['GET'])
 def metrics_by_interval():
-    route_id = request.args.get('route_id')
+    route_id = request.args.get('routeId')
     if route_id is None:
         route_id = '12'
-    start_stop_id = request.args.get('start_stop_id')
+    start_stop_id = request.args.get('startStopId')
     if start_stop_id is None:
         start_stop_id = '3476'
-    end_stop_id = request.args.get('end_stop_id')
+    end_stop_id = request.args.get('endStopId')
 
-    direction_id = request.args.get('direction_id')
+    direction_id = request.args.get('directionId')
 
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
+    start_date_str = request.args.get('startDate')
+    end_date_str = request.args.get('endDate')
     date_str = request.args.get('date')
 
     if date_str is not None:
@@ -156,19 +156,19 @@ def metrics_by_interval():
         if end_date_str is None:
             end_date_str = start_date_str
 
-    start_time_str = request.args.get('start_time') # e.g. "14:00" (24h time of day)
-    end_time_str = request.args.get('end_time') # e.g. "18:00" (24h time of day)
+    start_time_str = request.args.get('startTime') # e.g. "14:00" (24h time of day)
+    end_time_str = request.args.get('endTime') # e.g. "18:00" (24h time of day)
 
     params = {
-        'start_stop_id': start_stop_id,
-        'end_stop_id': end_stop_id,
-        'route_id': route_id,
-        'direction_id': direction_id,
-        'start_date': start_date_str,
-        'end_date': end_date_str,
+        'startStopId': start_stop_id,
+        'endStopId': end_stop_id,
+        'routeId': route_id,
+        'directionId': direction_id,
+        'startDate': start_date_str,
+        'endDate': end_date_str,
         'date': date_str,
-        'start_time': start_time_str,
-        'end_time': end_time_str,
+        'startTime': start_time_str,
+        'endTime': end_time_str,
     }
 
     data = {
@@ -207,13 +207,13 @@ def metrics_by_interval():
             rng = metrics.Range(dates, start_time_str, end_time_str, tz)
 
             return {
-                    'start_time': start_time_str,
-                    'end_time': end_time_str,
-                    'wait_times': route_metrics.get_wait_time_stats(
+                    'startTime': start_time_str,
+                    'endTime': end_time_str,
+                    'waitTimes': route_metrics.get_wait_time_stats(
                         direction_id, start_stop_id,
                         rng, keys
                     ),
-                    'trip_times': route_metrics.get_trip_time_stats(
+                    'tripTimes': route_metrics.get_trip_time_stats(
                         direction_id, start_stop_id, end_stop_id,
                         rng, keys
                     ),

@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Map, TileLayer, CircleMarker, Tooltip, Polyline } from 'react-leaflet';
-import { handleGraphParams } from '../actions';
 import * as d3 from 'd3';
 import Control from 'react-leaflet-control';
+import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 
@@ -50,30 +50,30 @@ class MapStops extends Component {
   
   populateRouteDirection = (
     routeStops,
-    direction_id,
+    directionId,
     color,
     radius,
     direction,
-    routeInfo
+    routeInfo,
   ) => {
     let route = null;
 
-    if (routeStops && routeStops[direction_id]) {
-      route = routeStops[direction_id].map(stop => {
+    if (routeStops && routeStops[directionId]) {
+      route = routeStops[directionId].map(stop => {
         const currentPosition = [stop.lat, stop.lon];
-        const isStart = stop.sid === this.props.graphParams.start_stop_id;
-        const isEnd = stop.sid === this.props.graphParams.end_stop_id;
+        const isStart = stop.sid === this.props.graphParams.startStopId;
+        const isEnd = stop.sid === this.props.graphParams.endStopId;
         return (
           <CircleMarker
-            key={stop.sid + '-' + direction_id}
+            key={`${stop.sid}-${directionId}`}
             center={currentPosition}
             color={color}
             opacity={0.5}
             radius={radius}
-            fill={true}
+            fill
             fillColor={isStart ? 'green' : isEnd ? 'red' : 'white'}
             fillOpacity={isStart || isEnd ? 1.0 : 0.5}
-            onClick={() => this.handleStopSelect(stop, direction_id)}
+            onClick={() => this.handleStopSelect(stop, directionId)}
           >
             <Tooltip>
               {stop.title}
@@ -83,40 +83,56 @@ class MapStops extends Component {
           </CircleMarker>
         );
       });
-      route.unshift(this.populateSpeed(routeInfo, direction, routeStops, direction_id));
+      route.unshift(
+        this.populateSpeed(routeInfo, direction, routeStops, directionId),
+      );
     }
     return route;
   };
 
   // plot speed along a route
 
-  populateSpeed = (routeInfo, direction, routeStops, direction_id,) => {
-    const downstreamStops = routeStops[direction_id];
-    let polylines = [];
+  populateSpeed = (routeInfo, direction, routeStops, directionId) => {
+    const downstreamStops = routeStops[directionId];
+    const polylines = [];
 
     for (let i = 0; i < downstreamStops.length - 1; i++) {
-
-      const speed = this.getSpeed(routeInfo, direction, downstreamStops, i, direction_id);
+      const speed = this.getSpeed(
+        routeInfo,
+        direction,
+        downstreamStops,
+        i,
+        directionId,
+      );
 
       // draw a wide white polyline as a background for the speed polyline
 
       polylines.push(
-          <Polyline
-            key={'poly-speed-white-' + direction_id + '-' + downstreamStops[i].sid}
-            positions={ getTripPoints(routeInfo, direction, downstreamStops[i].sid, downstreamStops[i+1].sid) }
-            color="white"
-            opacity={1}
-            weight={10}
-          >
-          </Polyline>
+        <Polyline
+          key={`poly-speed-white-${directionId}-${downstreamStops[i].sid}`}
+          positions={getTripPoints(
+            routeInfo,
+            direction,
+            downstreamStops[i].sid,
+            downstreamStops[i + 1].sid,
+          )}
+          color="white"
+          opacity={1}
+          weight={10}
+        ></Polyline>,
       );
 
       // then the speed polyline on top of the white polyline
 
       polylines.push(
         <Polyline
-          key={'poly-speed-' + direction_id + '-' + downstreamStops[i].sid}
-          positions={ getTripPoints(routeInfo, direction, downstreamStops[i].sid, downstreamStops[i+1].sid) }
+          key={`poly-speed-${directionId}-${downstreamStops[i].sid}`}
+          positions={getTripPoints(
+            routeInfo,
+            direction,
+            downstreamStops[i].sid,
+            downstreamStops[i + 1].sid,
+          )}
           color={speed < 0 ? 'white' : this.speedColor(speed)}
           opacity={1}
           weight={5}
@@ -154,44 +170,49 @@ class MapStops extends Component {
    * Speed from index to index+1
    * Using haversine distance for now.
    */
-  getSpeed = (routeInfo, direction, downstreamStops, index, directionID) => {
+  getSpeed = (routeInfo, direction, downstreamStops, index, directionId) => {
     const graphParams = this.props.graphParams;
-    const routeID = graphParams.route_id;
+    const routeId = graphParams.routeId;
 
     const firstStop = downstreamStops[index];
-    const firstStopID = firstStop.sid;
+    const firstStopId = firstStop.sid;
     const nextStop = downstreamStops[index + 1];
-    const nextStopID = nextStop.sid;
+    const nextStopId = nextStop.sid;
 
     const tripTimesFromStop = getTripTimesFromStop(
       this.props.tripTimesCache,
       graphParams,
-      routeID,
-      directionID,
-      firstStopID,
+      routeId,
+      directionId,
+      firstStopId,
     );
 
     let time = null;
-    if (tripTimesFromStop && tripTimesFromStop[nextStopID]) {
-      time = tripTimesFromStop[nextStopID];
+    if (tripTimesFromStop && tripTimesFromStop[nextStopId]) {
+      time = tripTimesFromStop[nextStopId];
     } else {
       return -1; // speed not available;
     }
 
-    const distance = getDistanceInMiles(routeInfo, direction, firstStopID, nextStopID);
+    const distance = getDistanceInMiles(
+      routeInfo,
+      direction,
+      firstStopId,
+      nextStopId,
+    );
 
     return (distance / time) * 60; // miles per minute -> mph
   };
 
   SpeedLegend = () => {
-    let items = [];
+    const items = [];
 
     const speedColorValues = [2.5, 6.25, 8.75, 12.5]; // representative values for quantizing
     // center of scale is 7.5 with quartile boundaries at 5 and 10.
 
     const speedColorLabels = [' < 5', '5-7.5', '7.5-10', '10+'];
 
-    for (let speedColorValue of speedColorValues) {
+    for (const speedColorValue of speedColorValues) {
       items.push(
         <div key={speedColorValue}>
           <i
@@ -217,7 +238,6 @@ class MapStops extends Component {
             padding: '5px',
           }}
         >
-          {' '}
           Speed (mph)
           {items}
         </div>
@@ -225,56 +245,56 @@ class MapStops extends Component {
     );
   };
 
-  handleStopSelect = (stop, new_direction_id) => {
+  handleStopSelect = (stop, newDirectionId) => {
     let {
-      route_id,
-      start_stop_id,
-      end_stop_id,
-      direction_id,
+      routeId,
+      startStopId,
+      endStopId,
+      directionId,
     } = this.props.graphParams;
 
-    if (!start_stop_id) {
+    if (!startStopId) {
       // no first stop set: treat as first stop
-      start_stop_id = stop.sid;
-      end_stop_id = null;
-      direction_id = new_direction_id;
-    } else if (!end_stop_id) {
-      if (direction_id !== new_direction_id) {
+      startStopId = stop.sid;
+      endStopId = null;
+      directionId = newDirectionId;
+    } else if (!endStopId) {
+      if (directionId !== newDirectionId) {
         // new direction: treat as first stop
-        start_stop_id = stop.sid;
-        end_stop_id = null;
-        direction_id = new_direction_id;
+        startStopId = stop.sid;
+        endStopId = null;
+        directionId = newDirectionId;
       } else {
         // set end stop, swap if needed
         const selectedRoute = this.props.routes.find(
-          route => route.id === route_id,
+          route => route.id === routeId,
         );
         const stopSids = selectedRoute.directions.find(
-          dir => dir.id === direction_id,
+          dir => dir.id === directionId,
         ).stops;
 
-        if (stopSids.indexOf(stop.sid) < stopSids.indexOf(start_stop_id)) {
-          end_stop_id = start_stop_id;
-          start_stop_id = stop.sid;
+        if (stopSids.indexOf(stop.sid) < stopSids.indexOf(startStopId)) {
+          endStopId = startStopId;
+          startStopId = stop.sid;
         } else {
           // order is correct
-          end_stop_id = stop.sid;
+          endStopId = stop.sid;
         }
       }
     } else {
       // both stops were already set, treat as first stop and clear second (although arguably if same direction could set as end stop)
-      start_stop_id = stop.sid;
-      end_stop_id = null;
-      direction_id = new_direction_id;
+      startStopId = stop.sid;
+      endStopId = null;
+      directionId = newDirectionId;
     }
 
     const { onGraphParams } = this.props;
     // for debugging
-    //console.log("end state is: start: " + start_stop_id + " end: " + end_stop_id + " dir: " + direction_id);
+    // console.log("end state is: start: " + startStopId + " end: " + endStopId + " dir: " + directionId);
     onGraphParams({
-      start_stop_id: start_stop_id,
-      end_stop_id: end_stop_id,
-      direction_id: direction_id,
+      startStopId,
+      endStopId,
+      directionId,
     });
   };
 
@@ -284,7 +304,7 @@ class MapStops extends Component {
     );
 
     return stopSids.stops.map(stop => {
-      let currentStopInfo = { ...selectedRoute.stops[stop] };
+      const currentStopInfo = { ...selectedRoute.stops[stop] };
       currentStopInfo.sid = stop;
       return currentStopInfo;
     });
@@ -299,20 +319,20 @@ class MapStops extends Component {
 
     let selectedRoute = null;
     let routeStops = null;
-    let populatedRoutes = [];
+    const populatedRoutes = [];
 
     if (routes && graphParams) {
-      selectedRoute = routes.find(route => route.id === graphParams.route_id);
+      selectedRoute = routes.find(route => route.id === graphParams.routeId);
 
       if (selectedRoute) {
         routeStops = {};
         let index = 0;
-        for (let direction of selectedRoute.directions) {
+        for (const direction of selectedRoute.directions) {
           // plot only the selected direction if we have one, or else all directions
 
           if (
-            !graphParams.direction_id ||
-            graphParams.direction_id === direction.id
+            !graphParams.directionId ||
+            graphParams.directionId === direction.id
           ) {
             routeStops[direction.id] = this.getStopsInfoInGivenDirection(
               selectedRoute,
@@ -323,9 +343,9 @@ class MapStops extends Component {
                 routeStops,
                 direction.id,
                 STOP_COLORS[index % STOP_COLORS.length],
-                radius ? radius : RADIUS,
+                radius || RADIUS,
                 direction,
-                selectedRoute
+                selectedRoute,
               ),
             );
           }
@@ -349,12 +369,17 @@ class MapStops extends Component {
         {populatedRoutes}
         <this.SpeedLegend />
         <Control position="topright">
-        {!graphParams.start_stop_id || !graphParams.end_stop_id ?
-          <div className='map-instructions'>
-            {!graphParams.direction_id ? "Select a direction to see stops in that direction." :
-            !graphParams.start_stop_id ? "Click an origin stop." :
-            !graphParams.end_stop_id ? "Click a destination stop." : ""}
-          </div> : null}
+          {!graphParams.startStopId || !graphParams.endStopId ? (
+            <div className="map-instructions">
+              {!graphParams.directionId
+                ? 'Select a direction to see stops in that direction.'
+                : !graphParams.startStopId
+                ? 'Click an origin stop.'
+                : !graphParams.endStopId
+                ? 'Click a destination stop.'
+                : ''}
+            </div>
+          ) : null}
         </Control>
       </Map>
     );

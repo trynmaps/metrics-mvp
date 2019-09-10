@@ -51,22 +51,22 @@ function TravelTimeChart(props) {
   };
 
   let tripData = null;
-  let direction_id = null;
+  let directionId = null;
   let tripTimeForDirection = null;
 
-  if (props.route_id || graphParams.route_id) {
+  if (props.routeId || graphParams.routeId) {
     // take route id from props if given, else use redux graphParams
 
-    const route_id = props.route_id || graphParams.route_id;
-    direction_id = props.direction_id || graphParams.direction_id; // also take direction_id from props if given
+    const routeId = props.routeId || graphParams.routeId;
+    directionId = props.directionId || graphParams.directionId; // also take direction_id from props if given
 
-    if (direction_id) {
+    if (directionId) {
       tripTimeForDirection = getEndToEndTripTime(
         props.tripCacheTimes,
         graphParams,
         props.routes,
-        route_id,
-        direction_id,
+        routeId,
+        directionId,
       );
 
       /* this is the end-to-end speed in the selected direction, not currently used
@@ -77,7 +77,7 @@ function TravelTimeChart(props) {
     } */
     }
 
-    tripData = getTripDataSeries(props, route_id, direction_id);
+    tripData = getTripDataSeries(props, routeId, directionId);
   }
 
   const legendItems = [
@@ -85,7 +85,7 @@ function TravelTimeChart(props) {
     { title: 'Actual', color: '#aa82c5', strokeWidth: 10 },
   ];
 
-  return direction_id ? (
+  return directionId ? (
     <Grid item xs={12}>
       <Card>
         <CardContent>

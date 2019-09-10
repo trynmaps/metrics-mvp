@@ -50,15 +50,15 @@ function RouteSummary(props) {
 
   let routes = null;
 
-  if (graphParams.route_id) {
+  if (graphParams.routeId) {
     routes = props.routes ? filterRoutes(props.routes) : [];
 
     allWaits = getAllWaits(props.waitTimesCache, graphParams, routes);
     allSpeeds = getAllSpeeds(props.tripTimesCache, graphParams, routes);
     allScores = getAllScores(routes, allWaits, allSpeeds);
 
-    const route_id = graphParams.route_id;
-    const route = routes.find(thisRoute => thisRoute.id === route_id);
+    const routeId = graphParams.routeId;
+    const route = routes.find(thisRoute => thisRoute.id === routeId);
     if (route) {
       const sumOfDistances = route.directions.reduce(
         (total, value) => total + value.distance,
@@ -67,18 +67,18 @@ function RouteSummary(props) {
       dist = sumOfDistances / route.directions.length;
     }
 
-    waitObj = allWaits ? allWaits.find(obj => obj.routeID === route_id) : null;
+    waitObj = allWaits ? allWaits.find(obj => obj.routeId === routeId) : null;
     waitRanking = waitObj ? allWaits.length - allWaits.indexOf(waitObj) : null; // invert wait ranking to for shortest wait time
     wait = waitObj ? waitObj.wait : null;
 
     speedObj = allSpeeds
-      ? allSpeeds.find(obj => obj.routeID === route_id)
+      ? allSpeeds.find(obj => obj.routeId === routeId)
       : null;
     speedRanking = speedObj ? allSpeeds.indexOf(speedObj) + 1 : null;
     speed = speedObj ? speedObj.speed : null;
 
     scoreObj = allScores
-      ? allScores.find(obj => obj.routeID === route_id)
+      ? allScores.find(obj => obj.routeId === routeId)
       : null;
     scoreRanking = scoreObj ? allScores.indexOf(scoreObj) + 1 : null;
 
