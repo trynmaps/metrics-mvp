@@ -152,14 +152,14 @@ export function fetchArrivals(params) {
     const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/v4/sf-muni/${dateStr.replace(
         /-/g,
         '/',
-      )}/arrivals_v4_sf-muni_${dateStr}_${params.route_id}.json.gz`;
+      )}/arrivals_v4_sf-muni_${dateStr}_${params.routeId}.json.gz`;
 
     axios
       .get(s3Url)
       .then(response => {
       dispatch({
         type: 'RECEIVED_ARRIVALS',
-        payload: [response.data, dateStr, params.route_id],
+        payload: [response.data, dateStr, params.routeId],
       });
     })
     .catch(err => {

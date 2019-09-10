@@ -257,13 +257,13 @@ function MareyChart(props) {
   }
 
   // if there's a time range, that takes priority over the automatic domain
-  if (graphParams.start_time) {
-    startHour = parseInt(graphParams.start_time);
+  if (graphParams.startTime) {
+    startHour = parseInt(graphParams.startTime);
   }
   
-  if (graphParams.end_time) {
-    endHour = parseInt(graphParams.end_time);
-    if (graphParams.end_time.endsWith('+1')) {
+  if (graphParams.endTime) {
+    endHour = parseInt(graphParams.endTime);
+    if (graphParams.endTime.endsWith('+1')) {
       endHour += 24;
     }
   }
