@@ -327,8 +327,7 @@ class MapStops extends Component {
 
       if (selectedRoute) {
         routeStops = {};
-        let index = 0;
-        selectedRoute.directions.forEach(direction => {
+        selectedRoute.directions.forEach((direction, index) => {
           // plot only the selected direction if we have one, or else all directions
 
           if (
@@ -350,9 +349,10 @@ class MapStops extends Component {
               ),
             );
           }
-          index += 1; // use a loop keeps the index consistent with direction and also stop color
+
         });
       }
+      
     }
 
     return (
