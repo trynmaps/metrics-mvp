@@ -1,8 +1,5 @@
 import React, { Component } from 'react';
 import {
-  Card,
-  CardContent,
-  CardHeader,
   FormControl,
   FormControlLabel,
   Radio,
@@ -122,9 +119,6 @@ class InfoIntervalsOfDay extends Component {
       <div>
         {intervals ? (
           <div>
-            <Card>
-              <CardContent>
-                <CardHeader>Performance by Time of Day</CardHeader>
                 <FormControl>
                   <div className="controls">
                     <FormControlLabel
@@ -217,8 +211,6 @@ class InfoIntervalsOfDay extends Component {
                   width={300}
                   items={legendItems}
                 />
-              </CardContent>
-            </Card>
           </div>
         ) : null}
         <code>{intervalError || ''}</code>

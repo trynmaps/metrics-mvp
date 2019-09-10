@@ -10,15 +10,17 @@ import {
   Crosshair,
 } from 'react-vis';
 import {
-  Card,
-  CardContent,
+  AppBar,
+  Box,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Tabs,
+  Typography,
 } from '@material-ui/core';
-import { css } from 'emotion';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData';
 import { milesBetween } from '../helpers/routeCalculations';
@@ -33,6 +35,7 @@ class Info extends Component {
     super(props);
     this.state = {
       crosshairValues: {}, // tooltip starts out empty
+      tabValue: 0,
     };
   }
 
@@ -219,6 +222,10 @@ class Info extends Component {
     return miles;
   }
 
+  handleTabChange(event, newValue) {
+    this.setState({tabValue: newValue});
+  }    
+  
   render() {
     const {
       graphData,
@@ -307,26 +314,48 @@ class Info extends Component {
       },
     ];
 
+    function a11yProps(index) {
+      return {
+        id: `simple-tab-${index}`,
+        'aria-controls': `simple-tabpanel-${index}`,
+      };
+    }
+    
+    const SUMMARY = 0;
+    const TIME_OF_DAY = 1;
+    const HEADWAYS = 2;
+    const WAITS = 3;
+    const TRIPS = 4;
+    
     return (
-      <div
-        className={css`
-          grid-column: col3-start;
-          grid-row: row1-start / row2-end;
-          padding: 4px;
-        `}
-      >
+      <div>
+        <br/>
+        <AppBar position="static" color="default">
+          <Tabs value={this.state.tabValue} onChange={this.handleTabChange.bind(this)}
+             aria-label="tab bar"
+             variant="scrollable"
+             scrollButtons="on">
+            <Tab style={{ minWidth: 72 }} label="Summary" {...a11yProps(SUMMARY)} />
+            <Tab style={{ minWidth: 72 }} label="Time of Day" {...a11yProps(TIME_OF_DAY)} />
+            <Tab style={{ minWidth: 72 }} label="Headways" {...a11yProps(HEADWAYS)} />
+            <Tab style={{ minWidth: 72 }} label="Wait Times" {...a11yProps(WAITS)} />
+            <Tab style={{ minWidth: 72 }} label="Trip Times" {...a11yProps(TRIPS)} />
+          </Tabs>
+        </AppBar>
+        
         {headwayMin && grades ? (
           <div>
-            <Card>
-              <CardContent>
-                <span className="h4">Overall Grade: </span>
-                <span className="h1">{grades.totalGrade}</span> ({' '}
-                {grades.totalScore} / {grades.highestPossibleScore} )
-                <div>
+            <Box p={2} hidden={this.state.tabValue !== SUMMARY} >
+            
+                <Typography variant="h5" display="inline">Trip Grade:{' '}
+                {grades.totalGrade}{' '}
+                ({' '}{grades.totalScore} / {grades.highestPossibleScore} )
+                </Typography>
+                <p>
                   {`${PLANNING_PERCENTILE}% of waits under ${Math.round(
                     getPercentileValue(waitTimes, PLANNING_PERCENTILE),
                   )} minutes`}
-                </div>
+                </p>
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -349,17 +378,21 @@ class Info extends Component {
                     ))}
                   </TableBody>
                 </Table>
-              </CardContent>
-            </Card>
-            <br />
-            <InfoIntervalsOfDay
+            </Box>
+
+           <Box p={2} hidden={this.state.tabValue !== TIME_OF_DAY}>
+             <Typography variant="h5" display="inline">
+               Performance by Time of Day
+             </Typography>
+                      
+            <InfoIntervalsOfDay 
               intervalData={intervalData}
               intervalError={intervalError}
             />
-            <br />
-            <Card>
-              <CardContent>
-                <h4>Headways</h4>
+            </Box>
+                      
+            <Box p={2} hidden={this.state.tabValue !== HEADWAYS}>
+               <Typography variant="h5" display="inline">Headways (Time Between Vehicles)</Typography>
                 <p>
                   {headwayMin.count + 1} arrivals, average headway{' '}
                   {Math.round(headwayMin.avg)} minutes, max headway{' '}
@@ -415,20 +448,18 @@ class Info extends Component {
                     </Crosshair>
                   )}
                 </XYPlot>
-              </CardContent>
-            </Card>
+            </Box>
           </div>
         ) : null}
+        
         {waitTimes ? (
-          <div>
-            <br />
-            <Card>
-              <CardContent>
-                <h4>Wait Times</h4>
+
+            <Box p={2} hidden={this.state.tabValue !== WAITS}>
+              <Typography variant="h5" display="inline">Wait Times</Typography>
                 <p>
                   average wait time {Math.round(waitTimes.avg)} minutes, max
                   wait time
-                  {Math.round(waitTimes.max)} minutes
+                  {' '}{Math.round(waitTimes.max)} minutes
                 </p>
                 <XYPlot
                   xDomain={[0, Math.max(60, Math.round(waitTimes.max) + 5)]}
@@ -480,18 +511,15 @@ class Info extends Component {
                     </Crosshair>
                   )}
                 </XYPlot>
-              </CardContent>
-            </Card>
-          </div>
+            </Box>
+
         ) : null}
         {tripTimes ? (
-          <div>
-            <br />
-            <Card>
-              <CardContent>
-                <h4>Trip Times</h4>
+
+            <Box p={2} hidden={this.state.tabValue !== TRIPS}>
+              <Typography variant="h5" display="inline">Trip Times</Typography>
                 <p>
-                  {tripTimes.count} trips, average
+                  {tripTimes.count} trips, average{' '}
                   {Math.round(tripTimes.avg)} minutes, max{' '}
                   {Math.round(tripTimes.max)} minutes
                 </p>
@@ -545,9 +573,8 @@ class Info extends Component {
                     </Crosshair>
                   )}
                 </XYPlot>
-              </CardContent>
-            </Card>
-          </div>
+            </Box>
+
         ) : null}
         <code>{graphError || ''}</code>
       </div>
