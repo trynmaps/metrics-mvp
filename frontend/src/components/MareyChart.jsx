@@ -15,8 +15,8 @@ import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import { Card, CardContent, Radio, FormControl, FormControlLabel } from '@material-ui/core';
 
-import Moment from "moment";
-import MomentTZ from "moment-timezone/builds/moment-timezone-with-data-10-year-range"; // this augments Moment
+import Moment from 'moment';
+import MomentTZ from 'moment-timezone/builds/moment-timezone-with-data-10-year-range'; // this augments Moment
 
 
 import { fetchArrivals } from '../actions';
