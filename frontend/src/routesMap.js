@@ -1,4 +1,5 @@
 import {handleGraphParams} from './actions';
+import {ROUTE, DIRECTION, FROM_STOP, TO_STOP, setPath, commitPath} from '../routeUtil';
 
 export default {
   HOME: '/home',
@@ -15,7 +16,7 @@ export default {
     the ? after the : means an optional paramter variable
     ()* shows am optional parameter label
     */
-    path: '/route/:route_id/(direction)*/:direction_id?/(from_stop)*/:start_stop_id?/(to_stop)*/:end_stop_id?',
+    path: `/${ROUTE}/:route_id/(${DIRECTION})*/:direction_id?/(${FROM_STOP})*/:start_stop_id?/(${TO_STOP})*/:end_stop_id?`,
     thunk: async (dispatch, getState) => {
       const {location} = getState();
       const {route_id, direction_id,start_stop_id, end_stop_id } = location.payload;

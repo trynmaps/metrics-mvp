@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
-import { getTimePath, getStatPath } from '../helpers/precomputed.js';
+import { getTimePath, getStatPath } from '../helpers/precomputed';
 
 export const routesUrl =
   'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
@@ -80,8 +80,8 @@ export function fetchRoutes() {
 
 export function fetchPrecomputedWaitAndTripData(params) {
   return function(dispatch, getState) {
-    const timeStr = params.start_time
-      ? `${params.start_time}-${params.end_time}`
+    const timeStr = params.startTime
+      ? `${params.startTime}-${params.endTime}`
       : '';
     const dateStr = params.date;
 
@@ -106,7 +106,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
             payload: [response.data, `${dateStr + timeStr}median`],
           });
         })
-        .catch(err => {
+        .catch(() => {
           /* do something? */
         });
     }
@@ -131,7 +131,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
             payload: [response.data, `${dateStr + timeStr}median`],
           });
         })
-        .catch(err => {
+        .catch(() => {
           /* do something? */
         });
     }
@@ -144,39 +144,6 @@ export function handleSpiderMapClick(stops, latLng) {
   };
 }
 
-export function handleGraphParams(params) {
-  return function(dispatch, getState) {
-    dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
-    const graphParams = getState().routes.graphParams;
-
-    // for debugging: console.log('hGP: ' + graphParams.route_id + ' dirid: ' + graphParams.direction_id + " start: " + graphParams.start_stop_id + " end: " + graphParams.end_stop_id);
-    // fetch graph data if all params provided
-    // TODO: fetch route summary data if all we have is a route ID.
-
-    if (graphParams.date) {
-      dispatch(fetchPrecomputedWaitAndTripData(graphParams));
-    }
-
-    if (
-      graphParams.route_id &&
-      graphParams.direction_id &&
-      graphParams.start_stop_id &&
-      graphParams.end_stop_id
-    ) {
-      const intervalParams = Object.assign({}, graphParams);
-      delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.end_time; // because the hourly graph is spiky and can trigger panda "empty axes" errors.
-
-      dispatch(fetchData(graphParams, intervalParams));
-    } else {
-      // when we don't have all params, clear graph data
-
-      dispatch(resetGraphData());
-      dispatch(resetIntervalData());
-    }
-  };
-}
-
 /**
  * This is an action creator where the action calls two actions.
  * Basically this a way of calling two APIs at once, where two APIs
@@ -186,5 +153,38 @@ export function fetchData(graphParams, intervalParams) {
   return function(dispatch) {
     dispatch(fetchGraphData(graphParams));
     dispatch(fetchIntervalData(intervalParams));
+  };
+}
+
+export function handleGraphParams(params) {
+  return function(dispatch, getState) {
+    dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
+    const graphParams = getState().routes.graphParams;
+
+    // for debugging: console.log('hGP: ' + graphParams.routeId + ' dirid: ' + graphParams.directionId + " start: " + graphParams.startStopId + " end: " + graphParams.endStopId);
+    // fetch graph data if all params provided
+    // TODO: fetch route summary data if all we have is a route ID.
+
+    if (graphParams.date) {
+      dispatch(fetchPrecomputedWaitAndTripData(graphParams));
+    }
+
+    if (
+      graphParams.routeId &&
+      graphParams.directionId &&
+      graphParams.startStopId &&
+      graphParams.endStopId
+    ) {
+      const intervalParams = Object.assign({}, graphParams);
+      delete intervalParams.startTime; // for interval api, clear out start/end time and use defaults for now
+      delete intervalParams.endTime; // because the hourly graph is spiky and can trigger panda "empty axes" errors.
+
+      dispatch(fetchData(graphParams, intervalParams));
+    } else {
+      // when we don't have all params, clear graph data
+
+      dispatch(resetGraphData());
+      dispatch(resetIntervalData());
+    }
   };
 }

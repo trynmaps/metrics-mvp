@@ -14,13 +14,31 @@ import Paper from '@material-ui/core/Paper';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
-import { filterRoutes, getAllWaits, getAllSpeeds, getAllScores } from '../helpers/routeCalculations';
 import { connect } from 'react-redux';
 import Link from 'redux-first-router-link';
+import {
+  filterRoutes,
+  getAllWaits,
+  getAllSpeeds,
+  getAllScores,
+} from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
 function desc(a, b, orderBy) {
+  // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
+  // NaN needs special handling because NaN < 3 is false as is Nan > 3.
+
+  if (Number.isNaN(a[orderBy]) && Number.isNaN(b[orderBy])) {
+    return 0;
+  }
+  if (Number.isNaN(a[orderBy])) {
+    return -1;
+  }
+  if (Number.isNaN(b[orderBy])) {
+    return 1;
+  }
+
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -181,44 +199,50 @@ function RouteTable(props) {
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
   }
-  
+
   let routes = props.routes ? filterRoutes(props.routes) : [];
   const spiderSelection = props.spiderSelection;
 
   // filter the route list down to the spider routes if needed
 
   if (spiderSelection && spiderSelection.length > 0) {
-    const spiderRouteIDs = spiderSelection.map(spider => spider.routeID);
-    routes = routes.filter(route => spiderRouteIDs.includes(route.id));
+    const spiderRouteIds = spiderSelection.map(spider => spider.routeId);
+    routes = routes.filter(thisRoute => spiderRouteIds.includes(thisRoute.id));
   }
 
   const allWaits = getAllWaits(props.waitTimesCache, props.graphParams, routes);
-  const allSpeeds = getAllSpeeds(props.tripTimesCache, props.graphParams, routes);
+  const allSpeeds = getAllSpeeds(
+    props.tripTimesCache,
+    props.graphParams,
+    routes,
+  );
   const allScores = getAllScores(routes, allWaits, allSpeeds);
-  
+
   routes = routes.map(route => {
-    
-    const waitObj = allWaits.find(waitObj => waitObj.routeID === route.id);
-    route.wait = waitObj ? waitObj.wait : NaN;
-    
-    const speedObj = allSpeeds.find(speedObj => speedObj.routeID === route.id);
-    route.speed = speedObj ? speedObj.speed : NaN;
-    
-    const scoreObj = allScores.find(scoreObj => scoreObj.routeID === route.id);
-    route.totalScore = scoreObj ? scoreObj.totalScore : NaN
-    
-    return route;
+    const waitObj = allWaits.find(
+      thisWaitObj => thisWaitObj.routeId === route.id,
+    );
+    const speedObj = allSpeeds.find(
+      thisSpeedObj => thisSpeedObj.routeId === route.id,
+    );
+    const scoreObj = allScores.find(
+      thisScoreObj => thisScoreObj.routeId === route.id,
+    );
+
+    return {
+      ...route,
+      wait: waitObj ? waitObj.wait : NaN,
+      speed: speedObj ? speedObj.speed : NaN,
+      totalScore: scoreObj ? scoreObj.totalScore : NaN,
+    };
   });
 
   return (
     <div className={classes.root}>
       <Paper className={classes.paper}>
-        <EnhancedTableToolbar numSelected={0}/>
+        <EnhancedTableToolbar numSelected={0} />
         <div className={classes.tableWrapper}>
-          <Table
-            aria-labelledby="tableTitle"
-            size={dense ? 'small' : 'medium'}
-          >
+          <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
             <EnhancedTableHead
               order={order}
               orderBy={orderBy}
@@ -231,12 +255,7 @@ function RouteTable(props) {
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
-                    <TableRow
-                      hover
-                      role="checkbox"
-                      tabIndex={-1}
-                      key={row.id}
-                    >
+                    <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
                       <TableCell
                         component="th"
                         id={labelId}
@@ -247,26 +266,24 @@ function RouteTable(props) {
                           to={{
                             type: 'ROUTESCREEN',
                             payload: {
-                              route_id: row.id,
-                              direction_id: null,
-                              start_stop_id: null,
-                              end_stop_id: null
-                            }
-                            
+                              routeId: row.id,
+                              directionId: null,
+                              startStopId: null,
+                              endStopId: null,
+                            },
                           }}
                         >
                           {row.title}
                         </Link>
-                        
                       </TableCell>
                       <TableCell align="right">
-                        {isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
+                        {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
                       </TableCell>
                       <TableCell align="right">
-                        {isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
+                        {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
                       </TableCell>
                       <TableCell align="right">
-                        {isNaN(row.totalScore) ? '--' : row.totalScore}
+                        {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
                       </TableCell>
                     </TableRow>
                   );

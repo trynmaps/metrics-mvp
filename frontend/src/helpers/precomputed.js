@@ -1,4 +1,32 @@
 /**
+ * Pulls a data series from a collection by index.
+ */
+function getTripTimeStat(tripTimeValues, index) {
+  if (!tripTimeValues) {
+    return null;
+  }
+
+  const statValues = {};
+
+  Object.keys(tripTimeValues).forEach(endStopId => {
+    statValues[endStopId] = tripTimeValues[endStopId][index];
+  });
+
+  return statValues;
+}
+
+/**
+ * Utility method to pull time and date out of graphParams as strings
+ */
+export function getTimeStrAndDateStr(graphParams) {
+  const timeStr = graphParams.startTime
+    ? `${graphParams.startTime}-${graphParams.endTime}`
+    : '';
+  const dateStr = graphParams.date;
+  return [timeStr, dateStr];
+}
+
+/**
  * Access of precomputed wait and trip times.
  *
  * See https://github.com/trynmaps/metrics-mvp/pull/143 for an overview of the file structure and
@@ -103,21 +131,7 @@ export function getTripTimesFromStop(
     // using the p10-median-p90 stat group (see getStatPath)
     return getTripTimeStat(tripTimeValues, 2);
   }
-}
-
-/**
- * Pulls a data series from a collection by index.
- */
-function getTripTimeStat(tripTimeValues, index) {
-  if (!tripTimeValues) {
-    return null;
-  }
-
-  const statValues = {};
-  for (const endStopId in tripTimeValues) {
-    statValues[endStopId] = tripTimeValues[endStopId][index];
-  }
-  return statValues;
+  return null;
 }
 
 /**
@@ -137,17 +151,6 @@ export function getStatPath(stat) {
     default:
       throw new Error(`unknown stat ${stat}`);
   }
-}
-
-/**
- * Utility method to pull time and date out of graphParams as strings
- */
-export function getTimeStrAndDateStr(graphParams) {
-  const timeStr = graphParams.start_time
-    ? `${graphParams.start_time}-${graphParams.end_time}`
-    : '';
-  const dateStr = graphParams.date;
-  return [timeStr, dateStr];
 }
 
 /**
