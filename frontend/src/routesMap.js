@@ -23,10 +23,10 @@ export default {
 
 
       dispatch(handleGraphParams({
-      	route_id,
-      	direction_id,
-      	start_stop_id,
-      	end_stop_id
+      	routeId: route_id,
+      	directionId: direction_id,
+      	startStopId: start_stop_id,
+      	endStopId: end_stop_id
       }));
     }
   },

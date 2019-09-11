@@ -34,14 +34,14 @@ function ControlPanel(props) {
     let path = new Path();
     path.buildPath(DIRECTION, directionId.target.value).commitPath();
     return (props.onGraphParams({
-      direction_id: directionId.target.value,
-      start_stop_id: null,
-      end_stop_id: null,
+      directionId: directionId.target.value,
+      startStopId: null,
+      endStopId: null,
     }));
   }
 
   function getSelectedRouteInfo() {
-    const routeId = props.graphParams.route_id;
+    const routeId = props.graphParams.routeId;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
 
@@ -63,8 +63,8 @@ function ControlPanel(props) {
   
 
   const onSelectFirstStop = stopId => {
-    const directionId = props.graphParams.direction_id;
-    const secondStopId = props.graphParams.end_stop_id;
+    const directionId = props.graphParams.directionId;
+    const secondStopId = props.graphParams.endStopId;
     const mySelectedRoute = { ...getSelectedRouteInfo() };
     secondStopList = generateSecondStopList(
       mySelectedRoute,
@@ -80,15 +80,15 @@ function ControlPanel(props) {
 
     path.commitPath();
     props.onGraphParams({
-      start_stop_id: stopId.target.value,
-      end_stop_id: secondStopId,
+      startStopId: stopId.target.value,
+      endStopId: secondStopId,
     });
   };
 
   const onSelectSecondStop = stopId => {
     let path = new Path();
     path.buildPath(TO_STOP,stopId.target.value).commitPath();
-    props.onGraphParams({ end_stop_id: stopId.target.value });
+    props.onGraphParams({ endStopId: stopId.target.value });
   };
 
   const setRouteId = routeId => {
@@ -108,25 +108,25 @@ function ControlPanel(props) {
     let path = new Path();
     path.buildPath(ROUTE, routeId.target.value).buildPath(DIRECTION, directionId).commitPath();
     props.onGraphParams({
-      route_id: routeId.target.value,
-      direction_id: directionId,
-      start_stop_id: null,
-      end_stop_id: null,
+      routeId: routeId.target.value,
+      directionId: directionId,
+      startStopId: null,
+      endStopId: null,
     });
   };
 
   let selectedDirection = null;
-  if (selectedRoute && selectedRoute.directions && graphParams.direction_id) {
+  if (selectedRoute && selectedRoute.directions && graphParams.directionId) {
     selectedDirection = selectedRoute.directions.find(
-      dir => dir.id === graphParams.direction_id,
+      dir => dir.id === graphParams.directionId,
     );
   }
 
   if (selectedDirection) {
     secondStopList = generateSecondStopList(
       selectedRoute,
-      graphParams.direction_id,
-      graphParams.start_stop_id,
+      graphParams.directionId,
+      graphParams.startStopId,
     );
   }
 
@@ -139,7 +139,7 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="route">Route</InputLabel>
               <Select
-                value={graphParams.route_id || 0}
+                value={graphParams.routeId || 0}
                 onChange={setRouteId}
                 input={<Input name="route" id="route" />}
               >
@@ -156,7 +156,7 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.direction_id || 1}
+                value={graphParams.directionId || 1}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >
@@ -175,7 +175,7 @@ function ControlPanel(props) {
               <FormControl className={classes.formControl}>
                 <InputLabel htmlFor="fromstop">From Stop</InputLabel>
                 <Select
-                  value={graphParams.start_stop_id || 1}
+                  value={graphParams.startStopId || 1}
                   onChange={onSelectFirstStop}
                   input={<Input name="stop" id="fromstop" />}
                 >
@@ -197,7 +197,7 @@ function ControlPanel(props) {
               <FormControl className={classes.formControl}>
                 <InputLabel htmlFor="tostop">To Stop</InputLabel>
                 <Select
-                  value={graphParams.end_stop_id || 1}
+                  value={graphParams.endStopId || 1}
                   onChange={onSelectSecondStop}
                   input={<Input name="stop" id="tostop" />}
                 >
