@@ -331,7 +331,6 @@ class MapSpider extends Component {
         // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
 
         onClick={e => {
-          debugger;
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
           let path = new Path();
           path.buildPath(ROUTE,startMarker.routeId).buildPath(DIRECTION,startMarker.direction.id).buildPath(FROM_STOP, startMarker.stopId).buildPath(TO_STOP, downstreamStops[i + 1].stopId).commitPath();
