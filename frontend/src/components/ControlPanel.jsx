@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { connect } from 'react-redux';
-import {ROUTE, DIRECTION, FROM_STOP, TO_STOP, setPath, commitPath} from '../routeUtil';
+import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Input from '@material-ui/core/Input';
@@ -31,8 +31,8 @@ function ControlPanel(props) {
   let secondStopList = [];
 
   const setDirectionId = directionId => {
-    let path = setPath(DIRECTION, directionId.target.value);
-    commitPath(path);
+    let path = new Path();
+    path.buildPath(DIRECTION, directionId.target.value).commitPath();
     return (props.onGraphParams({
       direction_id: directionId.target.value,
       start_stop_id: null,
@@ -71,12 +71,14 @@ function ControlPanel(props) {
       directionId,
       stopId.target.value,
     );
-    let path = setPath(FROM_STOP, stopId.target.value);
+    let path = new Path();
+    path.buildPath(FROM_STOP, stopId.target.value);
 
     if(secondStopId){
-      path = setPath(TO_STOP, secondStopId, path);
+      path.buildPath(TO_STOP, secondStopId);
     }
-    commitPath(path);
+
+    path.commitPath();
     props.onGraphParams({
       start_stop_id: stopId.target.value,
       end_stop_id: secondStopId,
@@ -84,13 +86,12 @@ function ControlPanel(props) {
   };
 
   const onSelectSecondStop = stopId => {
-    let path = setPath(TO_STOP,stopId.target.value);
-    commitPath(path);
+    let path = new Path();
+    path.buildPath(TO_STOP,stopId.target.value).commitPath();
     props.onGraphParams({ end_stop_id: stopId.target.value });
   };
 
   const setRouteId = routeId => {
-    let path = setPath(ROUTE, routeId.target.value);
     const mySelectedRoute = props.routes
       ? props.routes.find(route => route.id === routeId.target.value)
       : null;
@@ -104,8 +105,8 @@ function ControlPanel(props) {
         ? mySelectedRoute.directions[0].id
         : null;
     // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
-    path = setPath(DIRECTION, directionId, path);
-    commitPath(path);
+    let path = new Path();
+    path.buildPath(ROUTE, routeId.target.value).buildPath(DIRECTION, directionId).commitPath();
     props.onGraphParams({
       route_id: routeId.target.value,
       direction_id: directionId,

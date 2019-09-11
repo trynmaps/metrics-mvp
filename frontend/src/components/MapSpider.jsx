@@ -13,7 +13,7 @@ import {
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as d3 from 'd3';
-import { push } from 'redux-first-router';
+import {ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path} from '../routeUtil';
 import { Snackbar } from '@material-ui/core';
 import * as PropTypes from 'prop-types';
 import {
@@ -331,11 +331,10 @@ class MapSpider extends Component {
         // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
 
         onClick={e => {
+          debugger;
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
-
-          push(
-            `/route/${startMarker.routeId}/direction/${startMarker.direction.id}/startStop/${startMarker.stopId}/endStop/${downstreamStops[i + 1].stopId}`,
-          );
+          let path = new Path();
+          path.buildPath(ROUTE,startMarker.routeId).buildPath(DIRECTION,startMarker.direction.id).buildPath(FROM_STOP, startMarker.stopId).buildPath(TO_STOP, downstreamStops[i + 1].stopId).commitPath();
         }}
       >
         <Tooltip>
@@ -402,9 +401,9 @@ class MapSpider extends Component {
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
-          push(
-            `/route/${startMarker.routeId}/direction/${startMarker.direction.id}/startStop/${startMarker.stopId}/endStop/${lastStop.stopId}`,
-          );
+          let path = new Path();
+          path.buildPath(ROUTE,startMarker.routeId).buildPath(DIRECTION,startMarker.direction.id).buildPath(FROM_STOP, startMarker.stopId).buildPath(TO_STOP, lastStop.stopId).commitPath();
+        
         }}
       ></Marker>
     );

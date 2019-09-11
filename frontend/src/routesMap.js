@@ -1,5 +1,5 @@
 import {handleGraphParams} from './actions';
-import {ROUTE, DIRECTION, FROM_STOP, TO_STOP, setPath, commitPath} from '../routeUtil';
+import { ROUTE, DIRECTION, FROM_STOP, TO_STOP } from './routeUtil';
 
 export default {
   HOME: '/home',
