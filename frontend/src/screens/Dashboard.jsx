@@ -12,13 +12,15 @@ import DateTimePanel from '../components/DateTimePanel';
 import { fetchRoutes } from '../actions';
 
 function Dashboard(props) {
+  
+  const { routes, fetchRoutes } = props;
+  
   useEffect(() => {
-    if (!props.routes) {
-      props.fetchRoutes();
+    if (!routes) {
+      fetchRoutes();
     }
-  }, []); // like componentDidMount, this runs only on first render
+  }, [routes, fetchRoutes]); // like componentDidMount, this runs only on first render
 
-  const { routes } = props;
   return (
     <div className="flex-screen">
       <AppBar position="relative">
