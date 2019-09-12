@@ -58,6 +58,15 @@ class MapSpider extends Component {
     this.handleLocationFound = this.handleLocationFound.bind(this);
   }
 
+  componentDidMount() {
+    this.boundUpdate = this.updateDimensions.bind(this);
+    window.addEventListener('resize', this.boundUpdate);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.updateDimensions.bind(this));
+  }
+
   // Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
   // case make the map half height.
   //
@@ -78,16 +87,7 @@ class MapSpider extends Component {
     const height = this.computeHeight();
     this.setState({ height });
   }
-
-  componentDidMount() {
-    this.boundUpdate = this.updateDimensions.bind(this);
-    window.addEventListener('resize', this.boundUpdate);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('resize', this.updateDimensions.bind(this));
-  }
-
+  
   /**
    * Places a Leaflet Marker (blue pin) at the clicked or geolocated map location.
    * Like the isochrone, the marker can be dragged to get new results.
