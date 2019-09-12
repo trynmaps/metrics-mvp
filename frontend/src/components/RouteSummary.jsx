@@ -10,6 +10,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Rating from '@material-ui/lab/Rating';
 import Box from '@material-ui/core/Box';
 import TravelTimeChart from './TravelTimeChart';
+import MareyChart from './MareyChart';
 import { fetchPrecomputedWaitAndTripData } from '../actions';
 import {
   filterRoutes,
@@ -214,7 +215,10 @@ function RouteSummary(props) {
           </Tooltip>
 
           <TravelTimeChart />
-        </Grid>
+          <MareyChart/>
+
+      </Grid>
+
       </div>
     </Fragment>
   );

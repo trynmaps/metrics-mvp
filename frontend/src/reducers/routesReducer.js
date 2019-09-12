@@ -1,4 +1,7 @@
 /* eslint-disable no-case-declarations */
+import Moment from 'moment';
+
+const momentYesterday = Moment(Date.now() - 24*60*60*1000);
 
 // Make the initialState available to the rest of the app when resetting to default values.
 export const initialState = {
@@ -11,7 +14,8 @@ export const initialState = {
     endStopId: null,
     startTime: null,
     endTime: null,
-    date: '2019-07-01',
+    date: momentYesterday.format('YYYY-MM-DD'),
+
   },
   spiderLatLng: null,
   tripTimesCache: {},
@@ -51,6 +55,11 @@ export default (state = initialState, action) => {
           [action.payload[1]]: action.payload[0],
         },
       }; // add new dictionary entry into waitTimesCache
+    case 'RECEIVED_ARRIVALS':
+      return {
+        ...state,
+        arrivals: action.payload[0],
+      };
     default:
       return state;
   }
