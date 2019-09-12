@@ -26,8 +26,6 @@ const useStyles = makeStyles(theme => ({
 
 function ControlPanel(props) {
   const { routes, graphParams } = props;
-
-  const selectedRoute = getSelectedRouteInfo();
   let secondStopList = [];
 
   const setDirectionId = directionId => {
@@ -44,6 +42,8 @@ function ControlPanel(props) {
     const routeId = props.graphParams.routeId;
     return routes ? routes.find(route => route.id === routeId) : null;
   }
+
+  const selectedRoute = getSelectedRouteInfo();
 
   const getStopsInfoInGivenDirection = (mySelectedRoute, directionId) => {
     return mySelectedRoute.directions.find(dir => dir.id === directionId);

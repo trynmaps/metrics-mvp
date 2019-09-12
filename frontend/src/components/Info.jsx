@@ -576,7 +576,11 @@ class Info extends Component {
             </Box>
 
         ) : null}
-        <code>{graphError || ''}</code>
+        
+        { graphError ? (<Box p={2}>
+            <code>{graphError}</code>
+          </Box>
+        ) : null }
       </div>
     );
   }

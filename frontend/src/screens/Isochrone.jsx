@@ -17,7 +17,6 @@ import './Isochrone.css';
 
 const isochroneMinutes = 5;
 const maxColoredTripMin = 60;
-
 const WalkMetersPerMinute = 1.0 * 60;
 
 const tripMinOptions = {
@@ -50,31 +49,10 @@ const redIcon = new L.Icon({
 const computeCache = {};
 
 function getDirectionInfo(directionId, routeInfo) {
-  for (const dirInfo of routeInfo.directions) {
-    if (dirInfo.id === directionId) {
-      return dirInfo;
-    }
-  }
-  return null;
+  return routeInfo.directions.find(dirInfo => dirInfo.id === directionId);
 }
 
 class Isochrone extends React.Component {
-  componentDidMount() {
-    if (!this.props.routes) {
-      this.props.fetchRoutes();
-    }
-  }
-
-  componentDidUpdate(prevProps) {
-    if (
-      this.props.date !== prevProps.date ||
-      this.props.startTime !== prevProps.startTime ||
-      this.props.endTime !== prevProps.endTime
-    ) {
-      this.recomputeIsochrones();
-    }
-  }
-
   constructor(props) {
     super(props);
 
@@ -108,9 +86,9 @@ class Isochrone extends React.Component {
     this.tripLayers = [];
     this.mapRef = React.createRef();
 
-    for (const routeId of DefaultDisabledRoutes) {
+    DefaultDisabledRoutes.forEach(routeId => {
       this.state.enabledRoutes[routeId] = false;
-    }
+    });
 
     this.handleMapClick = this.handleMapClick.bind(this);
     this.handleStatChange = this.handleStatChange.bind(this);
@@ -124,6 +102,22 @@ class Isochrone extends React.Component {
     this.maxTripMinChanged = this.maxTripMinChanged.bind(this);
 
     isochroneWorker.onmessage = this.onWorkerMessage;
+  }
+
+  componentDidMount() {
+    if (!this.props.routes) {
+      this.props.fetchRoutes();
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (
+      this.props.date !== prevProps.date ||
+      this.props.startTime !== prevProps.startTime ||
+      this.props.endTime !== prevProps.endTime
+    ) {
+      this.recomputeIsochrones();
+    }
   }
 
   onWorkerMessage(e) {
@@ -214,7 +208,7 @@ class Isochrone extends React.Component {
     const map = this.mapRef.current.leafletElement;
 
     let allOptions = [];
-    for (const circle of reachableCircles) {
+    reachableCircles.forEach(circle => {
       const dist = map.distance(circle, endLatLng);
       if (dist <= circle.radius) {
         const walkMin = dist / WalkMetersPerMinute;
@@ -226,7 +220,7 @@ class Isochrone extends React.Component {
           circle,
         });
       }
-    }
+    });
 
     this.clearTripLayers(false);
 
@@ -249,7 +243,7 @@ class Isochrone extends React.Component {
         seenRoutes[circle.routes] = true;
 
         if (numOptions < 2 || !circle.tripItems.length) {
-          numOptions++;
+          numOptions += 1;
 
           for (const tripItem of circle.tripItems) {
             if (tripItem.route) {
@@ -350,11 +344,11 @@ class Isochrone extends React.Component {
 
     const enabledRoutesArr = [];
 
-    for (const route of this.props.routes) {
+    this.props.routes.forEach(route => {
       if (enabledRoutes[route.id] !== false) {
         enabledRoutesArr.push(route.id);
       }
-    }
+    });
 
     const computeId = [
       latLng.lat,
@@ -380,7 +374,7 @@ class Isochrone extends React.Component {
     marker.on('move', function(e) {
       newLatLng = e.latlng;
     });
-    marker.on('moveend', e => {
+    marker.on('moveend', () => { // event arg removed
       if (newLatLng) {
         this.resetMap();
         this.computeIsochrones(newLatLng);
@@ -455,13 +449,13 @@ class Isochrone extends React.Component {
     } else {
       const map = this.mapRef.current.leafletElement;
 
-      for (const isochroneLayer of this.isochroneLayers) {
+      this.isochroneLayers.forEach(isochroneLayer => {
         if (isochroneLayer.tripMin <= maxTripMin) {
           isochroneLayer.layer.addTo(map);
         } else {
           isochroneLayer.layer.remove();
         }
-      }
+      });
     }
   }
 
@@ -475,15 +469,15 @@ class Isochrone extends React.Component {
     );
   }
 
-  selectAllRoutesClicked(event) {
+  selectAllRoutesClicked() { // event arg
     this.selectAllRoutes(true);
   }
 
-  selectNoRoutesClicked(event) {
+  selectNoRoutesClicked() { // event arg
     this.selectAllRoutes(false);
   }
 
-  resetMapClicked(event) {
+  resetMapClicked() { // event arg
     this.resetMap();
   }
 
@@ -502,21 +496,23 @@ class Isochrone extends React.Component {
 
     this.setState({ computeId: null, latLng: null, endLatLng: null });
 
-    for (const isochroneLayer of this.isochroneLayers) {
+    this.isochroneLayers.forEach(isochroneLayer => {
       isochroneLayer.layer.remove();
-    }
-    for (const layer of this.layers) {
+    });
+
+    this.layers.forEach(layer => {
       layer.remove();
-    }
+    });
+
     this.layers = [];
     this.isochroneLayers = [];
     this.clearTripLayers();
   }
 
   clearTripLayers(clearTripInfo) {
-    for (const layer of this.tripLayers) {
+    this.tripLayers.forEach(layer => {
       layer.remove();
-    }
+    });
     this.tripLayers = [];
 
     if (clearTripInfo !== false) {
@@ -531,9 +527,9 @@ class Isochrone extends React.Component {
     }
 
     const enabledRoutes = {};
-    for (const route of routes) {
+    routes.forEach(route => {
       enabledRoutes[route.id] = enabled;
-    }
+    });
 
     this.setState({ enabledRoutes }, this.recomputeIsochrones);
   }
@@ -656,7 +652,9 @@ class Isochrone extends React.Component {
                   {(routes || []).map(route => this.makeRouteToggle(route))}
                 </div>
               </div>
-              <button onClick={this.resetMapClicked}>Clear</button>
+              <button type="button" onClick={this.resetMapClicked}>
+                Clear
+              </button>
             </div>
           </Control>
           <Control position="topright">

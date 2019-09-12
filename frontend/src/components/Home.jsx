@@ -1,9 +1,6 @@
-/* eslint-disable  */ // TODO: remove this and fix errors
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { css } from 'emotion';
-import { NavLink } from 'redux-first-router-link';
 import MapStops from './MapStops';
 import ControlPanel from './ControlPanel';
 import Info from './Info';
@@ -99,16 +96,12 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
   fetchData: (graphParams, intervalParams) =>
     dispatch(fetchData(graphParams, intervalParams)),
-  resetGraphData: params => dispatch(resetGraphData()),
+  resetGraphData: () => dispatch(resetGraphData()),
   fetchGraphData: params => dispatch(fetchGraphData(params)),
-  resetIntervalData: params => dispatch(resetIntervalData()),
+  resetIntervalData: () => dispatch(resetIntervalData()),
   fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });
-
-Home.propTypes = {
-  graphData: PropTypes.instanceOf(Object),
-};
 
 export default connect(
   mapStateToProps,

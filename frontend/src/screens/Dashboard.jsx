@@ -10,12 +10,7 @@ import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import {
-  fetchData,
-  fetchGraphData,
-  fetchIntervalData,
   fetchRoutes,
-  resetGraphData,
-  resetIntervalData,
 } from '../actions';
 
 function Dashboard(props) {
@@ -51,20 +46,15 @@ function Dashboard(props) {
 }
 
 const mapStateToProps = state => ({
-  graphData: state.fetchGraph.graphData,
   routes: state.routes.routes,
-  graphError: state.fetchGraph.err,
-  intervalData: state.fetchGraph.intervalData,
-  intervalError: state.fetchGraph.intervalErr,
-  graphParams: state.fetchGraph.graphParams,
 });
 
 const mapDispatchToProps = dispatch => ({
   fetchData: (graphParams, intervalParams) =>
     dispatch(fetchData(graphParams, intervalParams)),
-  resetGraphData: params => dispatch(resetGraphData()),
+  resetGraphData: () => dispatch(resetGraphData()),
   fetchGraphData: params => dispatch(fetchGraphData(params)),
-  resetIntervalData: params => dispatch(resetIntervalData()),
+  resetIntervalData: () => dispatch(resetIntervalData()),
   fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });

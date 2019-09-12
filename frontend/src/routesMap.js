@@ -2,7 +2,6 @@ import {handleGraphParams} from './actions';
 import { ROUTE, DIRECTION, FROM_STOP, TO_STOP } from './routeUtil';
 
 export default {
-  HOME: '/home',
   ABOUT: '/about',
   LANDING: '/landing',
   ISOCHRONE: '/isochrone',
