@@ -24,15 +24,15 @@ export function getTripPoints(
   const fromStopInfo = routeInfo.stops[fromStop];
   const toStopInfo = routeInfo.stops[toStop];
 
-  const fromStopGeometry = dirInfo.stop_geometry[fromStop];
-  const toStopGeometry = dirInfo.stop_geometry[toStop];
+  const fromStopGeometry = dirInfo.stopGeometry[fromStop];
+  const toStopGeometry = dirInfo.stopGeometry[toStop];
   const tripPoints = [];
 
   if (fromStopGeometry && toStopGeometry) {
     tripPoints.push(fromStopInfo);
     for (
-      let i = fromStopGeometry.after_index + 1;
-      i <= toStopGeometry.after_index;
+      let i = fromStopGeometry.afterIndex + 1;
+      i <= toStopGeometry.afterIndex;
       i++
     ) {
       tripPoints.push(dirInfo.coords[i]);
@@ -70,8 +70,8 @@ export function getDistanceInMiles(
   const fromStopInfo = routeInfo.stops[fromStop];
   const toStopInfo = routeInfo.stops[toStop];
 
-  const fromStopGeometry = dirInfo.stop_geometry[fromStop];
-  const toStopGeometry = dirInfo.stop_geometry[toStop];
+  const fromStopGeometry = dirInfo.stopGeometry[fromStop];
+  const toStopGeometry = dirInfo.stopGeometry[toStop];
   let distance = null;
 
   if (fromStopGeometry && toStopGeometry) {

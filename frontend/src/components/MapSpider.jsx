@@ -13,8 +13,8 @@ import {
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as d3 from 'd3';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { Snackbar } from '@material-ui/core';
+import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import {
   getAllWaits,
   filterRoutes,
@@ -67,6 +67,11 @@ class MapSpider extends Component {
     window.removeEventListener('resize', this.updateDimensions.bind(this));
   }
 
+  updateDimensions() {
+    const height = this.computeHeight();
+    this.setState({ height });
+  }
+
   // Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
   // case make the map half height.
   //
@@ -81,11 +86,6 @@ class MapSpider extends Component {
       (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
       64 /* blue app bar */
     );
-  }
-
-  updateDimensions() {
-    const height = this.computeHeight();
-    this.setState({ height });
   }
 
   /**
@@ -138,8 +138,13 @@ class MapSpider extends Component {
         riseOnHover
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
-          let path = new Path();
-          path.buildPath(ROUTE,startMarker.routeId).buildPath(DIRECTION,startMarker.direction.id).buildPath(FROM_STOP, startMarker.stopId).buildPath(TO_STOP, lastStop.stopId).commitPath();
+          const path = new Path();
+          path
+            .buildPath(ROUTE, startMarker.routeId)
+            .buildPath(DIRECTION, startMarker.direction.id)
+            .buildPath(FROM_STOP, startMarker.stopId)
+            .buildPath(TO_STOP, lastStop.stopId)
+            .commitPath();
         }}
       ></Marker>
     );
@@ -288,8 +293,13 @@ class MapSpider extends Component {
 
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
-          let path = new Path();
-          path.buildPath(ROUTE,startMarker.routeId).buildPath(DIRECTION,startMarker.direction.id).buildPath(FROM_STOP, startMarker.stopId).buildPath(TO_STOP, downstreamStops[i + 1].stopId).commitPath();
+          const path = new Path();
+          path
+            .buildPath(ROUTE, startMarker.routeId)
+            .buildPath(DIRECTION, startMarker.direction.id)
+            .buildPath(FROM_STOP, startMarker.stopId)
+            .buildPath(TO_STOP, downstreamStops[i + 1].stopId)
+            .commitPath();
         }}
       >
         <Tooltip>

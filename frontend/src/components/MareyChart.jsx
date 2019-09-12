@@ -190,12 +190,12 @@ function MareyChart(props) {
       };
 
       const stops = myArrivals.stops;
-      const startTime = myArrivals.start_time;
+      const startTime = myArrivals.startTime;
       const startHourOfDay = Moment.unix(startTime)
         .tz(TIME_ZONE_NAME)
         .hour();
 
-      const routeId = myArrivals.route_id;
+      const routeId = myArrivals.routeId;
       const route = myRoutes.find(myRoute => myRoute.id === routeId);
 
       Object.keys(stops).forEach(stopId => {

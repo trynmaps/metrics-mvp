@@ -561,7 +561,6 @@ class Isochrone extends React.Component {
 
   render() {
     const { routes } = this.props;
-
     const colors = [];
     const times = [];
 
@@ -593,6 +592,15 @@ class Isochrone extends React.Component {
     tripMins.push(90);
 
     const center = { lat: 37.772, lng: -122.442 };
+    let isochroneInstructions;
+
+    if (!this.state.latLng)
+      isochroneInstructions =
+        'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.';
+    else if (this.state.computing) isochroneInstructions = 'Computing...';
+    else
+      isochroneInstructions =
+        'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.';
 
     return (
       <div className="flex-screen">
@@ -666,11 +674,7 @@ class Isochrone extends React.Component {
               <div className="isochrone-trip-info">{this.state.tripInfo}</div>
             ) : (
               <div className="isochrone-instructions">
-                {!this.state.latLng
-                  ? 'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.'
-                  : this.state.computing
-                  ? 'Computing...'
-                  : 'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.'}
+                {isochroneInstructions}
               </div>
             )}
           </Control>

@@ -266,10 +266,10 @@ function RouteTable(props) {
                           to={{
                             type: 'ROUTESCREEN',
                             payload: {
-                              route_id: row.id,
-                              direction_id: null,
-                              start_stop_id: null,
-                              end_stop_id: null,
+                              routeId: row.id,
+                              directionId: null,
+                              startStopId: null,
+                              endStopId: null,
                             },
                           }}
                         >

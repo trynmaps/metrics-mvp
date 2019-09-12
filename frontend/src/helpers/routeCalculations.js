@@ -326,12 +326,12 @@ export function getTripDataSeries(props, routeId, directionId) {
   // Drop trip data points with no data.
 
   directionInfo.stops.slice(1).map((stop, index) => {
-    if (!directionInfo.stop_geometry[stop]) {
+    if (!directionInfo.stopGeometry[stop]) {
       // console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
     }
-    if (tripTimesForFirstStop[stop] && directionInfo.stop_geometry[stop]) {
+    if (tripTimesForFirstStop[stop] && directionInfo.stopGeometry[stop]) {
       dataSeries.push({
-        x: metersToMiles(directionInfo.stop_geometry[stop].distance),
+        x: metersToMiles(directionInfo.stopGeometry[stop].distance),
         y: tripTimesForFirstStop[stop],
         title: route.stops[stop].title,
         stopIndex: index,
