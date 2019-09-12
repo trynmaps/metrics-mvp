@@ -87,7 +87,7 @@ class MapSpider extends Component {
     const height = this.computeHeight();
     this.setState({ height });
   }
-  
+
   /**
    * Places a Leaflet Marker (blue pin) at the clicked or geolocated map location.
    * Like the isochrone, the marker can be dragged to get new results.
@@ -337,14 +337,14 @@ class MapSpider extends Component {
   handleLocationFound(e) {
     const { latlng } = e;
 
-    const icon = L.divIcon({
-      className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
-      html: MapShield({
-        waitScaled,
-        color: routeColor,
-        routeText: startMarker.routeId,
-      }),
-    });
+    // const icon = L.divIcon({
+    //   className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
+    //   html: MapShield({
+    //     waitScaled,
+    //     color: routeColor,
+    //     routeText: startMarker.routeId,
+    //   }),
+    // });
     // Set whether the location is valid
     this.setState({ isValidLocation: isInServiceArea(latlng) });
 
@@ -366,13 +366,13 @@ class MapSpider extends Component {
   /**
    * Append info about the downstream stops to the given stop object for plotting on the map.
    */
-  addDownstreamStops(stop) {
+  addDownstreamStops(myStop) {
     const selectedRoute = this.props.routes.find(
-      route => route.id === stop.routeId,
+      route => route.id === myStop.routeId,
     );
 
-    const secondStopInfo = stop.direction;
-    const secondStopListIndex = secondStopInfo.stops.indexOf(stop.stopId);
+    const secondStopInfo = myStop.direction;
+    const secondStopListIndex = secondStopInfo.stops.indexOf(myStop.stopId);
 
     const secondStopList = secondStopInfo.stops.slice(
       secondStopListIndex /* + 1  include starting stop */,
@@ -381,7 +381,7 @@ class MapSpider extends Component {
     const downstreamStops = secondStopList.map(stopId =>
       Object.assign(selectedRoute.stops[stopId], { stopId }),
     );
-    stop.downstreamStops = downstreamStops;
+    myStop.downstreamStops = downstreamStops;
   }
 
   /**

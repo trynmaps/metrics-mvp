@@ -145,7 +145,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
  * @param params graphParams object
  */
 export function fetchArrivals(params) {
-  return function(dispatch, getState) {
+  return function(dispatch) {
     const dateStr = params.date;
 
     const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/v4/sf-muni/${dateStr.replace(
@@ -162,7 +162,7 @@ export function fetchArrivals(params) {
         });
       })
       .catch(err => {
-        /* do something? */
+        console.error(err);
       });
   };
 }

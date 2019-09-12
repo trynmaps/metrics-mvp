@@ -20,27 +20,6 @@ class MapStops extends Component {
     };
   }
 
-  // Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
-  // case make the map half height.
-  //
-  // TODO: Need to convert this component to a functional component.  Then we can use the useTheme
-  // hook to programatically access the breakpoint widths.
-  //
-  // Note: This code has to be adjusted to be kept in sync with the UI layout.
-  //
-
-  computeHeight() {
-    return (
-      (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
-      64 /* blue app bar */
-    );
-  }
-
-  updateDimensions() {
-    const height = this.computeHeight();
-    this.setState({ height });
-  }
-
   componentDidMount() {
     this.boundUpdate = this.updateDimensions.bind(this);
     window.addEventListener('resize', this.boundUpdate);
@@ -65,6 +44,8 @@ class MapStops extends Component {
         const currentPosition = [stop.lat, stop.lon];
         const isStart = stop.sid === this.props.graphParams.startStopId;
         const isEnd = stop.sid === this.props.graphParams.endStopId;
+        const endFillColor = isEnd ? 'red' : 'white';
+
         return (
           <CircleMarker
             key={`${stop.sid}-${directionId}`}
@@ -73,7 +54,7 @@ class MapStops extends Component {
             opacity={0.5}
             radius={radius}
             fill
-            fillColor={isStart ? 'green' : isEnd ? 'red' : 'white'}
+            fillColor={isStart ? 'green' : endFillColor}
             fillOpacity={isStart || isEnd ? 1.0 : 0.5}
             onClick={() => this.handleStopSelect(stop, directionId)}
           >
@@ -301,6 +282,27 @@ class MapStops extends Component {
     });
   };
 
+  // Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
+  // case make the map half height.
+  //
+  // TODO: Need to convert this component to a functional component.  Then we can use the useTheme
+  // hook to programatically access the breakpoint widths.
+  //
+  // Note: This code has to be adjusted to be kept in sync with the UI layout.
+  //
+
+  computeHeight() {
+    return (
+      (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
+      64 /* blue app bar */
+    );
+  }
+
+  updateDimensions() {
+    const height = this.computeHeight();
+    this.setState({ height });
+  }
+
   speedColor(mph) {
     // should this be multiples of walking speed? 3/6/9/12?
     return d3
@@ -353,6 +355,12 @@ class MapStops extends Component {
       }
     }
 
+    let mapInstruction = '';
+    if (!graphParams.endStopId) mapInstruction = 'Click a destination stop.';
+    else if (!graphParams.startStopId) mapInstruction = 'Click an origin stop.';
+    else if (!graphParams.directionId)
+      mapInstruction = 'Select a direction to see stops in that direction.';
+
     return (
       <Map
         center={position || SF_COORDINATES}
@@ -369,15 +377,7 @@ class MapStops extends Component {
         <this.SpeedLegend />
         <Control position="topright">
           {!graphParams.startStopId || !graphParams.endStopId ? (
-            <div className="map-instructions">
-              {!graphParams.directionId
-                ? 'Select a direction to see stops in that direction.'
-                : !graphParams.startStopId
-                ? 'Click an origin stop.'
-                : !graphParams.endStopId
-                ? 'Click a destination stop.'
-                : ''}
-            </div>
+            <div className="map-instructions">{mapInstruction}</div>
           ) : null}
         </Control>
       </Map>

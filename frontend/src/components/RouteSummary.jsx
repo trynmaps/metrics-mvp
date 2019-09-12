@@ -136,89 +136,85 @@ function RouteSummary(props) {
       <div style={{ padding: 8 }}>
         <Grid container>
           <Grid item xs component={Paper} className={classes.grade}>
-              <Typography variant="overline">Route score</Typography>
-              <br />
+            <Typography variant="overline">Route score</Typography>
+            <br />
 
-              <Typography variant="h3" display="inline">
-                {wait && speed ? grades.totalScore : '--'}
-              </Typography>
-              <Typography variant="h5" display="inline">
-                /{grades ? grades.highestPossibleScore : '--'}
-              </Typography>
+            <Typography variant="h3" display="inline">
+              {wait && speed ? grades.totalScore : '--'}
+            </Typography>
+            <Typography variant="h5" display="inline">
+              /{grades ? grades.highestPossibleScore : '--'}
+            </Typography>
 
-              <Box pt={2}>
-                <Typography variant="body1">
-                  {scoreRanking
-                    ? `#${scoreRanking} out of ${allScores.length} routes`
-                    : 'No data'}
-                </Typography>
-              </Box>
+            <Box pt={2}>
+              <Typography variant="body1">
+                {scoreRanking
+                  ? `#${scoreRanking} out of ${allScores.length} routes`
+                  : 'No data'}
+              </Typography>
+            </Box>
           </Grid>
 
           <Tooltip
-             title={wait ? `Subscore: ${grades.medianWaitScore}/100` : ''}
+            title={wait ? `Subscore: ${grades.medianWaitScore}/100` : ''}
           >
             <Grid item xs component={Paper} className={classes.wait}>
-                <Typography variant="overline">Median wait</Typography>
-                <br />
-                <Typography variant="h3" display="inline">
-                  {wait === null ? '--' : wait.toFixed(0)}
-                </Typography>
-                <Typography variant="h5" display="inline">
-                  &nbsp;minutes
-                </Typography>
+              <Typography variant="overline">Median wait</Typography>
+              <br />
+              <Typography variant="h3" display="inline">
+                {wait === null ? '--' : wait.toFixed(0)}
+              </Typography>
+              <Typography variant="h5" display="inline">
+                &nbsp;minutes
+              </Typography>
 
-                <Rating
-                  readOnly
-                  size="small"
-                  value={
-                    grades ? Math.round(grades.medianWaitScore / 10.0) / 2.0 : 0
-                  }
-                  precision={0.5}
-                />
+              <Rating
+                readOnly
+                size="small"
+                value={
+                  grades ? Math.round(grades.medianWaitScore / 10.0) / 2.0 : 0
+                }
+                precision={0.5}
+              />
 
-                <Box pt={2}>
-                  {waitRanking
-                    ? `#${waitRanking} of ${allWaits.length} for shortest wait`
-                    : null}
-                </Box>
+              <Box pt={2}>
+                {waitRanking
+                  ? `#${waitRanking} of ${allWaits.length} for shortest wait`
+                  : null}
+              </Box>
             </Grid>
           </Tooltip>
 
           <Tooltip title={speed ? `Subscore: ${grades.speedScore}/100` : ''}>
-            <Grid item xs component={Paper} className={classes.trip}>                  
-                <Typography variant="overline">Median speed</Typography>
-                <br />
-                <Typography variant="h3" display="inline">
-                  {speed === null || Number.isNaN(speed)
-                    ? '--'
-                    : speed.toFixed(1)}
-                </Typography>
-                <Typography variant="h5" display="inline">
-                  &nbsp;mph
-                </Typography>
-                <Rating
-                  readOnly
-                  size="small"
-                  value={
-                    grades ? Math.round(grades.speedScore / 10.0) / 2.0 : 0
-                  }
-                  precision={0.5}
-                />
-                <Box pt={2}>
-                  {speedRanking
-                    ? `#${speedRanking} of ${allSpeeds.length} for fastest`
-                    : null}
-                </Box>
-                Length: {metersToMiles(dist).toFixed(1)} miles
+            <Grid item xs component={Paper} className={classes.trip}>
+              <Typography variant="overline">Median speed</Typography>
+              <br />
+              <Typography variant="h3" display="inline">
+                {speed === null || Number.isNaN(speed)
+                  ? '--'
+                  : speed.toFixed(1)}
+              </Typography>
+              <Typography variant="h5" display="inline">
+                &nbsp;mph
+              </Typography>
+              <Rating
+                readOnly
+                size="small"
+                value={grades ? Math.round(grades.speedScore / 10.0) / 2.0 : 0}
+                precision={0.5}
+              />
+              <Box pt={2}>
+                {speedRanking
+                  ? `#${speedRanking} of ${allSpeeds.length} for fastest`
+                  : null}
+              </Box>
+              Length: {metersToMiles(dist).toFixed(1)} miles
             </Grid>
           </Tooltip>
 
           <TravelTimeChart />
-          <MareyChart/>
-
-      </Grid>
-
+          <MareyChart />
+        </Grid>
       </div>
     </Fragment>
   );

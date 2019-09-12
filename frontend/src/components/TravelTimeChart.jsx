@@ -46,7 +46,8 @@ function TravelTimeChart(props) {
    * @param {index} index Index of the value in the data array.
    * @private
    */
-  const onNearestTripX = (value, { index }) => {
+  const onNearestTripX = value => {
+    // , { index })
     setCrosshairValues([value /* future:  how to add scheduleData[index] ? */]);
   };
 
