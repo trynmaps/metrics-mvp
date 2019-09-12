@@ -138,10 +138,8 @@ class MapSpider extends Component {
         riseOnHover
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
-
-          push(
-            `/route/${startMarker.routeId}/direction/${startMarker.direction.id}/startStop/${startMarker.stopId}/endStop/${lastStop.stopId}`,
-          );
+          let path = new Path();
+          path.buildPath(ROUTE,startMarker.routeId).buildPath(DIRECTION,startMarker.direction.id).buildPath(FROM_STOP, startMarker.stopId).buildPath(TO_STOP, lastStop.stopId).commitPath();
         }}
       ></Marker>
     );
