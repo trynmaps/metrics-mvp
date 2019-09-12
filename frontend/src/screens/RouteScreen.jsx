@@ -12,9 +12,7 @@ import DateTimePanel from '../components/DateTimePanel';
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 
-import {
-  fetchRoutes,
-} from '../actions';
+import { fetchRoutes } from '../actions';
 
 function RouteScreen(props) {
   useEffect(() => {
@@ -74,10 +72,9 @@ function RouteScreen(props) {
         </Grid>
         <Grid item xs={12} sm={6}>
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
-          <ControlPanel
-            routes={routes}
-          />
-          {graphData || graphError /* if we have graph data or an error, then show the info component */ ? (
+          <ControlPanel routes={routes} />
+          {graphData ||
+          graphError /* if we have graph data or an error, then show the info component */ ? (
             <Info
               graphData={graphData}
               graphError={graphError}
@@ -107,12 +104,6 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchData: (graphParams, intervalParams) =>
-    dispatch(fetchData(graphParams, intervalParams)),
-  resetGraphData: () => dispatch(resetGraphData()),
-  fetchGraphData: params => dispatch(fetchGraphData(params)),
-  resetIntervalData: () => dispatch(resetIntervalData()),
-  fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });
 

@@ -9,9 +9,7 @@ import RouteTable from '../components/RouteTable';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import {
-  fetchRoutes,
-} from '../actions';
+import { fetchRoutes } from '../actions';
 
 function Dashboard(props) {
   useEffect(() => {
@@ -50,12 +48,6 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchData: (graphParams, intervalParams) =>
-    dispatch(fetchData(graphParams, intervalParams)),
-  resetGraphData: () => dispatch(resetGraphData()),
-  fetchGraphData: params => dispatch(fetchGraphData(params)),
-  resetIntervalData: () => dispatch(resetIntervalData()),
-  fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });
 

@@ -374,7 +374,8 @@ class Isochrone extends React.Component {
     marker.on('move', function(e) {
       newLatLng = e.latlng;
     });
-    marker.on('moveend', () => { // event arg removed
+    marker.on('moveend', () => {
+      // event arg removed
       if (newLatLng) {
         this.resetMap();
         this.computeIsochrones(newLatLng);
@@ -469,15 +470,18 @@ class Isochrone extends React.Component {
     );
   }
 
-  selectAllRoutesClicked() { // event arg
+  selectAllRoutesClicked() {
+    // event arg
     this.selectAllRoutes(true);
   }
 
-  selectNoRoutesClicked() { // event arg
+  selectNoRoutesClicked() {
+    // event arg
     this.selectAllRoutes(false);
   }
 
-  resetMapClicked() { // event arg
+  resetMapClicked() {
+    // event arg
     this.resetMap();
   }
 
