@@ -1,9 +1,5 @@
 import React, { Component } from 'react';
-import {
-  FormControl,
-  FormControlLabel,
-  Radio,
-} from '@material-ui/core';
+import { FormControl, FormControlLabel, Radio } from '@material-ui/core';
 import {
   XYPlot,
   HorizontalGridLines,
@@ -64,7 +60,7 @@ class InfoIntervalsOfDay extends Component {
    * @param {index} index Index of the value in the data array.
    * @private
    */
-  onNearestX = (value, { index }) => {
+  onNearestX = (_value, { index }) => {
     this.setState({
       crosshairValues: [this.waitData[index], this.tripData[index]],
     });
@@ -81,7 +77,8 @@ class InfoIntervalsOfDay extends Component {
    * @param {intervalField} One of wait_times or travel_times.
    */
   mapInterval(intervalField) {
-    return (interval, index) => {
+    return interval => {
+      // , index)
       let y = 0;
 
       if (interval[intervalField] != null) {
@@ -119,98 +116,94 @@ class InfoIntervalsOfDay extends Component {
       <div>
         {intervals ? (
           <div>
-                <FormControl>
-                  <div className="controls">
-                    <FormControlLabel
-                      control={
-                        <Radio
-                          id="average_time"
-                          type="radio"
-                          value={InfoIntervalsOfDay.AVERAGE_TIME}
-                          checked={
-                            this.state.selectedOption ===
-                            InfoIntervalsOfDay.AVERAGE_TIME
-                          }
-                          onChange={this.handleOptionChange}
-                        />
+            <FormControl>
+              <div className="controls">
+                <FormControlLabel
+                  control={
+                    <Radio
+                      id="average_time"
+                      type="radio"
+                      value={InfoIntervalsOfDay.AVERAGE_TIME}
+                      checked={
+                        this.state.selectedOption ===
+                        InfoIntervalsOfDay.AVERAGE_TIME
                       }
-                      label="Average"
+                      onChange={this.handleOptionChange}
                     />
-
-                    <FormControlLabel
-                      control={
-                        <Radio
-                          id="planning_time"
-                          type="radio"
-                          value={InfoIntervalsOfDay.PLANNING_TIME}
-                          checked={
-                            this.state.selectedOption ===
-                            InfoIntervalsOfDay.PLANNING_TIME
-                          }
-                          onChange={this.handleOptionChange}
-                        />
-                      }
-                      label={`Planning (${PLANNING_PERCENTILE}th percentile)`}
-                    />
-                  </div>
-                </FormControl>
-
-                <XYPlot
-                  xType="ordinal"
-                  height={300}
-                  width={400}
-                  stackBy="y"
-                  onMouseLeave={this.onMouseLeave}
-                >
-                  <HorizontalGridLines />
-                  <XAxis />
-                  <YAxis hideLine />
-
-                  <VerticalBarSeries
-                    data={this.waitData}
-                    color={CHART_COLORS[0]}
-                    onNearestX={this.onNearestX}
-                  />
-                  <VerticalBarSeries
-                    data={this.tripData}
-                    color={CHART_COLORS[1]}
-                  />
-
-                  <ChartLabel
-                    text="minutes"
-                    className="alt-y-label"
-                    includeMargin={false}
-                    xPercent={0.06}
-                    yPercent={0.06}
-                    style={{
-                      transform: 'rotate(-90)',
-                      textAnchor: 'end',
-                    }}
-                  />
-
-                  {this.state.crosshairValues.length > 0 && (
-                    <Crosshair
-                      values={this.state.crosshairValues}
-                      style={REACT_VIS_CROSSHAIR_NO_LINE}
-                    >
-                      <div className="rv-crosshair__inner__content">
-                        <p>
-                          Onboard time:{' '}
-                          {Math.round(this.state.crosshairValues[1].y)}
-                        </p>
-                        <p>
-                          Wait time:{' '}
-                          {Math.round(this.state.crosshairValues[0].y)}
-                        </p>
-                      </div>
-                    </Crosshair>
-                  )}
-                </XYPlot>
-                <DiscreteColorLegend
-                  orientation="horizontal"
-                  width={300}
-                  items={legendItems}
+                  }
+                  label="Average"
                 />
+
+                <FormControlLabel
+                  control={
+                    <Radio
+                      id="planning_time"
+                      type="radio"
+                      value={InfoIntervalsOfDay.PLANNING_TIME}
+                      checked={
+                        this.state.selectedOption ===
+                        InfoIntervalsOfDay.PLANNING_TIME
+                      }
+                      onChange={this.handleOptionChange}
+                    />
+                  }
+                  label={`Planning (${PLANNING_PERCENTILE}th percentile)`}
+                />
+              </div>
+            </FormControl>
+
+            <XYPlot
+              xType="ordinal"
+              height={300}
+              width={400}
+              stackBy="y"
+              onMouseLeave={this.onMouseLeave}
+            >
+              <HorizontalGridLines />
+              <XAxis />
+              <YAxis hideLine />
+
+              <VerticalBarSeries
+                data={this.waitData}
+                color={CHART_COLORS[0]}
+                onNearestX={this.onNearestX}
+              />
+              <VerticalBarSeries data={this.tripData} color={CHART_COLORS[1]} />
+
+              <ChartLabel
+                text="minutes"
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end',
+                }}
+              />
+
+              {this.state.crosshairValues.length > 0 && (
+                <Crosshair
+                  values={this.state.crosshairValues}
+                  style={REACT_VIS_CROSSHAIR_NO_LINE}
+                >
+                  <div className="rv-crosshair__inner__content">
+                    <p>
+                      Onboard time:{' '}
+                      {Math.round(this.state.crosshairValues[1].y)}
+                    </p>
+                    <p>
+                      Wait time: {Math.round(this.state.crosshairValues[0].y)}
+                    </p>
+                  </div>
+                </Crosshair>
+              )}
+            </XYPlot>
+            <DiscreteColorLegend
+              orientation="horizontal"
+              width={300}
+              items={legendItems}
+            />
           </div>
         ) : null}
         <code>{intervalError || ''}</code>
