@@ -1,7 +1,7 @@
 /* eslint-disable no-case-declarations */
 import Moment from 'moment';
 
-const momentYesterday = Moment(Date.now() - 24*60*60*1000);
+const momentYesterday = Moment(Date.now() - 24 * 60 * 60 * 1000);
 
 // Make the initialState available to the rest of the app when resetting to default values.
 export const initialState = {
@@ -15,7 +15,6 @@ export const initialState = {
     startTime: null,
     endTime: null,
     date: momentYesterday.format('YYYY-MM-DD'),
-
   },
   spiderLatLng: null,
   tripTimesCache: {},

@@ -146,26 +146,25 @@ export function fetchPrecomputedWaitAndTripData(params) {
  */
 export function fetchArrivals(params) {
   return function(dispatch, getState) {
-
     const dateStr = params.date;
 
     const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/v4/sf-muni/${dateStr.replace(
-        /-/g,
-        '/',
-      )}/arrivals_v4_sf-muni_${dateStr}_${params.routeId}.json.gz`;
+      /-/g,
+      '/',
+    )}/arrivals_v4_sf-muni_${dateStr}_${params.routeId}.json.gz`;
 
     axios
       .get(s3Url)
       .then(response => {
-      dispatch({
-        type: 'RECEIVED_ARRIVALS',
-        payload: [response.data, dateStr, params.routeId],
+        dispatch({
+          type: 'RECEIVED_ARRIVALS',
+          payload: [response.data, dateStr, params.routeId],
+        });
+      })
+      .catch(err => {
+        /* do something? */
       });
-    })
-    .catch(err => {
-      /* do something? */
-    });
-  }
+  };
 }
 
 export function handleSpiderMapClick(stops, latLng) {
