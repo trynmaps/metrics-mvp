@@ -1,7 +1,6 @@
 import { handleGraphParams } from './actions';
 
 export default {
-  HOME: '/home',
   ABOUT: '/about',
   LANDING: '/landing',
   ISOCHRONE: '/isochrone',

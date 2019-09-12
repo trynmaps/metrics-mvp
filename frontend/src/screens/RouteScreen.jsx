@@ -14,12 +14,7 @@ import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 
 import {
-  fetchData,
-  fetchGraphData,
-  fetchIntervalData,
   fetchRoutes,
-  resetGraphData,
-  resetIntervalData,
 } from '../actions';
 
 function RouteScreen(props) {
@@ -82,13 +77,8 @@ function RouteScreen(props) {
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
           <ControlPanel
             routes={routes}
-            resetGraphData={props.resetGraphData}
-            fetchGraphData={props.fetchGraphData}
-            resetIntervalData={props.resetIntervalData}
-            fetchIntervalData={props.fetchIntervalData}
-            fetchData={props.fetchData}
           />
-          {graphData /* if we have graph data, then show the info component */ ? (
+          {graphData || graphError /* if we have graph data or an error, then show the info component */ ? (
             <Info
               graphData={graphData}
               graphError={graphError}
@@ -118,12 +108,6 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchData: (graphParams, intervalParams) =>
-    dispatch(fetchData(graphParams, intervalParams)),
-  resetGraphData: params => dispatch(resetGraphData()),
-  fetchGraphData: params => dispatch(fetchGraphData(params)),
-  resetIntervalData: params => dispatch(resetIntervalData()),
-  fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });
 
