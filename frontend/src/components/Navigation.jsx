@@ -1,10 +1,11 @@
 import React, { Fragment } from 'react';
 import { NavLink } from 'redux-first-router-link';
 
+// eslint-disable-next-line no-unused-vars
 export default props => {
   return (
     <Fragment>
-      <button>
+      <button type="button">
         <NavLink
           to={{ type: 'HOME' }}
           activeStyle={{ fontWeight: 'bold', color: 'purple' }}
@@ -14,7 +15,7 @@ export default props => {
           Home
         </NavLink>
       </button>
-      <button>
+      <button type="button">
         <NavLink
           to={{ type: 'ABOUT' }}
           activeStyle={{ fontWeight: 'bold', color: 'purple' }}
@@ -24,7 +25,7 @@ export default props => {
           About
         </NavLink>
       </button>
-      <button>
+      <button type="button">
         <NavLink
           to={{ type: 'LANDING' }}
           activeStyle={{ fontWeight: 'bold', color: 'purple' }}
@@ -34,7 +35,7 @@ export default props => {
           Landing
         </NavLink>
       </button>
-      <button>
+      <button type="button">
         <NavLink
           to={{ type: 'DASHBOARD' }}
           activeStyle={{ fontWeight: 'bold', color: 'purple' }}
@@ -44,7 +45,7 @@ export default props => {
           Dashboard
         </NavLink>
       </button>
-      <button>
+      <button type="button">
         <NavLink
           to={{ type: 'ROUTESCREEN' }}
           activeStyle={{ fontWeight: 'bold', color: 'purple' }}

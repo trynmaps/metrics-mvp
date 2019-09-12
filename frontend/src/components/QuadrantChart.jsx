@@ -34,7 +34,7 @@ function QuadrantChart(props) {
   const quadrantData = allSpeeds
     ? allSpeeds.map(speed => {
         const waitObj = allWaits.find(
-          waitObj => waitObj.routeId === speed.routeId,
+          thisWaitObj => thisWaitObj.routeId === speed.routeId,
         );
         return {
           x: waitObj ? waitObj.wait : 0,

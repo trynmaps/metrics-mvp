@@ -3,7 +3,6 @@ import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 
-import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
@@ -40,7 +39,7 @@ function RouteScreen(props) {
   const direction =
     selectedRoute && graphParams.directionId
       ? selectedRoute.directions.find(
-          direction => direction.id === graphParams.directionId,
+          thisDirection => thisDirection.id === graphParams.directionId,
         )
       : null;
   const startStopInfo =
@@ -108,12 +107,14 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
+  fetchData: (graphParams, intervalParams) =>
+    dispatch(fetchData(graphParams, intervalParams)),
+  resetGraphData: params => dispatch(resetGraphData(params)),
+  fetchGraphData: params => dispatch(fetchGraphData(params)),
+  resetIntervalData: params => dispatch(resetIntervalData(params)),
+  fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });
-
-RouteScreen.propTypes = {
-  graphData: PropTypes.instanceOf(Object),
-};
 
 export default connect(
   mapStateToProps,

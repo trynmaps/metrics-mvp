@@ -50,6 +50,12 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
+  fetchData: (graphParams, intervalParams) =>
+    dispatch(fetchData(graphParams, intervalParams)),
+  resetGraphData: params => dispatch(resetGraphData(params)),
+  fetchGraphData: params => dispatch(fetchGraphData(params)),
+  resetIntervalData: params => dispatch(resetIntervalData(params)),
+  fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });
 

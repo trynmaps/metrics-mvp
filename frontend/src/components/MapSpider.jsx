@@ -15,7 +15,6 @@ import Control from 'react-leaflet-control';
 import * as d3 from 'd3';
 import { push } from 'redux-first-router';
 import { Snackbar } from '@material-ui/core';
-import * as PropTypes from 'prop-types';
 import {
   getAllWaits,
   filterRoutes,
@@ -39,9 +38,13 @@ function ValidLocationAlert(props) {
   );
 }
 
-ValidLocationAlert.propTypes = { showAlert: PropTypes.bool };
-
 class MapSpider extends Component {
+  /**
+   * A function that returns one of ten colors given a route index.
+   * (index modulo 10).
+   */
+  routeColor = d3.scaleQuantize([0, 9], d3.schemeCategory10);
+
   constructor(props) {
     super(props);
     this.state = {
@@ -83,132 +86,63 @@ class MapSpider extends Component {
   }
 
   /**
-   * Geolocation button handler.
+   * Places a Leaflet Marker (blue pin) at the clicked or geolocated map location.
+   * Like the isochrone, the marker can be dragged to get new results.
    */
-  handleGeoLocate = e => {
-    e.preventDefault();
-    const map = this.mapRef.current;
-    if (map != null) {
-      map.leafletElement.locate(); // this is for geolocation, see https://leafletjs.com/examples/mobile/
-    }
+  SpiderOriginMarker = props => {
+    let latlng = null;
+
+    return props.spiderLatLng ? (
+      <Marker
+        position={props.spiderLatLng}
+        draggable
+        onMove={e => {
+          latlng = e.latlng;
+        }}
+        onMoveEnd={() => {
+          this.handleLocationFound({ latlng });
+        }}
+      />
+    ) : null;
   };
 
   /**
-   * When the map is clicked on, pass the event on to the location handler.
+   * Creates a clickable Marker with a custom svg icon (MapShield) for the route
+   * represented by startMarker.
+   *
+   * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
    */
-  handleMapClick = e => {
-    const map = this.mapRef.current;
-    if (map != null) {
-      this.handleLocationFound(e);
-    }
+  generateShield = (startMarker, waitScaled) => {
+    const lastStop =
+      startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
+    const shieldPosition = [lastStop.lat, lastStop.lon];
+    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+
+    const icon = L.divIcon({
+      className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
+      html: MapShield({
+        waitScaled,
+        color: routeColor,
+        routeText: startMarker.routed,
+      }),
+    });
+
+    return (
+      <Marker
+        key={`${startMarker.routeId}-${startMarker.direction.id}-Shield`}
+        position={shieldPosition}
+        icon={icon}
+        riseOnHover
+        onClick={e => {
+          e.originalEvent.view.L.DomEvent.stopPropagation(e);
+
+          push(
+            `/route/${startMarker.routeId}/direction/${startMarker.direction.id}/startStop/${startMarker.stopId}/endStop/${lastStop.stopId}`,
+          );
+        }}
+      ></Marker>
+    );
   };
-
-  /**
-   * Handles events with a location (either click, or geolocation call).
-   * Find nearby stops for each route/direction and plot the rest of the route to its terminal.
-   */
-  handleLocationFound(e) {
-    const { latlng } = e;
-
-    // Set whether the location is valid
-    this.setState({ isValidLocation: isInServiceArea(latlng) });
-
-    const stops = this.findStops(latlng); // note: all lowercase name in event.
-
-    // Add the downstream stops to the terminal.
-
-    for (const stop of stops) {
-      this.addDownstreamStops(stop);
-    }
-
-    // Fire events here indicating that the route list should be filtered to just the
-    // routes corresponding to "stops".
-
-    const { onSpiderMapClick } = this.props;
-    onSpiderMapClick(stops, latlng);
-  }
-
-  /**
-   * Append info about the downstream stops to the given stop object for plotting on the map.
-   */
-  addDownstreamStops(stop) {
-    const selectedRoute = this.props.routes.find(
-      route => route.id === stop.routeId,
-    );
-
-    const secondStopInfo = stop.direction;
-    const secondStopListIndex = secondStopInfo.stops.indexOf(stop.stopId);
-
-    const secondStopList = secondStopInfo.stops.slice(
-      secondStopListIndex /* + 1  include starting stop */,
-    );
-
-    const downstreamStops = secondStopList.map(stopId =>
-      Object.assign(selectedRoute.stops[stopId], { stopId }),
-    );
-    stop.downstreamStops = downstreamStops;
-  }
-
-  /**
-   * Use brute force iteration to find the nearest stop for each direction of each route.
-   *
-   * Take only stops within CLICK_RADIUS_MI miles and sort by distance.
-   */
-  findStops(latLng) {
-    const { routes } = this.props;
-    const latLon = { lat: latLng.lat, lon: latLng.lng };
-    let stopsByRouteAndDir = [];
-
-    const filteredRoutes = filterRoutes(routes);
-    for (let i = 0; i < filteredRoutes.length; i++) {
-      // optimize this on back end
-      const route = filteredRoutes[i];
-
-      if (route.directions) {
-        for (const direction of route.directions) {
-          const stopList = direction.stops;
-          const nearest = this.findNearestStop(latLon, stopList, route.stops);
-          nearest.routeId = route.id;
-          nearest.routeIndex = i;
-          nearest.routeTitle = route.title;
-          nearest.direction = direction;
-          nearest.routeInfo = route;
-          stopsByRouteAndDir.push(nearest);
-        }
-      }
-    }
-    // truncate by distance (CLICK_RADIUS_MI miles) and then sort
-
-    stopsByRouteAndDir = stopsByRouteAndDir.filter(
-      stop => stop.miles < CLICK_RADIUS_MI,
-    );
-    stopsByRouteAndDir.sort((a, b) => a.miles - b.miles);
-
-    return stopsByRouteAndDir;
-  }
-
-  /**
-   * Returns the nearest stop Object to the given latLon coordinates.
-   *
-   * stopList is an array of strings (stop ids) that are keys into the stopHash,
-   * a dictionary of stops (as found in route config objects).
-   */
-  findNearestStop(latLon, stopList, stopHash) {
-    let nearest = { miles: -1, stop: null, stopId: null };
-    for (const stop of stopList) {
-      const miles = milesBetween(latLon, stopHash[stop]);
-      if (nearest.miles === -1 || miles < nearest.miles) {
-        nearest = { miles, stop: stopHash[stop], stopId: stop };
-      }
-    }
-    return nearest;
-  }
-
-  /**
-   * A function that returns one of ten colors given a route index.
-   * (index modulo 10).
-   */
-  routeColor = d3.scaleQuantize([0, 9], d3.schemeCategory10);
 
   /**
    * Rendering of stops nearest to click or current location
@@ -298,6 +232,27 @@ class MapSpider extends Component {
   };
 
   /**
+   * Creates a circle at the terminal of a route.
+   */
+  generateTerminalCircle = (startMarker, waitScaled) => {
+    const lastStop =
+      startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
+    const terminalPosition = [lastStop.lat, lastStop.lon];
+    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+
+    return (
+      <CircleMarker
+        key={`startMarker-${startMarker.routeId}-terminal-${lastStop.stopId}`}
+        center={terminalPosition}
+        radius={3.0 + waitScaled / 2.0}
+        fillColor={routeColor}
+        fillOpacity={0.75}
+        stroke={false}
+      ></CircleMarker>
+    );
+  };
+
+  /**
    * Creates a line between two stops.
    */
   generatePolyline = (startMarker, waitScaled, i) => {
@@ -352,37 +307,32 @@ class MapSpider extends Component {
   };
 
   /**
-   * Creates a circle at the terminal of a route.
+   * Geolocation button handler.
    */
-  generateTerminalCircle = (startMarker, waitScaled) => {
-    const lastStop =
-      startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
-    const terminalPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
-
-    return (
-      <CircleMarker
-        key={`startMarker-${startMarker.routeId}-terminal-${lastStop.stopId}`}
-        center={terminalPosition}
-        radius={3.0 + waitScaled / 2.0}
-        fillColor={routeColor}
-        fillOpacity={0.75}
-        stroke={false}
-      ></CircleMarker>
-    );
+  handleGeoLocate = e => {
+    e.preventDefault();
+    const map = this.mapRef.current;
+    if (map != null) {
+      map.leafletElement.locate(); // this is for geolocation, see https://leafletjs.com/examples/mobile/
+    }
   };
 
   /**
-   * Creates a clickable Marker with a custom svg icon (MapShield) for the route
-   * represented by startMarker.
-   *
-   * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
+   * When the map is clicked on, pass the event on to the location handler.
    */
-  generateShield = (startMarker, waitScaled) => {
-    const lastStop =
-      startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
-    const shieldPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+  handleMapClick = e => {
+    const map = this.mapRef.current;
+    if (map != null) {
+      this.handleLocationFound(e);
+    }
+  };
+
+  /**
+   * Handles events with a location (either click, or geolocation call).
+   * Find nearby stops for each route/direction and plot the rest of the route to its terminal.
+   */
+  handleLocationFound(e) {
+    const { latlng } = e;
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
@@ -392,44 +342,100 @@ class MapSpider extends Component {
         routeText: startMarker.routeId,
       }),
     });
+    // Set whether the location is valid
+    this.setState({ isValidLocation: isInServiceArea(latlng) });
 
-    return (
-      <Marker
-        key={`${startMarker.routeId}-${startMarker.direction.id}-Shield`}
-        position={shieldPosition}
-        icon={icon}
-        riseOnHover
-        onClick={e => {
-          e.originalEvent.view.L.DomEvent.stopPropagation(e);
+    const stops = this.findStops(latlng); // note: all lowercase name in event.
 
-          push(
-            `/route/${startMarker.routeId}/direction/${startMarker.direction.id}/startStop/${startMarker.stopId}/endStop/${lastStop.stopId}`,
-          );
-        }}
-      ></Marker>
-    );
-  };
+    // Add the downstream stops to the terminal.
+
+    stops.forEach(stop => {
+      this.addDownstreamStops(stop);
+    });
+
+    // Fire events here indicating that the route list should be filtered to just the
+    // routes corresponding to "stops".
+
+    const { onSpiderMapClick } = this.props;
+    onSpiderMapClick(stops, latlng);
+  }
 
   /**
-   * Places a Leaflet Marker (blue pin) at the clicked or geolocated map location.
-   * Like the isochrone, the marker can be dragged to get new results.
+   * Append info about the downstream stops to the given stop object for plotting on the map.
    */
-  SpiderOriginMarker = props => {
-    let latlng = null;
+  addDownstreamStops(stop) {
+    const selectedRoute = this.props.routes.find(
+      route => route.id === stop.routeId,
+    );
 
-    return props.spiderLatLng ? (
-      <Marker
-        position={props.spiderLatLng}
-        draggable
-        onMove={e => {
-          latlng = e.latlng;
-        }}
-        onMoveEnd={e => {
-          this.handleLocationFound({ latlng });
-        }}
-      />
-    ) : null;
-  };
+    const secondStopInfo = stop.direction;
+    const secondStopListIndex = secondStopInfo.stops.indexOf(stop.stopId);
+
+    const secondStopList = secondStopInfo.stops.slice(
+      secondStopListIndex /* + 1  include starting stop */,
+    );
+
+    const downstreamStops = secondStopList.map(stopId =>
+      Object.assign(selectedRoute.stops[stopId], { stopId }),
+    );
+    stop.downstreamStops = downstreamStops;
+  }
+
+  /**
+   * Use brute force iteration to find the nearest stop for each direction of each route.
+   *
+   * Take only stops within CLICK_RADIUS_MI miles and sort by distance.
+   */
+  findStops(latLng) {
+    const { routes } = this.props;
+    const latLon = { lat: latLng.lat, lon: latLng.lng };
+    let stopsByRouteAndDir = [];
+
+    const filteredRoutes = filterRoutes(routes);
+    for (let i = 0; i < filteredRoutes.length; i++) {
+      // optimize this on back end
+      const route = filteredRoutes[i];
+
+      if (route.directions) {
+        // eslint-disable-next-line no-loop-func
+        route.directions.forEach(direction => {
+          const stopList = direction.stops;
+          const nearest = this.findNearestStop(latLon, stopList, route.stops);
+          nearest.routeId = route.id;
+          nearest.routeIndex = i;
+          nearest.routeTitle = route.title;
+          nearest.direction = direction;
+          nearest.routeInfo = route;
+          stopsByRouteAndDir.push(nearest);
+        });
+      }
+    }
+    // truncate by distance (CLICK_RADIUS_MI miles) and then sort
+
+    stopsByRouteAndDir = stopsByRouteAndDir.filter(
+      stop => stop.miles < CLICK_RADIUS_MI,
+    );
+    stopsByRouteAndDir.sort((a, b) => a.miles - b.miles);
+
+    return stopsByRouteAndDir;
+  }
+
+  /**
+   * Returns the nearest stop Object to the given latLon coordinates.
+   *
+   * stopList is an array of strings (stop ids) that are keys into the stopHash,
+   * a dictionary of stops (as found in route config objects).
+   */
+  findNearestStop(latLon, stopList, stopHash) {
+    let nearest = { miles: -1, stop: null, stopId: null };
+    stopList.forEach(stop => {
+      const miles = milesBetween(latLon, stopHash[stop]);
+      if (nearest.miles === -1 || miles < nearest.miles) {
+        nearest = { miles, stop: stopHash[stop], stopId: stop };
+      }
+    });
+    return nearest;
+  }
 
   /**
    * Main React render method.
@@ -437,9 +443,7 @@ class MapSpider extends Component {
   render() {
     const { position, zoom } = this.props;
     const { isValidLocation } = this.state;
-
     const mapClass = { width: '100%', height: this.state.height };
-
     const startMarkers = this.getStartMarkers();
 
     return (
@@ -484,7 +488,7 @@ class MapSpider extends Component {
             <Button
               variant="contained"
               color="secondary"
-              onClick={e => this.props.onSpiderMapClick([], null)}
+              onClick={() => this.props.onSpiderMapClick([], null)}
             >
               Clear map
             </Button>

@@ -156,16 +156,6 @@ class MapStops extends Component {
     return polylines;
   };
 
-  speedColor(mph) {
-    // should this be multiples of walking speed? 3/6/9/12?
-    return d3
-      .scaleQuantize()
-      .domain([2.5, 12.5])
-      .range(['#9e1313', '#e60000', '#f07d02', '#84ca50'])(mph);
-    // return d3.scaleQuantize().domain([0, 4]).range(d3.schemeSpectral[5])(mph/15.0*5);
-    // return d3.interpolateRdGy(mph/this.speedMax() /* scale to 0-1 */);
-  }
-
   /**
    * Speed from index to index+1
    * Using haversine distance for now.
@@ -205,15 +195,13 @@ class MapStops extends Component {
   };
 
   SpeedLegend = () => {
-    const items = [];
-
     const speedColorValues = [2.5, 6.25, 8.75, 12.5]; // representative values for quantizing
     // center of scale is 7.5 with quartile boundaries at 5 and 10.
 
     const speedColorLabels = [' < 5', '5-7.5', '7.5-10', '10+'];
 
-    for (const speedColorValue of speedColorValues) {
-      items.push(
+    const items = speedColorValues.map(speedColorValue => {
+      return (
         <div key={speedColorValue}>
           <i
             style={{
@@ -226,9 +214,9 @@ class MapStops extends Component {
           </i>{' '}
           &nbsp;
           {speedColorLabels[speedColorValues.indexOf(speedColorValue)]}
-        </div>,
+        </div>
       );
-    }
+    });
 
     return (
       <Control position="bottomright">
@@ -247,6 +235,7 @@ class MapStops extends Component {
 
   handleStopSelect = (stop, newDirectionId) => {
     let {
+      // eslint-disable-next-line prefer-const
       routeId,
       startStopId,
       endStopId,
@@ -310,6 +299,16 @@ class MapStops extends Component {
     });
   };
 
+  speedColor(mph) {
+    // should this be multiples of walking speed? 3/6/9/12?
+    return d3
+      .scaleQuantize()
+      .domain([2.5, 12.5])
+      .range(['#9e1313', '#e60000', '#f07d02', '#84ca50'])(mph);
+    // return d3.scaleQuantize().domain([0, 4]).range(d3.schemeSpectral[5])(mph/15.0*5);
+    // return d3.interpolateRdGy(mph/this.speedMax() /* scale to 0-1 */);
+  }
+
   render() {
     const { position, zoom, radius } = this.props;
 
@@ -327,7 +326,7 @@ class MapStops extends Component {
       if (selectedRoute) {
         routeStops = {};
         let index = 0;
-        for (const direction of selectedRoute.directions) {
+        selectedRoute.directions.forEach(direction => {
           // plot only the selected direction if we have one, or else all directions
 
           if (
@@ -349,8 +348,8 @@ class MapStops extends Component {
               ),
             );
           }
-          index++; // use a loop keeps the index consistent with direction and also stop color
-        }
+          index += 1; // use a loop keeps the index consistent with direction and also stop color
+        });
       }
     }
 
