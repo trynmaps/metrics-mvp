@@ -1,5 +1,3 @@
-import { generateTripURL, generateWaitTimeURL } from '../src/locationConstants';
-
 importScripts(
     "https://unpkg.com/kdbush@3.0.0/kdbush.min.js",
     'https://unpkg.com/tinyqueue@2.0.0/tinyqueue.min.js',
@@ -129,7 +127,9 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, 
         let timePath = getTimePath(timeStr);
         let statPath = getStatPath(stat);
 
-        let s3Url = generateTripURL(dateStr, statPath, timePath);
+        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/'+
+            dateStr.replace(/\-/g, '/')+
+            '/trip-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
         tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
             sendError("error loading trip times: " + e);
@@ -198,10 +198,12 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
 
     if (!waitTimes)
     {
-      const timePath = getTimePath(timeStr);
-      let statPath = getStatPath(stat);
+        var timePath = getTimePath(timeStr);
+        let statPath = getStatPath(stat);
 
-        let s3Url = generateWaitTimeURL(dateStr, statPath, timePath);
+        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/'+
+            dateStr.replace(/\-/g, '/')+
+            '/wait-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
         //console.log(s3Url);
 
