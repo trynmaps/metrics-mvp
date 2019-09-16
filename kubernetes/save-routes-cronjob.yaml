@@ -1,9 +1,9 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: compute-new
+  name: save-routes
 spec:
-  schedule: "0 * * * *"
+  schedule: "30 0 * * *"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
@@ -13,7 +13,7 @@ spec:
           - name: compute-new
             image: gcr.io/poetic-genius-233804/metrics-flask:latest
             imagePullPolicy: Always
-            command: ["python",  "compute_new.py"]
+            command: ["python",  "save_routes.py"]
             env:
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
@@ -26,4 +26,3 @@ spec:
                     name: aws-credentials
                     key: aws_secret_access_key
           restartPolicy: Never
-          activeDeadlineSeconds: 10000

@@ -3,7 +3,6 @@ import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 
-import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
@@ -13,14 +12,7 @@ import DateTimePanel from '../components/DateTimePanel';
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 
-import {
-  fetchData,
-  fetchGraphData,
-  fetchIntervalData,
-  fetchRoutes,
-  resetGraphData,
-  resetIntervalData,
-} from '../actions';
+import { fetchRoutes } from '../actions';
 
 function RouteScreen(props) {
   useEffect(() => {
@@ -45,7 +37,7 @@ function RouteScreen(props) {
   const direction =
     selectedRoute && graphParams.directionId
       ? selectedRoute.directions.find(
-          direction => direction.id === graphParams.directionId,
+          thisDirection => thisDirection.id === graphParams.directionId,
         )
       : null;
   const startStopInfo =
@@ -80,15 +72,9 @@ function RouteScreen(props) {
         </Grid>
         <Grid item xs={12} sm={6}>
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
-          <ControlPanel
-            routes={routes}
-            resetGraphData={props.resetGraphData}
-            fetchGraphData={props.fetchGraphData}
-            resetIntervalData={props.resetIntervalData}
-            fetchIntervalData={props.fetchIntervalData}
-            fetchData={props.fetchData}
-          />
-          {graphData /* if we have graph data, then show the info component */ ? (
+          <ControlPanel routes={routes} />
+          {graphData ||
+          graphError /* if we have graph data or an error, then show the info component */ ? (
             <Info
               graphData={graphData}
               graphError={graphError}
@@ -118,18 +104,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchData: (graphParams, intervalParams) =>
-    dispatch(fetchData(graphParams, intervalParams)),
-  resetGraphData: params => dispatch(resetGraphData()),
-  fetchGraphData: params => dispatch(fetchGraphData(params)),
-  resetIntervalData: params => dispatch(resetIntervalData()),
-  fetchIntervalData: params => dispatch(fetchIntervalData(params)),
   fetchRoutes: () => dispatch(fetchRoutes()),
 });
-
-RouteScreen.propTypes = {
-  graphData: PropTypes.instanceOf(Object),
-};
 
 export default connect(
   mapStateToProps,
