@@ -9,6 +9,7 @@ import RouteTable from '../components/RouteTable';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
+import { agencyTitle } from '../locationConstants';
 import { fetchRoutes } from '../actions';
 
 function Dashboard(props) {
@@ -24,7 +25,7 @@ function Dashboard(props) {
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className="page-title">Muni</div>
+          <div className="page-title">{agencyTitle}</div>
           <DateTimePanel />
         </Toolbar>
       </AppBar>

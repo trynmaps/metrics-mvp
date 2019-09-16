@@ -8,8 +8,8 @@ import AppBar from '@material-ui/core/AppBar';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { fetchRoutes, routesUrl } from '../actions';
-import { DefaultDisabledRoutes } from '../agencies/sf-muni';
+import { fetchRoutes} from '../actions';
+import { DefaultDisabledRoutes, routesUrl } from '../locationConstants';
 import { metricsBaseURL } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 
@@ -667,7 +667,8 @@ class Isochrone extends React.Component {
             ) : (
               <div className="isochrone-instructions">
                 {!this.state.latLng
-                  ? 'Click anywhere in the city to see the trip times from that point to the rest of the city via Muni and walking.'
+                  ? 'Click anywhere in the city to see the trip times from' +
+                  ' that point to the rest of the city via transit and walking.'
                   : this.state.computing
                   ? 'Computing...'
                   : 'Click anywhere in the shaded area to see routes and trip times between the two points, or drag the blue pin to see trip times from a new point.'}

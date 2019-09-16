@@ -12,6 +12,7 @@ import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { fetchRoutes, fetchPrecomputedWaitAndTripData } from '../actions';
+import { agencyTitle } from '../locationConstants';
 
 const useStyles = makeStyles({
   title: {
@@ -55,7 +56,7 @@ function DataDiagnostic(props) {
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className={classes.title}>Muni</div>
+          <div className={classes.title}>{agencyTitle}</div>
           <DateTimePanel />
         </Toolbar>
       </AppBar>

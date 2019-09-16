@@ -1,5 +1,5 @@
 /**
- * Renders an SVG "shield" representing a Muni route.
+ * Renders an SVG "shield" representing a transit route.
  */
 export default function MapShield(props) {
   const routeText = props.routeText;

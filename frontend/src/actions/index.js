@@ -1,9 +1,7 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
-import { getTimePath, getStatPath } from '../helpers/precomputed';
-
-export const routesUrl =
-  'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
+import { getStatPath, getTimePath } from '../helpers/precomputed';
+import { generateTripURL, generateWaitTimeURL, routesUrl } from '../locationConstants';
 
 export function fetchGraphData(params) {
   return function(dispatch) {
@@ -93,10 +91,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
       const timePath = getTimePath(timeStr);
       const statPath = getStatPath('median');
 
-      const s3Url = `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/${dateStr.replace(
-        /-/g,
-        '/',
-      )}/trip-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
+      const s3Url = generateTripURL(dateStr, statPath, timePath);
 
       axios
         .get(s3Url)
@@ -118,10 +113,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
       const timePath = getTimePath(timeStr);
       const statPath = getStatPath('median');
 
-      const s3Url = `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/${dateStr.replace(
-        /-/g,
-        '/',
-      )}/wait-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
+      const s3Url = generateWaitTimeURL(dateStr, statPath, timePath);
 
       axios
         .get(s3Url)
