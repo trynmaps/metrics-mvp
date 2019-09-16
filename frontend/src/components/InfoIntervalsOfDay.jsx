@@ -226,9 +226,9 @@ class InfoIntervalsOfDay extends Component {
   {
     "intervals": [
         {
-            "start_time": "09:00",
-            "end_time": "10:00",
-            "headway_min": {
+            "startTime": "09:00",
+            "endTime": "10:00",
+            "headwayMin": {
                 "count": 5,
                 "avg": 10.936666666666664,
                 "std": 5.4460729990619035,
@@ -239,8 +239,8 @@ class InfoIntervalsOfDay extends Component {
                     {
                         "value": "0-5",
                         "count": 1,
-                        "bin_start": 0,
-                        "bin_end": 5
+                        "binStart": 0,
+                        "binEnd": 5
                     } etc.
   
                 ],
@@ -251,9 +251,9 @@ class InfoIntervalsOfDay extends Component {
                     } etc.
                 ]
             },
-            "wait_times": {
-                "first_bus": "09:03:25",
-                "last_bus": "09:58:06",
+            "waitTimes": {
+                "firstBus": "09:03:25",
+                "lastBus": "09:58:06",
                 "count": 60,
                 "avg": 6.916666666666668,
                 "std": 5.050841514044961,
@@ -267,9 +267,9 @@ class InfoIntervalsOfDay extends Component {
                    etc.
                 ]
             },
-            "trip_times": {
-                "start_stop": "3994",
-                "end_stop": "5417",
+            "tripTimes": {
+                "startStop": "3994",
+                "endStop": "5417",
                 "count": 6,
                 "avg": 19.025000000000002,
                 "std": 2.3074506936668664,
@@ -304,20 +304,20 @@ class InfoIntervalsOfDay extends Component {
         }
     ],
     "params": {
-        "start_stop_id": "3994",
-        "end_stop_id": "5417",
-        "route_id": "J",
-        "direction_id": "J____I_F00",
-        "start_date": "2019-04-08",
-        "end_date": "2019-04-08",
-        "start_time": "09:00",
-        "end_time": "12:00"
+        "startStopId": "3994",
+        "endStopId": "5417",
+        "routeId": "J",
+        "directionId": "J____I_F00",
+        "startDate": "2019-04-08",
+        "endDate": "2019-04-08",
+        "startTime": "09:00",
+        "endTime": "12:00"
     },
-    "route_title": [
+    "routeTitle": [
         "J-Church"
     ],
-    "start_stop_title": "Church St & 22nd St",
-    "end_stop_title": "Powell Station Inbound",
+    "startStopTitle": "Church St & 22nd St",
+    "endStopTitle": "Powell Station Inbound",
     "directions": [
         {
             "id": "J____I_F00",

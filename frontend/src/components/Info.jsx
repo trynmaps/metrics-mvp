@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import * as d3 from 'd3';
 import {
   XYPlot,
   HorizontalGridLines,
@@ -13,19 +12,13 @@ import {
   AppBar,
   Box,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Tabs,
   Typography,
 } from '@material-ui/core';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
-import { getPercentileValue, getBinMin, getBinMax } from '../helpers/graphData';
-import { milesBetween } from '../helpers/routeCalculations';
+import InfoTripSummary from './InfoTripSummary';
+import { getBinMin, getBinMax } from '../helpers/graphData';
 import {
-  PLANNING_PERCENTILE,
   CHART_COLORS,
   REACT_VIS_CROSSHAIR_NO_LINE,
 } from '../UIConstants';
@@ -64,163 +57,6 @@ class Info extends Component {
   onNearestXTripTimes = (value, { index }) => {
     this.setState({ crosshairValues: { trip: [this.tripData[index]] } });
   };
-
-  computeGrades(headwayMin, waitTimes, tripTimes, speed) {
-    //
-    // grade and score for average wait
-    //
-
-    const averageWaitScoreScale = d3
-      .scaleLinear()
-      .domain([5, 10])
-      .rangeRound([100, 0])
-      .clamp(true);
-
-    const averageWaitGradeScale = d3
-      .scaleThreshold()
-      .domain([5, 7.5, 10])
-      .range(['A', 'B', 'C', 'D']);
-
-    //
-    // grade and score for long wait probability
-    //
-    // where probability of 20 min wait is:
-    //   the sum of counts of bins whose range starts at 20 or more, divided by count
-    //
-
-    const reducer = (accumulator, currentValue, index) => {
-      const LONG_WAIT = 20; // histogram bins are in minutes
-      return currentValue.bin_start >= LONG_WAIT
-        ? accumulator + currentValue.count
-        : accumulator;
-    };
-
-    let longWaitProbability = 0;
-    if (waitTimes && waitTimes.histogram) {
-      longWaitProbability = waitTimes.histogram.reduce(reducer, 0);
-      longWaitProbability /= waitTimes.count;
-    }
-
-    const longWaitScoreScale = d3
-      .scaleLinear()
-      .domain([0.1, 0.33])
-      .rangeRound([100, 0])
-      .clamp(true);
-
-    const longWaitGradeScale = d3
-      .scaleThreshold()
-      .domain([0.1, 0.2, 0.33])
-      .range(['A', 'B', 'C', 'D']);
-
-    // grade and score for travel speed
-
-    const speedScoreScale = d3
-      .scaleLinear()
-      .domain([5, 10])
-      .rangeRound([0, 100])
-      .clamp(true);
-
-    const speedGradeScale = d3
-      .scaleThreshold()
-      .domain([5, 7.5, 10])
-      .range(['D', 'C', 'B', 'A']);
-
-    //
-    // grade score for travel time variability
-    //
-    // where variance is planning percentile time minus average time
-    //
-
-    let travelVarianceTime = 0;
-    if (tripTimes) {
-      travelVarianceTime =
-        getPercentileValue(tripTimes, PLANNING_PERCENTILE) - tripTimes.avg;
-    }
-
-    const travelVarianceScoreScale = d3
-      .scaleLinear()
-      .domain([5, 10])
-      .rangeRound([100, 0])
-      .clamp(true);
-
-    const travelVarianceGradeScale = d3
-      .scaleThreshold()
-      .domain([5, 7.5, 10])
-      .range(['A', 'B', 'C', 'D']);
-
-    const totalGradeScale = d3
-      .scaleThreshold()
-      .domain([100, 200, 300])
-      .range(['D', 'C', 'B', 'A']);
-
-    let averageWaitScore = 0;
-    let averageWaitGrade = '';
-    let longWaitScore = 0;
-    let longWaitGrade = '';
-    let speedScore = 0;
-    let speedGrade = '';
-    let travelVarianceScore = 0;
-    let travelVarianceGrade = '';
-    let totalScore = 0;
-    let totalGrade = '';
-
-    if (headwayMin) {
-      averageWaitScore = averageWaitScoreScale(waitTimes.avg);
-      averageWaitGrade = averageWaitGradeScale(waitTimes.avg);
-
-      longWaitScore = longWaitScoreScale(longWaitProbability);
-      longWaitGrade = longWaitGradeScale(longWaitProbability);
-
-      speedScore = speedScoreScale(speed);
-      speedGrade = speedGradeScale(speed);
-
-      travelVarianceScore = travelVarianceScoreScale(travelVarianceTime);
-      travelVarianceGrade = travelVarianceGradeScale(travelVarianceTime);
-
-      totalScore =
-        averageWaitScore + longWaitScore + speedScore + travelVarianceScore;
-      totalGrade = totalGradeScale(totalScore);
-    }
-
-    return {
-      averageWaitScore,
-      averageWaitGrade,
-      longWaitProbability,
-      longWaitScore,
-      longWaitGrade,
-      speedScore,
-      speedGrade,
-      travelVarianceTime,
-      travelVarianceScore,
-      travelVarianceGrade,
-      totalScore,
-      totalGrade,
-      highestPossibleScore: 400,
-    };
-  }
-
-  computeDistance(graphParams, routes) {
-    let miles = 0;
-
-    if (graphParams && graphParams.endStopId) {
-      const directionId = graphParams.directionId;
-      const routeId = graphParams.routeId;
-
-      const route = routes.find(thisRoute => thisRoute.id === routeId);
-      const stopSequence = route.directions.find(dir => dir.id === directionId)
-        .stops;
-      const startIndex = stopSequence.indexOf(graphParams.startStopId);
-      const endIndex = stopSequence.indexOf(graphParams.endStopId);
-
-      for (let i = startIndex; i < endIndex; i++) {
-        const fromStopInfo = route.stops[stopSequence[i]];
-        const toStopInfo = route.stops[stopSequence[i + 1]];
-        miles += milesBetween(fromStopInfo, toStopInfo);
-      }
-    }
-
-    return miles;
-  }
 
   handleTabChange(event, newValue) {
     this.setState({tabValue: newValue});
@@ -270,49 +106,7 @@ class Info extends Component {
           }))
         : null;
 
-    const distance = routes ? this.computeDistance(graphParams, routes) : null;
-    const speed =
-      tripTimes && distance
-        ? (distance / (tripTimes.avg / 60.0)).toFixed(1)
-        : 0; // convert avg trip time to hours for mph
-    const grades = speed
-      ? this.computeGrades(headwayMin, waitTimes, tripTimes, speed)
-      : null;
 
-    const tableRows = (!grades && []) || [
-      {
-        metric: 'Average Wait',
-        value: `${Math.round(waitTimes.avg)} minutes`,
-        grade: grades.averageWaitGrade,
-        score: grades.averageWaitScore,
-      },
-      {
-        metric: '20 min wait probability',
-        value: `${Math.round(grades.longWaitProbability * 100)}% ${
-          grades.longWaitProbability > 0
-            ? `(1 time out of ${Math.round(1 / grades.longWaitProbability)})`
-            : ''
-        }`,
-        grade: grades.longWaitGrade,
-        score: grades.longWaitScore,
-      },
-      {
-        metric: 'Travel Time',
-        value: `Average time ${Math.round(
-          tripTimes.avg,
-        )} minutes (${speed} mph)`,
-        grade: grades.speedGrade,
-        score: grades.speedScore,
-      },
-      {
-        metric: 'Travel Variability',
-        value: `${PLANNING_PERCENTILE}% of trips take ${Math.round(
-          getPercentileValue(tripTimes, PLANNING_PERCENTILE),
-        )} minutes`,
-        grade: grades.travelVarianceGrade,
-        score: grades.travelVarianceScore,
-      },
-    ];
 
     function a11yProps(index) {
       return {
@@ -343,41 +137,15 @@ class Info extends Component {
           </Tabs>
         </AppBar>
         
-        {headwayMin && grades ? (
+        {headwayMin && routes ? (
           <div>
             <Box p={2} hidden={this.state.tabValue !== SUMMARY} >
             
-                <Typography variant="h5" display="inline">Trip Grade:{' '}
-                {grades.totalGrade}{' '}
-                ({' '}{grades.totalScore} / {grades.highestPossibleScore} )
-                </Typography>
-                <p>
-                  {`${PLANNING_PERCENTILE}% of waits under ${Math.round(
-                    getPercentileValue(waitTimes, PLANNING_PERCENTILE),
-                  )} minutes`}
-                </p>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell align="right">Metric</TableCell>
-                      <TableCell align="right">Value</TableCell>
-                      <TableCell align="right">Grade</TableCell>
-                      <TableCell align="right">Score</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {tableRows.map(row => (
-                      <TableRow key={row.metric}>
-                        <TableCell component="th" scope="row">
-                          {row.metric}
-                        </TableCell>
-                        <TableCell align="right">{row.value}</TableCell>
-                        <TableCell align="right">{row.grade}</TableCell>
-                        <TableCell align="right">{row.score}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <InfoTripSummary
+                graphData={graphData}
+                graphParams={graphParams}
+                routes={routes}
+              />
             </Box>
 
            <Box p={2} hidden={this.state.tabValue !== TIME_OF_DAY}>
