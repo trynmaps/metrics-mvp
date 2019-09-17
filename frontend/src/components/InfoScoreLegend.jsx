@@ -26,7 +26,7 @@ export default function InfoScoreLegend(props) {
 
         { rows.map(row => {
 
-          return <TableRow>
+          return <TableRow key={row.value}>
                    <TableCell>
                      {row.label}
                    </TableCell>

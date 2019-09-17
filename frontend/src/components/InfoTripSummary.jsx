@@ -216,14 +216,23 @@ export default function InfoTripSummary(props) {
       const routeId = graphParams.routeId;
 
       const route = routes.find(thisRoute => thisRoute.id === routeId);
-      const stopSequence = route.directions.find(dir => dir.id === directionId)
-        .stops;
-      const startIndex = stopSequence.indexOf(graphParams.startStopId);
-      const endIndex = stopSequence.indexOf(graphParams.endStopId);
+      const directionInfo = route.directions.find(dir => dir.id === directionId);
+
+      // if precomputed stop distance is available, use it
+      
+      if (directionInfo.stop_geometry[graphParams.startStopId] &&
+          directionInfo.stop_geometry[graphParams.endStopId]) {
+        let distance = directionInfo.stop_geometry[graphParams.endStopId].distance -
+          directionInfo.stop_geometry[graphParams.startStopId].distance;
+        return metersToMiles(distance);
+      }
+      
+      const startIndex = directionInfo.stops.indexOf(graphParams.startStopId);
+      const endIndex = directionInfo.stops.indexOf(graphParams.endStopId);
 
       for (let i = startIndex; i < endIndex; i++) {
-        const fromStopInfo = route.stops[stopSequence[i]];
-        const toStopInfo = route.stops[stopSequence[i + 1]];
+        const fromStopInfo = route.stops[directionInfo.stops[i]];
+        const toStopInfo = route.stops[directionInfo.stops[i + 1]];
         miles += milesBetween(fromStopInfo, toStopInfo);
       }
     }
@@ -231,7 +240,17 @@ export default function InfoTripSummary(props) {
     return miles;
   }
 
-  
+  let whyNoData = null;
+  if (!distance) {
+    whyNoData = 'Unable to determine distance between selected stops.';
+  } else if (!tripTimes || !tripTimes.count) {
+    whyNoData = 'No trip data between selected stops.';
+  } else if (!speed) {
+    whyNoData = 'Unable to determine speed between selected stops.';
+  } else if (!waitTimes.median) {
+    whyNoData = 'No median wait time available.';
+  } 
+
   
   const distance = routes ? computeDistance(graphParams, routes) : null;
   const speed =
@@ -239,7 +258,7 @@ export default function InfoTripSummary(props) {
       ? (distance / (tripTimes.avg / 60.0)).toFixed(1)
       : 0; // convert avg trip time to hours for mph
 
-  const grades = speed
+  const grades = speed && waitTimes.median
   ? computeGrades(headwayMin, waitTimes, tripTimes, speed)
   : null;
 
@@ -393,7 +412,7 @@ export default function InfoTripSummary(props) {
               </Typography>
               </Box>
               
-              <Box display="flex" justifyContent="space-between" alignContent="flex-end">
+              <Box display="flex" justifyContent="space-between" alignItems="flex-end">
                 &nbsp;
                 <IconButton id='infoGrade' size='small' onClick={handleClick}><InfoIcon fontSize='small'/></IconButton> 
               </Box>           
@@ -416,7 +435,7 @@ export default function InfoTripSummary(props) {
               >
                 <div className={classes.popover}>
 
-                <Typography style={{width:300}}>Trip score of { grades.totalScore } is the average of the following subscores:
+                <Typography style={{width:300}} component={'div'}>Trip score of { grades.totalScore } is the average of the following subscores:
                 </Typography>
                 <Table>
                 <TableBody>
@@ -469,12 +488,12 @@ export default function InfoTripSummary(props) {
                   readOnly
                   size="small"
                   value={
-                    grades ? Math.round(grades.medianWaitScore / 10.0) / 2.0 : 0
+                    grades ? Math.max(Math.round(grades.medianWaitScore / 10.0) / 2.0, 0.5) : 0
                   }
                   precision={0.5}
                 />
                 </Box>
-                <Box display="flex" justifyContent="space-between" alignContent="flex-end">
+                <Box display="flex" justifyContent="space-between" alignItems="flex-end">
                   &nbsp;
                   <IconButton id='infoWait' size='small' onClick={handleClick} ><InfoIcon fontSize='small'/></IconButton> 
                 </Box>           
@@ -541,13 +560,13 @@ export default function InfoTripSummary(props) {
                 readOnly
                 size="small"
                 value={
-                  grades ? Math.round(grades.longWaitScore / 10.0) / 2.0 : 0
+                  grades ? Math.max(Math.round(grades.longWaitScore / 10.0) / 2.0, 0.5) : 0
                 }
                 precision={0.5}
               />
               </Box>
 
-              <Box display="flex" justifyContent="space-between" alignContent="flex-end" pt={2}>
+              <Box display="flex" justifyContent="space-between" alignItems="flex-end" pt={2}>
               {
                 grades.longWaitProbability > 0
                   ? `1 time out of ${Math.round(1 / grades.longWaitProbability)}`
@@ -575,7 +594,7 @@ export default function InfoTripSummary(props) {
             >
               <div className={classes.popover}>
 
-              <Typography style={{width:300}}>20 min wait probability of { (grades.longWaitProbability * 100).toFixed(1) }% gets a score of {grades.longWaitScore}.
+              <Typography style={{width:300}} component={'div'}>20 min wait probability of { (grades.longWaitProbability * 100).toFixed(1) }% gets a score of {grades.longWaitScore}.
 
               <InfoScoreLegend rows={[
               { label: '10% or less', value: 100 },
@@ -613,12 +632,12 @@ export default function InfoTripSummary(props) {
                   readOnly
                   size="small"
                   value={
-                    grades ? Math.round(grades.speedScore / 10.0) / 2.0 : 0
+                    grades ? Math.max(Math.round(grades.speedScore / 10.0) / 2.0, 0.5) : 0
                   }
                   precision={0.5}
                 />
                 </Box>
-                <Box display="flex" justifyContent="space-between" alignContent="flex-end" pt={2}>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-end" pt={2}>
 
 
                   { distance.toFixed(1) } miles
@@ -645,7 +664,7 @@ export default function InfoTripSummary(props) {
                 >
                   <div className={classes.popover}>
 
-                  <Typography style={{width:300}}>Median speed of { speed } mph gets a score of {grades.speedScore}.
+                  <Typography style={{width:300}} component={'div'}>Median speed of { speed } mph gets a score of {grades.speedScore}.
 
                   <InfoScoreLegend rows={[
                   { label: '10 mph or more', value: 100 },
@@ -680,12 +699,12 @@ export default function InfoTripSummary(props) {
                 readOnly
                 size="small"
                 value={
-                  grades ? Math.round(grades.travelVarianceScore / 10.0) / 2.0 : 0
+                  grades ? Math.max(Math.round(grades.travelVarianceScore / 10.0) / 2.0, 0.5) : 0
                 }
                 precision={0.5}
               />
               </Box>
-              <Box display="flex" justifyContent="space-between" alignContent="flex-end" pt={2}>
+              <Box display="flex" justifyContent="space-between" alignItems="flex-end" pt={2}>
                 In {PLANNING_PERCENTILE}% of trips
                 <IconButton id='infoExtraTravel' size='small' onClick={handleClick} ><InfoIcon fontSize='small'/></IconButton>                  
               </Box>
@@ -710,7 +729,7 @@ export default function InfoTripSummary(props) {
               >
                 <div className={classes.popover}>
 
-                <Typography style={{width:300}}>Extra travel time of { planningTravel - typicalTravel } min gets a score of {grades.travelVarianceScore}.
+                <Typography style={{width:300}} component={'div'}>Extra travel time of { planningTravel - typicalTravel } min gets a score of {grades.travelVarianceScore}.
 
                 <InfoScoreLegend rows={[
                 { label: '5 min or less', value: 100 },
@@ -729,8 +748,8 @@ export default function InfoTripSummary(props) {
         </Grid>
       </Fragment>
             
-         
-      : null }
+      : 'No trip summary (' + whyNoData + ')'} 
+      
       </div>
     </Fragment>
               )

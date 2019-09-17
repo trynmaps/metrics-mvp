@@ -533,12 +533,12 @@ export function getAllScores(routes, waits, speeds) {
 export const quartileBackgroundColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
-  .range([red[300], yellow[500], lightGreen[700], green[900]]);
+  .range([red[300], yellow[300], lightGreen[800], green[900]]);
 
 export const quartileForegroundColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
-  .range(['black', 'black', 'black', 'white']);
+  .range(['black', 'black', 'white', 'white']);
 
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon
