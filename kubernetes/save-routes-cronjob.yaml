@@ -13,7 +13,7 @@ spec:
           - name: compute-new
             image: gcr.io/poetic-genius-233804/metrics-flask:latest
             imagePullPolicy: Always
-            command: ["python",  "save_routes.py"]
+            command: ["python",  "save_routes.py",  "--s3"]
             env:
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
