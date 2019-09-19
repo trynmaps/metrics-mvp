@@ -470,6 +470,8 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
     start_trip = 0
 
+    arrival_time_diffs = []
+
     def set_trip(dir_arrivals):
         nonlocal start_trip
 
@@ -482,6 +484,8 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         arrival_time_values = dir_arrivals['TIME'].values
 
         arrival_time_diff = np.diff(arrival_time_values, prepend=arrival_time_values[0])
+
+        arrival_time_diffs.append(arrival_time_diff)
 
         new_trip = (stop_index_diff <= 0) | (arrival_time_diff > 3600)
 
@@ -516,6 +520,11 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         get_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, buses_map[vehicle_id], route_config)
             for (vehicle_id, direction_id), dir_arrivals in possible_arrivals.groupby(['VID', 'DID'])
     ])
+
+    arrival_time_diffs = np.concatenate(arrival_time_diffs)
+    diff_quantiles = np.quantile(arrival_time_diffs, [0.5, 0.9, 1])
+
+    print(f' median={diff_quantiles[0]} 90%={diff_quantiles[1]} max={diff_quantiles[2]}')
 
     return arrivals.sort_values('TIME'), start_trip
 
