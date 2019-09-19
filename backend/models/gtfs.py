@@ -99,7 +99,7 @@ class GtfsScraper:
             return stop_times[["trip_id", "arrival_time", "departure_time", "stop_id", "nextbus_id", "stop_sequence", "direction"]].sort_values("arrival_time")
         else:
             print(f"Stop times df for route {route_id} on {date} going {direction} is empty")
-            return pd.DataFrame()
+            return pd.DataFrame(columns = ["trip_id", "arrival_time", "departure_time", "stop_id", "nextbus_id", "stop_sequence", "direction"])
 
     def get_excluded_stops(self, route_id, stop_times_df, route_config, direction, d):
         stop_dirs = {

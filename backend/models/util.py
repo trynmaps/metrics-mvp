@@ -90,3 +90,23 @@ def get_localized_datetime(d: date, time_str: str, tz: pytz.timezone):
         dt = dt + timedelta(days=int(time_str_parts[1]))
 
     return tz.localize(dt)
+
+def get_intervals(start_time, end_time, interval_length):
+    # round start_time down and end_time up to allow for even intervals
+    rounded_start_time = datetime.strptime(start_time, '%H:%M:%S').replace(microsecond=0, second=0, minute=0)
+    rounded_end_time = datetime.strptime(end_time, '%H:%M:%S').replace(microsecond=0, second=0, minute=0) + timedelta(hours=1)
+    # save the date of the start time to account for the case that the end time is during the next day
+    start_day = rounded_start_time.date()
+
+    time_str_intervals = []
+
+    # if the next interval would extend beyond the end time, exclude it 
+    while rounded_start_time <= rounded_end_time:
+        new_start_time = rounded_start_time + timedelta(hours = interval_length)
+        time_str_intervals.append((
+            rounded_start_time.strftime('%H:%M:%S'),
+            (new_start_time).strftime('%H:%M:%S') if start_day == new_start_time.date() else f"{(new_start_time).strftime('%H:%M:%S')}+1"
+        ))
+        rounded_start_time = new_start_time
+
+    return time_str_intervals

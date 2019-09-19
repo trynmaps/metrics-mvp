@@ -10,7 +10,8 @@ import time
 import requests
 import math
 import sys
-from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors
+from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors, schema
+from flask_graphql import GraphQLView
 
 """
 This is the app's main file!
@@ -27,6 +28,58 @@ CORS(app)
 @app.route('/api/ping', methods=['GET'])
 def ping():
     return "pong"
+
+app.add_url_rule('/api/metrics_api', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = True))
+
+@app.route('/api/routes', methods=['GET'])
+def routes():
+    route_list = nextbus.get_route_list('sf-muni')
+
+    data = [{
+        'id': route.id,
+        'title': route.title,
+        'directions': [{
+            'id': dir.id,
+            'title': dir.title,
+            'name': dir.name,
+            'stops': dir.get_stop_ids()
+        } for dir in route.get_direction_infos()],
+        'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
+    } for route in route_list]
+
+    res = Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
+    if not DEBUG:
+        res.headers['Cache-Control'] = 'max-age=3600'
+    return res
+
+@app.route('/api/route', methods=['GET'])
+def route_config():
+    route_id = request.args.get('route_id')
+    params = {'route_id': route_id}
+
+    if route_id is None:
+        return make_error_response(params, "Missing route_id", 400)
+
+    route = nextbus.get_route_config('sf-muni', route_id)
+
+    if route is None:
+        return make_error_response(params, f"Invalid route ID {route_id}", 404)
+
+    data = {
+        'id': route_id,
+        'title': route.title,
+        'directions': [{
+            'id': dir.id,
+            'title': dir.title,
+            'name': dir.name,
+            'stops': dir.get_stop_ids()
+        } for dir in route.get_direction_infos()],
+        'stops': {stop.id: {'title': stop.title, 'lat': stop.lat, 'lon': stop.lon} for stop in route.get_stop_infos()}
+    }
+    res = Response(json.dumps(data), mimetype='application/json') # no prettyprinting to save bandwidth
+    if not DEBUG:
+        res.headers['Cache-Control'] = 'max-age=3600'
+    return res
 
 @app.route('/api/metrics', methods=['GET'])
 def metrics_page():

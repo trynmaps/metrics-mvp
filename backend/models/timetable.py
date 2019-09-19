@@ -18,11 +18,15 @@ class Timetable:
         self.date = date
 
     def get_data_frame(self, stop_id, direction = None):
-        if direction is None:
-            df = self.timetable.loc[self.timetable.nextbus_id.apply(lambda x: x == stop_id) ["arrival_time", "departure_time"]].copy(deep = True)
-        else:
-            direction_name = "inbound" if "i" in direction.lower() else "outbound"
-            df = self.timetable.loc[(self.timetable.nextbus_id.apply(lambda x: x == stop_id)) & (self.timetable.direction.apply(lambda x: x == direction_name)), ["arrival_time", "departure_time"]].copy(deep = True)
+        try:
+            if direction is None:
+                df = self.timetable.loc[self.timetable.nextbus_id.apply(lambda x: x == stop_id), ["arrival_time", "departure_time"]].copy(deep = True)
+            else:
+                direction_name = "inbound" if "i" in direction.lower() else "outbound"
+                df = self.timetable.loc[(self.timetable.nextbus_id.apply(lambda x: x == stop_id)) & (self.timetable.direction.apply(lambda x: x == direction_name)), ["arrival_time", "departure_time"]].copy(deep = True)
+        except AttributeError:
+            print(f"No timetable found for {self.route_id} on {self.date.isoformat()}.")
+            raise errors.TimetableError(f"No timetable found for route {self.route_id} on {self.date.isoformat()}.")
         
         midnight = datetime.combine(self.date, time(), tzinfo = pytz.timezone('America/Los_Angeles'))
         df.index = range(len(df))

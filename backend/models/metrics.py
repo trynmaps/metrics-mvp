@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 ROUND_DIGITS = 3
-DEFAULT_STAT_KEYS = ['count', 'avg', 'min', 'median', 'max']
+DEFAULT_STAT_KEYS = ['count', 'avg', 'min', 'median', 'max', 'percentiles', 'histogram']
 
 # Represents a range of days with a time range within each day.
 # RouteMetrics can calculate various statistics over a range.
@@ -91,10 +91,15 @@ class RouteMetrics:
     def get_comparison_to_timetable(self, d, stop_id=None, direction_id=None):
         stop_timetable = self.get_stop_timetable(d, stop_id, direction_id)
         stop_arrivals = self.get_data_frame(d, stop_id, direction_id)
+        
+        if len(stop_arrivals) == 0:
+            raise errors.TimetableError(f"No arrivals found for {stop_id} on {d.isoformat()}.")
 
         # first headway is always nan
         arrival_headways = np.insert(compute_headway_minutes(stop_arrivals['TIME'].to_numpy()), 0, np.nan)
         stop_arrivals['headway'] = arrival_headways
+
+        # comparing headways requires at least 2 arrivals and 
 
         # for each scheduled arrival time, get the closest actual arrival (earlier or later), the next actual arrival, and the corresponding headways
         def get_adjacent_arrival_times(scheduled_arrivals, arrivals, arrival_headways):
@@ -110,6 +115,9 @@ class RouteMetrics:
             previous_abs = np.absolute(previous_arrivals - scheduled_arrivals)
 
             # compare the delta between scheduled arrival and next arrival to delta between scheduled arrival and previous arrival
+            # replace nan values with np.inf to prevent runtime error and guarantee that the other value is smaller
+            np.place(next_abs, pd.isnull(next_abs), np.inf)
+            np.place(previous_abs, pd.isnull(previous_abs), np.inf)
             comparison = next_abs < previous_abs
 
             # returns, in order: next arrival, next headway, closest arrival, closest headway
@@ -130,7 +138,6 @@ class RouteMetrics:
         return stop_timetable[['arrival_time', 'arrival_headway', 'next_arrival', 'next_arrival_delta', 'next_arrival_headway', 'closest_arrival', 'closest_arrival_delta', 'closest_arrival_headway']] 
         
     def get_wait_time_stats(self, direction_id, stop_id, rng: Range, keys=DEFAULT_STAT_KEYS):
-
         averages = []
 
         needs_histogram = ('histogram' in keys)
@@ -174,7 +181,8 @@ class RouteMetrics:
         data = {}
 
         if 'count' in keys:
-            data['count'] = 100 # percent
+            # account for the case where the time interval had no arrivals to sample (and therefore no percentile values)
+            data['count'] = 0 if len(percentile_values_arr) == 0 else 100 # percent
 
         if 'avg' in keys and len(averages) > 0:
             data['avg'] = round(np.average(averages), ROUND_DIGITS)
