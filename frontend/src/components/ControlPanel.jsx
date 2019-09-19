@@ -12,7 +12,6 @@ import Select from '@material-ui/core/Select';
 import { handleGraphParams } from '../actions';
 import Grid from '@material-ui/core/Grid';
 
-
 const useStyles = makeStyles(theme => ({
   root: {
     display: 'flex',
