@@ -19,7 +19,7 @@ class SidebarButton extends React.Component {
   }
 
   handleToggleDrawer() {
-    this.setState({ drawerOpen: !this.state.drawerOpen });
+    this.setState(prevState => ({ drawerOpen: !prevState.drawerOpen }));
   }
 
   render() {

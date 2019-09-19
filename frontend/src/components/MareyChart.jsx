@@ -68,7 +68,7 @@ function MareyChart(props) {
   const INBOUND = 'Inbound'; // same as directionInfo name
   const OUTBOUND = 'Outbound'; // same as directionInfo name
 
-  const { graphParams, fetchArrivals, arrivals, routes } = props;
+  const { graphParams, thisFetchArrivals, arrivals, routes } = props;
 
   // On first load, get the raw arrival history corresponding to graphParams.
 
