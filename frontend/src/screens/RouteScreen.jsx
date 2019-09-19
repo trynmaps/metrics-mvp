@@ -16,12 +16,7 @@ import { fetchRoutes } from '../actions';
 import { agencyTitle } from '../locationConstants';
 
 function RouteScreen(props) {
-  useEffect(() => {
-    if (!props.routes) {
-      props.fetchRoutes();
-    }
-  }, []); // like componentDidMount, this runs only on first render
-
+  
   const {
     graphData,
     graphError,
@@ -30,6 +25,12 @@ function RouteScreen(props) {
     intervalError,
     routes,
   } = props;
+  
+  useEffect(() => {
+    if (!routes) {
+      fetchRoutes();
+    }
+  }, [routes]); // like componentDidMount, this runs only on first render
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId

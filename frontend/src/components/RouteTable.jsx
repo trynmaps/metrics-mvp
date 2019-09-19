@@ -189,10 +189,12 @@ function RouteTable(props) {
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
   const dense = true;
+  
+  const { graphParams, fetchPrecomputedWaitAndTripData } = props;
 
   useEffect(() => {
-    props.fetchPrecomputedWaitAndTripData(props.graphParams);
-  }, []); // like componentDidMount, this runs only on first render
+    fetchPrecomputedWaitAndTripData(graphParams);
+  }, [graphParams, fetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
