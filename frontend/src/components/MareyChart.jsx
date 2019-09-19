@@ -115,7 +115,7 @@ function MareyChart(props) {
         };
       }
 
-      if (directionInfo.stop_geometry[stopId]) {
+      if (directionInfo && directionInfo.stop_geometry[stopId]) {
         let distance = directionInfo.stop_geometry[stopId].distance;
 
         // This is a little clunky -- for all outbound routes, we restate the distance
@@ -257,7 +257,7 @@ function MareyChart(props) {
 
       if (
         selectedOption === INBOUND_AND_OUTBOUND ||
-        trip.directionInfo.name === selectedOption
+        (trip.directionInfo && trip.directionInfo.name === selectedOption)
       ) {
         const dataSeries = trip.series.sort((a, b) => {
           const deltaY = b.y - a.y;

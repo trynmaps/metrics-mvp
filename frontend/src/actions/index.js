@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
-import { getTimePath, getStatPath } from '../helpers/precomputed';
+import { getTimePath } from '../helpers/precomputed';
 
 export const routesUrl =
   'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
@@ -85,13 +85,14 @@ export function fetchPrecomputedWaitAndTripData(params) {
       : '';
     const dateStr = params.date;
 
+    const tripStatGroup = 'p10-median-p90'; // blocked; // 'median'
     const tripTimesCache = getState().routes.tripTimesCache;
 
-    const tripTimes = tripTimesCache[`${dateStr + timeStr}median`];
+    const tripTimes = tripTimesCache[`${dateStr + timeStr}${tripStatGroup}`];
 
     if (!tripTimes) {
       const timePath = getTimePath(timeStr);
-      const statPath = getStatPath('median');
+      const statPath = tripStatGroup;
 
       const s3Url = `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/${dateStr.replace(
         /-/g,
@@ -103,7 +104,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
-            payload: [response.data, `${dateStr + timeStr}median`],
+            payload: [response.data, `${dateStr + timeStr}${tripStatGroup}`],
           });
         })
         .catch(() => {
@@ -111,12 +112,13 @@ export function fetchPrecomputedWaitAndTripData(params) {
         });
     }
 
+    const waitStatGroup = 'median-p90-plt20m';
     const waitTimesCache = getState().routes.waitTimesCache;
-    const waitTimes = waitTimesCache[`${dateStr + timeStr}median`];
+    const waitTimes = waitTimesCache[`${dateStr + timeStr}${waitStatGroup}`];
 
     if (!waitTimes) {
       const timePath = getTimePath(timeStr);
-      const statPath = getStatPath('median');
+      const statPath = waitStatGroup; // for now, nothing clever about selecting smaller files here //getStatPath(statGroup);
 
       const s3Url = `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/${dateStr.replace(
         /-/g,
@@ -128,7 +130,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
-            payload: [response.data, `${dateStr + timeStr}median`],
+            payload: [response.data, `${dateStr + timeStr}${waitStatGroup}`],
           });
         })
         .catch(() => {
