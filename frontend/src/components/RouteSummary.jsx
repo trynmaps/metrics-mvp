@@ -29,11 +29,12 @@ import {
  * @param {any} props
  */
 function RouteSummary(props) {
-  useEffect(() => {
-    props.fetchPrecomputedWaitAndTripData(props.graphParams);
-  }, []); // like componentDidMount, this runs only on first render
+  
+  const { graphParams, fetchPrecomputedWaitAndTripData } = props;
 
-  const { graphParams } = props;
+  useEffect(() => {
+    fetchPrecomputedWaitAndTripData(graphParams);
+  }, [graphParams, fetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
 
   let wait = null;
   let speed = null;
