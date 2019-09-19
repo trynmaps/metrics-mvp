@@ -3,7 +3,6 @@
  */
  
 import React, { Fragment } from 'react';
-import * as d3 from 'd3';
 import { getPercentileValue } from '../helpers/graphData';
 import { PLANNING_PERCENTILE } from '../UIConstants';
 import { milesBetween } from '../helpers/routeCalculations';
