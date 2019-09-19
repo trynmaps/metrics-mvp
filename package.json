@@ -12,8 +12,5 @@
     "node": ">=8.14.0",
     "npm": ">=6.0.0",
     "yarn": "NO LONGER USED - Please use npm"
-  },
-  "dependencies": {
-    "@material-ui/core": "^4.1.0"
   }
 }

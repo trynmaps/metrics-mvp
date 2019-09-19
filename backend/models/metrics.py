@@ -338,8 +338,8 @@ class RouteMetrics:
         return [{
                 "value": f'{bin}-{bin+bin_size}',
                 "count": round(float(count), ROUND_DIGITS),
-                "bin_start": bin,
-                "bin_end": bin + bin_size
+                "binStart": bin,
+                "binEnd": bin + bin_size
             }
           for bin, count in zip(bins, histogram)]
 

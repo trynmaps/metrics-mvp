@@ -36,3 +36,25 @@
 .largeMarginTop {
   margin-top:4rem;
 }
+
+.page-title
+{
+    flex-grow:1;
+}
+
+.flex-screen
+{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+}
+
+.map-instructions
+{
+    border:1px solid #ccc;
+    background-color:#fff;
+    border-radius:5px;
+    max-width:180px;
+    padding:8px;
+    opacity:1.0;
+}

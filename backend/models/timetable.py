@@ -104,6 +104,6 @@ def get_date_period(agency: str, d: date, ver: str):
     elif len(period) > 0:
         date_range = period.date_range.iloc[0]
     else:
-        raise Exception(f"No timetable data for {d.isoformat()}")
+        raise errors.TimetableError(f"No timetable data for {d.isoformat()}")
 
     return [date_range[0], date_range[-1]]

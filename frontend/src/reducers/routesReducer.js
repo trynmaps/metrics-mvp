@@ -1,17 +1,22 @@
 /* eslint-disable no-case-declarations */
-const initialState = {
+import Moment from 'moment';
+
+const momentYesterday = Moment(Date.now() - 24 * 60 * 60 * 1000);
+
+// Make the initialState available to the rest of the app when resetting to default values.
+export const initialState = {
   routes: null,
   spiderSelection: [],
   graphParams: {
-    route_id: null,
-    direction_id: null,
-    start_stop_id: null,
-    end_stop_id: null,
-    start_time: null,
-    end_time: null,
-    date: '2019-06-06',
+    routeId: null,
+    directionId: null,
+    startStopId: null,
+    endStopId: null,
+    startTime: null,
+    endTime: null,
+    date: momentYesterday.format('YYYY-MM-DD'),
   },
-  spiderLatLng: null, 
+  spiderLatLng: null,
   tripTimesCache: {},
   waitTimesCache: {},
 };
@@ -21,17 +26,39 @@ export default (state = initialState, action) => {
     case 'RECEIVED_ROUTES':
       return { ...state, routes: action.payload };
     case 'RECEIVED_SPIDER_MAP_CLICK':
-      return { ...state, spiderSelection: action.payload[0], spiderLatLng: action.payload[1]};
+      return {
+        ...state,
+        spiderSelection: action.payload[0],
+        spiderLatLng: action.payload[1],
+      };
     case 'RECEIVED_GRAPH_PARAMS':
-      return { ...state, graphParams: Object.assign({}, state.graphParams, action.payload) };
+      return {
+        ...state,
+        graphParams: Object.assign({}, state.graphParams, action.payload),
+      };
     case 'RECEIVED_ROUTES_ERROR':
       return state;
     case 'RECEIVED_PRECOMPUTED_TRIP_TIMES':
-      return { ...state, tripTimesCache: { ...state.tripTimesCache,
-        [action.payload[1]]: action.payload[0] }} ; // add new dictionary entry into tripTimesCache
+      return {
+        ...state,
+        tripTimesCache: {
+          ...state.tripTimesCache,
+          [action.payload[1]]: action.payload[0],
+        },
+      }; // add new dictionary entry into tripTimesCache
     case 'RECEIVED_PRECOMPUTED_WAIT_TIMES':
-      return { ...state, waitTimesCache: { ...state.waitTimesCache,
-        [action.payload[1]]: action.payload[0] }} ; // add new dictionary entry into waitTimesCache
+      return {
+        ...state,
+        waitTimesCache: {
+          ...state.waitTimesCache,
+          [action.payload[1]]: action.payload[0],
+        },
+      }; // add new dictionary entry into waitTimesCache
+    case 'RECEIVED_ARRIVALS':
+      return {
+        ...state,
+        arrivals: action.payload[0],
+      };
     default:
       return state;
   }

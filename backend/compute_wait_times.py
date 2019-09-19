@@ -79,7 +79,10 @@ def add_median_wait_time_stats_for_direction(
 
         dir_wait_time_stats["median"] = median
 
-def compute_wait_times(agency_id, d: date, routes, tz, stat_ids, save_to_s3 = False):
+def compute_wait_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids=None):
+    if stat_ids is None:
+        stat_ids = stat_groups.keys()
+
     print(d)
     all_wait_time_stats = {}
 
@@ -216,8 +219,6 @@ if __name__ == '__main__':
         raise Exception('missing date, start-date, or end-date')
 
     stat_ids = args.stat
-    if stat_ids is None:
-        stat_ids = stat_groups.keys()
 
     for d in dates:
-        compute_wait_times(agency_id, d, routes, tz, stat_ids, save_to_s3=args.s3)
+        compute_wait_times(d, tz, agency_id, routes, save_to_s3=args.s3, stat_ids=stat_ids)

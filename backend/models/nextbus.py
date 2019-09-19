@@ -4,14 +4,16 @@ import json
 import requests
 import re
 from . import util
+import pandas as pd
 
 class StopInfo:
-    def __init__(self, data):
+    def __init__(self, route, data):
         self.id = data['tag']
         self.location_id = data['stopId']
         self.title = data['title']
         self.lat = float(data['lat'])
         self.lon = float(data['lon'])
+        self.route = route
 
 class DirectionInfo:
     def __init__(self, data):
@@ -49,12 +51,12 @@ class RouteConfig:
                 return None
 
     def get_stop_infos(self):
-        return [StopInfo(stop) for stop in self.data['stop']]
+        return [StopInfo(self, stop) for stop in self.data['stop']]
 
     def get_stop_info(self, stop_id):
         for stop in self.data['stop']:
             if stop['tag'] == stop_id:
-                return StopInfo(stop)
+                return StopInfo(self, stop)
         return None
 
     def _get_direction_data(self):
@@ -83,6 +85,49 @@ class RouteConfig:
             for direction in self._get_direction_data()
             for stop in direction['stop'] if stop['tag'] == stop_id
         ]
+
+class StopLocationInfo:
+    def __init__(self, location_id, lat, lon, title):
+        self.id = location_id
+        self.lat = lat
+        self.lon = lon
+        self.title = title
+        self.stop_infos = []
+
+    def get_stop_infos(self):
+        return self.stop_infos
+
+    def add_stop_info(self, stop_info):
+        self.stop_infos.append(stop_info)
+
+class StopLocations:
+    def __init__(self, agency_id, locations_map):
+        self.agency_id = agency_id
+        self.locations_map = locations_map
+        self.loc_df = pd.DataFrame([(loc.id, loc.lat, loc.lon) for id, loc in locations_map.items()],
+            columns=['LOCATION_ID','LAT','LON']
+        )
+
+    def get_data_frame(self):
+        return self.loc_df
+
+    def get_location_by_id(self, loc_id):
+        if loc_id in self.locations_map:
+            return self.locations_map[loc_id]
+        else:
+            return None
+
+def get_all_stop_locations(agency_id) -> StopLocations:
+    routes = get_route_list(agency_id)
+    locations_map = {}
+    for route in routes:
+        route_config = get_route_config(agency_id, route.id)
+        for stop_info in route_config.get_stop_infos():
+            location_id = stop_info.location_id
+            if not location_id in locations_map:
+                locations_map[location_id] = StopLocationInfo(stop_info.location_id, stop_info.lat, stop_info.lon, stop_info.title)
+            locations_map[location_id].add_stop_info(stop_info)
+    return StopLocations(agency_id, locations_map)
 
 def get_route_list(agency_id):
 

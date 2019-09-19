@@ -51,7 +51,7 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
         lat_diff_values = lat_values - prev_lat_values
         lon_diff_values = lon_values - prev_lon_values
 
-        moved_dist_values = haver_distance(prev_lat_values, prev_lon_values, lat_values, lon_values)
+        moved_dist_values = util.haver_distance(prev_lat_values, prev_lon_values, lat_values, lon_values)
         num_samples_values = np.floor(moved_dist_values / target_dist) # may be 0
         num_samples_values[0] = 0
 
@@ -115,22 +115,6 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
     resampled_bus['TIME'] = resampled_bus['TIME'].astype(np.int64)
 
     return resampled_bus
-
-# haversine formula for calcuating distance between two coordinates in lat lon
-# from bird eye view; seems to be +- 8 meters difference from geopy distance
-def haver_distance(latstop,lonstop,latbus,lonbus):
-
-    latstop,lonstop,latbus,lonbus = map(np.deg2rad,[latstop,lonstop,latbus,lonbus])
-    eradius = 6371000
-
-    latdiff = (latbus-latstop)
-    londiff = (lonbus-lonstop)
-
-    a = np.sin(latdiff/2)**2 + np.cos(latstop)*np.cos(latbus)*np.sin(londiff/2)**2
-    c = 2*np.arctan2(np.sqrt(a),np.sqrt(1-a))
-
-    distance = eradius*c
-    return distance
 
 PM = [('12:00', None)]
 AM = [(None, '12:00')]
@@ -247,7 +231,7 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
             stop_direction_ids = route_config.get_directions_for_stop(stop_id)
             if len(stop_direction_ids) > 0:
                 # calculate distances fast with haversine function
-                buses[f'DIST_{stop_id}'] = haver_distance(stop_info.lat, stop_info.lon, lat_values, lon_values)
+                buses[f'DIST_{stop_id}'] = util.haver_distance(stop_info.lat, stop_info.lon, lat_values, lon_values)
 
     compute_distances_to_all_stops()
 
@@ -311,7 +295,7 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
 
                 # set radius to be no larger than the distance to the previous/next stop.
                 # this helps avoid odd results near the terminals of certain routes
-                distance_to_adjacent_stop = haver_distance(stop_info.lat, stop_info.lon, adjacent_stop_info.lat, adjacent_stop_info.lon)
+                distance_to_adjacent_stop = util.haver_distance(stop_info.lat, stop_info.lon, adjacent_stop_info.lat, adjacent_stop_info.lon)
                 radius = min(radius, round(distance_to_adjacent_stop))
 
         #dirs_text = [f'{d}[{i}]' for d, i in zip(stop_direction_ids, stop_indexes)]
@@ -344,7 +328,7 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
     possible_arrivals = concat_possible_arrivals()
 
     if possible_arrivals.empty:
-        arrivals = possible_arrivals
+        arrivals, num_trips = possible_arrivals, 0
     else:
         print(f'{route_id}: {round(time.time() - t0, 1)} cleaning arrivals')
 

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
-import { getTimePath, getStatPath } from '../helpers/precomputed.js';
+import { getStatPath, getTimePath } from '../helpers/precomputed';
+import { generateTripURL, generateWaitTimeURL, routesUrl } from '../locationConstants';
 
 export function fetchGraphData(params) {
   return function(dispatch) {
@@ -65,11 +66,9 @@ export function resetIntervalData() {
 export function fetchRoutes() {
   return function(dispatch) {
     axios
-      .get('/api/routes', {
-        baseURL: metricsBaseURL,
-      })
+      .get(routesUrl)
       .then(response => {
-        dispatch({ type: 'RECEIVED_ROUTES', payload: response.data });
+        dispatch({ type: 'RECEIVED_ROUTES', payload: response.data.routes });
       })
       .catch(err => {
         dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });
@@ -79,83 +78,90 @@ export function fetchRoutes() {
 
 export function fetchPrecomputedWaitAndTripData(params) {
   return function(dispatch, getState) {
+    const timeStr = params.startTime
+      ? `${params.startTime}-${params.endTime}`
+      : '';
+    const dateStr = params.date;
 
-    let timeStr = params.start_time ? params.start_time + '-' + params.end_time : '';
-    let dateStr = params.date;
-    
-    const tripTimesCache = getState().routes.tripTimesCache;  
-  
-    let tripTimes = tripTimesCache[dateStr + timeStr + 'median']; 
+    const tripTimesCache = getState().routes.tripTimesCache;
+
+    const tripTimes = tripTimesCache[`${dateStr + timeStr}median`];
 
     if (!tripTimes) {
-      let timePath = getTimePath(timeStr);
-      let statPath = getStatPath('median');
+      const timePath = getTimePath(timeStr);
+      const statPath = getStatPath('median');
 
-      let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/'+
-          dateStr.replace(/-/g, '/')+
-          '/trip-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+      const s3Url = generateTripURL(dateStr, statPath, timePath);
 
-      axios.get(s3Url)
-      .then(response => {
-        dispatch({ type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES', payload: [response.data, dateStr + timeStr + 'median'] })
-      })
-      .catch(err => { /* do something? */ })
+      axios
+        .get(s3Url)
+        .then(response => {
+          dispatch({
+            type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
+            payload: [response.data, `${dateStr + timeStr}median`],
+          });
+        })
+        .catch(() => {
+          /* do something? */
+        });
     }
-  
-    const waitTimesCache = getState().routes.waitTimesCache;  
 
-    let waitTimes = waitTimesCache[dateStr + timeStr + 'median']; 
+    const waitTimesCache = getState().routes.waitTimesCache;
+    const waitTimes = waitTimesCache[`${dateStr + timeStr}median`];
 
     if (!waitTimes) {
-      let timePath = getTimePath(timeStr);
-      let statPath = getStatPath('median');
+      const timePath = getTimePath(timeStr);
+      const statPath = getStatPath('median');
 
-      let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/'+
-      dateStr.replace(/-/g, '/')+
-      '/wait-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+      const s3Url = generateWaitTimeURL(dateStr, statPath, timePath);
 
-      axios.get(s3Url)
-      .then(response => {
-        dispatch({ type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES', payload: [response.data, dateStr + timeStr + 'median'] })
-      })
-      .catch(err => { /* do something? */ })
+      axios
+        .get(s3Url)
+        .then(response => {
+          dispatch({
+            type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
+            payload: [response.data, `${dateStr + timeStr}median`],
+          });
+        })
+        .catch(() => {
+          /* do something? */
+        });
     }
-  }
+  };
+}
+
+/**
+ * Action creator that fetches arrival history from S3 corresponding to the
+ * day and route specified by params.
+ *
+ * @param params graphParams object
+ */
+export function fetchArrivals(params) {
+  return function(dispatch) {
+    const dateStr = params.date;
+
+    const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/v4/sf-muni/${dateStr.replace(
+      /-/g,
+      '/',
+    )}/arrivals_v4_sf-muni_${dateStr}_${params.routeId}.json.gz`;
+
+    axios
+      .get(s3Url)
+      .then(response => {
+        dispatch({
+          type: 'RECEIVED_ARRIVALS',
+          payload: [response.data, dateStr, params.routeId],
+        });
+      })
+      .catch(err => {
+        console.error(err);
+      });
+  };
 }
 
 export function handleSpiderMapClick(stops, latLng) {
   return function(dispatch) {
     dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: [stops, latLng] });
-  };
-}
-
-export function handleGraphParams(params) {
-  return function(dispatch, getState) {
-    dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
-    const graphParams = getState().routes.graphParams;
-
-    // for debugging: console.log('hGP: ' + graphParams.route_id + ' dirid: ' + graphParams.direction_id + " start: " + graphParams.start_stop_id + " end: " + graphParams.end_stop_id);
-    // fetch graph data if all params provided
-    // TODO: fetch route summary data if all we have is a route ID.
-    
-    if (graphParams.route_id) {
-      dispatch(fetchPrecomputedWaitAndTripData(graphParams));
-    }
-
-    if (graphParams.route_id && graphParams.direction_id &&
-        graphParams.start_stop_id && graphParams.end_stop_id) {
-      const intervalParams = Object.assign({}, graphParams);
-      delete intervalParams.start_time; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.end_time;   // because the hourly graph is spiky and can trigger panda "empty axes" errors.
-
-      dispatch(fetchData(graphParams, intervalParams));
-
-    } else { // when we don't have all params, clear graph data
-
-      dispatch(resetGraphData());
-      dispatch(resetIntervalData());
-
-    }
   };
 }
 
@@ -168,5 +174,38 @@ export function fetchData(graphParams, intervalParams) {
   return function(dispatch) {
     dispatch(fetchGraphData(graphParams));
     dispatch(fetchIntervalData(intervalParams));
+  };
+}
+
+export function handleGraphParams(params) {
+  return function(dispatch, getState) {
+    dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
+    const graphParams = getState().routes.graphParams;
+
+    // for debugging: console.log('hGP: ' + graphParams.routeId + ' dirid: ' + graphParams.directionId + " start: " + graphParams.startStopId + " end: " + graphParams.endStopId);
+    // fetch graph data if all params provided
+    // TODO: fetch route summary data if all we have is a route ID.
+
+    if (graphParams.date) {
+      dispatch(fetchPrecomputedWaitAndTripData(graphParams));
+    }
+
+    if (
+      graphParams.routeId &&
+      graphParams.directionId &&
+      graphParams.startStopId &&
+      graphParams.endStopId
+    ) {
+      const intervalParams = Object.assign({}, graphParams);
+      delete intervalParams.startTime; // for interval api, clear out start/end time and use defaults for now
+      delete intervalParams.endTime; // because the hourly graph is spiky and can trigger panda "empty axes" errors.
+
+      dispatch(fetchData(graphParams, intervalParams));
+    } else {
+      // when we don't have all params, clear graph data
+
+      dispatch(resetGraphData());
+      dispatch(resetIntervalData());
+    }
   };
 }

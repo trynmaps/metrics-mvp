@@ -14,16 +14,31 @@ import Paper from '@material-ui/core/Paper';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import FilterListIcon from '@material-ui/icons/FilterList';
-
-import { filterRoutes } from '../helpers/routeCalculations';
-import { getWaitTimeForDirection } from '../helpers/precomputed';
 import { connect } from 'react-redux';
-import { push } from 'redux-first-router'
-import Link from 'redux-first-router-link'
+import Link from 'redux-first-router-link';
+import {
+  filterRoutes,
+  getAllWaits,
+  getAllSpeeds,
+  getAllScores,
+} from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
 function desc(a, b, orderBy) {
+  // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
+  // NaN needs special handling because NaN < 3 is false as is Nan > 3.
+
+  if (Number.isNaN(a[orderBy]) && Number.isNaN(b[orderBy])) {
+    return 0;
+  }
+  if (Number.isNaN(a[orderBy])) {
+    return -1;
+  }
+  if (Number.isNaN(b[orderBy])) {
+    return 1;
+  }
+
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -44,14 +59,16 @@ function stableSort(array, cmp) {
 }
 
 function getSorting(order, orderBy) {
-  return order === 'desc' ? (a, b) => desc(a, b, orderBy) : (a, b) => -desc(a, b, orderBy);
+  return order === 'desc'
+    ? (a, b) => desc(a, b, orderBy)
+    : (a, b) => -desc(a, b, orderBy);
 }
 
 const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'wait', numeric: true, disablePadding: false, label: 'Wait (min)' },
   { id: 'speed', numeric: true, disablePadding: false, label: 'Speed (mph)' },
-  { id: 'score', numeric: true, disablePadding: false, label: 'Score' },
+  { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
 ];
 
 function EnhancedTableHead(props) {
@@ -139,11 +156,11 @@ const EnhancedTableToolbar = props => {
       </div>
       <div className={classes.spacer} />
       <div className={classes.actions}>
-          <Tooltip title="Filter list">
-            <IconButton aria-label="Filter list">
-              <FilterListIcon />
-            </IconButton>
-          </Tooltip>
+        <Tooltip title="Filter list">
+          <IconButton aria-label="Filter list">
+            <FilterListIcon />
+          </IconButton>
+        </Tooltip>
       </div>
     </Toolbar>
   );
@@ -162,9 +179,6 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     marginBottom: theme.spacing(2),
   },
-  table: {
-    minWidth: 750,
-  },
   tableWrapper: {
     overflowX: 'auto',
   },
@@ -174,150 +188,129 @@ function RouteTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
-  const [selected, setSelected] = React.useState([]);
   const dense = true;
 
   useEffect(() => {
     props.fetchPrecomputedWaitAndTripData(props.graphParams);
-  }, []);  // like componentDidMount, this runs only on first render
-  
+  }, []); // like componentDidMount, this runs only on first render
+
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
   }
 
-  function handleClick(event, route) {
-    const selectedIndex = selected.indexOf(route.title);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = [route.title];//newSelected.concat(selected, name);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-
-    setSelected(newSelected);
-
-    props.handleGraphParams({
-      route_id: route.id,
-      direction_id: null,
-      start_stop_id: null,
-      end_stop_id: null,
-    });
-    push('/route');
-  }
-
-  /**
-   * Averages together the median wait in all directions for a route.
-   * 
-   * @param {any} waitTimesCache
-   * @param {any} graphParams
-   * @param {any} route
-   */
-  function getAverageOfMedianWait(waitTimesCache, graphParams, route) {
-    const directions = route.directions;
-    const sumOfMedians = directions.reduce((total, direction) => {
-      const waitForDir = getWaitTimeForDirection(waitTimesCache, graphParams, route.id, direction.id);
-      if (!waitForDir) {
-          return NaN;
-      }
-      return total + waitForDir.median;  
-    }, 0);
-    return sumOfMedians/directions.length;
-  }
-
-  const isSelected = name => selected.indexOf(name) !== -1;
-  
   let routes = props.routes ? filterRoutes(props.routes) : [];
   const spiderSelection = props.spiderSelection;
-  
+
   // filter the route list down to the spider routes if needed
-  
+
   if (spiderSelection && spiderSelection.length > 0) {
-    const spiderRouteIDs = spiderSelection.map(spider => spider.routeID);
-    routes = routes.filter(route => spiderRouteIDs.includes(route.id));
+    const spiderRouteIds = spiderSelection.map(spider => spider.routeId);
+    routes = routes.filter(thisRoute => spiderRouteIds.includes(thisRoute.id));
   }
-  
+
+  const allWaits = getAllWaits(props.waitTimesCache, props.graphParams, routes);
+  const allSpeeds = getAllSpeeds(
+    props.tripTimesCache,
+    props.graphParams,
+    routes,
+  );
+  const allScores = getAllScores(routes, allWaits, allSpeeds);
+
   routes = routes.map(route => {
-    route.wait = getAverageOfMedianWait(props.waitTimesCache, props.graphParams, route);     
-    return route;
+    const waitObj = allWaits.find(
+      thisWaitObj => thisWaitObj.routeId === route.id,
+    );
+    const speedObj = allSpeeds.find(
+      thisSpeedObj => thisSpeedObj.routeId === route.id,
+    );
+    const scoreObj = allScores.find(
+      thisScoreObj => thisScoreObj.routeId === route.id,
+    );
+
+    return {
+      ...route,
+      wait: waitObj ? waitObj.wait : NaN,
+      speed: speedObj ? speedObj.speed : NaN,
+      totalScore: scoreObj ? scoreObj.totalScore : NaN,
+    };
   });
 
-    return (
+  return (
     <div className={classes.root}>
       <Paper className={classes.paper}>
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <EnhancedTableToolbar numSelected={0} />
         <div className={classes.tableWrapper}>
-          <Table
-            className={classes.table}
-            aria-labelledby="tableTitle"
-            size={dense ? 'small' : 'medium'}
-          >
+          <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
             <EnhancedTableHead
-              numSelected={selected.length}
               order={order}
               orderBy={orderBy}
               onRequestSort={handleRequestSort}
               rowCount={routes.length}
             />
             <TableBody>
-              {stableSort(routes, getSorting(order, orderBy))
-                .map((row, index) => {
-                  const isItemSelected = isSelected(row.title);
+              {stableSort(routes, getSorting(order, orderBy)).map(
+                (row, index) => {
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
-                    <TableRow
-                      hover
-                      onClick={ event => handleClick(event, row) }
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      tabIndex={-1}
-                      key={row.id}
-                      selected={isItemSelected}
-                    >
-                      <TableCell component="th" id={labelId} scope="row" padding="none">
-                        <Link to={{type: 'RECEIVED_GRAPH_PARAMS', payload: {
-                      route_id: row.id,
-                      direction_id: null,
-                      start_stop_id: null,
-                      end_stop_id: null,
-                    }, query: { route_id: row.id } }} >{row.title}</Link>
+                    <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                      <TableCell
+                        component="th"
+                        id={labelId}
+                        scope="row"
+                        padding="none"
+                      >
+                        <Link
+                          to={{
+                            type: 'ROUTESCREEN',
+                            payload: {
+                              route_id: row.id,
+                              direction_id: null,
+                              start_stop_id: null,
+                              end_stop_id: null,
+                            },
+                          }}
+                        >
+                          {row.title}
+                        </Link>
                       </TableCell>
-                      <TableCell align="right">{isNaN(row.wait) ? "--" : row.wait.toFixed(1)}</TableCell>
-                      <TableCell align="right">{row.speed}</TableCell>
-                      <TableCell align="right">{row.score}</TableCell>
+                      <TableCell align="right">
+                        {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
+                      </TableCell>
                     </TableRow>
                   );
-                })}
+                },
+              )}
             </TableBody>
           </Table>
         </div>
       </Paper>
-   </div>
-  );    
+    </div>
+  );
 }
 
 const mapStateToProps = state => ({
   graphParams: state.routes.graphParams,
   spiderSelection: state.routes.spiderSelection,
   waitTimesCache: state.routes.waitTimesCache,
+  tripTimesCache: state.routes.tripTimesCache,
 });
 
 const mapDispatchToProps = dispatch => {
-  return ({
-      fetchPrecomputedWaitAndTripData: params => dispatch(fetchPrecomputedWaitAndTripData(params)),
-      handleGraphParams: params => dispatch(handleGraphParams(params))
-  })
-}
+  return {
+    fetchPrecomputedWaitAndTripData: params =>
+      dispatch(fetchPrecomputedWaitAndTripData(params)),
+    handleGraphParams: params => dispatch(handleGraphParams(params)),
+  };
+};
 
 export default connect(
   mapStateToProps,
