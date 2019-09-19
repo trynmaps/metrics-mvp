@@ -1,4 +1,4 @@
-import React, { useEffect, Fragment } from 'react';
+import React, { Fragment, useEffect } from 'react';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
@@ -13,14 +13,10 @@ import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 
 import { fetchRoutes } from '../actions';
+import { agencyTitle } from '../locationConstants';
 
 function RouteScreen(props) {
-  useEffect(() => {
-    if (!props.routes) {
-      props.fetchRoutes();
-    }
-  }, []); // like componentDidMount, this runs only on first render
-
+  
   const {
     graphData,
     graphError,
@@ -29,6 +25,12 @@ function RouteScreen(props) {
     intervalError,
     routes,
   } = props;
+  
+  useEffect(() => {
+    if (!routes) {
+      fetchRoutes();
+    }
+  }, [routes]); // like componentDidMount, this runs only on first render
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
@@ -55,7 +57,7 @@ function RouteScreen(props) {
         <Toolbar>
           <SidebarButton />
           <div className="page-title">
-            Muni
+            {agencyTitle}
             {selectedRoute ? ` > ${selectedRoute.title}` : null}
             {direction ? ` > ${direction.title}` : null}
             &nbsp;

@@ -7,10 +7,10 @@ import Control from 'react-leaflet-control';
 import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
+import { STARTING_COORDINATES } from '../locationConstants';
 
 const RADIUS = 6;
 const STOP_COLORS = ['blue', 'red', 'green', 'purple'];
-const SF_COORDINATES = { lat: 37.7793, lng: -122.419 };
 const ZOOM = 13;
 
 class MapStops extends Component {
@@ -368,7 +368,7 @@ class MapStops extends Component {
 
     return (
       <Map
-        center={position || SF_COORDINATES}
+        center={position || STARTING_COORDINATES}
         bounds={routeStops ? routeStops[selectedRoute.directions[0].id] : null}
         zoom={zoom || ZOOM}
         style={mapClass}

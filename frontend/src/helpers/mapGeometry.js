@@ -4,7 +4,7 @@
 
 import * as turf from '@turf/turf';
 import { milesBetween, metersToMiles } from './routeCalculations';
-import { ServiceArea } from '../agencies/sf-muni';
+import { ServiceArea } from '../locationConstants';
 
 /**
  * Gets coordinates that can be consumed by a Leaflet Polyline.  Uses

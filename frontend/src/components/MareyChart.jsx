@@ -73,7 +73,9 @@ function MareyChart(props) {
   // On first load, get the raw arrival history corresponding to graphParams.
 
   useEffect(() => {
-    fetchArrivals(graphParams);
+    if (graphParams.routeId) {
+      fetchArrivals(graphParams);
+    }
   }, [graphParams, fetchArrivals]);
 
   // When both the raw arrival history and route configs have loaded, first
