@@ -24,6 +24,7 @@ function RouteScreen(props) {
     intervalData,
     intervalError,
     routes,
+    fetchRoutes,
   } = props;
   
   useEffect(() => {

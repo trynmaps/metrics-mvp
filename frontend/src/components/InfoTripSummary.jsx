@@ -128,7 +128,8 @@ export default function InfoTripSummary(props) {
   const typicalTravel = Math.round(tripTimes.median); // note: can have NaN issues here due to lack of trip data between stops
 
 
-  const popoverContentTotalScore = <Fragment> 
+  const popoverContentTotalScore = grades
+  ? <Fragment> 
     
     Trip score of { grades.totalScore } is the average of the following subscores:
       <Box pt={2}>
@@ -161,10 +162,11 @@ export default function InfoTripSummary(props) {
       </TableBody>
       </Table>
       </Box>
-  </Fragment>;
+  </Fragment>
+  : null;
 
-  
-  const popoverContentWait = <Fragment>
+  const popoverContentWait = grades
+  ? <Fragment>
     Median wait of { waitTimes.median.toFixed(1) } min gets a score of {grades.medianWaitScore}.
     <Box pt={2}>
       <InfoScoreLegend rows={[
@@ -175,10 +177,12 @@ export default function InfoTripSummary(props) {
       { label: '10 min or more', value: 0 },
       ]}/>
     </Box>
-  </Fragment>;
+  </Fragment>
+  : null;
 
   
-  const popoverContentLongWait = <Fragment>
+  const popoverContentLongWait = grades
+  ? <Fragment>      
     20 min wait probability of { (longWaitProbability * 100).toFixed(1) /* be more precise than card */ }%
     gets a score of {grades.longWaitScore}.
     <Box pt={2}>
@@ -190,10 +194,12 @@ export default function InfoTripSummary(props) {
     { label: '33% or more', value: 0 },
     ]}/>
     </Box>
-    </Fragment>;
+  </Fragment>
+  : null;
 
   
-  const popoverContentSpeed = <Fragment>
+  const popoverContentSpeed = grades
+  ? <Fragment>
     Median speed of { speed.toFixed(1) /* be more precise here than card */ }
     {' '}mph gets a score of {grades.speedScore}.
     <Box pt={2}>
@@ -205,9 +211,11 @@ export default function InfoTripSummary(props) {
     { label: '5 mph or less', value: 0 },
     ]}/>
     </Box>
-    </Fragment>;
+  </Fragment>
+  : null;
   
-  const popoverContentTravelVariance = <Fragment>
+  const popoverContentTravelVariance = grades
+  ? <Fragment>
     Extra travel time of { planningTravel - typicalTravel } min gets a score of {grades.travelVarianceScore}.
     <Box pt={2}>
     <InfoScoreLegend rows={[
@@ -218,7 +226,8 @@ export default function InfoTripSummary(props) {
     { label: '10 min or more', value: 0 },
     ]}/>
     </Box>
-    </Fragment>;
+  </Fragment>
+  : null;
   
   return (
     <Fragment>
