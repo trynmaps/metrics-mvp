@@ -142,7 +142,6 @@ class MapStops extends Component {
 
   /**
    * Speed from index to index+1
-   * Using haversine distance for now.
    */
   getSpeed = (routeInfo, direction, downstreamStops, index, directionId) => {
     const graphParams = this.props.graphParams;

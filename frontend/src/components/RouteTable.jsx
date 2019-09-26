@@ -21,6 +21,8 @@ import {
   getAllWaits,
   getAllSpeeds,
   getAllScores,
+  quartileBackgroundColor,
+  quartileForegroundColor,
 } from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
@@ -66,9 +68,11 @@ function getSorting(order, orderBy) {
 
 const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
-  { id: 'wait', numeric: true, disablePadding: false, label: 'Wait (min)' },
-  { id: 'speed', numeric: true, disablePadding: false, label: 'Speed (mph)' },
   { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
+  { id: 'wait', numeric: true, disablePadding: false, label: 'Wait (min)' },
+  { id: 'longWait', numeric: true, disablePadding: false, label: '20 min wait %' },
+  { id: 'speed', numeric: true, disablePadding: false, label: 'Speed (mph)' },
+  { id: 'variability', numeric: true, disablePadding: false, label: 'Extra Travel (min)' },
 ];
 
 function EnhancedTableHead(props) {
@@ -234,7 +238,9 @@ function RouteTable(props) {
     return {
       ...route,
       wait: waitObj ? waitObj.wait : NaN,
+      longWait: waitObj ? waitObj.longWait : NaN,
       speed: speedObj ? speedObj.speed : NaN,
+      variability: speedObj ? speedObj.variability : NaN,
       totalScore: scoreObj ? scoreObj.totalScore : NaN,
     };
   });
@@ -278,14 +284,20 @@ function RouteTable(props) {
                           {row.title}
                         </Link>
                       </TableCell>
-                      <TableCell align="right">
-                        {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(1)}
-                      </TableCell>
-                      <TableCell align="right">
-                        {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(1)}
-                      </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" style={{color: quartileForegroundColor(row.totalScore/100), backgroundColor: quartileBackgroundColor(row.totalScore/100)}}>
                         {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
+                      </TableCell>
+                      <TableCell align="right">
+                        {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {Number.isNaN(row.longWait) ? '--' : (row.longWait*100).toFixed(0) + '%'}
+                      </TableCell>
+                      <TableCell align="right">
+                        {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {Number.isNaN(row.variability) ? '--' : row.variability.toFixed(0)}
                       </TableCell>
                     </TableRow>
                   );

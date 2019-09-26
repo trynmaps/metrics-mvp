@@ -1,7 +1,7 @@
 /**
  * Pulls a data series from a collection by index.
  */
-function getTripTimeStat(tripTimeValues, index) {
+export function getTripTimeStat(tripTimeValues, index) {
   if (!tripTimeValues) {
     return null;
   }
@@ -66,7 +66,6 @@ export function getTripTimesForDirection(
   graphParams,
   routeId,
   directionId,
-  stat = 'median',
 ) {
   const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
 
@@ -74,14 +73,16 @@ export function getTripTimesForDirection(
     return null;
   }
 
-  const tripTimes = tripTimesCache[dateStr + timeStr + stat];
+  const tripTimes = tripTimesCache[dateStr + timeStr + 'p10-median-p90']; // 'median'
 
   if (!tripTimes) {
+    //console.log('no trip times');
     return null;
   }
 
   const routeTripTimes = tripTimes.routes[routeId];
   if (!routeTripTimes) {
+    //console.log('no trip times for route');
     return null;
   }
 
@@ -115,13 +116,15 @@ export function getTripTimesFromStop(
     directionId,
   );
   if (!directionTripTimes) {
+    //console.log('null trip times');
     return null;
   }
   const tripTimeValues = directionTripTimes[startStopId];
 
   if (stat === 'median') {
     // using the median stat group (see getStatPath)
-    return tripTimeValues;
+    return getTripTimeStat(tripTimeValues, 1);
+    //return tripTimeValues; // p10-median-p90 file blocked:
   }
   if (stat === 'p10') {
     // using the p10-median-p90 stat group (see getStatPath)
@@ -167,11 +170,10 @@ export function getWaitTimeForDirection(
   graphParams,
   routeId,
   directionId,
-  stat = 'median',
 ) {
   const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
 
-  const waitTimes = waitTimesCache[dateStr + timeStr + stat];
+  const waitTimes = waitTimesCache[dateStr + timeStr + 'median-p90-plt20m'];
 
   if (!waitTimes) {
     return null;
@@ -196,7 +198,7 @@ export function getWaitTimeForDirection(
  * @param {any} graphParams
  * @param {any} route
  */
-export function getAverageOfMedianWait(waitTimesCache, graphParams, route) {
+export function getAverageOfMedianWaitStat(waitTimesCache, graphParams, route, stat = 'median') {
   const directions = route.directions;
   const sumOfMedians = directions.reduce((total, direction) => {
     const waitForDir = getWaitTimeForDirection(
@@ -205,60 +207,14 @@ export function getAverageOfMedianWait(waitTimesCache, graphParams, route) {
       route.id,
       direction.id,
     );
-    if (!waitForDir) {
+    if (!waitForDir || !waitForDir.median) {
       return NaN;
     }
-    return total + waitForDir.median;
+    if (stat === 'plt20m') { // statgroup is median-p90-plt20m
+      return total + waitForDir.median[2]; // subscript two is median of per-stop probabilities of < 20m wait
+    } else { // default to median
+      return total + waitForDir.median[0]; // subscript zero is median of per-stop medians
+    }
   }, 0);
   return sumOfMedians / directions.length;
 }
-
-/*
-async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr, stat)
-{
-    let waitTimes = waitTimesCache[dateStr + timeStr + stat];
-
-    if (!waitTimes)
-    {
-        var timePath = getTimePath(timeStr);
-        let statPath = getStatPath(stat);
-
-        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/'+
-            dateStr.replace(/\-/g, '/')+
-            '/wait-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz?v2';
-
-        //console.log(s3Url);
-
-        waitTimes = waitTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
-            sendError("error loading wait times: " + e);
-            throw e;
-        });
-    }
-
-    let routeWaitTimes = waitTimes.routes[routeId];
-    if (!routeWaitTimes)
-    {
-        return null;
-    }
-
-    let directionWaitTimes = routeWaitTimes[directionId];
-    if (!directionWaitTimes)
-    {
-        return null;
-    }
-    let waitTimeValues = directionWaitTimes[stopId];
-
-    if (stat === 'median')
-    {
-        return waitTimeValues;
-    }
-    if (stat === 'p10')
-    {
-        return waitTimeValues ? waitTimeValues[0] : null;
-    }
-    if (stat === 'p90')
-    {
-        return waitTimeValues ? waitTimeValues[2] : null;
-    }
-}
-*/
