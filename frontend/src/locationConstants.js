@@ -138,6 +138,8 @@ export const ServiceArea = {
 export const routesUrl =
   'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
 
+const tripTimesVersion = 'v1a';
+
 /**
  * Generate S3 url for trips
  * @param dateStr - date
@@ -146,11 +148,13 @@ export const routesUrl =
  * @returns {string} S3 url
  */
 export function generateTripURL(dateStr, statPath, timePath) {
-  return `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/${dateStr.replace(
+  return `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/${tripTimesVersion}/sf-muni/${dateStr.replace(
     /-/g,
     '/',
-  )}/trip-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
+  )}/trip-times_${tripTimesVersion}_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
 }
+
+const waitTimesVersion = 'v1a';
 
 /**
  * Generate S3 url for wait times
@@ -160,10 +164,10 @@ export function generateTripURL(dateStr, statPath, timePath) {
  * @returns {string} S3 url
  */
 export function generateWaitTimeURL(dateStr, statPath, timePath) {
-  return `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/${dateStr.replace(
+  return `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/${waitTimesVersion}/sf-muni/${dateStr.replace(
     /-/g,
     '/',
-  )}/wait-times_v1_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
+  )}/wait-times_${waitTimesVersion}_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
 }
 
 /**

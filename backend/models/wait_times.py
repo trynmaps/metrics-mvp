@@ -355,7 +355,7 @@ class WaitTimeStats:
 
         return waits[np.logical_not(np.isnan(waits))] / 60
 
-DefaultVersion = 'v1'
+DefaultVersion = 'v1a'
 
 class CachedWaitTimes:
     def __init__(self, wait_times_data):
