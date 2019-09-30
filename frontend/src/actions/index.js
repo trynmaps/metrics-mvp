@@ -144,10 +144,12 @@ export function fetchArrivals(params) {
   return function(dispatch) {
     const dateStr = params.date;
 
-    const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/v4/sf-muni/${dateStr.replace(
+    const arrivalsVersion = 'v4a';
+
+    const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/${arrivalsVersion}/sf-muni/${dateStr.replace(
       /-/g,
       '/',
-    )}/arrivals_v4_sf-muni_${dateStr}_${params.routeId}.json.gz`;
+    )}/arrivals_${arrivalsVersion}_sf-muni_${dateStr}_${params.routeId}.json.gz`;
 
     axios
       .get(s3Url)

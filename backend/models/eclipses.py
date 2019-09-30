@@ -35,6 +35,22 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
 
     new_rows = []
 
+    def make_separator_row(vid):
+        # adding a separator row at the end of each vehicle's observations allows simplifying
+        # get_possible_arrivals_for_stop() (and making it slightly faster).
+        # this row will always be filtered out by find_arrivals
+        # so the row index will always have a gap in it even if two vehicles
+        # adjacent in the buses frame both happen to be near the same stop
+        return (
+            vid,
+            '',
+            0,
+            0,
+            0,
+            0,
+            # 0 # uncomment for debugging
+        )
+
     if not bus.empty:
         # faster to use numpy arrays instead of pandas series
         time_values = bus['TIME'].values
@@ -64,52 +80,53 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
         vid = bus['VID'].values[0]
         did_values = bus['DID'].values
 
+        obs_group = 1
+
         for i in range(0, len(time_values)):
             did_i = did_values[i]
             num_samples_i = int(num_samples_values[i])
-            if num_samples_i > 1 and num_samples_i < 100:
-                dt_i = dt_values[i]
-                if dt_i < 180:
-                    prev_lat_i = prev_lat_values[i]
-                    prev_lon_i = prev_lon_values[i]
-                    prev_time_i = prev_time_values[i]
-                    lon_diff_i = lon_diff_values[i]
-                    lat_diff_i = lat_diff_values[i]
-                    for j in range(1, num_samples_i):
-                        frac = j / num_samples_i
-                        new_rows.append((
-                            vid,
-                            did_i,
-                            prev_lat_i + lat_diff_i * frac,
-                            prev_lon_i + lon_diff_i * frac,
-                            prev_time_i + dt_i * frac,
-                            # 1 # uncomment for debugging
-                        ))
+            dt_i = dt_values[i]
+
+            if num_samples_i > 1 and num_samples_i < 100 and dt_i < 180:
+                prev_lat_i = prev_lat_values[i]
+                prev_lon_i = prev_lon_values[i]
+                prev_time_i = prev_time_values[i]
+                lon_diff_i = lon_diff_values[i]
+                lat_diff_i = lat_diff_values[i]
+                for j in range(1, num_samples_i):
+                    frac = j / num_samples_i
+                    new_rows.append((
+                        vid,
+                        did_i,
+                        prev_lat_i + lat_diff_i * frac,
+                        prev_lon_i + lon_diff_i * frac,
+                        prev_time_i + dt_i * frac,
+                        obs_group,
+                        # 1 # uncomment for debugging
+                    ))
+            elif dt_i > 1800:
+                # if a vehicle does not report any GPS observations for more than 30 minutes,
+                # increment the "observation group" counter and add a separator row
+                # so that the algorithm will consider observations before and after the gap
+                # as belonging to separate trips.
+
+                obs_group += 1
+                new_rows.append(make_separator_row(vid))
+
             new_rows.append((
                 vid,
                 did_i,
                 lat_values[i],
                 lon_values[i],
-                time_values[i]
+                time_values[i],
+                obs_group,
                 # 0 # uncomment for debugging
             ))
 
-        # adding a separator row at the end of each vehicle's observations allows simplifying
-        # get_possible_arrivals_for_stop() (and making it slightly faster).
-        # this row will always be filtered out by find_arrivals
-        # so the row index will always have a gap in it even if two vehicles
-        # adjacent in the buses frame both happen to be near the same stop
-        new_rows.append((
-            vid,
-            '',
-            0,
-            0,
-            0
-            # 0 # uncomment for debugging
-        ))
+        new_rows.append(make_separator_row(vid))
 
     resampled_bus = pd.DataFrame(new_rows, columns=[
-        'VID','DID','LAT','LON','TIME',
+        'VID','DID','LAT','LON','TIME','OBS_GROUP'
         # 'INTERP' # whether a sample was interpolated isn't needed by algorithm, but useful for debugging
     ])
     resampled_bus['TIME'] = resampled_bus['TIME'].astype(np.int64)
@@ -398,6 +415,8 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id: str,
     all_distance_values = eclipses[dist_column].values
     all_time_values = eclipses['TIME'].values
     all_vid_values = eclipses['VID'].values
+    all_obs_group_values = eclipses['OBS_GROUP'].values
+
     if use_reported_direction:
         all_did_values = eclipses['DID'].values
 
@@ -434,6 +453,7 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id: str,
             stop_id,
             all_did_values[eclipse_start_index] if use_reported_direction else direction_id,
             stop_index,
+            all_obs_group_values[eclipse_start_index],
             -1
         )
 
@@ -445,7 +465,7 @@ def get_possible_arrivals_for_stop(buses: pd.DataFrame, stop_id: str,
 def make_arrivals_frame(rows: list) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=[
         'VID','TIME','DEPARTURE_TIME','DIST',
-        'SID','DID','STOP_INDEX','TRIP'
+        'SID','DID','STOP_INDEX','OBS_GROUP','TRIP'
     ])
 
 def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_config: nextbus.RouteConfig) -> tuple:
@@ -470,7 +490,10 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
     start_trip = 0
 
+    '''
     arrival_time_diffs = []
+    trip_times = []
+    '''
 
     def set_trip(dir_arrivals):
         nonlocal start_trip
@@ -481,13 +504,8 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
         stop_index_diff = np.diff(stop_index_values, prepend=-999999)
 
-        arrival_time_values = dir_arrivals['TIME'].values
-
-        arrival_time_diff = np.diff(arrival_time_values, prepend=arrival_time_values[0])
-
-        arrival_time_diffs.append(arrival_time_diff)
-
-        new_trip = (stop_index_diff <= 0) | (arrival_time_diff > 3600)
+        # if vehicle not observed at 3 or more stops in a row, count it as starting a new trip
+        new_trip = (stop_index_diff <= 0) | (stop_index_diff > 3)
 
         # The trip ID is an arbitrary integer that is the same for a group
         # of arrivals for the same vehicle and direction that have an ascending stop index.
@@ -498,6 +516,36 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         dir_arrivals = dir_arrivals.copy()
         dir_arrivals['TRIP'] = trip_id
 
+        # uncomment to print information about adjacent arrivals in the same trip with long travel times in between
+        '''
+        arrival_time_values = dir_arrivals['TIME'].values
+        departure_time_values = dir_arrivals['DEPARTURE_TIME'].values
+        prev_departure_time_values = np.r_[arrival_time_values[0], departure_time_values[:-1]]
+        arrival_time_diff = np.diff(arrival_time_values, prepend=arrival_time_values[0])
+
+        arrival_time_diffs.append(arrival_time_diff[~new_trip])
+
+        trip_time = arrival_time_values - prev_departure_time_values
+
+        trip_times.append(trip_time[~new_trip])
+
+        trip_time_1 = np.r_[trip_time[1:],0]
+
+        gap_arrivals = dir_arrivals.copy()
+        gap_arrivals['NT'] = new_trip
+
+        new_trip_1 = np.r_[new_trip[1:],False]
+        gap_arrivals['NT1'] = new_trip_1
+
+        gap_arrivals['TT'] = trip_time
+        gap_arrivals['TT_1'] = trip_time_1
+        gap_arrivals['DWELL'] = gap_arrivals['DEPARTURE_TIME'].values - gap_arrivals['TIME'].values
+        gap_arrivals = gap_arrivals[((trip_time > 1800) & (~new_trip)) | ((trip_time_1 > 1800) & (~new_trip_1))]
+
+        if not gap_arrivals.empty:
+            print(gap_arrivals)
+        '''
+
         start_trip = trip_id[-1] + 1
 
         return dir_arrivals
@@ -506,6 +554,7 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         dir_arrivals: pd.DataFrame,
         vehicle_id: str,
         direction_id: str,
+        obs_group: int,
         bus: pd.DataFrame,
         route_config: nextbus.RouteConfig
     ) -> pd.DataFrame:
@@ -517,14 +566,22 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         return dir_arrivals
 
     arrivals = pd.concat([
-        get_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, buses_map[vehicle_id], route_config)
-            for (vehicle_id, direction_id), dir_arrivals in possible_arrivals.groupby(['VID', 'DID'])
+        get_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, obs_group, buses_map[vehicle_id], route_config)
+            for (vehicle_id, direction_id, obs_group), dir_arrivals in possible_arrivals.groupby(['VID', 'DID', 'OBS_GROUP'])
     ])
 
-    arrival_time_diffs = np.concatenate(arrival_time_diffs)
-    diff_quantiles = np.quantile(arrival_time_diffs, [0.5, 0.9, 1])
+    '''
+    if len(arrival_time_diffs) > 0:
+        arrival_time_diffs = np.concatenate(arrival_time_diffs)
+        diff_quantiles = np.quantile(arrival_time_diffs, [0.5, 0.9, 1])
 
-    print(f' median={diff_quantiles[0]} 90%={diff_quantiles[1]} max={diff_quantiles[2]}')
+        print(f' arrival time diffs median={diff_quantiles[0]} 90%={diff_quantiles[1]} max={diff_quantiles[2]}')
+
+        trip_times = np.concatenate(trip_times)
+        diff_quantiles = np.quantile(trip_times, [0.5, 0.9, 1])
+
+        print(f' adjacent stop times median={diff_quantiles[0]} 90%={diff_quantiles[1]} max={diff_quantiles[2]}')
+    '''
 
     return arrivals.sort_values('TIME'), start_trip
 
