@@ -8,9 +8,10 @@ import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { STARTING_COORDINATES } from '../locationConstants';
+import { BLUE, RED, GREEN, PURPLE } from '../UIConstants';
 
 const RADIUS = 6;
-const STOP_COLORS = ['blue', 'red', 'green', 'purple'];
+const STOP_COLORS = [BLUE, RED, GREEN, PURPLE];
 const ZOOM = 13;
 
 class MapStops extends Component {
