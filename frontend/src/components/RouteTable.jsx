@@ -27,12 +27,6 @@ import {
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 
-/**
- * 
- * @param {any} a
- * @param {any} b
- * @param {any} orderBy
- */
 function desc(a, b, orderBy) {
   // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
   // NaN needs special handling because NaN < 3 is false as is Nan > 3.
