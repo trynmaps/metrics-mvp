@@ -472,7 +472,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    fetchArrivals: params => dispatch(fetchArrivals(params)),
+    thisFetchArrivals: params => dispatch(fetchArrivals(params)),
   };
 };
 
