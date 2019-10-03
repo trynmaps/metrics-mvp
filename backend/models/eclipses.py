@@ -80,6 +80,10 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
         vid = bus['VID'].values[0]
         did_values = bus['DID'].values
 
+        # obs_group is a counter associated with each resampled GPS observation
+        # that lets us group consecutive GPS observations for a particular vehicle.
+        # If a vehicle is missing GPS observations for a certain amount of time,
+        # we increment the obs_group counter.
         obs_group = 1
 
         for i in range(0, len(time_values)):
