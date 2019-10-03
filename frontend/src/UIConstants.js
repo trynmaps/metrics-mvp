@@ -3,16 +3,18 @@
  */
 
 // Colors definition:
-// This section its should be use to declare the colors
-// used in the application
-export const GRAY = '#a4a6a9';
-export const PURPLE = '#aa82c5';
-export const BLUE = 'blue';
-export const RED = 'RED';
-export const GREEN = 'green';
+// This section its should be use to declare an object color
+// that contain the colors used in the application
+export const Colors = {
+  GRAY: '#a4a6a9',
+  PURPLE: '#aa82c5',
+  BLUE: 'blue',
+  RED: 'RED',
+  GREEN: 'green'
+}
 
 // placeholder colors: gray and purple from nyc busstats
-export const CHART_COLORS = [GRAY, PURPLE];
+export const CHART_COLORS = [Colors.GRAY, Colors.PURPLE];
 
 // use this percentile (e.g. 90th) for waits/travel times
 // for planning purposes the idea here is to filter out
