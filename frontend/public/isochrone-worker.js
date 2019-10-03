@@ -19,6 +19,9 @@ const EarthRadius = 6371000;
 const MaxWalkRadius = 1800;
 const FirstStopMinWaitMinutes = 1.0;
 
+const TripTimesVersion = 'v1a';
+const WaitTimesVersion = 'v1a';
+
 let curComputeId = null;
 let tripTimesCache = {};
 let waitTimesCache = {};
@@ -127,9 +130,9 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, 
         let timePath = getTimePath(timeStr);
         let statPath = getStatPath(stat);
 
-        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/v1/sf-muni/'+
+        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/'+TripTimesVersion+'/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
-            '/trip-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+            '/trip-times_'+TripTimesVersion+'_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
         tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
             sendError("error loading trip times: " + e);
@@ -201,9 +204,9 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
         var timePath = getTimePath(timeStr);
         let statPath = getStatPath(stat);
 
-        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/v1/sf-muni/'+
+        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/'+WaitTimesVersion+'/sf-muni/'+
             dateStr.replace(/\-/g, '/')+
-            '/wait-times_v1_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+            '/wait-times_'+WaitTimesVersion+'_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
         //console.log(s3Url);
 
