@@ -15,6 +15,9 @@ import RouteSummary from '../components/RouteSummary';
 import { fetchRoutes } from '../actions';
 import { agencyTitle } from '../locationConstants';
 
+import Link from 'redux-first-router-link';
+
+
 function RouteScreen(props) {
   
   const {
@@ -51,19 +54,28 @@ function RouteScreen(props) {
     direction && graphParams.endStopId
       ? selectedRoute.stops[graphParams.endStopId]
       : null;
-
+      debugger;
+  const link = {
+    type:'ROUTESCREEN',
+    payload : {
+      route_id: selectedRoute ? selectedRoute.id : null,
+      direction_id: direction ? direction.id : null,
+      start_stop_id: startStopInfo ? graphParams.startStopId : null,
+      end_stop_id: endStopInfo ? graphParams.endStopId : null
+    }
+  }
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
           <div className="page-title">
-            {agencyTitle}
-            {selectedRoute ? ` > ${selectedRoute.title}` : null}
-            {direction ? ` > ${direction.title}` : null}
+            <Link to="/">{agencyTitle}</Link>
+            {selectedRoute ? <span> > <Link to={link}> {selectedRoute.title} </Link> </span> : null}
+            {direction ?  <span> > <Link to={link}> {direction.title} </Link> </span> : null}
             &nbsp;
-            {startStopInfo ? `(from ${startStopInfo.title}` : null}
-            {endStopInfo ? ` to ${endStopInfo.title})` : null}
+            {startStopInfo ? <span> > <Link to={link}> {`(from ${startStopInfo.title}`} </Link> </span> : null}
+            {endStopInfo ? <span> > <Link to={link}> {`to ${endStopInfo.title})`} </Link> </span>  : null}
           </div>
           <DateTimePanel />
         </Toolbar>
