@@ -74,7 +74,7 @@ function MareyChart(props) {
 
   useEffect(() => {
     if (graphParams.routeId) {
-      fetchArrivals(graphParams);
+      thisFetchArrivals(graphParams);
     }
   }, [graphParams, thisFetchArrivals]);
 

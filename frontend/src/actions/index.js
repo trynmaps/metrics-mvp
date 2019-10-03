@@ -7,7 +7,6 @@ import {
   routesUrl,
 } from '../locationConstants';
 
-
 export function fetchGraphData(params) {
   return function(dispatch) {
     axios
