@@ -73,16 +73,16 @@ export function getTripTimesForDirection(
     return null;
   }
 
-  const tripTimes = tripTimesCache[dateStr + timeStr + 'p10-median-p90']; // 'median'
+  const tripTimes = tripTimesCache[`${dateStr + timeStr}p10-median-p90`]; // 'median'
 
   if (!tripTimes) {
-    //console.log('no trip times');
+    // console.log('no trip times');
     return null;
   }
 
   const routeTripTimes = tripTimes.routes[routeId];
   if (!routeTripTimes) {
-    //console.log('no trip times for route');
+    // console.log('no trip times for route');
     return null;
   }
 
@@ -116,7 +116,7 @@ export function getTripTimesFromStop(
     directionId,
   );
   if (!directionTripTimes) {
-    //console.log('null trip times');
+    // console.log('null trip times');
     return null;
   }
   const tripTimeValues = directionTripTimes[startStopId];
@@ -124,7 +124,7 @@ export function getTripTimesFromStop(
   if (stat === 'median') {
     // using the median stat group (see getStatPath)
     return getTripTimeStat(tripTimeValues, 1);
-    //return tripTimeValues; // p10-median-p90 file blocked:
+    // return tripTimeValues; // p10-median-p90 file blocked:
   }
   if (stat === 'p10') {
     // using the p10-median-p90 stat group (see getStatPath)
@@ -173,7 +173,7 @@ export function getWaitTimeForDirection(
 ) {
   const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
 
-  const waitTimes = waitTimesCache[dateStr + timeStr + 'median-p90-plt20m'];
+  const waitTimes = waitTimesCache[`${dateStr + timeStr}median-p90-plt20m`];
 
   if (!waitTimes) {
     return null;
@@ -198,7 +198,12 @@ export function getWaitTimeForDirection(
  * @param {any} graphParams
  * @param {any} route
  */
-export function getAverageOfMedianWaitStat(waitTimesCache, graphParams, route, stat = 'median') {
+export function getAverageOfMedianWaitStat(
+  waitTimesCache,
+  graphParams,
+  route,
+  stat = 'median',
+) {
   const directions = route.directions;
   const sumOfMedians = directions.reduce((total, direction) => {
     const waitForDir = getWaitTimeForDirection(
@@ -210,11 +215,11 @@ export function getAverageOfMedianWaitStat(waitTimesCache, graphParams, route, s
     if (!waitForDir || !waitForDir.median) {
       return NaN;
     }
-    if (stat === 'plt20m') { // statgroup is median-p90-plt20m
+    if (stat === 'plt20m') {
+      // statgroup is median-p90-plt20m
       return total + waitForDir.median[2]; // subscript two is median of per-stop probabilities of < 20m wait
-    } else { // default to median
-      return total + waitForDir.median[0]; // subscript zero is median of per-stop medians
-    }
+    } // default to median
+    return total + waitForDir.median[0]; // subscript zero is median of per-stop medians
   }, 0);
   return sumOfMedians / directions.length;
 }

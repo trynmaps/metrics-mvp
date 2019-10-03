@@ -70,9 +70,19 @@ const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
   { id: 'wait', numeric: true, disablePadding: false, label: 'Wait (min)' },
-  { id: 'longWait', numeric: true, disablePadding: false, label: '20 min wait %' },
+  {
+    id: 'longWait',
+    numeric: true,
+    disablePadding: false,
+    label: '20 min wait %',
+  },
   { id: 'speed', numeric: true, disablePadding: false, label: 'Speed (mph)' },
-  { id: 'variability', numeric: true, disablePadding: false, label: 'Extra Travel (min)' },
+  {
+    id: 'variability',
+    numeric: true,
+    disablePadding: false,
+    label: 'Extra Travel (min)',
+  },
 ];
 
 function EnhancedTableHead(props) {
@@ -193,7 +203,7 @@ function RouteTable(props) {
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
   const dense = true;
-  
+
   const { graphParams, fetchPrecomputedWaitAndTripData } = props;
 
   useEffect(() => {
@@ -284,20 +294,32 @@ function RouteTable(props) {
                           {row.title}
                         </Link>
                       </TableCell>
-                      <TableCell align="right" style={{color: quartileForegroundColor(row.totalScore/100), backgroundColor: quartileBackgroundColor(row.totalScore/100)}}>
+                      <TableCell
+                        align="right"
+                        style={{
+                          color: quartileForegroundColor(row.totalScore / 100),
+                          backgroundColor: quartileBackgroundColor(
+                            row.totalScore / 100,
+                          ),
+                        }}
+                      >
                         {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
                       </TableCell>
                       <TableCell align="right">
                         {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
                       </TableCell>
                       <TableCell align="right">
-                        {Number.isNaN(row.longWait) ? '--' : (row.longWait*100).toFixed(0) + '%'}
+                        {Number.isNaN(row.longWait)
+                          ? '--'
+                          : `${(row.longWait * 100).toFixed(0)}%`}
                       </TableCell>
                       <TableCell align="right">
                         {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
                       </TableCell>
                       <TableCell align="right">
-                        {Number.isNaN(row.variability) ? '--' : row.variability.toFixed(0)}
+                        {Number.isNaN(row.variability)
+                          ? '--'
+                          : row.variability.toFixed(0)}
                       </TableCell>
                     </TableRow>
                   );

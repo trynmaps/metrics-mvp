@@ -194,8 +194,10 @@ export function getEndToEndTripTime(
   // if there is no trip time to the last stop, then use the highest trip time actually observed
 
   if (!tripTime) {
-    tripTime = Math.max(...Object.values(getTripTimeStat(tripTimesForFirstStop, statIndex)));
-    //console.log("No trip time found for " + routeId + " " + directionId + " to stop " + lastStop + '. max observed: ' + tripTime);
+    tripTime = Math.max(
+      ...Object.values(getTripTimeStat(tripTimesForFirstStop, statIndex)),
+    );
+    // console.log("No trip time found for " + routeId + " " + directionId + " to stop " + lastStop + '. max observed: ' + tripTime);
   }
 
   // console.log('trip time in minutes is ' + tripTime);
@@ -268,7 +270,14 @@ export function getAllWaits(waitTimesCache, graphParams, routes) {
       return {
         routeId: route.id,
         wait: getAverageOfMedianWaitStat(waitTimesCache, graphParams, route),
-        longWait: 1-getAverageOfMedianWaitStat(waitTimesCache, graphParams, route, 'plt20m'),
+        longWait:
+          1 -
+          getAverageOfMedianWaitStat(
+            waitTimesCache,
+            graphParams,
+            route,
+            'plt20m',
+          ),
       };
     });
     allWaits = allWaits.filter(waitObj => !Number.isNaN(waitObj.wait));
@@ -288,7 +297,12 @@ export function getAllWaits(waitTimesCache, graphParams, routes) {
  * @param {any} routes
  * @param {any} routeId
  */
-function getSpeedAndVariabilityForRoute(tripTimesCache, graphParams, routes, routeId) {
+function getSpeedAndVariabilityForRoute(
+  tripTimesCache,
+  graphParams,
+  routes,
+  routeId,
+) {
   const route = routes.find(thisRoute => thisRoute.id === routeId);
 
   const filteredDirections = filterDirections(route.directions, routeId);
@@ -303,13 +317,13 @@ function getSpeedAndVariabilityForRoute(tripTimesCache, graphParams, routes, rou
     );
 
     const p90tripTime = getEndToEndTripTime(
-        tripTimesCache,
-        graphParams,
-        routes,
-        route.id,
-        direction.id,
-        'p90',
-      );
+      tripTimesCache,
+      graphParams,
+      routes,
+      route.id,
+      direction.id,
+      'p90',
+    );
 
     if (dist <= 0 || Number.isNaN(tripTime)) {
       // something wrong with the data here
@@ -319,7 +333,7 @@ function getSpeedAndVariabilityForRoute(tripTimesCache, graphParams, routes, rou
 
     const speed = (metersToMiles(Number.parseFloat(dist)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
     return {
-      speed: speed,
+      speed,
       variability: p90tripTime - tripTime,
     };
   });
@@ -330,8 +344,14 @@ function getSpeedAndVariabilityForRoute(tripTimesCache, graphParams, routes, rou
     return 0;
   }
 
-  const sum = speeds.reduce((total, currentValue) => total + currentValue.speed, 0);
-  const sumVariability = speeds.reduce((total, currentValue) => total + currentValue.variability, 0);
+  const sum = speeds.reduce(
+    (total, currentValue) => total + currentValue.speed,
+    0,
+  );
+  const sumVariability = speeds.reduce(
+    (total, currentValue) => total + currentValue.variability,
+    0,
+  );
   return {
     speed: sum / speeds.length,
     variability: sumVariability / speeds.length,
@@ -348,7 +368,12 @@ export function getAllSpeeds(tripTimesCache, graphParams, routes) {
   let allSpeeds = null;
   if (routes) {
     allSpeeds = filterRoutes(routes).map(route => {
-      const speedAndVariability = getSpeedAndVariabilityForRoute(tripTimesCache, graphParams, routes, route.id);
+      const speedAndVariability = getSpeedAndVariabilityForRoute(
+        tripTimesCache,
+        graphParams,
+        routes,
+        route.id,
+      );
       return {
         routeId: route.id,
         speed: speedAndVariability.speed,
@@ -372,7 +397,12 @@ export function getAllSpeeds(tripTimesCache, graphParams, routes) {
  * TODO: refactor with Info.jsx's computation of grades once we add in probability
  * of long wait and travel variability to RouteSummary.
  */
-export function computeGrades(medianWait, longWaitProbability, speed, variability) {
+export function computeGrades(
+  medianWait,
+  longWaitProbability,
+  speed,
+  variability,
+) {
   //
   // grade and score for median wait
   //
@@ -451,7 +481,9 @@ export function computeGrades(medianWait, longWaitProbability, speed, variabilit
     travelVarianceScore = variabilityScoreScale(variability);
   }
 
-  totalScore = Math.round((medianWaitScore + longWaitScore + speedScore + travelVarianceScore) / 4.0);
+  totalScore = Math.round(
+    (medianWaitScore + longWaitScore + speedScore + travelVarianceScore) / 4.0,
+  );
   totalGrade = totalGradeScale(totalScore);
 
   return {
@@ -480,7 +512,12 @@ export function getAllScores(routes, waits, speeds) {
     const speedObj = speeds.find(speed => speed.routeId === route.id);
     const waitObj = waits.find(wait => wait.routeId === route.id);
     if (waitObj && speedObj) {
-      const grades = computeGrades(waitObj.wait, waitObj.longWait, speedObj.speed, speedObj.variability);
+      const grades = computeGrades(
+        waitObj.wait,
+        waitObj.longWait,
+        speedObj.speed,
+        speedObj.variability,
+      );
       allScores.push({ routeId: route.id, totalScore: grades.totalScore });
     }
   });

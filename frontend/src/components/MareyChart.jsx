@@ -76,7 +76,7 @@ function MareyChart(props) {
     if (graphParams.routeId) {
       fetchArrivals(graphParams);
     }
-  }, [graphParams, fetchArrivals]);
+  }, [graphParams, thisFetchArrivals]);
 
   // When both the raw arrival history and route configs have loaded, first
   // rebucket the data by trip ID.  Then create react-vis Series objects for
