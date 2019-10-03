@@ -56,13 +56,7 @@ function RouteScreen(props) {
       : null;
       debugger;
   const link = {
-    type:'ROUTESCREEN',
-    payload : {
-      route_id: selectedRoute ? selectedRoute.id : null,
-      direction_id: direction ? direction.id : null,
-      start_stop_id: startStopInfo ? graphParams.startStopId : null,
-      end_stop_id: endStopInfo ? graphParams.endStopId : null
-    }
+    type:'ROUTESCREEN'
   }
   return (
     <Fragment>
@@ -71,11 +65,11 @@ function RouteScreen(props) {
           <SidebarButton />
           <div className="page-title">
             <Link to="/">{agencyTitle}</Link>
-            {selectedRoute ? <span> > <Link to={link}> {selectedRoute.title} </Link> </span> : null}
-            {direction ?  <span> > <Link to={link}> {direction.title} </Link> </span> : null}
+            {selectedRoute ? <span> > <Link to={Object.assign({...link}, {payload: { route_id: selectedRoute.id}})}> {selectedRoute.title} </Link> </span> : null}
+            {direction ?  <span> > <Link to={Object.assign({...link}, {payload: { route_id: selectedRoute.id, direction_id: direction.id}})}> {direction.title} </Link> </span> : null}
             &nbsp;
-            {startStopInfo ? <span> > <Link to={link}> {`(from ${startStopInfo.title}`} </Link> </span> : null}
-            {endStopInfo ? <span> > <Link to={link}> {`to ${endStopInfo.title})`} </Link> </span>  : null}
+            {startStopInfo ? <span> > <Link to={Object.assign({...link}, {payload: { route_id: selectedRoute.id, direction_id: direction.id, start_stop_id: graphParams.startStopId}})}> {`(from ${startStopInfo.title}`} </Link> </span> : null}
+            {endStopInfo ? <span> > <Link to={Object.assign({...link}, {payload: { route_id: selectedRoute.id, direction_id: direction.id, start_stop_id: graphParams.startStopId, end_stop_id: graphParams.endStopId }})}> {`to ${endStopInfo.title})`} </Link> </span>  : null}
           </div>
           <DateTimePanel />
         </Toolbar>
