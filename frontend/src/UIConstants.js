@@ -9,7 +9,7 @@ export const Colors = {
   GRAY: '#a4a6a9',
   PURPLE: '#aa82c5',
   BLUE: 'blue',
-  RED: 'RED',
+  RED: 'red',
   GREEN: 'green'
 }
 
