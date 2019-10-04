@@ -13,9 +13,8 @@ import { agencyTitle } from '../locationConstants';
 import { fetchRoutes } from '../actions';
 
 function Dashboard(props) {
-  
   const { routes, fetchRoutes } = props;
-  
+
   useEffect(() => {
     if (!routes) {
       fetchRoutes();

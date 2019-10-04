@@ -2,12 +2,16 @@
   "name": "metrics-mvp",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "yarn": "NO LONGER USED - Please use npm"
+  },
   "dependencies": {
     "@material-ui/core": "^4.3.0",
     "@material-ui/icons": "^4.1.0",
     "@material-ui/lab": "^4.0.0-alpha.20",
     "@turf/turf": "^5.1.6",
     "axios": "0.19.0",
+    "clsx": "^1.0.4",
     "d3": "^5.9.2",
     "emotion": "^10.0.9",
     "leaflet": "^1.5.1",
@@ -25,6 +29,22 @@
     "redux-first-router": "^2.1.1",
     "redux-first-router-link": "^2.1.1",
     "redux-thunk": "^2.3.0"
+  },
+  "devDependencies": {
+    "babel-eslint": "10.0.2",
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-config-prettier": "^4.3.0",
+    "eslint-config-react-app": "^3.0.6",
+    "eslint-loader": "^2.1.1",
+    "eslint-plugin-flowtype": "^3.2.1",
+    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-react": "^7.13.0",
+    "husky": "3.0.2",
+    "lint-staged": "^8.2.0",
+    "prettier": "^1.18.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -57,24 +77,5 @@
     "not ie <= 11",
     "not op_mini all"
   ],
-  "homepage": "frontend/build",
-  "engines": {
-    "yarn": "NO LONGER USED - Please use npm"
-  },
-  "devDependencies": {
-    "babel-eslint": "10.0.2",
-    "eslint": "^6.1.0",
-    "eslint-config-airbnb": "^17.1.0",
-    "eslint-config-prettier": "^4.3.0",
-    "eslint-config-react-app": "^3.0.6",
-    "eslint-loader": "^2.1.1",
-    "eslint-plugin-flowtype": "^3.2.1",
-    "eslint-plugin-import": "^2.17.3",
-    "eslint-plugin-jsx-a11y": "^6.2.1",
-    "eslint-plugin-prettier": "^3.1.0",
-    "eslint-plugin-react": "^7.13.0",
-    "husky": "3.0.2",
-    "lint-staged": "^8.2.0",
-    "prettier": "^1.18.2"
-  }
+  "homepage": "frontend/build"
 }

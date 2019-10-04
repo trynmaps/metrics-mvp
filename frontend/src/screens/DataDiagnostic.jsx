@@ -25,18 +25,21 @@ const useStyles = makeStyles({
  * for all routes.  Access via /dataDiagnostic.
  */
 function DataDiagnostic(props) {
-  
-  const { graphParams, routes, fetchRoutes, fetchPrecomputedWaitAndTripData } = props;
-  
+  const {
+    graphParams,
+    routes,
+    fetchRoutes,
+    fetchPrecomputedWaitAndTripData,
+  } = props;
+
   useEffect(() => {
     if (!routes) {
       fetchRoutes();
     }
     fetchPrecomputedWaitAndTripData(graphParams);
-  }, [ routes, fetchRoutes, fetchPrecomputedWaitAndTripData, graphParams ]); // like componentDidMount, this runs only on first render
+  }, [routes, fetchRoutes, fetchPrecomputedWaitAndTripData, graphParams]); // like componentDidMount, this runs only on first render
 
   const classes = useStyles();
-
 
   let charts = null;
 

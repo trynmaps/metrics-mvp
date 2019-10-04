@@ -16,7 +16,6 @@ import { fetchRoutes } from '../actions';
 import { agencyTitle } from '../locationConstants';
 
 function RouteScreen(props) {
-  
   const {
     graphData,
     graphError,
