@@ -17,8 +17,7 @@ backend/data/trip-times_*
 docker-compose.override.yml
 
 .aws/
-
-
+.vscode/
 
 
 
