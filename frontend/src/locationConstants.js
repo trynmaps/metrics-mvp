@@ -170,6 +170,20 @@ export function generateWaitTimeURL(dateStr, statPath, timePath) {
   )}/wait-times_${waitTimesVersion}_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
 }
 
+const arrivalsVersion = 'v4a';
+
+/**
+ * Generate S3 url for arrivals
+ * @param dateStr - date
+ * @param routeId - route id
+ */
+export function generateArrivalsURL(dateStr, routeId) {
+  return `https://opentransit-stop-arrivals.s3.amazonaws.com/${arrivalsVersion}/sf-muni/${dateStr.replace(
+    /-/g,
+    '/',
+  )}/arrivals_${arrivalsVersion}_sf-muni_${dateStr}_${routeId}.json.gz`;
+}
+
 /**
  * Returns a data object with centralized declarations of "per route" heuristic rules
  * to apply when doing systemwide computations.
