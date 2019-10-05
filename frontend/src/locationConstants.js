@@ -136,52 +136,53 @@ export const ServiceArea = {
 
 // S3 link to routes
 export const routesUrl =
-  'https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_sf-muni.json.gz';
+  `https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_${agencyName}.json.gz`;
 
 const tripTimesVersion = 'v1a';
 
 /**
  * Generate S3 url for trips
- * @param dateStr - date
- * @param statPath - the statistical measure (e.g. median)
- * @param timePath - the time of day
+ * @param dateStr {string} date
+ * @param statPath {string} the statistical measure (e.g. median)
+ * @param timePath {string} the time of day
  * @returns {string} S3 url
  */
 export function generateTripURL(dateStr, statPath, timePath) {
-  return `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/${tripTimesVersion}/sf-muni/${dateStr.replace(
+  return `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/${tripTimesVersion}/${agencyName}/${dateStr.replace(
     /-/g,
     '/',
-  )}/trip-times_${tripTimesVersion}_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
+  )}/trip-times_${tripTimesVersion}_${agencyName}_${dateStr}_${statPath}${timePath}.json.gz`;
 }
 
 const waitTimesVersion = 'v1a';
 
 /**
  * Generate S3 url for wait times
- * @param dateStr - date
- * @param statPath - the statistical measure (e.g. median)
- * @param timePath - the time of day
+ * @param dateStr {string} date
+ * @param statPath {string} the statistical measure (e.g. median)
+ * @param timePath {string} the time of day
  * @returns {string} S3 url
  */
 export function generateWaitTimeURL(dateStr, statPath, timePath) {
-  return `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/${waitTimesVersion}/sf-muni/${dateStr.replace(
+  return `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/${waitTimesVersion}/${agencyName}/${dateStr.replace(
     /-/g,
     '/',
-  )}/wait-times_${waitTimesVersion}_sf-muni_${dateStr}_${statPath}${timePath}.json.gz`;
+  )}/wait-times_${waitTimesVersion}_${agencyName}_${dateStr}_${statPath}${timePath}.json.gz`;
 }
 
 const arrivalsVersion = 'v4a';
 
 /**
  * Generate S3 url for arrivals
- * @param dateStr - date
- * @param routeId - route id
+ * @param dateStr {string} date
+ * @param routeId {string} route id
+ * @returns {string} S3 url
  */
 export function generateArrivalsURL(dateStr, routeId) {
-  return `https://opentransit-stop-arrivals.s3.amazonaws.com/${arrivalsVersion}/sf-muni/${dateStr.replace(
+  return `https://opentransit-stop-arrivals.s3.amazonaws.com/${arrivalsVersion}/${agencyName}/${dateStr.replace(
     /-/g,
     '/',
-  )}/arrivals_${arrivalsVersion}_sf-muni_${dateStr}_${routeId}.json.gz`;
+  )}/arrivals_${arrivalsVersion}_${agencyName}_${dateStr}_${routeId}.json.gz`;
 }
 
 /**
