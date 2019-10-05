@@ -61,6 +61,7 @@ function desc(a, b, orderBy) {
  * @param {Function} cmp     Comparator to use
  * @param {String} sortOrder Either 'desc' or 'asc'
  * @param {String} orderBy   Column to sort by
+ * @returns {Array}          The sorted array
  */
 function stableSort(array, cmp, sortOrder, orderBy) {
   
