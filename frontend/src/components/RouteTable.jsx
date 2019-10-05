@@ -50,7 +50,32 @@ function desc(a, b, orderBy) {
   return 0;
 }
 
-function stableSort(array, cmp) {
+/**
+ * Sorts the given array using a comparator.  Equal values are ordered by array index.
+ * 
+ * Sorting by title is a special case because the original order of the routes array is
+ * better than sorting route title alphabetically.  For example, 1 should be followed by
+ * 1AX rather than 10 and 12.
+ *  
+ * @param {Array} array      Array to sort
+ * @param {Function} cmp     Comparator to use
+ * @param {String} sortOrder Either 'desc' or 'asc'
+ * @param {String} orderBy   Column to sort by
+ * @returns {Array}          The sorted array
+ */
+function stableSort(array, cmp, sortOrder, orderBy) {
+  
+  // special case for title sorting that short circuits the use of the comparator
+  
+  if (orderBy === 'title') {
+    if (sortOrder === 'desc') {
+      const newArray = [...array].reverse();
+      return newArray;
+    } else {
+      return array;
+    }
+  }
+  
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);
@@ -268,7 +293,7 @@ function RouteTable(props) {
               rowCount={routes.length}
             />
             <TableBody>
-              {stableSort(routes, getSorting(order, orderBy)).map(
+              {stableSort(routes, getSorting(order, orderBy), order, orderBy).map(
                 (row, index) => {
                   const labelId = `enhanced-table-checkbox-${index}`;
 
