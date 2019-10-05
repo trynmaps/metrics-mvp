@@ -2,6 +2,7 @@ import axios from 'axios';
 import { metricsBaseURL } from '../config';
 import { getTimePath } from '../helpers/precomputed';
 import {
+  generateArrivalsURL,
   generateTripURL,
   generateWaitTimeURL,
   routesUrl,
@@ -146,12 +147,7 @@ export function fetchArrivals(params) {
   return function(dispatch) {
     const dateStr = params.date;
 
-    const arrivalsVersion = 'v4a';
-
-    const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/${arrivalsVersion}/sf-muni/${dateStr.replace(
-      /-/g,
-      '/',
-    )}/arrivals_${arrivalsVersion}_sf-muni_${dateStr}_${params.routeId}.json.gz`;
+    const s3Url = generateArrivalsURL(dateStr, params.routeId);
 
     axios
       .get(s3Url)
