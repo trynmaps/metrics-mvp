@@ -78,7 +78,6 @@ class InfoIntervalsOfDay extends Component {
    */
   mapInterval(intervalField) {
     return interval => {
-
       let y = 0;
 
       if (interval[intervalField] != null) {
@@ -88,11 +87,11 @@ class InfoIntervalsOfDay extends Component {
           y = getPercentileValue(interval[intervalField], PLANNING_PERCENTILE);
         }
       }
-      
+
       if (y === undefined) {
         y = 0;
       }
-      
+
       return {
         x: `${interval.startTime} - ${interval.endTime}`,
         y,

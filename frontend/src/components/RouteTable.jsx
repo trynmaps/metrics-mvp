@@ -50,7 +50,32 @@ function desc(a, b, orderBy) {
   return 0;
 }
 
-function stableSort(array, cmp) {
+/**
+ * Sorts the given array using a comparator.  Equal values are ordered by array index.
+ * 
+ * Sorting by title is a special case because the original order of the routes array is
+ * better than sorting route title alphabetically.  For example, 1 should be followed by
+ * 1AX rather than 10 and 12.
+ *  
+ * @param {Array} array      Array to sort
+ * @param {Function} cmp     Comparator to use
+ * @param {String} sortOrder Either 'desc' or 'asc'
+ * @param {String} orderBy   Column to sort by
+ * @returns {Array}          The sorted array
+ */
+function stableSort(array, cmp, sortOrder, orderBy) {
+  
+  // special case for title sorting that short circuits the use of the comparator
+  
+  if (orderBy === 'title') {
+    if (sortOrder === 'desc') {
+      const newArray = [...array].reverse();
+      return newArray;
+    } else {
+      return array;
+    }
+  }
+  
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);
@@ -70,9 +95,19 @@ const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
   { id: 'wait', numeric: true, disablePadding: false, label: 'Wait (min)' },
-  { id: 'longWait', numeric: true, disablePadding: false, label: '20 min wait %' },
+  {
+    id: 'longWait',
+    numeric: true,
+    disablePadding: false,
+    label: '20 min wait %',
+  },
   { id: 'speed', numeric: true, disablePadding: false, label: 'Speed (mph)' },
-  { id: 'variability', numeric: true, disablePadding: false, label: 'Extra Travel (min)' },
+  {
+    id: 'variability',
+    numeric: true,
+    disablePadding: false,
+    label: 'Extra Travel (min)',
+  },
 ];
 
 function EnhancedTableHead(props) {
@@ -193,7 +228,7 @@ function RouteTable(props) {
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
   const dense = true;
-  
+
   const { graphParams, fetchPrecomputedWaitAndTripData } = props;
 
   useEffect(() => {
@@ -258,7 +293,7 @@ function RouteTable(props) {
               rowCount={routes.length}
             />
             <TableBody>
-              {stableSort(routes, getSorting(order, orderBy)).map(
+              {stableSort(routes, getSorting(order, orderBy), order, orderBy).map(
                 (row, index) => {
                   const labelId = `enhanced-table-checkbox-${index}`;
 
@@ -274,30 +309,42 @@ function RouteTable(props) {
                           to={{
                             type: 'ROUTESCREEN',
                             payload: {
-                              route_id: row.id,
-                              direction_id: null,
-                              start_stop_id: null,
-                              end_stop_id: null,
+                              routeId: row.id,
+                              directionId: null,
+                              startStopId: null,
+                              endStopId: null,
                             },
                           }}
                         >
                           {row.title}
                         </Link>
                       </TableCell>
-                      <TableCell align="right" style={{color: quartileForegroundColor(row.totalScore/100), backgroundColor: quartileBackgroundColor(row.totalScore/100)}}>
+                      <TableCell
+                        align="right"
+                        style={{
+                          color: quartileForegroundColor(row.totalScore / 100),
+                          backgroundColor: quartileBackgroundColor(
+                            row.totalScore / 100,
+                          ),
+                        }}
+                      >
                         {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
                       </TableCell>
                       <TableCell align="right">
                         {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
                       </TableCell>
                       <TableCell align="right">
-                        {Number.isNaN(row.longWait) ? '--' : (row.longWait*100).toFixed(0) + '%'}
+                        {Number.isNaN(row.longWait)
+                          ? '--'
+                          : `${(row.longWait * 100).toFixed(0)}%`}
                       </TableCell>
                       <TableCell align="right">
                         {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
                       </TableCell>
                       <TableCell align="right">
-                        {Number.isNaN(row.variability) ? '--' : row.variability.toFixed(0)}
+                        {Number.isNaN(row.variability)
+                          ? '--'
+                          : row.variability.toFixed(0)}
                       </TableCell>
                     </TableRow>
                   );

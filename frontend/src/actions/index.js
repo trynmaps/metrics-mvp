@@ -1,9 +1,12 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
-
 import { getTimePath } from '../helpers/precomputed';
-import { generateTripURL, generateWaitTimeURL, generateArrivalsURL, routesUrl } from '../locationConstants';
-
+import {
+  generateArrivalsURL,
+  generateTripURL,
+  generateWaitTimeURL,
+  routesUrl,
+} from '../locationConstants';
 
 export function fetchGraphData(params) {
   return function(dispatch) {
