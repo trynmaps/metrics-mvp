@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Map, TileLayer, CircleMarker, Tooltip, Polyline } from 'react-leaflet';
+import { Map, TileLayer, Marker, CircleMarker, Tooltip, Polyline } from 'react-leaflet';
 import * as d3 from 'd3';
+import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import { DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { handleGraphParams } from '../actions';
@@ -9,9 +10,12 @@ import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { STARTING_COORDINATES } from '../locationConstants';
 import { Colors } from '../UIConstants';
+import LocationOn from '@material-ui/icons/LocationOn';
+import TripOrigin from '@material-ui/icons/TripOrigin';
+import ReactDOMServer from 'react-dom/server';
 
 const RADIUS = 6;
-const STOP_COLORS = [Colors.BLUE, Colors.RED, Colors.GREEN, Colors.PURPLE];
+const STOP_COLORS = [Colors.INDIGO];
 const ZOOM = 13;
 
 class MapStops extends Component {
@@ -30,8 +34,36 @@ class MapStops extends Component {
   componentWillUnmount() {
     window.removeEventListener('resize', this.updateDimensions.bind(this));
   }
+  
+  /**
+   * Helper method that draws starting and ending stops with Material UI icons.
+   * 
+   * @param {boolean} isStart - True if the starting stop, else the ending stop.
+   * @param {Object} currentPosition - Coordinates for this stop.
+   * @param {Function} onClickHandler - Method for handling mouse clicks.
+   * @param {Object} tooltip - The react-leaflet Tooltip for this stop. 
+   * @returns {Object} The react-leaflet Marker.
+   */
+  populateStartOrEndStop = (isStart, currentPosition, onClickHandler, tooltip) => {
+    const icon = L.divIcon({
+      className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
+      iconSize: [24, 24],
+      html: ReactDOMServer.renderToString(isStart ?
+          <TripOrigin fontSize={'small'}/>
+          : <LocationOn fontSize={'small'}/>),
+    });
 
-  populateRouteDirection = (
+    return (
+      <Marker
+        key={ isStart ? 'icon-trip-start' : 'icon-trip-end' }
+        position={currentPosition}
+        icon={icon}
+        onClick={ onClickHandler }
+      >{tooltip}</Marker>
+    )
+  };
+
+  populateStops = (
     routeStops,
     directionId,
     color,
@@ -46,35 +78,37 @@ class MapStops extends Component {
         const currentPosition = [stop.lat, stop.lon];
         const isStart = stop.sid === this.props.graphParams.startStopId;
         const isEnd = stop.sid === this.props.graphParams.endStopId;
-        const endFillColor = isEnd ? 'red' : 'white';
+        
+        const onClickHandler = () => this.handleStopSelect(stop, directionId); 
+        const tooltip = <Tooltip>
+          {stop.title}
+          <br />
+          {direction.title}
+        </Tooltip>; 
 
+        if (isStart || isEnd) {
+          return this.populateStartOrEndStop(isStart, currentPosition, onClickHandler, tooltip);
+        }
+        
         return (
           <CircleMarker
             key={`${stop.sid}-${directionId}`}
             center={currentPosition}
             color={color}
-            opacity={0.5}
+            weight={2.5}
+            opacity={0.7}
             radius={radius}
-            fill
-            fillColor={isStart ? 'green' : endFillColor}
-            fillOpacity={isStart || isEnd ? 1.0 : 0.5}
-            onClick={() => this.handleStopSelect(stop, directionId)}
+            onClick={ onClickHandler }
           >
-            <Tooltip>
-              {stop.title}
-              <br />
-              {direction.title}
-            </Tooltip>
+            { tooltip }  
           </CircleMarker>
         );
       });
-      route.unshift(
-        this.populateSpeed(routeInfo, direction, routeStops, directionId),
-      );
+      
     }
     return route;
-  };
-
+  }; 
+  
   // plot speed along a route
 
   populateSpeed = (routeInfo, direction, routeStops, directionId) => {
@@ -120,7 +154,7 @@ class MapStops extends Component {
           )}
           color={speed < 0 ? 'white' : this.speedColor(speed)}
           opacity={1}
-          weight={5}
+          weight={7}
           onClick={e => {
             // when this segment is clicked, plot only the stops for this route/dir by setting the first stop
 
@@ -346,8 +380,11 @@ class MapStops extends Component {
               selectedRoute,
               direction.id,
             );
+            
+            // add white lines and speed color lines
+            
             populatedRoutes.push(
-              this.populateRouteDirection(
+              this.populateStops(
                 routeStops,
                 direction.id,
                 STOP_COLORS[index % STOP_COLORS.length],
@@ -356,6 +393,12 @@ class MapStops extends Component {
                 selectedRoute,
               ),
             );
+            
+            // draw stop markers on top of lines for all directions
+            
+            populatedRoutes.unshift(
+              this.populateSpeed(selectedRoute, direction, routeStops, direction.id),
+            )
           }
         });
       }

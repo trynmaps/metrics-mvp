@@ -2,6 +2,8 @@
  * Constants for the UI that allow for reconfiguration.
  */
 
+import indigo from '@material-ui/core/colors/indigo';
+
 // Colors definition:
 // This section its should be use to declare an object color
 // that contain the colors used in the application
@@ -10,7 +12,8 @@ export const Colors = {
   PURPLE: '#aa82c5',
   BLUE: 'blue',
   RED: 'red',
-  GREEN: 'green'
+  GREEN: 'green',
+  INDIGO: indigo[400],
 }
 
 // placeholder colors: gray and purple from nyc busstats
