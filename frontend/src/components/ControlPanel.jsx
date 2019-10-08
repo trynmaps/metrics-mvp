@@ -27,15 +27,20 @@ function ControlPanel(props) {
   const { routes, graphParams } = props;
   let secondStopList = [];
 
-  const setDirectionId = directionId => {
+  /**
+   * Sets the direction
+   */
+  function setDirectionId(event) {
+    const directionId = event.target.value;
+
     const path = new Path();
-    path.buildPath(DIRECTION, directionId.target.value).commitPath();
+    path.buildPath(DIRECTION, directionId).commitPath();
     return props.onGraphParams({
-      directionId: directionId.target.value,
+      directionId,
       startStopId: null,
       endStopId: null,
     });
-  };
+  }
 
   function getSelectedRouteInfo() {
     const routeId = props.graphParams.routeId;
@@ -44,9 +49,9 @@ function ControlPanel(props) {
 
   const selectedRoute = getSelectedRouteInfo();
 
-  const getStopsInfoInGivenDirection = (mySelectedRoute, directionId) => {
+  function getStopsInfoInGivenDirection(mySelectedRoute, directionId) {
     return mySelectedRoute.directions.find(dir => dir.id === directionId);
-  };
+  }
 
   function generateSecondStopList(mySelectedRoute, directionId, stopId) {
     const secondStopInfo = getStopsInfoInGivenDirection(
@@ -59,17 +64,20 @@ function ControlPanel(props) {
     return secondStopInfo.stops.slice(secondStopListIndex + 1);
   }
 
-  const onSelectFirstStop = stopId => {
+  function onSelectFirstStop(event) {
+    const stopId = event.target.value;
+
     const directionId = props.graphParams.directionId;
     const secondStopId = props.graphParams.endStopId;
     const mySelectedRoute = { ...getSelectedRouteInfo() };
+
     secondStopList = generateSecondStopList(
       mySelectedRoute,
       directionId,
-      stopId.target.value,
+      stopId,
     );
     const path = new Path();
-    path.buildPath(FROM_STOP, stopId.target.value);
+    path.buildPath(FROM_STOP, stopId);
 
     if (secondStopId) {
       path.buildPath(TO_STOP, secondStopId);
@@ -77,20 +85,25 @@ function ControlPanel(props) {
 
     path.commitPath();
     props.onGraphParams({
-      startStopId: stopId.target.value,
+      startStopId: stopId,
       endStopId: secondStopId,
     });
-  };
+  }
 
-  const onSelectSecondStop = stopId => {
+  function onSelectSecondStop(event) {
+    const endStopId = event.target.value;
+
     const path = new Path();
-    path.buildPath(TO_STOP, stopId.target.value).commitPath();
-    props.onGraphParams({ endStopId: stopId.target.value });
-  };
+    path.buildPath(TO_STOP, endStopId).commitPath();
 
-  const setRouteId = routeId => {
+    props.onGraphParams({ endStopId });
+  }
+
+  function setRouteId(event) {
+    const routeId = event.target.value;
+
     const mySelectedRoute = props.routes
-      ? props.routes.find(route => route.id === routeId.target.value)
+      ? props.routes.find(route => route.id === routeId)
       : null;
 
     if (!mySelectedRoute) {
@@ -104,16 +117,16 @@ function ControlPanel(props) {
     // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
     const path = new Path();
     path
-      .buildPath(ROUTE, routeId.target.value)
+      .buildPath(ROUTE, routeId)
       .buildPath(DIRECTION, directionId)
       .commitPath();
     props.onGraphParams({
-      routeId: routeId.target.value,
+      routeId,
       directionId,
       startStopId: null,
       endStopId: null,
     });
-  };
+  }
 
   let selectedDirection = null;
   if (selectedRoute && selectedRoute.directions && graphParams.directionId) {
