@@ -11,9 +11,14 @@ import yellow from '@material-ui/core/colors/yellow';
 import lightGreen from '@material-ui/core/colors/lightGreen';
 import green from '@material-ui/core/colors/green';
 import {
+<<<<<<< HEAD
   getTripTimeStat,
   getTripTimesForDirection,
   getAverageOfMedianWaitStat,
+=======
+  getAverageOfMedianWait,
+  getTripTimesForDirection,
+>>>>>>> updated beautification
 } from './precomputed';
 import { routeHeuristics } from '../locationConstants';
 

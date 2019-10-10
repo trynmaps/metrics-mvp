@@ -1,8 +1,13 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
+<<<<<<< HEAD
 import { getTimePath } from '../helpers/precomputed';
 import {
   generateArrivalsURL,
+=======
+import { getStatPath, getTimePath } from '../helpers/precomputed';
+import {
+>>>>>>> updated beautification
   generateTripURL,
   generateWaitTimeURL,
   routesUrl,
