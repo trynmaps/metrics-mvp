@@ -29,15 +29,7 @@ CORS(app)
 def ping():
     return "pong"
 
-<<<<<<< HEAD
-app.add_url_rule('/api/metrics_api', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = True))
-=======
-<<<<<<< HEAD:metrics-api.py
-app.add_url_rule('/metrics_api', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = True))
-=======
-app.add_url_rule('/api/metrics_api', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = True))
->>>>>>> temp-graphene:backend/metrics-api.py
->>>>>>> a2888acefa213d4799ff9d04dc871dde61be1965
+app.add_url_rule('/api/graphql', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = True))
 
 @app.route('/api/routes', methods=['GET'])
 def routes():
