@@ -28,8 +28,8 @@ function DataDiagnostic(props) {
   const {
     graphParams,
     routes,
-    fetchRoutes,
-    fetchPrecomputedWaitAndTripData,
+    myFetchRoutes,
+    myFetchPrecomputedWaitAndTripData,
   } = props;
 
   useEffect(() => {
@@ -37,7 +37,7 @@ function DataDiagnostic(props) {
       fetchRoutes();
     }
     fetchPrecomputedWaitAndTripData(graphParams);
-  }, [routes, fetchRoutes, fetchPrecomputedWaitAndTripData, graphParams]); // like componentDidMount, this runs only on first render
+  }, [routes, myFetchRoutes, myFetchPrecomputedWaitAndTripData, graphParams]); // like componentDidMount, this runs only on first render
 
   const classes = useStyles();
 
@@ -83,8 +83,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: () => dispatch(fetchRoutes()),
-  fetchPrecomputedWaitAndTripData: params =>
+  myFetchRoutes: () => dispatch(fetchRoutes()),
+  myFetchPrecomputedWaitAndTripData: params =>
     dispatch(fetchPrecomputedWaitAndTripData(params)),
 });
 

@@ -52,11 +52,11 @@ function desc(a, b, orderBy) {
 
 /**
  * Sorts the given array using a comparator.  Equal values are ordered by array index.
- * 
+ *
  * Sorting by title is a special case because the original order of the routes array is
  * better than sorting route title alphabetically.  For example, 1 should be followed by
  * 1AX rather than 10 and 12.
- *  
+ *
  * @param {Array} array      Array to sort
  * @param {Function} cmp     Comparator to use
  * @param {String} sortOrder Either 'desc' or 'asc'
@@ -64,18 +64,16 @@ function desc(a, b, orderBy) {
  * @returns {Array}          The sorted array
  */
 function stableSort(array, cmp, sortOrder, orderBy) {
-  
   // special case for title sorting that short circuits the use of the comparator
-  
+
   if (orderBy === 'title') {
     if (sortOrder === 'desc') {
       const newArray = [...array].reverse();
       return newArray;
-    } else {
-      return array;
     }
+    return array;
   }
-  
+
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);
@@ -229,11 +227,11 @@ function RouteTable(props) {
   const [orderBy, setOrderBy] = React.useState('title');
   const dense = true;
 
-  const { graphParams, fetchPrecomputedWaitAndTripData } = props;
+  const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
 
   useEffect(() => {
     fetchPrecomputedWaitAndTripData(graphParams);
-  }, [graphParams, fetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
+  }, [graphParams, myFetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -293,63 +291,66 @@ function RouteTable(props) {
               rowCount={routes.length}
             />
             <TableBody>
-              {stableSort(routes, getSorting(order, orderBy), order, orderBy).map(
-                (row, index) => {
-                  const labelId = `enhanced-table-checkbox-${index}`;
+              {stableSort(
+                routes,
+                getSorting(order, orderBy),
+                order,
+                orderBy,
+              ).map((row, index) => {
+                const labelId = `enhanced-table-checkbox-${index}`;
 
-                  return (
-                    <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
-                      <TableCell
-                        component="th"
-                        id={labelId}
-                        scope="row"
-                        padding="none"
-                      >
-                        <Link
-                          to={{
-                            type: 'ROUTESCREEN',
-                            payload: {
-                              routeId: row.id,
-                              directionId: null,
-                              startStopId: null,
-                              endStopId: null,
-                            },
-                          }}
-                        >
-                          {row.title}
-                        </Link>
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        style={{
-                          color: quartileForegroundColor(row.totalScore / 100),
-                          backgroundColor: quartileBackgroundColor(
-                            row.totalScore / 100,
-                          ),
+                return (
+                  <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                    <TableCell
+                      component="th"
+                      id={labelId}
+                      scope="row"
+                      padding="none"
+                    >
+                      <Link
+                        to={{
+                          type: 'ROUTESCREEN',
+                          payload: {
+                            routeId: row.id,
+                            directionId: null,
+                            startStopId: null,
+                            endStopId: null,
+                          },
                         }}
                       >
-                        {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
-                      </TableCell>
-                      <TableCell align="right">
-                        {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
-                      </TableCell>
-                      <TableCell align="right">
-                        {Number.isNaN(row.longWait)
-                          ? '--'
-                          : `${(row.longWait * 100).toFixed(0)}%`}
-                      </TableCell>
-                      <TableCell align="right">
-                        {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
-                      </TableCell>
-                      <TableCell align="right">
-                        {Number.isNaN(row.variability)
-                          ? '--'
-                          : row.variability.toFixed(0)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                },
-              )}
+                        {row.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      style={{
+                        color: quartileForegroundColor(row.totalScore / 100),
+                        backgroundColor: quartileBackgroundColor(
+                          row.totalScore / 100,
+                        ),
+                      }}
+                    >
+                      {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
+                    </TableCell>
+                    <TableCell align="right">
+                      {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {Number.isNaN(row.longWait)
+                        ? '--'
+                        : `${(row.longWait * 100).toFixed(0)}%`}
+                    </TableCell>
+                    <TableCell align="right">
+                      {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {Number.isNaN(row.variability)
+                        ? '--'
+                        : row.variability.toFixed(0)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -367,7 +368,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    fetchPrecomputedWaitAndTripData: params =>
+    myFetchPrecomputedWaitAndTripData: params =>
       dispatch(fetchPrecomputedWaitAndTripData(params)),
     handleGraphParams: params => dispatch(handleGraphParams(params)),
   };

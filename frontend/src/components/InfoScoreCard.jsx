@@ -53,13 +53,13 @@ export default function InfoScoreCard(props) {
     setAnchorEl(null);
   }
 
-  const cardStyle = (grades, gradeName) => {
+  const cardStyle = (myGrades, myGradeName) => {
     return {
-      background: grades
-        ? quartileBackgroundColor(grades[gradeName] / 100.0)
+      background: myGrades
+        ? quartileBackgroundColor(myGrades[myGradeName] / 100.0)
         : 'gray',
-      color: grades
-        ? quartileForegroundColor(grades[gradeName] / 100.0)
+      color: myGrades
+        ? quartileForegroundColor(myGrades[myGradeName] / 100.0)
         : 'black',
       margin: 4,
     };

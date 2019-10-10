@@ -135,8 +135,7 @@ export const ServiceArea = {
 };
 
 // S3 link to routes
-export const routesUrl =
-  `https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_${agencyName}.json.gz`;
+export const routesUrl = `https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_${agencyName}.json.gz`;
 
 const tripTimesVersion = 'v1a';
 

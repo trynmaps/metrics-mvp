@@ -13,13 +13,13 @@ import { agencyTitle } from '../locationConstants';
 import { fetchRoutes } from '../actions';
 
 function Dashboard(props) {
-  const { routes, fetchRoutes } = props;
+  const { routes, myFetchRoutes } = props;
 
   useEffect(() => {
     if (!routes) {
       fetchRoutes();
     }
-  }, [routes, fetchRoutes]); // like componentDidMount, this runs only on first render
+  }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
   return (
     <div className="flex-screen">
@@ -50,7 +50,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: () => dispatch(fetchRoutes()),
+  myFetchRoutes: () => dispatch(fetchRoutes()),
 });
 
 export default connect(
