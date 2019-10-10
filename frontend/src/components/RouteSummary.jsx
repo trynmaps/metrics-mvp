@@ -29,7 +29,7 @@ function RouteSummary(props) {
   const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
 
   useEffect(() => {
-    fetchPrecomputedWaitAndTripData(graphParams);
+    myFetchPrecomputedWaitAndTripData(graphParams);
   }, [graphParams, myFetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
 
   let wait = null;

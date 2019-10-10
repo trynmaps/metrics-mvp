@@ -17,7 +17,7 @@ function Dashboard(props) {
 
   useEffect(() => {
     if (!routes) {
-      fetchRoutes();
+      myFetchRoutes();
     }
   }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
