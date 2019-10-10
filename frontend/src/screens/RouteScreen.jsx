@@ -16,7 +16,6 @@ import { fetchRoutes } from '../actions';
 import { agencyTitle } from '../locationConstants';
 
 function RouteScreen(props) {
-  
   const {
     graphData,
     graphError,
@@ -24,13 +23,14 @@ function RouteScreen(props) {
     intervalData,
     intervalError,
     routes,
+    thisFetchRoutes,
   } = props;
-  
+
   useEffect(() => {
     if (!routes) {
-      fetchRoutes();
+      thisFetchRoutes();
     }
-  }, [routes]); // like componentDidMount, this runs only on first render
+  }, [routes, thisFetchRoutes]); // like componentDidMount, this runs only on first render
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
@@ -106,7 +106,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: () => dispatch(fetchRoutes()),
+  thisFetchRoutes: () => dispatch(fetchRoutes()),
 });
 
 export default connect(

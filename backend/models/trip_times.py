@@ -70,7 +70,7 @@ def sort_parallel(arr, arr2):
     sort_order = np.argsort(arr)
     return arr[sort_order], arr2[sort_order]
 
-DefaultVersion = 'v1'
+DefaultVersion = 'v1a'
 
 class CachedTripTimes:
     def __init__(self, trip_times_data):

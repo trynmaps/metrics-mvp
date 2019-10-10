@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
-import { getStatPath, getTimePath } from '../helpers/precomputed';
-import { generateTripURL, generateWaitTimeURL, routesUrl } from '../locationConstants';
+import { getTimePath } from '../helpers/precomputed';
+import {
+  generateArrivalsURL,
+  generateTripURL,
+  generateWaitTimeURL,
+  routesUrl,
+} from '../locationConstants';
 
 export function fetchGraphData(params) {
   return function(dispatch) {
@@ -83,13 +88,14 @@ export function fetchPrecomputedWaitAndTripData(params) {
       : '';
     const dateStr = params.date;
 
+    const tripStatGroup = 'p10-median-p90'; // blocked; // 'median'
     const tripTimesCache = getState().routes.tripTimesCache;
 
-    const tripTimes = tripTimesCache[`${dateStr + timeStr}median`];
+    const tripTimes = tripTimesCache[`${dateStr + timeStr}${tripStatGroup}`];
 
     if (!tripTimes) {
       const timePath = getTimePath(timeStr);
-      const statPath = getStatPath('median');
+      const statPath = tripStatGroup;
 
       const s3Url = generateTripURL(dateStr, statPath, timePath);
 
@@ -98,7 +104,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
-            payload: [response.data, `${dateStr + timeStr}median`],
+            payload: [response.data, `${dateStr + timeStr}${tripStatGroup}`],
           });
         })
         .catch(() => {
@@ -106,12 +112,13 @@ export function fetchPrecomputedWaitAndTripData(params) {
         });
     }
 
+    const waitStatGroup = 'median-p90-plt20m';
     const waitTimesCache = getState().routes.waitTimesCache;
-    const waitTimes = waitTimesCache[`${dateStr + timeStr}median`];
+    const waitTimes = waitTimesCache[`${dateStr + timeStr}${waitStatGroup}`];
 
     if (!waitTimes) {
       const timePath = getTimePath(timeStr);
-      const statPath = getStatPath('median');
+      const statPath = waitStatGroup; // for now, nothing clever about selecting smaller files here //getStatPath(statGroup);
 
       const s3Url = generateWaitTimeURL(dateStr, statPath, timePath);
 
@@ -120,7 +127,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
-            payload: [response.data, `${dateStr + timeStr}median`],
+            payload: [response.data, `${dateStr + timeStr}${waitStatGroup}`],
           });
         })
         .catch(() => {
@@ -140,10 +147,7 @@ export function fetchArrivals(params) {
   return function(dispatch) {
     const dateStr = params.date;
 
-    const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/v4/sf-muni/${dateStr.replace(
-      /-/g,
-      '/',
-    )}/arrivals_v4_sf-muni_${dateStr}_${params.routeId}.json.gz`;
+    const s3Url = generateArrivalsURL(dateStr, params.routeId);
 
     axios
       .get(s3Url)

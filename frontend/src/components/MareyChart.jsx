@@ -68,15 +68,15 @@ function MareyChart(props) {
   const INBOUND = 'Inbound'; // same as directionInfo name
   const OUTBOUND = 'Outbound'; // same as directionInfo name
 
-  const { graphParams, fetchArrivals, arrivals, routes } = props;
+  const { graphParams, thisFetchArrivals, arrivals, routes } = props;
 
   // On first load, get the raw arrival history corresponding to graphParams.
 
   useEffect(() => {
     if (graphParams.routeId) {
-      fetchArrivals(graphParams);
+      thisFetchArrivals(graphParams);
     }
-  }, [graphParams, fetchArrivals]);
+  }, [graphParams, thisFetchArrivals]);
 
   // When both the raw arrival history and route configs have loaded, first
   // rebucket the data by trip ID.  Then create react-vis Series objects for
@@ -117,7 +117,7 @@ function MareyChart(props) {
         };
       }
 
-      if (directionInfo.stop_geometry[stopId]) {
+      if (directionInfo && directionInfo.stop_geometry[stopId]) {
         let distance = directionInfo.stop_geometry[stopId].distance;
 
         // This is a little clunky -- for all outbound routes, we restate the distance
@@ -259,7 +259,7 @@ function MareyChart(props) {
 
       if (
         selectedOption === INBOUND_AND_OUTBOUND ||
-        trip.directionInfo.name === selectedOption
+        (trip.directionInfo && trip.directionInfo.name === selectedOption)
       ) {
         const dataSeries = trip.series.sort((a, b) => {
           const deltaY = b.y - a.y;
@@ -472,7 +472,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    fetchArrivals: params => dispatch(fetchArrivals(params)),
+    thisFetchArrivals: params => dispatch(fetchArrivals(params)),
   };
 };
 
