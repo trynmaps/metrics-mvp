@@ -113,7 +113,7 @@ class HistogramBin(ObjectType):
     binEnd = Float()
 
 class BasicStats(ObjectType):
-    count = Float()
+    count = Int()
     avg = Float()
     min = Float()
     median = Float()
