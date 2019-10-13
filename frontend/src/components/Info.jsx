@@ -39,14 +39,12 @@ function Info(props) {
         }))
       : null;
 
-  const waitHistogramCount = waitTimes && waitTimes.histogram ? waitTimes.histogram.reduce((acc, thisBin) => acc + thisBin.count, 0) : 100;
-
   const waitData =
     waitTimes && waitTimes.histogram
       ? waitTimes.histogram.map(bin => ({
           x0: bin.binStart,
           x: bin.binEnd,
-          y: (100 * bin.count) / waitHistogramCount,
+          y: bin.count,
         }))
       : null;
 

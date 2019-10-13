@@ -90,8 +90,7 @@ export default function InfoTripSummary(props) {
         : accumulator;
     };
 
-    longWaitProbability = waitTimes.histogram.reduce(reducer, 0);
-    longWaitProbability /= waitTimes.histogram.reduce((acc, thisBin) => acc + thisBin.count, 0);
+    longWaitProbability = waitTimes.histogram.reduce(reducer, 0) / 100;
   }
 
   let travelVarianceTime = 0;
