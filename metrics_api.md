@@ -76,7 +76,7 @@ query {
 
 **does** work, since `title`, `lat`, `lon`, `stopIds`, etc. are all primitive types:
 
-```graphql
+```
 {
   "data": {
     "routes": [
@@ -469,7 +469,7 @@ Complex objects contain fields that are themselves complex objects or are primit
 
 ### Query
 
-The root query object for the API. The `routeInfo` and `routeMetrics` fields require input parameters.
+The root query object for the API. The `routeConfig` and `routeMetrics` fields require input parameters.
 
 | Field Name | Type | Description |
 | --- | --- | --- |
@@ -578,7 +578,7 @@ Contains metrics data a particular pair of stops on a single route in a particul
 | Field Name | Type | Description |
 | --- | --- | --- |
 | `startTime` | `String` | Start time of interval. |
-| `endTime` | [`String` | End time of interval. |
+| `endTime` | `String` | End time of interval. |
 | `waitTimes` | [`WaitTimeStats`](#waittimestats) | Contains metrics data for wait times. |
 | `headways` | [`BasicStats`](#basicstats) | Contains metrics data for headways. |
 | `tripTimes` | [`BasicStats`](#basicstats) | Contains metrics data for trip times (will be `None` if `endStopId` isn't given). |
