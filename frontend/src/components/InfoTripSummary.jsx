@@ -31,6 +31,7 @@ import InfoScoreLegend from './InfoScoreLegend';
  * @param {any} props
  */
 export default function InfoTripSummary(props) {
+
   const { graphData, graphParams, routes } = props;
   const waitTimes = graphData ? graphData.waitTimes : null;
   const tripTimes = graphData ? graphData.tripTimes : null;
@@ -78,6 +79,8 @@ export default function InfoTripSummary(props) {
       ? distance / (tripTimes.avg / 60.0)
       : 0; // convert avg trip time to hours for mph
 
+
+
   let longWaitProbability = 0;
   if (waitTimes && waitTimes.histogram) {
     const reducer = (accumulator, currentValue, index) => {
@@ -88,13 +91,13 @@ export default function InfoTripSummary(props) {
     };
 
     longWaitProbability = waitTimes.histogram.reduce(reducer, 0);
-    longWaitProbability /= waitTimes.count;
+    longWaitProbability /= waitTimes.histogram.reduce((acc, thisBin) => acc + thisBin.count, 0);
   }
 
   let travelVarianceTime = 0;
   if (tripTimes) {
     travelVarianceTime =
-      getPercentileValue(tripTimes, PLANNING_PERCENTILE) - tripTimes.avg;
+      getPercentileValue(tripTimes, PLANNING_PERCENTILE) - tripTimes.median;
   }
 
   const grades =

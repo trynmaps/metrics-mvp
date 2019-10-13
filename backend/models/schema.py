@@ -1,364 +1,433 @@
 from . import nextbus, constants, metrics, util
 from graphene import ObjectType, String, Int, Float, List, Field, Boolean, Schema
 from datetime import date
+import sys
+import numpy as np
+import math
+
+ROUND_DIGITS = 3
 
 class DirectionInfo(ObjectType):
     id = String()
     title = String()
     name = String()
-    stops = List(String)
+    stopIds = List(String)
+
+    # `parent` is a nextbus.DirectionInfo object
 
     def resolve_id(parent, info):
-        return parent["dir"].id
+        return parent.id
 
     def resolve_title(parent, info):
-        return parent["dir"].title
+        return parent.title
 
     def resolve_name(parent, info):
-        return parent["dir"].name
+        return parent.name
 
-    def resolve_stops(parent, info):
-        return parent["dir"].get_stop_ids()
+    def resolve_stopIds(parent, info):
+        return parent.get_stop_ids()
 
 class StopInfo(ObjectType):
+    id = String()
     title = String()
     lat = Float()
     lon = Float()
 
+    # `parent` is a nextbus.StopInfo object
+
+    def resolve_id(parent, info):
+        return parent.id
+
     def resolve_title(parent, info):
-        return parent["stop_info"].title
+        return parent.title
 
     def resolve_lat(parent, info):
-        return parent["stop_info"].lat
+        return parent.lat
 
     def resolve_lon(parent, info):
-        return parent["stop_info"].lon
+        return parent.lon
 
-class StopDictionary(ObjectType):
-    key = Int()
-    value = Field(StopInfo)
+class RouteConfig(ObjectType):
+    id = String()
+    title = String()
+    directions = List(DirectionInfo)
+    stops = List(StopInfo)
+    stopInfo = Field(StopInfo, stopId = String())
+    directionInfo = Field(DirectionInfo, directionId = String())
 
-    def resolve_key(parent, info):
-        return parent["stop_info"].id
+    # `parent` is a nextbus.RouteConfig object
 
-    def resolve_value(parent, info):
-        return {
-            "stop_info": parent["stop_info"]
-        }
+    def resolve_id(parent, info):
+        return parent.id
+
+    def resolve_title(parent, info):
+        return parent.title
+
+    def resolve_stopInfo(parent, info, stopId):
+        return parent.get_stop_info(stopId)
+
+    def resolve_directionInfo(parent, info, directionId):
+        return parent.get_direction_info(directionId)
+
+    def resolve_directions(parent, info):
+        return parent.get_direction_infos()
+
+    def resolve_stops(parent, info):
+        return parent.get_stop_infos()
 
 class RouteInfo(ObjectType):
     id = String()
     title = String()
-    directions = List(DirectionInfo)
-    stops = List(StopDictionary)
+    config = Field(RouteConfig)
+
+    # `parent` is a nextbus.RouteInfo object
 
     def resolve_id(parent, info):
-        return parent["id"]
+        return parent.id
 
     def resolve_title(parent, info):
-        return parent["route_config"].title
+        return parent.title
 
-    def resolve_directions(parent, info):
-        return [
-            {
-                "dir": dir_info
-            } for dir_info in parent["route_config"].get_direction_infos()
-        ]
+    def resolve_config(parent, info):
+        return nextbus.get_route_config(constants.AGENCY, parent.id)
 
-    def resolve_stops(parent, info):
-        return [
-            {
-                "stop_info": stop
-            } for stop in parent["route_config"].get_stop_infos()
-        ]
-
-class RouteList(ObjectType):
-    routeInfos = List(RouteInfo)
-
-    def resolve_routeInfos(parent, info):
-        return [
-            {
-                "id": route.id,
-                "route_config": nextbus.get_route_config(constants.AGENCY, route.id)
-            } for route in parent["routes"]
-        ]
+def get_percentiles_data(percentiles, percentile_values):
+    return [{"percentile": percentile, "value": round(value, ROUND_DIGITS)}
+        for percentile, value in zip(percentiles, percentile_values)]
 
 class PercentileData(ObjectType):
-    percentile = Int()
+    percentile = Float()
     value = Float()
 
-    def resolve_percentile(parent, info):
-        return parent["percentile"]
-
-    def resolve_value(parent, info):
-        return parent["value"]
+def get_histogram_data(histogram, bins, bin_size):
+    return [{
+            "count": round(float(count), ROUND_DIGITS),
+            "binStart": bin,
+            "binEnd": bin + bin_size
+        }
+      for bin, count in zip(bins, histogram)]
 
 class HistogramBin(ObjectType):
-    value = String()
-    count = Int()
+    count = Float()
     binStart = Float()
     binEnd = Float()
 
-    def resolve_value(parent, info):
-        return parent["value"]
-
-    def resolve_count(parent, info):
-        return parent["count"]
-
-    def resolve_binStart(parent, info):
-        return parent["bin_start"]
-
-    def resolve_binEnd(parent, info):
-        return parent["bin_end"]
-
-class ArrayStats(ObjectType):
-    count = Int()
+class BasicStats(ObjectType):
+    count = Float()
     avg = Float()
     min = Float()
     median = Float()
     max = Float()
-    percentiles = List(PercentileData)
-    histogram = List(HistogramBin)
+    std = Float()
+    percentiles = List(PercentileData,
+        percentiles = List(Float, required = False),
+    )
+    histogram = List(HistogramBin,
+        min = Float(required=False, default_value=0),
+        max = Float(required=False),
+        bin_size = Float(required=False, default_value=5)
+    )
+
+    # parent is a dict containing "values" property, an array-like containing numeric values
 
     def resolve_count(parent, info):
-        return parent["count"]
+        return len(parent["values"])
 
     def resolve_avg(parent, info):
-        return parent["avg"]
+        values = parent["values"]
+        if len(values) > 0:
+            return round(np.average(values), ROUND_DIGITS)
+        else:
+            return None
+
+    def resolve_std(parent, info):
+        values = parent["values"]
+        if len(values) > 0:
+            return round(np.std(values), ROUND_DIGITS)
+        else:
+            return None
 
     def resolve_min(parent, info):
-        return parent["min"]
+        values = parent["values"]
+        if len(values) > 0:
+            return round(np.min(values), ROUND_DIGITS)
+        else:
+            return None
 
     def resolve_median(parent, info):
-        return parent["median"]
+        values = parent["values"]
+        if len(values) > 0:
+            return round(np.median(values), ROUND_DIGITS)
+        else:
+            return None
 
     def resolve_max(parent, info):
-        return parent["max"]
+        values = parent["values"]
+        if len(values) > 0:
+            return round(np.max(values), ROUND_DIGITS)
+        else:
+            return None
 
-    def resolve_percentiles(parent, info):
-        return [
-            {
-                "percentile": ele["percentile"],
-                "value": ele["value"]
-            }
-            for ele in parent["percentiles"]
-        ]
-    
-    def resolve_histogram(parent, info):
-        return [
-            {
-                "value": ele["value"],
-                "count": ele["count"],
-                "bin_start": ele["bin_start"],
-                "bin_end": ele["bin_end"]
-            }
-            for ele in parent["histogram"]
-        ]
+    def resolve_percentiles(parent, info, percentiles = None):
+        values = parent["values"]
+        if len(values) > 0:
+            if percentiles is None:
+                percentiles = range(0, 101, 5)
+            percentile_values = np.percentile(values, percentiles)
+            return get_percentiles_data(percentiles, percentile_values)
+        else:
+            return None
 
-class IntervalStats(ObjectType):
-    intervalStart = String()
-    intervalEnd = String()
-    stats = Field(ArrayStats)
- 
-    def resolve_intervalStart(parent, info):
-        return parent["interval_start"]
+    def resolve_histogram(parent, info, bin_size = None, min = None, max = None):
+        values = parent["values"]
+        if len(values) > 0:
+            percentile_values = np.percentile(values, [0, 100])
 
-    def resolve_intervalEnd(parent, info):
-        return parent["interval_end"]
+            if bin_size is None or bin_size <= 0:
+                bin_size = 5
 
-    def resolve_stats(parent, info):
-        stats = parent["statfunc"](
-                **{**parent["data"], **{
-                    "rng": metrics.Range(parent["dates"], parent["interval_start"], parent["interval_end"], constants.PACIFIC_TIMEZONE)
-                    }
-                })
+            bin_min = min if min is not None else 0 # math.floor(percentile_values[0] / bin_size) * bin_size
+            bin_max = max if max is not None else math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
+            bins = np.arange(bin_min, bin_max, bin_size)
 
-        if parent["metric_name"] == "next_delta":
-            stats = stats["next_arrival_delta_stats"]
-        elif parent["metric_name"] == "closest_delta":
-            stats = stats["closest_arrival_delta_stats"]
+            histogram, bin_edges = np.histogram(values, bins)
 
-        return stats if stats else {"count" : 0}
+            return get_histogram_data(histogram, bins, bin_size)
+        else:
+            return None
 
-class MetricsStats(ObjectType):
-    intervals = List(IntervalStats)
+class WaitTimeStats(ObjectType):
+    avg = Float()
+    min = Float()
+    median = Float()
+    max = Float()
+    percentiles = List(PercentileData,
+        percentiles = List(Float, required = False),
+    )
+    histogram = List(HistogramBin,
+        min = Float(required=False, default_value=0),
+        max = Float(required=False, default_value=90),
+        bin_size = Float(required=False, default_value=5)
+    )
 
-    def resolve_intervals(parent, info):
-        return [
-            {
-                **parent, **{
-                    "interval_start": interval[0],
-                    "interval_end": interval[1]
-                }
-            }
-            for interval in parent["intervals"]
-        ]
+    # parent is a dict containing a "wait_stats_arr" key with a list of WaitTimeStats objects
+
+    def resolve_avg(parent, info):
+        averages = []
+        for wait_stats in parent['wait_stats_arr']:
+            avg = wait_stats.get_average()
+            if avg is not None:
+                averages.append(avg)
+
+        if len(averages) > 0:
+            return round(np.average(averages), ROUND_DIGITS)
+        else:
+            return None
+
+    def resolve_min(parent, info):
+        percentiles_data = WaitTimeStats.resolve_percentiles(parent, info, [0])
+        return percentiles_data[0]['value'] if percentiles_data is not None else None
+
+    def resolve_median(parent, info):
+        percentiles_data = WaitTimeStats.resolve_percentiles(parent, info, [50])
+        return percentiles_data[0]['value'] if percentiles_data is not None else None
+
+    def resolve_max(parent, info):
+        percentiles_data = WaitTimeStats.resolve_percentiles(parent, info, [100])
+        return percentiles_data[0]['value'] if percentiles_data is not None else None
+
+    def resolve_percentiles(parent, info, percentiles = None):
+        percentile_values_arr = []
+
+        if percentiles is None:
+            percentiles = range(0, 101, 5)
+
+        for wait_stats in parent['wait_stats_arr']:
+            percentile_values = wait_stats.get_percentiles(percentiles)
+            if percentile_values is not None:
+                percentile_values_arr.append(percentile_values)
+
+        if len(percentile_values_arr) > 0:
+            # todo: handle multiple days
+            percentile_values = percentile_values_arr[0]
+
+            return get_percentiles_data(percentiles, percentile_values)
+        else:
+            return None
+
+    def resolve_histogram(parent, info, bin_size = 5, min = 0, max = 90):
+        histograms = []
+
+        if bin_size < 0:
+            bin_size = 5
+
+        bins = np.arange(min, max + bin_size, bin_size)
+
+        for wait_stats in parent['wait_stats_arr']:
+            histogram = wait_stats.get_histogram(bins)
+            if histogram is not None:
+                histograms.append(histogram * 100) # convert to percentages
+
+        if len(histograms) > 0:
+            # todo: handle multiple days
+            histogram = histograms[0]
+
+            nonzero_buckets = np.nonzero(histogram)[0]
+
+            if len(nonzero_buckets) > 0:
+                histogram_end_index = nonzero_buckets[-1] + 1
+            else:
+                histogram_end_index = 0
+
+            histogram = histogram[0:histogram_end_index]
+            bins = bins[0:histogram_end_index]
+
+            return get_histogram_data(histogram, bins, bin_size)
+        else:
+            return None
+
 
 class ComparisonStats(ObjectType):
-    closestDeltaStats = List(IntervalStats)
-    nextDeltaStats = List(IntervalStats)
+    closestDeltaStats = Field(BasicStats)
+    nextDeltaStats = Field(BasicStats)
 
     def resolve_closestDeltaStats(parent, info):
-        return [
-            {
-                "interval_start": interval[0],
-                "interval_end": interval[1],
-                "data": parent["data"],
-                "dates": parent["dates"],
-                "statfunc": parent["statfunc"],
-                "metric_name": "closest_delta"
-            }
-            for interval in parent["intervals"]
-        ]
+        return {"values": parent["closest_arrival_deltas"]}
 
     def resolve_nextDeltaStats(parent, info):
-        return [
-            {
-                "interval_start": interval[0],
-                "interval_end": interval[1],
-                "data": parent["data"],
-                "dates": parent["dates"],
-                "statfunc": parent["statfunc"],
-                "metric_name": "next_delta"
-            }
-            for interval in parent["intervals"]
-        ]
+        return {"values": parent["next_arrival_deltas"]}
 
-class MetricsStopInfo(ObjectType):
-    startStopTitle = String()
-    endStopTitle = String()
-
-    def resolve_startStopTitle(parent, info):
-        return parent["rc"].get_stop_info(parent["start_stop_id"]).title
-
-    def resolve_endStopTitle(parent, info):
-        return parent["rc"].get_stop_info(parent["end_stop_id"]).title
-
-class StopMetrics(ObjectType):
-    waitTimes = Field(MetricsStats)
-    headways = Field(MetricsStats)
-    tripTimes = Field(MetricsStats)
-    timetableHeadways = Field(MetricsStats)
+class IntervalMetrics(ObjectType):
+    startTime = String()
+    endTime = String()
+    waitTimes = Field(WaitTimeStats)
+    headways = Field(BasicStats)
+    tripTimes = Field(BasicStats)
+    timetableHeadways = Field(BasicStats)
     timetableComparison = Field(ComparisonStats)
 
     def resolve_waitTimes(parent, info):
-        return get_stats({
-            "params": parent,
-            "statfunc": parent["rm"].get_wait_time_stats,
-            "metric_name": "wait_times",
-            "data": {
-                "stop_id": parent["start_stop_id"],
-                "direction_id": parent["direction_id"]
-            }
-        })
+        return {'wait_stats_arr':
+            parent["route_metrics"].get_wait_time_stats(
+                direction_id = parent["direction_id"],
+                stop_id = parent["start_stop_id"],
+                rng = parent["range"]
+            )
+        }
 
     def resolve_headways(parent, info):
-        return get_stats({
-            "params": parent,
-            "statfunc": parent["rm"].get_headway_min_stats,
-            "metric_name": "headways",
-            "data": {
-                "stop_id": parent["start_stop_id"],
-                "direction_id": parent["direction_id"]
-            }
-        })
+        return {
+            'values': parent["route_metrics"].get_headways(
+                direction_id = parent["direction_id"],
+                stop_id = parent["start_stop_id"],
+                rng = parent["range"]
+            )
+        }
 
     def resolve_tripTimes(parent, info):
-        return get_stats({
-            "params": parent,
-            "statfunc": parent["rm"].get_trip_time_stats,
-            "metric_name": "trip_times",
-            "data": {
-                "start_stop_id": parent["start_stop_id"],
-                "end_stop_id": parent["end_stop_id"],
-                "direction_id": parent["direction_id"]
-            }
-        })
+        return {
+            'values': parent["route_metrics"].get_trip_times(
+                direction_id = parent["direction_id"],
+                start_stop_id = parent["start_stop_id"],
+                end_stop_id = parent["end_stop_id"],
+                rng = parent["range"]
+            )
+        }
 
     def resolve_timetableHeadways(parent, info):
-        return get_stats({
-            "params": parent,
-            "statfunc": parent["rm"].get_timetable_headway_stats,
-            "metric_name": "timetable_headways",
-            "data": {
-                "stop_id": parent["start_stop_id"],
-                "direction_id": parent["direction_id"]
-            }
-        })
+        return {
+            'values': parent["route_metrics"].get_timetable_headways(
+                direction_id = parent["direction_id"],
+                stop_id = parent["start_stop_id"],
+                rng = parent["range"]
+            )
+        }
 
     def resolve_timetableComparison(parent, info):
-        return get_stats({
-            "params": parent,
-            "statfunc": parent["rm"].get_timetable_comparison_stats,
-            "metric_name": "timetable_comparison",
-            "data": {
-                "stop_id": parent["start_stop_id"],
-                "direction_id": parent["direction_id"]
+        return parent["route_metrics"].get_timetable_comparisons(
+            direction_id = parent["direction_id"],
+            stop_id = parent["start_stop_id"],
+            rng = parent["range"]
+        )
+
+    def resolve_startTime(parent, info):
+        return parent["range"].start_time_str
+
+    def resolve_endTime(parent, info):
+        return parent["range"].end_time_str
+
+class TripMetrics(ObjectType):
+    interval = Field(IntervalMetrics,
+        date_strs = List(String, name='dates'),
+        start_time = String(required = False),
+        end_time = String(required = False),
+    )
+
+    timeRanges = List(IntervalMetrics,
+        date_strs = List(String, name='dates'),
+    )
+
+    # parent is a dict with "route_metrics","start_stop_id","end_stop_id","direction_id" keys
+
+    def resolve_interval(parent, info, date_strs, start_time = None, end_time = None):
+        dates = [util.parse_date(date_str) for date_str in date_strs]
+
+        rng = metrics.Range(
+            dates,
+            start_time,
+            end_time,
+            constants.PACIFIC_TIMEZONE
+        )
+
+        return {
+            "range": rng,
+            **parent
+        }
+
+    def resolve_timeRanges(parent, info, date_strs):
+        dates = [util.parse_date(date_str) for date_str in date_strs]
+
+        return [{
+                'range': metrics.Range(
+                    dates,
+                    start_time,
+                    end_time,
+                    constants.PACIFIC_TIMEZONE
+                ),
+                **parent
             }
-        })
+            for start_time,end_time in constants.DEFAULT_TIME_STR_INTERVALS
+        ]
 
 class RouteMetrics(ObjectType):
-    stopinfo = Field(MetricsStopInfo)
-    metrics = Field(StopMetrics)
+    trip = Field(TripMetrics,
+        startStopId = String(),
+        endStopId = String(required = False),
+        directionId = String(required = False)
+    )
 
-    def resolve_stopinfo(parent, info):
+    # parent is a metrics.RouteMetrics object
+
+    def resolve_trip(parent, info, startStopId, endStopId = None, directionId = None):
         return {
-            "rc": nextbus.get_route_config(constants.AGENCY, parent["route_id"]),
-            "start_stop_id": parent["start_stop_id"],
-            "end_stop_id": parent["end_stop_id"]
-        }
-
-    def resolve_metrics(parent, info):
-        return parent
-
-class Query(ObjectType):
-    routes = Field(RouteList)
-    routeInfo = Field(RouteInfo, routeId = String())
-    routeMetrics = Field(RouteMetrics, routeId = String(), startStopId = String(), endStopId = String(required = False) , date = String(required = False), startDate = String(required = False), endDate = String(required = False), startTime = String(required = False), endTime = String(required = False), directionId = String(required = False), intervalLengths = Int(required = False))
-
-    def resolve_routes(parent, info):
-        return {
-            "routes": nextbus.get_route_list(constants.AGENCY)
-        }
-
-    def resolve_routeInfo(parent, info, routeId):
-        return {
-            "id": routeId,
-            "route_config": nextbus.get_route_config(constants.AGENCY, routeId)
-        }
-
-    def resolve_routeMetrics(parent, info, routeId, startStopId, endStopId = None, date = "2019-06-06", startDate = None, endDate = None, startTime = "00:00", endTime = "22:59", directionId = None, intervalLengths = None):
-        return {
-            "rm": metrics.RouteMetrics(constants.AGENCY, routeId),
-            "route_id": routeId,
+            "route_metrics": parent,
             "start_stop_id": startStopId,
             "end_stop_id": endStopId,
-            "date": date,
-            "start_date": startDate,
-            "end_date": endDate,
-            "start_time": startTime,
-            "end_time": endTime,
             "direction_id": directionId,
-            "interval_lengths": intervalLengths
         }
-        
-def get_stats(parent):
-    if parent["params"]["date"]:
-        dates = [date.fromisoformat(parent["params"]["date"])]
-    else:
-        dates = util.get_dates_in_range(parent["params"]["start_date"], parent["params"]["end_date"])
 
-    if parent["params"]["interval_lengths"]:
-        intervals = util.get_intervals(parent["params"]["start_time"], parent["params"]["end_time"], parent["params"]["interval_lengths"])
-    else:
-        intervals = constants.DEFAULT_TIME_STR_INTERVALS
+class Query(ObjectType):
+    routes = List(RouteInfo)
+    routeConfig = Field(RouteConfig, routeId = String())
+    routeMetrics = Field(RouteMetrics, routeId = String())
 
-    return {
-        "dates": dates,
-        "intervals": intervals,
-        "statfunc": parent["statfunc"],
-        "metric_name": parent["metric_name"],
-        "data": parent["data"]
-    }
+    def resolve_routes(parent, info):
+        return nextbus.get_route_list(constants.AGENCY)
+
+    def resolve_routeConfig(parent, info, routeId):
+        return nextbus.get_route_config(constants.AGENCY, routeId)
+
+    def resolve_routeMetrics(parent, info, routeId):
+        return metrics.RouteMetrics(constants.AGENCY, routeId)
 
 metrics_api = Schema(query = Query)

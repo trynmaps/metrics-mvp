@@ -11,7 +11,6 @@ import {
 import { AppBar, Box, Tab, Tabs, Typography } from '@material-ui/core';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import InfoTripSummary from './InfoTripSummary';
-import { getBinMin, getBinMax } from '../helpers/graphData';
 import { CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 
 function Info(props) {
@@ -27,36 +26,35 @@ function Info(props) {
     routes,
   } = props;
 
-  const headwayMin = graphData ? graphData.headwayMin : null;
+  const headways = graphData ? graphData.headways : null;
   const waitTimes = graphData ? graphData.waitTimes : null;
   const tripTimes = graphData ? graphData.tripTimes : null;
 
   const headwayData =
-    headwayMin && headwayMin.histogram
-      ? headwayMin.histogram.map(bin => ({
-          x0: getBinMin(bin),
-          x: getBinMax(bin),
+    headways && headways.histogram
+      ? headways.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
           y: bin.count,
         }))
       : null;
+
+  const waitHistogramCount = waitTimes && waitTimes.histogram ? waitTimes.histogram.reduce((acc, thisBin) => acc + thisBin.count, 0) : 100;
+
   const waitData =
     waitTimes && waitTimes.histogram
       ? waitTimes.histogram.map(bin => ({
-          x0: getBinMin(bin),
-          x: getBinMax(bin),
-          y:
-            (100 * bin.count) /
-            waitTimes.histogram.reduce(
-              (acc, thisBin) => acc + thisBin.count,
-              0,
-            ),
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: (100 * bin.count) / waitHistogramCount,
         }))
       : null;
+
   const tripData =
     tripTimes && tripTimes.histogram
       ? tripTimes.histogram.map(bin => ({
-          x0: getBinMin(bin),
-          x: getBinMax(bin),
+          x0: bin.binStart,
+          x: bin.binEnd,
           y: bin.count,
         }))
       : null;
@@ -143,7 +141,7 @@ function Info(props) {
         </Tabs>
       </AppBar>
 
-      {headwayMin && routes ? (
+      {headways && routes ? (
         <div>
           <Box p={2} hidden={tabValue !== SUMMARY}>
             <InfoTripSummary
@@ -169,12 +167,12 @@ function Info(props) {
               Headways (Time Between Vehicles)
             </Typography>
             <p>
-              {headwayMin.count + 1} arrivals, average headway{' '}
-              {Math.round(headwayMin.avg)} minutes, max headway{' '}
-              {Math.round(headwayMin.max)} minutes
+              {headways.count + 1} arrivals, median headway{' '}
+              {Math.round(headways.median)} minutes, max headway{' '}
+              {Math.round(headways.max)} minutes
             </p>
             <XYPlot
-              xDomain={[0, Math.max(60, Math.round(headwayMin.max) + 5)]}
+              xDomain={[0, Math.max(60, Math.round(headways.max) + 5)]}
               height={200}
               width={400}
               onMouseLeave={onMouseLeave}
@@ -232,7 +230,7 @@ function Info(props) {
             Wait Times
           </Typography>
           <p>
-            average wait time {Math.round(waitTimes.avg)} minutes, max wait time{' '}
+            median wait time {Math.round(waitTimes.median)} minutes, max wait time{' '}
             {Math.round(waitTimes.max)} minutes
           </p>
           <XYPlot
@@ -292,7 +290,7 @@ function Info(props) {
             Trip Times
           </Typography>
           <p>
-            {tripTimes.count} trips, average {Math.round(tripTimes.avg)}{' '}
+            {tripTimes.count} trips, median {Math.round(tripTimes.median)}{' '}
             minutes, max {Math.round(tripTimes.max)} minutes
           </p>
           <XYPlot

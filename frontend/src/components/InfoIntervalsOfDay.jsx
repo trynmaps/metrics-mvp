@@ -82,7 +82,7 @@ class InfoIntervalsOfDay extends Component {
 
       if (interval[intervalField] != null) {
         if (this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME) {
-          y = interval[intervalField].avg;
+          y = getPercentileValue(interval[intervalField], 50);
         } else {
           y = getPercentileValue(interval[intervalField], PLANNING_PERCENTILE);
         }
@@ -102,7 +102,7 @@ class InfoIntervalsOfDay extends Component {
   render() {
     const { intervalData, intervalError } = this.props;
 
-    const intervals = intervalData ? intervalData.intervals : null;
+    const intervals = intervalData;
     this.waitData = intervals
       ? intervals.map(this.mapInterval('waitTimes'))
       : null;
@@ -134,7 +134,7 @@ class InfoIntervalsOfDay extends Component {
                       onChange={this.handleOptionChange}
                     />
                   }
-                  label="Average"
+                  label="Median"
                 />
 
                 <FormControlLabel
@@ -215,113 +215,5 @@ class InfoIntervalsOfDay extends Component {
   }
 }
 
-/*
-   * Interval data is mainly the array named intervals.  It contains objects that resemble the graphData
-   * object, for a given start_time and end_time.  Example is below.
-
-  {
-    "intervals": [
-        {
-            "startTime": "09:00",
-            "endTime": "10:00",
-            "headwayMin": {
-                "count": 5,
-                "avg": 10.936666666666664,
-                "std": 5.4460729990619035,
-                "min": 3.3833333333333333,
-                "median": 11.45,
-                "max": 19.3,
-                "histogram": [
-                    {
-                        "value": "0-5",
-                        "count": 1,
-                        "binStart": 0,
-                        "binEnd": 5
-                    } etc.
-  
-                ],
-                "percentiles": [
-                    {
-                        "percentile": 0,
-                        "value": 3.3833333333333333
-                    } etc.
-                ]
-            },
-            "waitTimes": {
-                "firstBus": "09:03:25",
-                "lastBus": "09:58:06",
-                "count": 60,
-                "avg": 6.916666666666668,
-                "std": 5.050841514044961,
-                "min": 0.1,
-                "median": 6.033333333333333,
-                "max": 19.683333333333334,
-                "histogram": [
-                   etc.
-                ],
-                "percentiles": [
-                   etc.
-                ]
-            },
-            "tripTimes": {
-                "startStop": "3994",
-                "endStop": "5417",
-                "count": 6,
-                "avg": 19.025000000000002,
-                "std": 2.3074506936668664,
-                "min": 17.1,
-                "median": 17.891666666666666,
-                "max": 23.383333333333333,
-                "histogram": [
-                    etc.
-                ],
-                "percentiles": [
-                    etc.
-                ]
-            }
-        },
-        {
-            "start_time": "10:00",
-            "end_time": "11:00",
-            "headway_min": {
-                etc.
-            },
-            "wait_times": {
-                etc.
-            },
-            "trip_times": {
-                etc.
-            }
-        },
-        {
-            "start_time": "11:00",
-            "end_time": "12:00",
-            etc.
-        }
-    ],
-    "params": {
-        "startStopId": "3994",
-        "endStopId": "5417",
-        "routeId": "J",
-        "directionId": "J____I_F00",
-        "startDate": "2019-04-08",
-        "endDate": "2019-04-08",
-        "startTime": "09:00",
-        "endTime": "12:00"
-    },
-    "routeTitle": [
-        "J-Church"
-    ],
-    "startStopTitle": "Church St & 22nd St",
-    "endStopTitle": "Powell Station Inbound",
-    "directions": [
-        {
-            "id": "J____I_F00",
-            "title": "Inbound to Embarcadero Station"
-        }
-    ]
-  }
-
-*/
 
 export default InfoIntervalsOfDay;
