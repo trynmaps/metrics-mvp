@@ -11,39 +11,36 @@ import {
 export function fetchGraphData(params) {
   return function(dispatch) {
 
-    var query = `fragment intervalFields on IntervalMetrics {
-  headways {
-    count median max
-    percentiles { percentile value }
-    histogram { binStart binEnd count }
-  }
-  tripTimes {
-    count median avg max
-    percentiles { percentile value }
-    histogram { binStart binEnd count }
-  }
-  waitTimes {
-    median max
-    percentiles { percentile value }
-    histogram { binStart binEnd count }
-  }
-}
-
-fragment timeRangeFields on IntervalMetrics {
-  startTime endTime
-  waitTimes {
-    percentiles(percentiles:[50,90]) { percentile value }
-  }
-  tripTimes {
-    percentiles(percentiles:[50,90]) { percentile value }
-  }
-}
-
-query FetchMetrics($routeId:String, $startStopId:String, $endStopId:String, $directionId:String, $date:String, $startTime:String, $endTime:String) {
+    var query = `query($routeId:String, $startStopId:String, $endStopId:String,
+    $directionId:String, $date:String, $startTime:String, $endTime:String) {
   routeMetrics(routeId:$routeId) {
     trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
-      interval(dates:[$date], startTime:$startTime, endTime:$endTime) { ...intervalFields }
-      timeRanges(dates:[$date]) { ...timeRangeFields }
+      interval(dates:[$date], startTime:$startTime, endTime:$endTime) {
+        headways {
+          count median max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        tripTimes {
+          count median avg max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        waitTimes {
+          median max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+      }
+      timeRanges(dates:[$date]) {
+        startTime endTime
+        waitTimes {
+          percentiles(percentiles:[50,90]) { percentile value }
+        }
+        tripTimes {
+          percentiles(percentiles:[50,90]) { percentile value }
+        }
+      }
     }
   }
 }`.replace(/\s+/g, ' ');
