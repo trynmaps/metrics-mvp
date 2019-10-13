@@ -381,14 +381,14 @@ class MapSpider extends Component {
    * Append info about the downstream stops to the given stop object for plotting on the map.
    */
   addDownstreamStops(myStop) {
-    const thisMyStop = myStop;
+    const localMyStop = myStop;
 
     const selectedRoute = this.props.routes.find(
-      route => route.id === thisMyStop.routeId,
+      route => route.id === localMyStop.routeId,
     );
 
-    const secondStopInfo = thisMyStop.direction;
-    const secondStopListIndex = secondStopInfo.stops.indexOf(thisMyStop.stopId);
+    const secondStopInfo = localMyStop.direction;
+    const secondStopListIndex = secondStopInfo.stops.indexOf(localMyStop.stopId);
 
     const secondStopList = secondStopInfo.stops.slice(
       secondStopListIndex /* + 1  include starting stop */,
@@ -398,7 +398,7 @@ class MapSpider extends Component {
       Object.assign(selectedRoute.stops[stopId], { stopId }),
     );
 
-    thisMyStop.downstreamStops = downstreamStops;
+    localMyStop.downstreamStops = downstreamStops;
   }
 
   /**

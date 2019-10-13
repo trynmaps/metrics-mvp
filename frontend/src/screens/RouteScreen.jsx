@@ -39,7 +39,7 @@ function RouteScreen(props) {
   const direction =
     selectedRoute && graphParams.directionId
       ? selectedRoute.directions.find(
-          thisDirection => thisDirection.id === graphParams.directionId,
+          myDirection => myDirection.id === graphParams.directionId,
         )
       : null;
   const startStopInfo =

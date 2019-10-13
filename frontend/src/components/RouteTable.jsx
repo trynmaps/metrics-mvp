@@ -246,7 +246,7 @@ function RouteTable(props) {
 
   if (spiderSelection && spiderSelection.length > 0) {
     const spiderRouteIds = spiderSelection.map(spider => spider.routeId);
-    routes = routes.filter(thisRoute => spiderRouteIds.includes(thisRoute.id));
+    routes = routes.filter(myRoute => spiderRouteIds.includes(myRoute.id));
   }
 
   const allWaits = getAllWaits(props.waitTimesCache, props.graphParams, routes);

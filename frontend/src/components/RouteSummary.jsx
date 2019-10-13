@@ -58,7 +58,7 @@ function RouteSummary(props) {
     allScores = getAllScores(routes, allWaits, allSpeeds);
 
     const routeId = graphParams.routeId;
-    const route = routes.find(thisRoute => thisRoute.id === routeId);
+    const route = routes.find(myRoute => myRoute.id === routeId);
     if (route) {
       const sumOfDistances = route.directions.reduce(
         (total, value) => total + value.distance,

@@ -450,10 +450,10 @@ function MareyChart(props) {
             {hintValue ? (
               <Hint
                 value={hintValue}
-                format={thisHintValue => [
-                  { title: 'Stop', value: thisHintValue.title },
-                  { title: 'Time', value: thisHintValue.arrivalTimeString },
-                  { title: 'Vehicle ID', value: thisHintValue.vehicleId },
+                format={myHintValue => [
+                  { title: 'Stop', value: myHintValue.title },
+                  { title: 'Time', value: myHintValue.arrivalTimeString },
+                  { title: 'Vehicle ID', value: myHintValue.vehicleId },
                 ]}
               />
             ) : null}
