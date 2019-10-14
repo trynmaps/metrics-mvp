@@ -2,7 +2,37 @@
 
 The backend API uses GraphQL. There is one endpoint, `/api/graphql`, that accepts a query string containing the necessary parameters for the query and the fields to be returned in the response.
 
-You can open this URL in the browser at http://localhost:5000/api/graphql to view a graphical user interface to browse the GraphQL schema and send queries.
+The GraphQL API is available publicly at https://muni.opentransit.city/api/graphql . (In a development environment, the URL is http://localhost:5000/api/graphql .) This endpoint can be called via either GET or POST. When making a GET request, the GraphQL query should be passed as a URL-encoded parameter named `query`. Variables may optionally be passed as a URL-encoded JSON-encoded object in a parameter named `variables`.
+
+For example, the following GraphQL query would return some statistics about headways and wait times for a particular stop on one day:
+
+```
+query($routeId:String, $startStopId:String, $date:String) {
+  routeMetrics(routeId:$routeId) {
+    trip(startStopId:$startStopId) {
+      interval(dates:[$date]) {
+        headways { median max }
+        waitTimes { median }
+      }
+    }
+  }
+}
+```
+
+To run the above query with the variables `$routeId` = "1", `$startStopId` = "6307", and `$date` = "2019-10-12", you can make a GET request to the URL below:
+
+https://muni.opentransit.city/api/graphql?query=query(%24routeId%3AString%2C+%24startStopId%3AString%2C+%24date%3AString)+%7B+routeMetrics(routeId%3A%24routeId)+%7B+trip(startStopId%3A%24startStopId)+%7B+interval(dates%3A%5B%24date%5D)+%7B+headways+%7B+median+max+%7D+waitTimes+%7B+median+%7D+%7D+%7D+%7D+%7D&variables=%7B"routeId":"1","startStopId":"6307","date":"2019-10-12"%7D
+
+Queries can also be sent via POST, with the Content-Type `application/json`, and a request body like this:
+
+```
+{
+  "query": "...",
+  "variables": { "myVariable": "someValue", ... }
+}
+```
+
+For more information about calling GraphQL APIs over HTTP, see https://graphql.org/learn/serving-over-http/ . For more information about GraphQL in general, see https://graphql.org/learn/ .
 
 # Structure of a GraphQL Query
 
