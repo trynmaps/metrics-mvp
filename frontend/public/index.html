@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-149760652-1"></script>
+  <script>
+    // customization for OpenTransit: only run analytics code for the production URL 
+    if (document.location.hostname.search("opentransit.city") !== -1) {  
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-149760652-1');
+    }
+  </script>
+
   <meta charset="utf-8" />
   <base href='/' />
   <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
