@@ -54,6 +54,16 @@ function SidebarButton() {
             </ListItem>
             <ListItem>
               <NavLink
+                onClick={() => window.open('https://sites.google.com/view/opentransit', '_blank')}
+                activeStyle={activeStyle}
+                exact
+                strict
+              >
+                About
+              </NavLink>
+            </ListItem>
+            <ListItem>
+              <NavLink
                 to={{ type: 'ISOCHRONE' }}
                 activeStyle={activeStyle}
                 exact
