@@ -16,17 +16,3 @@ export function getPercentileValue(graphData, percentile) {
   }
   return 0;
 }
-
-/**
- * Given a histogram bin value like "5-10", return "5".
- */
-export function getBinMin(bin) {
-  return bin.value.split('-')[0];
-}
-
-/**
- * Given a histogram bin value like "5-10", return "10".
- */
-export function getBinMax(bin) {
-  return bin.value.split('-')[1];
-}

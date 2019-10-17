@@ -10,9 +10,43 @@ import {
 
 export function fetchGraphData(params) {
   return function(dispatch) {
-    axios
-      .get('/api/metrics', {
-        params,
+
+    var query = `query($routeId:String, $startStopId:String, $endStopId:String,
+    $directionId:String, $date:String, $startTime:String, $endTime:String) {
+  routeMetrics(routeId:$routeId) {
+    trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
+      interval(dates:[$date], startTime:$startTime, endTime:$endTime) {
+        headways {
+          count median max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        tripTimes {
+          count median avg max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        waitTimes {
+          median max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+      }
+      timeRanges(dates:[$date]) {
+        startTime endTime
+        waitTimes {
+          percentiles(percentiles:[50,90]) { percentile value }
+        }
+        tripTimes {
+          percentiles(percentiles:[50,90]) { percentile value }
+        }
+      }
+    }
+  }
+}`.replace(/\s+/g, ' ');
+
+    axios.get('/api/graphql', {
+        params: { query: query, variables: JSON.stringify(params) },
         baseURL: metricsBaseURL,
       })
       .then(response => {
@@ -35,36 +69,6 @@ export function fetchGraphData(params) {
 export function resetGraphData() {
   return function(dispatch) {
     dispatch({ type: 'RESET_GRAPH_DATA', payload: null });
-  };
-}
-
-export function fetchIntervalData(params) {
-  return function(dispatch) {
-    axios
-      .get('/api/metrics_by_interval', {
-        params,
-        baseURL: metricsBaseURL,
-      })
-      .then(response => {
-        dispatch({
-          type: 'RECEIVED_INTERVAL_DATA',
-          payload: response.data,
-          graphParams: params,
-        });
-      })
-      .catch(err => {
-        const errStr =
-          err.response && err.response.data && err.response.data.error
-            ? err.response.data.error
-            : err.message;
-        dispatch({ type: 'RECEIVED_INTERVAL_ERROR', payload: errStr });
-      });
-  };
-}
-
-export function resetIntervalData() {
-  return function(dispatch) {
-    dispatch({ type: 'RESET_INTERVAL_DATA', payload: null });
   };
 }
 
@@ -169,18 +173,6 @@ export function handleSpiderMapClick(stops, latLng) {
   };
 }
 
-/**
- * This is an action creator where the action calls two actions.
- * Basically this a way of calling two APIs at once, where two APIs
- * have no interactions with each other.
- */
-export function fetchData(graphParams, intervalParams) {
-  return function(dispatch) {
-    dispatch(fetchGraphData(graphParams));
-    dispatch(fetchIntervalData(intervalParams));
-  };
-}
-
 export function handleGraphParams(params) {
   return function(dispatch, getState) {
     dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
@@ -200,16 +192,11 @@ export function handleGraphParams(params) {
       graphParams.startStopId &&
       graphParams.endStopId
     ) {
-      const intervalParams = Object.assign({}, graphParams);
-      delete intervalParams.startTime; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.endTime; // because the hourly graph is spiky and can trigger panda "empty axes" errors.
-
-      dispatch(fetchData(graphParams, intervalParams));
+      dispatch(fetchGraphData(graphParams));
     } else {
       // when we don't have all params, clear graph data
 
       dispatch(resetGraphData());
-      dispatch(resetIntervalData());
     }
   };
 }
