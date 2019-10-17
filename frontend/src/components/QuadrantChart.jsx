@@ -53,9 +53,9 @@ function QuadrantChart(props) {
 
       <CustomSVGSeries
         className="custom-marking"
-        customComponent={(row, positionInPixels) => {
+        customComponent={row => {
           return (
-            <g className="inner-inner-component" dummy-var={positionInPixels}>
+            <g className="inner-inner-component">
               <circle cx="0" cy="0" r={row.size || 3} fill="#aa82c5" />
               <text x={0} y={0} fontSize="75%" fill="#450042">
                 <tspan x="5" y="4">{`${row.title}`}</tspan>
