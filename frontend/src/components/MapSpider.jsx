@@ -68,27 +68,6 @@ class MapSpider extends Component {
     window.removeEventListener('resize', this.updateDimensions.bind(this));
   }
 
-  // Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
-  // case make the map half height.
-  //
-  // TODO: Need to convert this component to a functional component.  Then we can use the useTheme
-  // hook to programatically access the breakpoint widths.
-  //
-  // Note: This code has to be adjusted to be kept in sync with the UI layout.
-  //
-
-  computeHeight() {
-    return (
-      (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
-      64 /* blue app bar */
-    );
-  }
-
-  updateDimensions() {
-    const height = this.computeHeight();
-    this.setState({ height });
-  }
-
   /**
    * Places a Leaflet Marker (blue pin) at the clicked or geolocated map location.
    * Like the isochrone, the marker can be dragged to get new results.
@@ -157,6 +136,7 @@ class MapSpider extends Component {
   getStartMarkers = () => {
     let items = null;
 
+    /* eslint-disable react/no-array-index-key */
     if (this.props.spiderSelection) {
       items = this.props.spiderSelection.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
@@ -286,9 +266,15 @@ class MapSpider extends Component {
           e.target.setStyle({ opacity: 1, weight: computedWeight + 4 });
           return true;
         }}
+        onFocus={e => {
+          this.onMouseOver(e);
+        }}
         onMouseOut={e => {
           e.target.setStyle({ opacity: 0.5, weight: computedWeight });
           return true;
+        }}
+        onBlur={e => {
+          this.onMouseOut(e);
         }}
         // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
 
@@ -337,6 +323,27 @@ class MapSpider extends Component {
     }
   };
 
+  updateDimensions() {
+    const height = this.computeHeight();
+    this.setState({ height });
+  }
+
+  /* Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
+   * case make the map half height.
+   *
+   * TODO: Need to convert this component to a functional component.  Then we can use the useTheme
+   * hook to programatically access the breakpoint widths.
+   *
+   * Note: This code has to be adjusted to be kept in sync with the UI layout.
+   */
+
+  computeHeight() {
+    return (
+      (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
+      64 /* blue app bar */
+    );
+  }
+
   /**
    * Handles events with a location (either click, or geolocation call).
    * Find nearby stops for each route/direction and plot the rest of the route to its terminal.
@@ -374,12 +381,14 @@ class MapSpider extends Component {
    * Append info about the downstream stops to the given stop object for plotting on the map.
    */
   addDownstreamStops(myStop) {
+    const targetStop = myStop;
+
     const selectedRoute = this.props.routes.find(
-      route => route.id === myStop.routeId,
+      route => route.id === targetStop.routeId,
     );
 
-    const secondStopInfo = myStop.direction;
-    const secondStopListIndex = secondStopInfo.stops.indexOf(myStop.stopId);
+    const secondStopInfo = targetStop.direction;
+    const secondStopListIndex = secondStopInfo.stops.indexOf(targetStop.stopId);
 
     const secondStopList = secondStopInfo.stops.slice(
       secondStopListIndex /* + 1  include starting stop */,
@@ -388,7 +397,8 @@ class MapSpider extends Component {
     const downstreamStops = secondStopList.map(stopId =>
       Object.assign(selectedRoute.stops[stopId], { stopId }),
     );
-    myStop.downstreamStops = downstreamStops;
+
+    targetStop.downstreamStops = downstreamStops;
   }
 
   /**

@@ -23,14 +23,14 @@ function RouteScreen(props) {
     intervalData,
     intervalError,
     routes,
-    thisFetchRoutes,
+    myFetchRoutes,
   } = props;
 
   useEffect(() => {
     if (!routes) {
-      thisFetchRoutes();
+      myFetchRoutes();
     }
-  }, [routes, thisFetchRoutes]); // like componentDidMount, this runs only on first render
+  }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
@@ -39,7 +39,7 @@ function RouteScreen(props) {
   const direction =
     selectedRoute && graphParams.directionId
       ? selectedRoute.directions.find(
-          thisDirection => thisDirection.id === graphParams.directionId,
+          myDirection => myDirection.id === graphParams.directionId,
         )
       : null;
   const startStopInfo =
@@ -106,7 +106,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  thisFetchRoutes: () => dispatch(fetchRoutes()),
+  myFetchRoutes: () => dispatch(fetchRoutes()),
 });
 
 export default connect(

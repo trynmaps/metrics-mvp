@@ -6,9 +6,6 @@ from . import wait_times, util, arrival_history, trip_times, errors, timetable, 
 import pandas as pd
 import numpy as np
 
-ROUND_DIGITS = 3
-DEFAULT_STAT_KEYS = ['count', 'avg', 'min', 'median', 'max']
-
 # Represents a range of days with a time range within each day.
 # RouteMetrics can calculate various statistics over a range.
 class Range:
@@ -25,18 +22,6 @@ class Range:
 # It caches the arrival history and data frames so that the different
 # metrics calculations can reuse the same arrivals data without
 # needing to reload it from disk each time.
-#
-# It also allows the client to fetch only the desired stats. Supported
-# stats for headways, wait times, and trip times include:
-#
-#   count
-#   avg
-#   std (not implemented for wait times)
-#   min
-#   median
-#   max
-#   percentiles
-#   histogram
 #
 class RouteMetrics:
     def __init__(self, agency_id, route_id):
@@ -82,19 +67,24 @@ class RouteMetrics:
     def get_stop_timetable(self, d, stop_id, direction_id):
         tt = self.get_route_timetable(d)
         timetable_key = f'{str(d)}_{stop_id}_{direction_id}_timetable'
-        
+
         if timetable_key not in self.data_frames:
             self.data_frames[timetable_key] = tt.get_data_frame(stop_id, direction_id)
-        
+
         return self.data_frames[timetable_key]
-    
+
     def get_comparison_to_timetable(self, d, stop_id=None, direction_id=None):
         stop_timetable = self.get_stop_timetable(d, stop_id, direction_id)
         stop_arrivals = self.get_data_frame(d, stop_id, direction_id)
 
+        if len(stop_arrivals) == 0:
+            raise errors.TimetableError(f"No arrivals found for {stop_id} on {d.isoformat()}.")
+
         # first headway is always nan
         arrival_headways = np.insert(compute_headway_minutes(stop_arrivals['TIME'].to_numpy()), 0, np.nan)
         stop_arrivals['headway'] = arrival_headways
+
+        # comparing headways requires at least 2 arrivals and
 
         # for each scheduled arrival time, get the closest actual arrival (earlier or later), the next actual arrival, and the corresponding headways
         def get_adjacent_arrival_times(scheduled_arrivals, arrivals, arrival_headways):
@@ -110,6 +100,9 @@ class RouteMetrics:
             previous_abs = np.absolute(previous_arrivals - scheduled_arrivals)
 
             # compare the delta between scheduled arrival and next arrival to delta between scheduled arrival and previous arrival
+            # replace nan values with np.inf to prevent runtime error and guarantee that the other value is smaller
+            np.place(next_abs, pd.isnull(next_abs), np.inf)
+            np.place(previous_abs, pd.isnull(previous_abs), np.inf)
             comparison = next_abs < previous_abs
 
             # returns, in order: next arrival, next headway, closest arrival, closest headway
@@ -127,25 +120,10 @@ class RouteMetrics:
         stop_timetable['closest_arrival_delta'] = closest_deltas
         stop_timetable['closest_arrival_headway'] = closest_headways
 
-        return stop_timetable[['arrival_time', 'arrival_headway', 'next_arrival', 'next_arrival_delta', 'next_arrival_headway', 'closest_arrival', 'closest_arrival_delta', 'closest_arrival_headway']] 
-        
-    def get_wait_time_stats(self, direction_id, stop_id, rng: Range, keys=DEFAULT_STAT_KEYS):
+        return stop_timetable[['arrival_time', 'arrival_headway', 'next_arrival', 'next_arrival_delta', 'next_arrival_headway', 'closest_arrival', 'closest_arrival_delta', 'closest_arrival_headway']]
 
-        averages = []
-
-        needs_histogram = ('histogram' in keys)
-        needs_avg = ('avg' in keys)
-
-        if needs_histogram:
-            histograms = []
-            bin_size = 5
-            bin_min = 0
-            bin_max = 90
-            bins = range(bin_min, bin_max + bin_size, bin_size)
-
-        percentiles = range(0, 101, 5)
-
-        percentile_values_arr = []
+    def get_wait_time_stats(self, direction_id, stop_id, rng: Range):
+        wait_stats_arr = []
 
         for d in rng.dates:
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
@@ -157,63 +135,11 @@ class RouteMetrics:
 
             wait_stats = wait_times.get_stats(departure_time_values, start_time, end_time)
 
-            percentile_values = wait_stats.get_percentiles(percentiles)
-            if percentile_values is not None:
-                percentile_values_arr.append(percentile_values)
+            wait_stats_arr.append(wait_stats)
 
-            if needs_histogram:
-                histogram = wait_stats.get_histogram(bins)
-                if histogram is not None:
-                    histograms.append(histogram * 100) # convert to percentages
+        return wait_stats_arr
 
-            if needs_avg:
-                avg = wait_stats.get_average()
-                if avg is not None:
-                    averages.append(avg)
-
-        data = {}
-
-        if 'count' in keys:
-            data['count'] = 100 # percent
-
-        if 'avg' in keys and len(averages) > 0:
-            data['avg'] = round(np.average(averages), ROUND_DIGITS)
-
-        if len(percentile_values_arr) > 0:
-            # todo handle multiple days
-            percentile_values = percentile_values_arr[0]
-
-            if 'min' in keys:
-                data['min'] = round(percentile_values[0], ROUND_DIGITS)
-
-            if 'median' in keys:
-                data['median'] = round(percentile_values[10], ROUND_DIGITS)
-
-            if 'max' in keys:
-                data['max'] = round(percentile_values[20], ROUND_DIGITS)
-
-            if 'percentiles' in keys:
-                data['percentiles'] = self.get_percentiles_data(percentiles, percentile_values)
-
-        if needs_histogram and len(histograms) > 0:
-            # todo handle multiple days
-            histogram = histograms[0]
-
-            nonzero_buckets = np.nonzero(histogram)[0]
-
-            if len(nonzero_buckets) > 0:
-                histogram_end_index = nonzero_buckets[-1] + 1
-            else:
-                histogram_end_index = 0
-
-            histogram = histogram[0:histogram_end_index]
-            bins = bins[0:histogram_end_index]
-
-            data['histogram'] = self.get_histogram_data(histogram, bins, bin_size)
-
-        return data
-
-    def get_timetable_headway_stats(self, direction_id, stop_id, rng: Range, keys = DEFAULT_STAT_KEYS):
+    def get_timetable_headways(self, direction_id, stop_id, rng: Range):
 
         timetable_headways_arr = []
 
@@ -224,17 +150,15 @@ class RouteMetrics:
 
             if start_time is not None:
                 df = df[df['arrival_time'] >= start_time]
-            
+
             if end_time is not None:
                 df = df[df['arrival_time'] < end_time]
 
             timetable_headways_arr.append(df['arrival_headway'].dropna().values)
 
-        all_timetable_headways = np.concatenate(timetable_headways_arr)
+        return np.concatenate(timetable_headways_arr)
 
-        return self.get_array_stats(all_timetable_headways, keys)
-
-    def get_timetable_comparison_stats(self, direction_id, stop_id, rng: Range, keys = DEFAULT_STAT_KEYS):
+    def get_timetable_comparisons(self, direction_id, stop_id, rng: Range):
 
         compared_timetable_arr = []
 
@@ -255,11 +179,11 @@ class RouteMetrics:
         # returns stats in minutes
         all_compared_timetable_data = pd.concat(compared_timetable_arr)
         return {
-            "next_arrival_delta_stats": self.get_array_stats(all_compared_timetable_data["next_arrival_delta"].dropna().values/60, keys),
-            "closest_arrival_delta_stats": self.get_array_stats(all_compared_timetable_data["closest_arrival_delta"].values/60, keys)
+            "next_arrival_deltas": all_compared_timetable_data["next_arrival_delta"].dropna().values/60,
+            "closest_arrival_deltas": all_compared_timetable_data["closest_arrival_delta"].values/60,
         }
 
-    def get_trip_time_stats(self, direction_id, start_stop_id, end_stop_id, rng: Range, keys=DEFAULT_STAT_KEYS):
+    def get_trip_times(self, direction_id, start_stop_id, end_stop_id, rng: Range):
 
         completed_trips_arr = []
 
@@ -289,12 +213,9 @@ class RouteMetrics:
 
             completed_trips_arr.append(completed_trip_times)
 
-        completed_trips = np.concatenate(completed_trips_arr)
+        return np.concatenate(completed_trips_arr)
 
-        return self.get_array_stats(completed_trips, keys)
-
-    def get_headway_min_stats(self, direction_id, stop_id, rng: Range, keys=DEFAULT_STAT_KEYS):
-
+    def get_headways(self, direction_id, stop_id, rng: Range):
         headway_min_arr = []
 
         for d in rng.dates:
@@ -310,72 +231,7 @@ class RouteMetrics:
 
             headway_min_arr.append(headway_min)
 
-        headway_min = np.concatenate(headway_min_arr)
-
-        return self.get_array_stats(headway_min, keys)
-
-    def get_histogram_data_for_array(self, values):
-        bin_size = 5
-        percentile_values = np.percentile(values, [0, 100])
-
-        bin_min = 0 # math.floor(percentile_values[0] / bin_size) * bin_size
-        bin_max = math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
-        bins = range(bin_min, bin_max, bin_size)
-
-        histogram, bin_edges = np.histogram(values, bins)
-
-        return self.get_histogram_data(histogram, bins, bin_size)
-
-    def get_histogram_data(self, histogram, bins, bin_size):
-        return [{
-                "value": f'{bin}-{bin+bin_size}',
-                "count": round(float(count), ROUND_DIGITS),
-                "binStart": bin,
-                "binEnd": bin + bin_size
-            }
-          for bin, count in zip(bins, histogram)]
-
-    def get_percentiles_data_for_array(self, values):
-        percentiles = range(0, 101, 5)
-        percentile_values = np.percentile(values, percentiles)
-        return self.get_percentiles_data(percentiles, percentile_values)
-
-    def get_percentiles_data(self, percentiles, percentile_values):
-        return [{"percentile": percentile, "value": round(value, ROUND_DIGITS)}
-            for percentile, value in zip(percentiles, percentile_values)]
-
-    def get_array_stats(self, values, keys):
-        data = {}
-
-        if 'count' in keys:
-            data['count'] = len(values)
-
-        if len(values) > 0:
-            if 'avg' in keys:
-                data['avg'] = round(np.average(values), ROUND_DIGITS)
-
-            if 'std' in keys:
-                data['std'] = round(np.std(values), ROUND_DIGITS)
-
-            if ('min' in keys) or ('median' in keys) or ('max' in keys):
-                quantiles = np.quantile(values, [0,0.5,1])
-
-                if 'min' in keys:
-                    data['min'] = round(quantiles[0], ROUND_DIGITS)
-
-                if 'median' in keys:
-                    data['median'] = round(quantiles[1], ROUND_DIGITS)
-
-                if 'max' in keys:
-                    data['max'] = round(quantiles[2], ROUND_DIGITS)
-
-            if 'percentiles' in keys:
-                data['percentiles'] = self.get_percentiles_data_for_array(values)
-
-            if 'histogram' in keys:
-                data['histogram'] = self.get_histogram_data_for_array(values)
-
-        return data
+        return np.concatenate(headway_min_arr)
 
 def compute_headway_minutes(time_values, start_time=None, end_time=None):
     if start_time is not None:

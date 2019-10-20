@@ -26,11 +26,11 @@ import { PLANNING_PERCENTILE } from '../UIConstants';
  * @param {any} props
  */
 function RouteSummary(props) {
-  const { graphParams, fetchPrecomputedWaitAndTripData } = props;
+  const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
 
   useEffect(() => {
-    fetchPrecomputedWaitAndTripData(graphParams);
-  }, [graphParams, fetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
+    myFetchPrecomputedWaitAndTripData(graphParams);
+  }, [graphParams, myFetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
 
   let wait = null;
   let speed = null;
@@ -58,7 +58,7 @@ function RouteSummary(props) {
     allScores = getAllScores(routes, allWaits, allSpeeds);
 
     const routeId = graphParams.routeId;
-    const route = routes.find(thisRoute => thisRoute.id === routeId);
+    const route = routes.find(myRoute => myRoute.id === routeId);
     if (route) {
       const sumOfDistances = route.directions.reduce(
         (total, value) => total + value.distance,
@@ -289,7 +289,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    fetchPrecomputedWaitAndTripData: params =>
+    myFetchPrecomputedWaitAndTripData: params =>
       dispatch(fetchPrecomputedWaitAndTripData(params)),
   };
 };

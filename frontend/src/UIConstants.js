@@ -14,7 +14,7 @@ export const Colors = {
   RED: 'red',
   GREEN: 'green',
   INDIGO: indigo[400],
-}
+};
 
 // placeholder colors: gray and purple from nyc busstats
 export const CHART_COLORS = [Colors.GRAY, Colors.PURPLE];

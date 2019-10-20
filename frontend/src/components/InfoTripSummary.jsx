@@ -31,18 +31,19 @@ import InfoScoreLegend from './InfoScoreLegend';
  * @param {any} props
  */
 export default function InfoTripSummary(props) {
+
   const { graphData, graphParams, routes } = props;
   const waitTimes = graphData ? graphData.waitTimes : null;
   const tripTimes = graphData ? graphData.tripTimes : null;
 
-  const computeDistance = (graphParams, routes) => {
+  const computeDistance = (myGraphParams, myRoutes) => {
     let miles = 0;
 
-    if (graphParams && graphParams.endStopId) {
-      const directionId = graphParams.directionId;
-      const routeId = graphParams.routeId;
+    if (myGraphParams && myGraphParams.endStopId) {
+      const directionId = myGraphParams.directionId;
+      const routeId = myGraphParams.routeId;
 
-      const route = routes.find(thisRoute => thisRoute.id === routeId);
+      const route = myRoutes.find(thisRoute => thisRoute.id === routeId);
       const directionInfo = route.directions.find(
         dir => dir.id === directionId,
       );
@@ -50,17 +51,17 @@ export default function InfoTripSummary(props) {
       // if precomputed stop distance is available, use it
 
       if (
-        directionInfo.stop_geometry[graphParams.startStopId] &&
-        directionInfo.stop_geometry[graphParams.endStopId]
+        directionInfo.stop_geometry[myGraphParams.startStopId] &&
+        directionInfo.stop_geometry[myGraphParams.endStopId]
       ) {
         const distance =
-          directionInfo.stop_geometry[graphParams.endStopId].distance -
-          directionInfo.stop_geometry[graphParams.startStopId].distance;
+          directionInfo.stop_geometry[myGraphParams.endStopId].distance -
+          directionInfo.stop_geometry[myGraphParams.startStopId].distance;
         return metersToMiles(distance);
       }
 
-      const startIndex = directionInfo.stops.indexOf(graphParams.startStopId);
-      const endIndex = directionInfo.stops.indexOf(graphParams.endStopId);
+      const startIndex = directionInfo.stops.indexOf(myGraphParams.startStopId);
+      const endIndex = directionInfo.stops.indexOf(myGraphParams.endStopId);
 
       for (let i = startIndex; i < endIndex; i++) {
         const fromStopInfo = route.stops[directionInfo.stops[i]];
@@ -78,23 +79,24 @@ export default function InfoTripSummary(props) {
       ? distance / (tripTimes.avg / 60.0)
       : 0; // convert avg trip time to hours for mph
 
+
+
   let longWaitProbability = 0;
   if (waitTimes && waitTimes.histogram) {
-    const reducer = (accumulator, currentValue, index) => {
+    const reducer = (accumulator, currentValue) => {
       const LONG_WAIT = 20; // histogram bins are in minutes
       return currentValue.binStart >= LONG_WAIT
         ? accumulator + currentValue.count
         : accumulator;
     };
 
-    longWaitProbability = waitTimes.histogram.reduce(reducer, 0);
-    longWaitProbability /= waitTimes.count;
+    longWaitProbability = waitTimes.histogram.reduce(reducer, 0) / 100;
   }
 
   let travelVarianceTime = 0;
   if (tripTimes) {
     travelVarianceTime =
-      getPercentileValue(tripTimes, PLANNING_PERCENTILE) - tripTimes.avg;
+      getPercentileValue(tripTimes, PLANNING_PERCENTILE) - tripTimes.median;
   }
 
   const grades =
