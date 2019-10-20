@@ -12,8 +12,9 @@ import Select from '@material-ui/core/Select';
 import Grid from '@material-ui/core/Grid';
 import { handleGraphParams } from '../actions';
 import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
-import StartStopIcon from '@material-ui/icons/LocationOn';
+import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
+import { Colors } from '../UIConstants';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -189,7 +190,7 @@ function ControlPanel(props) {
           <Grid container>
             <Grid item xs>
               <Box ml={1}>
-                <StartStopIcon fontSize="small" htmlColor="black"/>
+                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="fromstop">From Stop</InputLabel>
                   <Select
@@ -214,7 +215,7 @@ function ControlPanel(props) {
             </Grid>
             <Grid item xs>
               <Box ml={1}>
-                <EndStopIcon fontSize="small" htmlColor="black"/>
+                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="tostop">To Stop</InputLabel>
                   <Select

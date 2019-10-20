@@ -10,7 +10,7 @@ import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { STARTING_COORDINATES } from '../locationConstants';
 import { Colors } from '../UIConstants';
-import StartStopIcon from '@material-ui/icons/LocationOn';
+import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import ReactDOMServer from 'react-dom/server';
 
@@ -54,11 +54,11 @@ class MapStops extends Component {
       
       icon = L.divIcon({
         className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
-        iconSize: [240, 22],
-        iconAnchor: [11, 11], // centers icon over position, with text to the right
+        iconSize: [240, 24],
+        iconAnchor: [12, 12], // centers icon over position, with text to the right
         html:
           
-          `<svg width="22" height="22" viewBox="-10 -10 10 10">` +
+          `<svg width="24" height="24" viewBox="-10 -10 10 10">` +
           
           // this is a larger white circle
           
@@ -66,13 +66,13 @@ class MapStops extends Component {
           
           // this is the passed in icon, which we ask React to render as html (becomes an svg object)
           
-          `</svg><div style="position:relative; top: -25px; left:1px">` +
-          ReactDOMServer.renderToString(<IconType style={{color:'black'}} fontSize={'small'}/>) +
+          `</svg><div style="position:relative; top: -26px; left:2px">` +
+          ReactDOMServer.renderToString(<IconType style={{color:Colors.INDIGO}} fontSize={'small'}/>) +
          `</div>` +
          
          // this is the stop title with a text shadow to outline it in white
          
-         `<div style="position:relative; top:-50px; left:25px; font-weight:bold; ` +
+         `<div style="position:relative; top:-50px; left:25px; font-weight:bold; color:` + Colors.INDIGO + `; ` +
          `text-shadow: -1px 1px 0 #fff,` +
          `1px 1px 0 #fff,` +
          `1px -1px 0 #fff,` +
