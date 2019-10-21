@@ -16,6 +16,7 @@ import { fetchRoutes } from '../actions';
 import { agencyTitle } from '../locationConstants';
 
 import Link from 'redux-first-router-link';
+import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeUtil';
 
 function RouteScreen(props) {
   const {
@@ -38,13 +39,12 @@ function RouteScreen(props) {
     let link = {
       type:'ROUTESCREEN'
     }
-    const params = ['route_id', 'direction_id', 'start_stop_id','end_stop_id'];
+    const params = [ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID];
     const labels = (param, title) => {
-      const  specialLabels = { 
-          'start_stop_id':`(from ${title}`,
-          'end_stop_id' : `to ${title})`
-      };
-      return specialLabels[param] ? specialLabels[param] : title;
+        let  specialLabels = {};
+        specialLabels[START_STOP_ID] = `(from ${title}`;
+        specialLabels[END_STOP_ID] = `to ${title})`;
+        return specialLabels[param] ? specialLabels[param] : title;
     }
     return paths.filter(path => {
       return  path ?  true : false;
@@ -75,11 +75,11 @@ function RouteScreen(props) {
       : null;
   const startStopInfo =
     direction && graphParams.startStopId
-      ? selectedRoute.stops[graphParams.startStopId]
+      ? Object.assign(selectedRoute.stops[graphParams.startStopId], {id:graphParams.startStopId})
       : null;
   const endStopInfo =
     direction && graphParams.endStopId
-      ? selectedRoute.stops[graphParams.endStopId]
+      ? Object.assign(selectedRoute.stops[graphParams.endStopId],{id:graphParams.endStopId})
       : null;
 
   return (
