@@ -15,6 +15,8 @@ import RouteSummary from '../components/RouteSummary';
 import { fetchRoutes } from '../actions';
 import { agencyTitle } from '../locationConstants';
 
+import Link from 'redux-first-router-link';
+
 function RouteScreen(props) {
   const {
     graphData,
@@ -60,7 +62,7 @@ function RouteScreen(props) {
         : (<span> > {label} </span>)
     });
   }
-  
+
   const selectedRoute =
     routes && graphParams && graphParams.routeId
       ? routes.find(route => route.id === graphParams.routeId)
