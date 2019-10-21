@@ -68,15 +68,19 @@ function MareyChart(props) {
   const INBOUND = 'Inbound'; // same as directionInfo name
   const OUTBOUND = 'Outbound'; // same as directionInfo name
 
-  const { graphParams, fetchArrivals, arrivals, routes } = props;
+  const { graphParams, myFetchArrivals, arrivals, routes } = props;
+
+  const [hintValue, setHintValue] = useState();
+  const [tripHighlight, setTripHighlight] = useState();
+  const [processedArrivals, setProcessedArrivals] = useState(); // where the tripData gets stored
+  const [selectedOption, setSelectedOption] = useState(INBOUND_AND_OUTBOUND);
 
   // On first load, get the raw arrival history corresponding to graphParams.
-
   useEffect(() => {
     if (graphParams.routeId) {
-      fetchArrivals(graphParams);
+      myFetchArrivals(graphParams);
     }
-  }, [graphParams, fetchArrivals]);
+  }, [graphParams, myFetchArrivals]);
 
   // When both the raw arrival history and route configs have loaded, first
   // rebucket the data by trip ID.  Then create react-vis Series objects for
@@ -106,10 +110,11 @@ function MareyChart(props) {
       startTime,
       startHourOfDay,
     ) => {
+      const myTripData = tripData;
       const tripId = arrival.i;
       const vehicleId = arrival.v;
-      if (tripData.byTripId[tripId] === undefined) {
-        tripData.byTripId[tripId] = {
+      if (myTripData.byTripId[tripId] === undefined) {
+        myTripData.byTripId[tripId] = {
           tripId,
           vehicleId,
           series: [],
@@ -133,7 +138,7 @@ function MareyChart(props) {
         const arrivalMoment = Moment.unix(arrival.t).tz(TIME_ZONE_NAME);
         const yValue = (arrival.t - startTime) / 60 / 60 + startHourOfDay; // time of arrival in fractional hours
 
-        tripData.byTripId[tripId].series.push({
+        myTripData.byTripId[tripId].series.push({
           stopId,
           title: route.stops[stopId].title,
           arrivalTimeString: arrivalMoment.format('h:mm a'),
@@ -143,17 +148,17 @@ function MareyChart(props) {
         });
 
         if (
-          tripData.earliestArrivalTime === null ||
-          yValue < tripData.earliestArrivalTime
+          myTripData.earliestArrivalTime === null ||
+          yValue < myTripData.earliestArrivalTime
         ) {
-          tripData.earliestArrivalTime = yValue;
+          myTripData.earliestArrivalTime = yValue;
         }
 
         if (
-          tripData.latestArrivalTime === null ||
-          yValue > tripData.latestArrivalTime
+          myTripData.latestArrivalTime === null ||
+          yValue > myTripData.latestArrivalTime
         ) {
-          tripData.latestArrivalTime = yValue;
+          myTripData.latestArrivalTime = yValue;
         }
 
         // If the exit time arrival.e is more than a certain amount of time, add a data point
@@ -163,7 +168,7 @@ function MareyChart(props) {
           const exitMoment = Moment.unix(arrival.e).tz(TIME_ZONE_NAME);
           const exitYValue = (arrival.e - startTime) / 60 / 60 + startHourOfDay; // time of arrival in fractional hours
 
-          tripData.byTripId[tripId].series.push({
+          myTripData.byTripId[tripId].series.push({
             stopId,
             title: route.stops[stopId].title,
             arrivalTimeString: exitMoment.format('h:mm a'),
@@ -232,11 +237,6 @@ function MareyChart(props) {
       setProcessedArrivals(tripData);
     }
   }, [arrivals, routes]);
-
-  const [hintValue, setHintValue] = useState();
-  const [tripHighlight, setTripHighlight] = useState();
-  const [processedArrivals, setProcessedArrivals] = useState(); // where the tripData gets stored
-  const [selectedOption, setSelectedOption] = useState(INBOUND_AND_OUTBOUND);
 
   /**
    * This is a render-time helper function.
@@ -450,10 +450,10 @@ function MareyChart(props) {
             {hintValue ? (
               <Hint
                 value={hintValue}
-                format={hintValue => [
-                  { title: 'Stop', value: hintValue.title },
-                  { title: 'Time', value: hintValue.arrivalTimeString },
-                  { title: 'Vehicle ID', value: hintValue.vehicleId },
+                format={myHintValue => [
+                  { title: 'Stop', value: myHintValue.title },
+                  { title: 'Time', value: myHintValue.arrivalTimeString },
+                  { title: 'Vehicle ID', value: myHintValue.vehicleId },
                 ]}
               />
             ) : null}
@@ -472,7 +472,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    fetchArrivals: params => dispatch(fetchArrivals(params)),
+    myFetchArrivals: params => dispatch(fetchArrivals(params)),
   };
 };
 

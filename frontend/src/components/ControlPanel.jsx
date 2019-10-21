@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { connect } from 'react-redux';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Input from '@material-ui/core/Input';
@@ -9,9 +8,9 @@ import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
-import { handleGraphParams } from '../actions';
 import Grid from '@material-ui/core/Grid';
-
+import { handleGraphParams } from '../actions';
+import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -28,14 +27,19 @@ function ControlPanel(props) {
   const { routes, graphParams } = props;
   let secondStopList = [];
 
-  const setDirectionId = directionId => {
-    let path = new Path();
-    path.buildPath(DIRECTION, directionId.target.value).commitPath();
-    return (props.onGraphParams({
-      directionId: directionId.target.value,
+  /**
+   * Sets the direction
+   */
+  function setDirectionId(event) {
+    const directionId = event.target.value;
+
+    const path = new Path();
+    path.buildPath(DIRECTION, directionId).commitPath();
+    return props.onGraphParams({
+      directionId,
       startStopId: null,
       endStopId: null,
-    }));
+    });
   }
 
   function getSelectedRouteInfo() {
@@ -45,9 +49,9 @@ function ControlPanel(props) {
 
   const selectedRoute = getSelectedRouteInfo();
 
-  const getStopsInfoInGivenDirection = (mySelectedRoute, directionId) => {
+  function getStopsInfoInGivenDirection(mySelectedRoute, directionId) {
     return mySelectedRoute.directions.find(dir => dir.id === directionId);
-  };
+  }
 
   function generateSecondStopList(mySelectedRoute, directionId, stopId) {
     const secondStopInfo = getStopsInfoInGivenDirection(
@@ -59,41 +63,47 @@ function ControlPanel(props) {
       : 0;
     return secondStopInfo.stops.slice(secondStopListIndex + 1);
   }
-  
-  
 
-  const onSelectFirstStop = stopId => {
+  function onSelectFirstStop(event) {
+    const stopId = event.target.value;
+
     const directionId = props.graphParams.directionId;
     const secondStopId = props.graphParams.endStopId;
     const mySelectedRoute = { ...getSelectedRouteInfo() };
+
     secondStopList = generateSecondStopList(
       mySelectedRoute,
       directionId,
-      stopId.target.value,
+      stopId,
     );
-    let path = new Path();
-    path.buildPath(FROM_STOP, stopId.target.value);
+    const path = new Path();
+    path.buildPath(FROM_STOP, stopId);
 
-    if(secondStopId){
+    if (secondStopId) {
       path.buildPath(TO_STOP, secondStopId);
     }
 
     path.commitPath();
     props.onGraphParams({
-      startStopId: stopId.target.value,
+      startStopId: stopId,
       endStopId: secondStopId,
     });
-  };
+  }
 
-  const onSelectSecondStop = stopId => {
-    let path = new Path();
-    path.buildPath(TO_STOP,stopId.target.value).commitPath();
-    props.onGraphParams({ endStopId: stopId.target.value });
-  };
+  function onSelectSecondStop(event) {
+    const endStopId = event.target.value;
 
-  const setRouteId = routeId => {
+    const path = new Path();
+    path.buildPath(TO_STOP, endStopId).commitPath();
+
+    props.onGraphParams({ endStopId });
+  }
+
+  function setRouteId(event) {
+    const routeId = event.target.value;
+
     const mySelectedRoute = props.routes
-      ? props.routes.find(route => route.id === routeId.target.value)
+      ? props.routes.find(route => route.id === routeId)
       : null;
 
     if (!mySelectedRoute) {
@@ -105,15 +115,18 @@ function ControlPanel(props) {
         ? mySelectedRoute.directions[0].id
         : null;
     // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
-    let path = new Path();
-    path.buildPath(ROUTE, routeId.target.value).buildPath(DIRECTION, directionId).commitPath();
+    const path = new Path();
+    path
+      .buildPath(ROUTE, routeId)
+      .buildPath(DIRECTION, directionId)
+      .commitPath();
     props.onGraphParams({
-      routeId: routeId.target.value,
-      directionId: directionId,
+      routeId,
+      directionId,
       startStopId: null,
       endStopId: null,
     });
-  };
+  }
 
   let selectedDirection = null;
   if (selectedRoute && selectedRoute.directions && graphParams.directionId) {
@@ -136,23 +149,23 @@ function ControlPanel(props) {
     <div className="ControlPanel">
       <Grid container>
         <Grid item xs>
-            <FormControl className={classes.formControl}>
-              <InputLabel htmlFor="route">Route</InputLabel>
-              <Select
-                value={graphParams.routeId || 0}
-                onChange={setRouteId}
-                input={<Input name="route" id="route" />}
-              >
-                {(routes || []).map(route => (
-                  <MenuItem key={route.id} value={route.id}>
-                    {route.title}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+          <FormControl className={classes.formControl}>
+            <InputLabel htmlFor="route">Route</InputLabel>
+            <Select
+              value={graphParams.routeId || 0}
+              onChange={setRouteId}
+              input={<Input name="route" id="route" />}
+            >
+              {(routes || []).map(route => (
+                <MenuItem key={route.id} value={route.id}>
+                  {route.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Grid>
         {selectedRoute ? (
-        <Grid item xs>
+          <Grid item xs>
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
@@ -167,11 +180,11 @@ function ControlPanel(props) {
                 ))}
               </Select>
             </FormControl>
-        </Grid>
+          </Grid>
         ) : null}
         {selectedDirection ? (
-        <Grid container>
-          <Grid item xs>
+          <Grid container>
+            <Grid item xs>
               <FormControl className={classes.formControl}>
                 <InputLabel htmlFor="fromstop">From Stop</InputLabel>
                 <Select
@@ -192,8 +205,8 @@ function ControlPanel(props) {
                   ))}
                 </Select>
               </FormControl>
-          </Grid>
-          <Grid item xs>
+            </Grid>
+            <Grid item xs>
               <FormControl className={classes.formControl}>
                 <InputLabel htmlFor="tostop">To Stop</InputLabel>
                 <Select
@@ -214,11 +227,11 @@ function ControlPanel(props) {
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
           </Grid>
-        </Grid>
         ) : null}
       </Grid>
-   </div>
+    </div>
   );
 }
 

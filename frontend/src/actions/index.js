@@ -1,15 +1,52 @@
 import axios from 'axios';
 import { metricsBaseURL } from '../config';
-
 import { getTimePath } from '../helpers/precomputed';
-import { generateTripURL, generateWaitTimeURL, routesUrl } from '../locationConstants';
-
+import {
+  generateArrivalsURL,
+  generateTripURL,
+  generateWaitTimeURL,
+  routesUrl,
+} from '../locationConstants';
 
 export function fetchGraphData(params) {
   return function(dispatch) {
-    axios
-      .get('/api/metrics', {
-        params,
+
+    var query = `query($routeId:String, $startStopId:String, $endStopId:String,
+    $directionId:String, $date:String, $startTime:String, $endTime:String) {
+  routeMetrics(routeId:$routeId) {
+    trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
+      interval(dates:[$date], startTime:$startTime, endTime:$endTime) {
+        headways {
+          count median max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        tripTimes {
+          count median avg max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        waitTimes {
+          median max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+      }
+      timeRanges(dates:[$date]) {
+        startTime endTime
+        waitTimes {
+          percentiles(percentiles:[50,90]) { percentile value }
+        }
+        tripTimes {
+          percentiles(percentiles:[50,90]) { percentile value }
+        }
+      }
+    }
+  }
+}`.replace(/\s+/g, ' ');
+
+    axios.get('/api/graphql', {
+        params: { query: query, variables: JSON.stringify(params) },
         baseURL: metricsBaseURL,
       })
       .then(response => {
@@ -32,36 +69,6 @@ export function fetchGraphData(params) {
 export function resetGraphData() {
   return function(dispatch) {
     dispatch({ type: 'RESET_GRAPH_DATA', payload: null });
-  };
-}
-
-export function fetchIntervalData(params) {
-  return function(dispatch) {
-    axios
-      .get('/api/metrics_by_interval', {
-        params,
-        baseURL: metricsBaseURL,
-      })
-      .then(response => {
-        dispatch({
-          type: 'RECEIVED_INTERVAL_DATA',
-          payload: response.data,
-          graphParams: params,
-        });
-      })
-      .catch(err => {
-        const errStr =
-          err.response && err.response.data && err.response.data.error
-            ? err.response.data.error
-            : err.message;
-        dispatch({ type: 'RECEIVED_INTERVAL_ERROR', payload: errStr });
-      });
-  };
-}
-
-export function resetIntervalData() {
-  return function(dispatch) {
-    dispatch({ type: 'RESET_INTERVAL_DATA', payload: null });
   };
 }
 
@@ -144,10 +151,7 @@ export function fetchArrivals(params) {
   return function(dispatch) {
     const dateStr = params.date;
 
-    const s3Url = `https://opentransit-stop-arrivals.s3.amazonaws.com/v4/sf-muni/${dateStr.replace(
-      /-/g,
-      '/',
-    )}/arrivals_v4_sf-muni_${dateStr}_${params.routeId}.json.gz`;
+    const s3Url = generateArrivalsURL(dateStr, params.routeId);
 
     axios
       .get(s3Url)
@@ -166,18 +170,6 @@ export function fetchArrivals(params) {
 export function handleSpiderMapClick(stops, latLng) {
   return function(dispatch) {
     dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: [stops, latLng] });
-  };
-}
-
-/**
- * This is an action creator where the action calls two actions.
- * Basically this a way of calling two APIs at once, where two APIs
- * have no interactions with each other.
- */
-export function fetchData(graphParams, intervalParams) {
-  return function(dispatch) {
-    dispatch(fetchGraphData(graphParams));
-    dispatch(fetchIntervalData(intervalParams));
   };
 }
 
@@ -200,16 +192,11 @@ export function handleGraphParams(params) {
       graphParams.startStopId &&
       graphParams.endStopId
     ) {
-      const intervalParams = Object.assign({}, graphParams);
-      delete intervalParams.startTime; // for interval api, clear out start/end time and use defaults for now
-      delete intervalParams.endTime; // because the hourly graph is spiky and can trigger panda "empty axes" errors.
-
-      dispatch(fetchData(graphParams, intervalParams));
+      dispatch(fetchGraphData(graphParams));
     } else {
       // when we don't have all params, clear graph data
 
       dispatch(resetGraphData());
-      dispatch(resetIntervalData());
     }
   };
 }

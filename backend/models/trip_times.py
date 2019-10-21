@@ -27,10 +27,14 @@ def get_completed_trip_times(
         s1_trip_values, s1_departure_time_values = sort_parallel(s1_trip_values, s1_departure_time_values)
         s2_trip_values, s2_arrival_time_values = sort_parallel(s2_trip_values, s2_arrival_time_values)
 
-    _, (s1_indexes, s2_indexes) = snp.intersect(s1_trip_values, s2_trip_values, indices=True)
+    # if s1_trip_values and s2_trip_values are empty, this throws a ValueError
+    if (len(s1_trip_values) > 0) and (len(s2_trip_values) > 0):
+        _, (s1_indexes, s2_indexes) = snp.intersect(s1_trip_values, s2_trip_values, indices=True)
 
-    return (s2_arrival_time_values[s2_indexes] - s1_departure_time_values[s1_indexes]) / 60
-
+        return (s2_arrival_time_values[s2_indexes] - s1_departure_time_values[s1_indexes]) / 60
+    else:
+        return []
+        
 def get_matching_trips_and_arrival_times(
     s1_trip_values, s1_departure_time_values,
     s2_trip_values, s2_arrival_time_values):
@@ -66,7 +70,7 @@ def sort_parallel(arr, arr2):
     sort_order = np.argsort(arr)
     return arr[sort_order], arr2[sort_order]
 
-DefaultVersion = 'v1'
+DefaultVersion = 'v1a'
 
 class CachedTripTimes:
     def __init__(self, trip_times_data):

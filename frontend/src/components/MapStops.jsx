@@ -1,16 +1,17 @@
 import React, { Component } from 'react';
-import { DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { connect } from 'react-redux';
 import { Map, TileLayer, CircleMarker, Tooltip, Polyline } from 'react-leaflet';
 import * as d3 from 'd3';
 import Control from 'react-leaflet-control';
+import { DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { STARTING_COORDINATES } from '../locationConstants';
+import { Colors } from '../UIConstants';
 
 const RADIUS = 6;
-const STOP_COLORS = ['blue', 'red', 'green', 'purple'];
+const STOP_COLORS = [Colors.BLUE, Colors.RED, Colors.GREEN, Colors.PURPLE];
 const ZOOM = 13;
 
 class MapStops extends Component {
@@ -259,9 +260,9 @@ class MapStops extends Component {
       endStopId = null;
       directionId = newDirectionId;
     }
-    let path = new Path();
+    const path = new Path();
     path.buildPath(DIRECTION, directionId).buildPath(FROM_STOP, startStopId);
-    if(endStopId) {
+    if (endStopId) {
       path.buildPath(TO_STOP, endStopId);
     }
     path.commitPath();
