@@ -68,6 +68,7 @@ function DateTimePanel(props) {
   const { graphParams } = props;
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const maxDate = initialState.graphParams.date;
 
   function handleClick(event) {
     setAnchorEl(event.currentTarget);
@@ -198,6 +199,11 @@ function DateTimePanel(props) {
                 label="Date"
                 type="date"
                 defaultValue={graphParams.date}
+                InputProps={{
+                  inputProps:{
+                    max: maxDate,
+                  },
+                }}
                 className={classes.textField}
                 InputLabelProps={{
                   shrink: true,

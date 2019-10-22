@@ -67,6 +67,7 @@ class Isochrone extends React.Component {
       endLatLng: null,
       tripInfo: null,
       enabledRoutes: {},
+      noData: false,
     };
 
     let workerUrl = `${
@@ -131,8 +132,14 @@ class Isochrone extends React.Component {
       if (computeId === this.state.computeId) {
         this.addReachableLocationsLayer(data);
       }
+      this.setState({noData: false});
     } else if (data.type === 'error') {
-      this.showError(data.error);
+      if (data.error.status >= 400 && data.error.status < 500) {
+        // there is no JSON data for this day
+        this.setState({noData: true});
+      } else {
+        this.showError(data.error.message);
+      }
     } else {
       console.log(e.data);
     }
@@ -667,7 +674,9 @@ class Isochrone extends React.Component {
               <div className="isochrone-trip-info">{this.state.tripInfo}</div>
             ) : (
               <div className="isochrone-instructions">
-                {!this.state.latLng
+                {this.state.noData
+                  ? 'There is no data for the selected date. Choose another date.'
+                  : !this.state.latLng
                   ? 'Click anywhere in the city to see the trip times from' +
                     ' that point to the rest of the city via transit and walking.'
                   : this.state.computing
