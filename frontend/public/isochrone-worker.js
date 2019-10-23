@@ -44,7 +44,7 @@ function loadJson(url)
             }
             catch (e)
             {
-                reject({message: "Invalid JSON", status: req.status});
+                return reject({message: "Invalid JSON", status: req.status});
             }
             resolve(res);
         });
