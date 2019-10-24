@@ -13,9 +13,10 @@ import Typography from '@material-ui/core/Typography';
 import Paper from '@material-ui/core/Paper';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
+import { createMuiTheme } from '@material-ui/core/styles';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import { connect } from 'react-redux';
-import Link from 'redux-first-router-link';
+import Navlink from 'redux-first-router-link';
 import {
   filterRoutes,
   getAllWaits,
@@ -212,10 +213,6 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     marginTop: theme.spacing(3),
   },
-  paper: {
-    width: '100%',
-    marginBottom: theme.spacing(2),
-  },
   tableWrapper: {
     overflowX: 'auto',
   },
@@ -226,6 +223,7 @@ function RouteTable(props) {
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
   const dense = true;
+  const theme = createMuiTheme();
 
   const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
 
@@ -280,7 +278,6 @@ function RouteTable(props) {
 
   return (
     <div className={classes.root}>
-      <Paper className={classes.paper}>
         <EnhancedTableToolbar numSelected={0} />
         <div className={classes.tableWrapper}>
           <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
@@ -307,7 +304,8 @@ function RouteTable(props) {
                       scope="row"
                       padding="none"
                     >
-                      <Link
+                      <Navlink
+                        style={{color: theme.palette.primary.dark, textDecoration: 'none'}}
                         to={{
                           type: 'ROUTESCREEN',
                           payload: {
@@ -319,7 +317,7 @@ function RouteTable(props) {
                         }}
                       >
                         {row.title}
-                      </Link>
+                      </Navlink>
                     </TableCell>
                     <TableCell
                       align="right"
@@ -354,7 +352,6 @@ function RouteTable(props) {
             </TableBody>
           </Table>
         </div>
-      </Paper>
     </div>
   );
 }
