@@ -1,4 +1,5 @@
 import React from 'react';
+import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Popover from '@material-ui/core/Popover';
 import Typography from '@material-ui/core/Typography';
@@ -68,6 +69,7 @@ function DateTimePanel(props) {
   const { graphParams } = props;
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const maxDate = Moment(Date.now()).format('YYYY-MM-DD');
 
   function handleClick(event) {
     setAnchorEl(event.currentTarget);
@@ -198,6 +200,11 @@ function DateTimePanel(props) {
                 label="Date"
                 type="date"
                 defaultValue={graphParams.date}
+                InputProps={{
+                  inputProps:{
+                    max: maxDate,
+                  },
+                }}
                 className={classes.textField}
                 InputLabelProps={{
                   shrink: true,
