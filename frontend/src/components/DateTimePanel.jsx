@@ -89,7 +89,7 @@ function DateTimePanel(props) {
   }
 
 
-  function setTimeToDateToNow() {
+  function setTimeAndDateToNow() {
     /** Sets the date as today
     * Gets the current time, sets start and end time as the
     * the corresponding members of TIME_RANGES
@@ -240,7 +240,7 @@ function DateTimePanel(props) {
         <br />
         <List style={{ color: 'black' }}>
           <ListItem>
-            <Button onClick={setTimeToDateToNow}>Set to current time</Button>
+            <Button onClick={setTimeAndDateToNow}>Set to current time</Button>
           </ListItem>
 
           <ListItem>
