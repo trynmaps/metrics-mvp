@@ -1,4 +1,6 @@
 import React, { Fragment, useEffect } from 'react';
+
+import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
@@ -18,6 +20,12 @@ import { agencyTitle } from '../locationConstants';
 import Link from 'redux-first-router-link';
 import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeUtil';
 
+const useStyles = makeStyles(theme => ({
+  whiteLinks: {
+    color: '#DCDCDC'
+  }
+}));
+
 function RouteScreen(props) {
   const {
     graphData,
@@ -35,31 +43,32 @@ function RouteScreen(props) {
     }
   }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
-  const breadCrumbs = paths => {
+  const breadCrumbs = (paths, linkClass) => {
     let link = {
       type:'ROUTESCREEN'
     }
     const params = [ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID];
     const labels = (param, title) => {
         let  specialLabels = {};
-        specialLabels[START_STOP_ID] = `(from ${title}`;
-        specialLabels[END_STOP_ID] = `to ${title})`;
+        specialLabels[START_STOP_ID] = `from ${title}`;
+        specialLabels[END_STOP_ID] = `to ${title}`;
         return specialLabels[param] ? specialLabels[param] : title;
     }
     return paths.filter(path => {
       return  path ?  true : false;
       }).map((path, index, paths) => {
-        const nextValue = paths[index+1];
+        const hasNextValue = paths[index+1];
         const param = params[index];
         let payload = {};
         payload[param] = path.id;
         const updatedPayload = Object.assign({...link.payload}, payload);
         link = Object.assign({...link}, {payload:updatedPayload});
         const label = labels(param, path.title);
-        return nextValue
-        ? (<span> > <Link to={link}>
-          {label}> </Link> </span> )
-        : (<span> > {label} </span>)
+        return hasNextValue
+        ? (<span> > <Link to={link} className={linkClass}> {label} </Link> </span> )
+        : ( 
+                    <span> > {label}
+                    </span> )
     });
   }
 
@@ -75,21 +84,27 @@ function RouteScreen(props) {
       : null;
   const startStopInfo =
     direction && graphParams.startStopId
-      ? Object.assign(selectedRoute.stops[graphParams.startStopId], {id:graphParams.startStopId})
+      ? selectedRoute.stops[graphParams.startStopId]
       : null;
   const endStopInfo =
     direction && graphParams.endStopId
-      ? Object.assign(selectedRoute.stops[graphParams.endStopId],{id:graphParams.endStopId})
+      ? selectedRoute.stops[graphParams.endStopId]
       : null;
 
+  const classes = useStyles();
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
           <div className="page-title">
-            <Link to="/">{agencyTitle}</Link>
-            {breadCrumbs([selectedRoute,direction,startStopInfo,endStopInfo])}
+        
+            <Link to="/" className={classes.whiteLinks}>{agencyTitle}</Link>
+
+            {breadCrumbs([selectedRoute,direction,
+              startStopInfo ? Object.assign(startStopInfo,{id: graphParams.startStopId }) : null,
+              endStopInfo ? Object.assign(endStopInfo,{id: graphParams.endStopInfo }) : null],classes.whiteLinks)}
+         
           </div>
           <DateTimePanel />
         </Toolbar>
