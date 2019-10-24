@@ -14,6 +14,7 @@ import { List, ListItem } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
+import Moment from 'moment';
 import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
 import { initialState } from '../reducers/routesReducer';
 import { handleGraphParams } from '../actions';
@@ -87,6 +88,52 @@ function DateTimePanel(props) {
     handleClose(); // this forces the native date picker to reset, otherwise it doesn't stay in sync
   }
 
+
+  function setTimeToDateToNow() {
+    /** Sets the date as today
+    * Gets the current time, sets start and end time as the
+    * the corresponding members of TIME_RANGES
+    */
+
+    const date = Moment(Date.now());
+
+    const currentDate =  date.format('YYYY-MM-DD');
+    const hour = parseInt(date.format("HH"))
+
+    var startTime = null;
+    var endTime = null;
+
+    // Hard-code handling of early morning
+    if (hour < 3 || hour >= 19) {
+      startTime = TIME_RANGES[6].value.split("-")[0]
+      endTime = TIME_RANGES[6].value.split("-")[1]
+    }
+    else {
+      // First two of TIME_RANGES are not applicable
+      const possibleTimes = TIME_RANGES.slice(2,6).map(x => parseInt(x.value.slice(0,2)))
+
+      var correspondingTimeRange = null
+      possibleTimes.forEach(function(element, i) {
+        if (hour >= element) {
+          correspondingTimeRange = i
+        }
+      });
+
+      correspondingTimeRange = TIME_RANGES[correspondingTimeRange+2].value
+      startTime = correspondingTimeRange.split("-")[0]
+      endTime = correspondingTimeRange.split("-")[1]
+    }
+
+    props.handleGraphParams({
+      date: currentDate,
+      startTime: startTime,
+      endTime: endTime,
+    });
+
+    handleClose(); // this forces the native date picker to reset, otherwise it doesn't stay in sync
+  }
+
+
   /**
    * convert yyyy/mm/dd to mm/dd/yyyy
    */
@@ -124,6 +171,7 @@ function DateTimePanel(props) {
         startTime: timeRangeParts[0],
         endTime: timeRangeParts[1],
       });
+
     }
   };
 
@@ -191,6 +239,10 @@ function DateTimePanel(props) {
         </IconButton>
         <br />
         <List style={{ color: 'black' }}>
+          <ListItem>
+            <Button onClick={setTimeToDateToNow}>Set to current time</Button>
+          </ListItem>
+
           <ListItem>
             <FormControl className={classes.formControl}>
               <TextField
