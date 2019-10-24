@@ -102,8 +102,8 @@ function RouteScreen(props) {
             <Link to="/" className={classes.whiteLinks}>{agencyTitle}</Link>
 
             {breadCrumbs([selectedRoute,direction,
-              startStopInfo ? Object.assign(startStopInfo,{id: graphParams.startStopId }) : null,
-              endStopInfo ? Object.assign(endStopInfo,{id: graphParams.endStopInfo }) : null],classes.whiteLinks)}
+              startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
+              endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null],classes.whiteLinks)}
          
           </div>
           <DateTimePanel />
