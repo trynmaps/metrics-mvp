@@ -4,8 +4,13 @@ import { connect } from 'react-redux';
 import { Map, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
+import Grid from '@material-ui/core/Grid';
+import Typography from '@material-ui/core/Typography';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import Button from '@material-ui/core/Button';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
@@ -626,48 +631,63 @@ class Isochrone extends React.Component {
           />
           {/* see http://maps.stamen.com for details */}
           <Control position="topleft">
-            <div className="isochrone-controls">
-              <div>
-                stat:
-                <select
+            <Grid container
+              className="isochrone-controls"
+              direction="column">
+              <Grid item>
+                <Typography variant="button">Statistic</Typography>
+              </Grid>
+              <Grid item>
+                <Select
                   value={this.state.stat}
                   onChange={this.handleStatChange}
-                  className="isochrone-control-select"
                 >
-                  <option value="p10">10th percentile</option>
-                  <option value="median">median</option>
-                  <option value="p90">90th percentile</option>
-                </select>
-              </div>
-              <div>
-                max trip time:
-                <select
+                  <MenuItem value="p10">10th percentile</MenuItem>
+                  <MenuItem value="median">median</MenuItem>
+                  <MenuItem value="p90">90th percentile</MenuItem>
+                </Select>
+              </Grid>
+            </Grid>
+            <Grid container
+              className="isochrone-controls"
+              direction="column">
+              <Grid item>
+                <Typography variant="button">Max Trip Time</Typography>
+              </Grid>
+              <Grid item className="isochrone-controls-select">
+                <Select
                   value={this.state.maxTripMin}
                   onChange={this.handleMaxTripMinChange}
-                  className="isochrone-control-select"
                 >
                   {tripMins.map(tripMin => (
-                    <option key={tripMin} value={tripMin}>
+                    <MenuItem key={tripMin} value={tripMin}>
                       {tripMin} minutes
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </div>
-              <div>
-                routes:
-                <div className="isochrone-select-all">
-                  <span onClick={this.selectAllRoutesClicked}>all</span>
-                  {' / '}
-                  <span onClick={this.selectNoRoutesClicked}>none</span>
-                </div>
+                </Select>
+              </Grid>
+            </Grid>
+            <Grid container
+              className="isochrone-controls"
+              direction="column"
+              alignItems="left">
+              <Grid item>
+                <Typography variant="button">Routes</Typography>
+              </Grid>
+              <Grid containter item
+                direction="row"
+                alignItems="flex-start">
+                <Grid item>
+                  <Button className="isochrone-select-all" onClick={this.selectAllRoutesClicked}>all</Button>
+                  <Button onClick={this.selectNoRoutesClicked}>none</Button>
+                </Grid>
+              </Grid>
+              <Grid item>
                 <div className="isochrone-routes">
                   {(routes || []).map(route => this.makeRouteToggle(route))}
                 </div>
-              </div>
-              <button type="button" onClick={this.resetMapClicked}>
-                Clear
-              </button>
-            </div>
+              </Grid>
+            </Grid>
           </Control>
           <Control position="topright">
             {this.state.tripInfo ? (
@@ -691,6 +711,17 @@ class Isochrone extends React.Component {
               <div className="isochrone-legend-colors">{colors}</div>
               <div className="isochrone-legend-times">{times}</div>
             </div>
+          </Control>
+          <Control position="bottomleft">
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={this.resetMapClicked}
+            >
+              Clear map
+            </Button>
+            <br />
+            <br />
           </Control>
         </Map>
       </div>
