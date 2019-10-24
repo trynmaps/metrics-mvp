@@ -95,7 +95,7 @@ function RouteSummary(props) {
         <Table>
           <TableBody>
             <TableRow>
-              <TableCell>Wait</TableCell>
+              <TableCell>Median Wait</TableCell>
               <TableCell align="right">{grades.medianWaitScore}</TableCell>
             </TableRow>
             <TableRow>
