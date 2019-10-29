@@ -68,9 +68,7 @@ function ControlPanel(props) {
     return secondStopInfo.stops.slice(secondStopListIndex + 1);
   }
 
-  function onSelectFirstStop(event) {
-    const stopId = event.target.value;
-
+  function handleSelectFirstStop(stopId) {
     const directionId = props.graphParams.directionId;
     const secondStopId = props.graphParams.endStopId;
     const mySelectedRoute = { ...getSelectedRouteInfo() };
@@ -94,13 +92,33 @@ function ControlPanel(props) {
     });
   }
 
-  function onSelectSecondStop(event) {
-    const endStopId = event.target.value;
+  function onSelectFirstStop(event) {
+    const stopId = event.target.value;
+    handleSelectFirstStop(stopId);
+  }
 
+  function onHoverFirstStop(event) {
+    const stopId = event.target.getAttribute('data-value');
+    if (stopId) handleSelectFirstStop(stopId);
+  }
+
+  function handleSelectSecondStop(endStopId) {
     const path = new Path();
     path.buildPath(TO_STOP, endStopId).commitPath();
 
     props.onGraphParams({ endStopId });
+  }
+
+  function onSelectSecondStop(event) {
+    const endStopId = event.target.value;
+    handleSelectSecondStop(endStopId);
+  }
+
+  function onHoverSecondStop(event) {
+    const endStopId = event.target.getAttribute('data-value');
+    if (endStopId) {
+      handleSelectSecondStop(endStopId);
+    }
   }
 
   function setRouteId(event) {
@@ -190,13 +208,14 @@ function ControlPanel(props) {
           <Grid container>
             <Grid item xs>
               <Box ml={1}>
-                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
+                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="fromstop">From Stop</InputLabel>
                   <Select
-                  value={graphParams.startStopId || 1}
-                  onChange={onSelectFirstStop}
-                  input={<Input name="stop" id="fromstop" />}
+                    value={graphParams.startStopId || 1}
+                    onChange={onSelectFirstStop}
+                    input={<Input name="stop" id="fromstop" />}
+                    onMouseOver={onHoverFirstStop}
                   >
                     {(selectedDirection.stops || []).map(firstStopId => (
                       <MenuItem key={firstStopId} value={firstStopId}>
@@ -211,17 +230,18 @@ function ControlPanel(props) {
                     ))}
                   </Select>
                 </FormControl>
-              </Box> 
+              </Box>
             </Grid>
             <Grid item xs>
               <Box ml={1}>
-                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
+                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="tostop">To Stop</InputLabel>
                   <Select
-                  value={graphParams.endStopId || 1}
-                  onChange={onSelectSecondStop}
-                  input={<Input name="stop" id="tostop" />}
+                    value={graphParams.endStopId || 1}
+                    onChange={onSelectSecondStop}
+                    input={<Input name="stop" id="tostop" />}
+                    onMouseOver={onHoverSecondStop}
                   >
                     {(secondStopList || []).map(secondStopId => (
                       <MenuItem key={secondStopId} value={secondStopId}>
