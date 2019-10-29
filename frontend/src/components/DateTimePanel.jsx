@@ -240,10 +240,6 @@ function DateTimePanel(props) {
         <br />
         <List style={{ color: 'black' }}>
           <ListItem>
-            <Button onClick={setTimeAndDateToNow}>Set to current time</Button>
-          </ListItem>
-
-          <ListItem>
             <FormControl className={classes.formControl}>
               <TextField
                 id="date"
@@ -277,7 +273,7 @@ function DateTimePanel(props) {
             </FormControl>
           </ListItem>
           <ListItem>
-            <Button onClick={handleReset}>Reset</Button>
+            <Button onClick={setTimeAndDateToNow} color="secondary">Today</Button>
           </ListItem>
         </List>
       </Popover>
