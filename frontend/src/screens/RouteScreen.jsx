@@ -28,8 +28,6 @@ function RouteScreen(props) {
 
   const [stopOnHover, setStopOnHover] = useState(null);
 
-  console.log(stopOnHover);
-
   const handleMouseOver = stop => setStopOnHover(stop);
   const clearStopOnHover = () => setStopOnHover(null);
 
