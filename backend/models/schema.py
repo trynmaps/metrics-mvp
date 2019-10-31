@@ -1,4 +1,4 @@
-from . import constants, metrics, util, config
+from . import nextbus, constants, metrics, util, wait_times, trip_times
 from graphene import ObjectType, String, Int, Float, List, Field, Boolean, Schema
 from datetime import date
 import sys
@@ -6,6 +6,96 @@ import numpy as np
 import math
 
 ROUND_DIGITS = 3
+
+
+
+class BasicWaitTimeStats(ObjectType):
+    median = Float()
+    percentile = Float(percentile=Int(required=True))
+    probabilityLessThan = Float(minutes=Int(required=True))
+
+    def resolve_median(parent, info):
+        first_date = util.parse_date(parent["date_str"])
+        wait_time_median = wait_times.get_cached_wait_times(parent['route_metrics'].agency_id, first_date, "median", parent["start_time"], parent["end_time"])
+        if wait_time_median is None:
+            raise Exception(f"There is no cached median for start_stop_id {parent['start_stop_id']} at times {parent['start_time'], parent['end_time']}.")
+        return wait_time_median.get_value(parent["route_metrics"].route_id, parent["direction_id"], parent["start_stop_id"])
+
+    def resolve_percentile(parent, info, percentile):
+        first_date = util.parse_date(parent["date_str"])
+        wait_time_percentile = wait_times.get_cached_wait_times(parent['route_metrics'].agency_id, first_date, "p10-median-p90", parent["start_time"], parent["end_time"])
+        percentiles_arr = wait_time_percentile.get_value(parent["route_metrics"].route_id, parent["direction_id"], parent["start_stop_id"])
+        if percentiles_arr is None:
+            raise Exception(f"There is no cached data for stop: {parent['start_stop_id']}.")
+        if percentile == 10:
+            return percentiles_arr[0]
+        elif percentile == 50:
+            return percentiles_arr[1]
+        elif percentile == 90:
+            return percentiles_arr[2]
+        else:
+            raise Exception(f"User requested a percentile other than [ 10 | 50 | 90 ].")
+    
+    def resolve_probabilityLessThan(parent, info, minutes):
+        first_date = util.parse_date(parent["date_str"])
+        wait_time_probability = wait_times.get_cached_wait_times(parent['route_metrics'].agency_id, first_date, "plt5m-30m", parent["start_time"], parent["end_time"])
+        probabilitys_arr = wait_time_probability.get_value(parent["route_metrics"].route_id, parent["direction_id"], parent["start_stop_id"])
+        minutes_to_index = {5: 0, 10: 1, 15: 2, 20: 3, 25: 4, 30: 5}
+        if minutes not in minutes_to_index:
+            raise Exception(f'User requested minutes other than [ 5 | 10 | 15 | 20 | 25 | 30 ]')
+        return probabilitys_arr[minutes_to_index[minutes]]
+
+class BasicTripTimeStats(ObjectType):
+    median = Float()
+    percentile = Float(percentile=Int(required=True))
+
+    def resolve_median(parent, info):
+        first_date = util.parse_date(parent["date_str"])
+        trip_time_median = trip_times.get_cached_trip_times(parent['route_metrics'].agency_id, first_date, "median", parent["start_time"], parent["end_time"])
+        return trip_time_median.get_value(parent["route_metrics"].route_id, parent["direction_id"], parent["start_stop_id"], parent["end_stop_id"])
+
+    def resolve_percentile(parent, info, percentile):
+        first_date = util.parse_date(parent["date_str"])
+        trip_time_percentile = trip_times.get_cached_trip_times(parent['route_metrics'].agency_id, first_date, "p10-median-p90", parent["start_time"], parent["end_time"])
+        percentiles_arr = trip_time_percentile.get_value(parent["route_metrics"].route_id, parent["direction_id"], parent["start_stop_id"], parent["end_stop_id"])
+        if percentiles_arr is None:
+            raise Exception(f"There is no cached data for stops: {parent['start_stop_id']}, {parent['end_stop_id']}.")
+        if percentile == 10:
+            return percentiles_arr[0]
+        elif percentile == 50:
+            return percentiles_arr[1]
+        elif percentile == 90:
+            return percentiles_arr[2]
+        else:
+            raise Exception(f"User requested a percentile other than [ 10 | 50 | 90 ].")
+
+
+class BasicIntervalMetrics(ObjectType):
+    dates = List(String)
+    startTime = String()
+    endTime = String()
+    waitTimes = Field(BasicWaitTimeStats)
+    tripTimes = Field(BasicTripTimeStats)
+
+    def resolve_dates(parent, info):
+        dates = [parent["date_str"]]
+        return dates
+
+    def resolve_startTime(parent, info):
+        return parent["start_time"]
+    
+    def resolve_endTime(parent, info):
+        return parent["end_time"]
+
+
+    def resolve_waitTimes(parent, info):
+        return parent
+
+    def resolve_tripTimes(parent, info):
+        return parent
+
+
+
 
 class DirectionInfo(ObjectType):
     id = String()
@@ -364,6 +454,12 @@ class TripMetrics(ObjectType):
         date_strs = List(String, name='dates'),
     )
 
+    byDay = List(BasicIntervalMetrics,
+        date_strs = List(String, name='dates'),
+        start_time = String(),
+        end_time = String(),
+    )
+
     # parent is a dict with "route_metrics","start_stop_id","end_stop_id","direction_id" keys
 
     def resolve_interval(parent, info, date_strs, start_time = None, end_time = None):
@@ -398,6 +494,15 @@ class TripMetrics(ObjectType):
                 **parent
             }
             for start_time,end_time in constants.DEFAULT_TIME_STR_INTERVALS
+        ]
+
+    def resolve_byDay(parent, info, date_strs, start_time, end_time):
+        return [{**parent, 
+                "start_time": start_time, 
+                "end_time": end_time, 
+                "date_str": date_str
+            }
+            for date_str in date_strs
         ]
 
 class RouteMetrics(ObjectType):
