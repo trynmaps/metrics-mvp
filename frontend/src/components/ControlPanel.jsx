@@ -68,7 +68,8 @@ function ControlPanel(props) {
     return secondStopInfo.stops.slice(secondStopListIndex + 1);
   }
 
-  function handleSelectFirstStop(stopId) {
+  function onSelectFirstStop(event) {
+    const stopId = event.target.value;
     const directionId = props.graphParams.directionId;
     const secondStopId = props.graphParams.endStopId;
     const mySelectedRoute = { ...getSelectedRouteInfo() };
@@ -92,33 +93,12 @@ function ControlPanel(props) {
     });
   }
 
-  function onSelectFirstStop(event) {
-    const stopId = event.target.value;
-    handleSelectFirstStop(stopId);
-  }
-
-  function onHoverFirstStop(event) {
-    const stopId = event.target.getAttribute('data-value');
-    if (stopId) handleSelectFirstStop(stopId);
-  }
-
-  function handleSelectSecondStop(endStopId) {
+  function onSelectSecondStop(event) {
+    const endStopId = event.target.value;
     const path = new Path();
     path.buildPath(TO_STOP, endStopId).commitPath();
 
     props.onGraphParams({ endStopId });
-  }
-
-  function onSelectSecondStop(event) {
-    const endStopId = event.target.value;
-    handleSelectSecondStop(endStopId);
-  }
-
-  function onHoverSecondStop(event) {
-    const endStopId = event.target.getAttribute('data-value');
-    if (endStopId) {
-      handleSelectSecondStop(endStopId);
-    }
   }
 
   function setRouteId(event) {
