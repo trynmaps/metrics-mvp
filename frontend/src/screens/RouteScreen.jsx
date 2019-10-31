@@ -55,6 +55,7 @@ function RouteScreen(props) {
         return specialLabels[param] ? specialLabels[param] : title;
     }
     return paths.filter(path => {
+      //return paths with non null values
       return  path ?  true : false;
       }).map((path, index, paths) => {
         const hasNextValue = paths[index+1];
@@ -65,10 +66,8 @@ function RouteScreen(props) {
         link = Object.assign({...link}, {payload:updatedPayload});
         const label = labels(param, path.title);
         return hasNextValue
-        ? (<span> > <Link to={link} className={linkClass}> {label} </Link> </span> )
-        : ( 
-                    <span> > {label}
-                    </span> )
+        ? ( <span> > <Link to={link} className={linkClass}> {label} </Link> </span> )
+        : ( <span> > {label} </span> )
     });
   }
 
