@@ -28,7 +28,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function ControlPanel(props) {
-  const { routes, graphParams } = props;
+  const { routes, graphParams, handleMouseOver, clearStopOnHover } = props;
   let secondStopList = [];
 
   /**
@@ -212,10 +212,13 @@ function ControlPanel(props) {
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="fromstop">From Stop</InputLabel>
                   <Select
-                    value={graphParams.startStopId || 1}
-                    onChange={onSelectFirstStop}
-                    input={<Input name="stop" id="fromstop" />}
-                    onMouseOver={onHoverFirstStop}
+                  value={graphParams.startStopId || 1}
+                  onChange={e => {
+                    onSelectFirstStop(e);
+                    setTimeout(() => clearStopOnHover(), 200);
+                  }}
+                  input={<Input name="stop" id="fromstop" />}
+                  onMouseOver={e => handleMouseOver(e.target.getAttribute("data-value"))}
                   >
                     {(selectedDirection.stops || []).map(firstStopId => (
                       <MenuItem key={firstStopId} value={firstStopId}>
@@ -238,10 +241,13 @@ function ControlPanel(props) {
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="tostop">To Stop</InputLabel>
                   <Select
-                    value={graphParams.endStopId || 1}
-                    onChange={onSelectSecondStop}
-                    input={<Input name="stop" id="tostop" />}
-                    onMouseOver={onHoverSecondStop}
+                  value={graphParams.endStopId || 1}
+                  onChange={e => {
+                    onSelectSecondStop(e);
+                    setTimeout(() => clearStopOnHover(), 200);
+                  }}
+                  input={<Input name="stop" id="tostop" />}
+                  onMouseOver={e => handleMouseOver(e.target.getAttribute("data-value"))}
                   >
                     {(secondStopList || []).map(secondStopId => (
                       <MenuItem key={secondStopId} value={secondStopId}>
