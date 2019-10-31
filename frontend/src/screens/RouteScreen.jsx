@@ -30,11 +30,7 @@ const useStyles = makeStyles(theme => ({
     color: '#DCDCDC',
     fontWeight: 'bold',
     textTransform : 'initial',
-    },
-    clickableLink: {
-      display:'block',
-      width: '100%',
-      height:'100%'
+    display : 'inline',
     }
 }));
 
@@ -62,9 +58,9 @@ function RouteScreen(props) {
     const params = [ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID];
     const labels = (param, title) => {
         let  specialLabels = {};
-        specialLabels[START_STOP_ID] = `from ${title}`;
-        specialLabels[END_STOP_ID] = `to ${title}`;
-        return specialLabels[param] ? specialLabels[param] : title;
+        specialLabels[START_STOP_ID] = "from ";
+        specialLabels[END_STOP_ID] = "to ";
+        return {label: title, specialLabel: specialLabels[param] ? specialLabels[param] : null};
     }
     return paths.filter(path => {
       //return paths with non null values
@@ -76,10 +72,10 @@ function RouteScreen(props) {
         payload[param] = path.id;
         const updatedPayload = Object.assign({...link.payload}, payload);
         link = Object.assign({...link}, {payload:updatedPayload});
-        const label = labels(param, path.title);
+        const {label, specialLabel}  = labels(param, path.title);
         return hasNextValue
-        ? ( <Link to={link} className={whiteLinks}> <Typography variant="subtitle1" className={whiteLinks}> {label} </Typography> </Link> )
-        : ( <Typography variant="subtitle1" className={whiteLinks}> {label} </Typography> )
+        ? ( <Typography variant="subtitle1" className={whiteLinks}> {specialLabel}  <Link to={link} className={whiteLinks}>  {label}  </Link> </Typography> )
+        : ( <Typography variant="subtitle1" className={whiteLinks}> {specialLabel} {label} </Typography> )
     });
   }
 
