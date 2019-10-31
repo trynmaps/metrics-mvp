@@ -4,6 +4,10 @@ import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import NavigateNextIcon from '@material-ui/icons/NavigateNext';
+import Breadcrumbs from '@material-ui/core/Breadcrumbs';
+import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
 
 import { connect } from 'react-redux';
 import Info from '../components/Info';
@@ -17,13 +21,21 @@ import RouteSummary from '../components/RouteSummary';
 import { fetchRoutes } from '../actions';
 import { agencyTitle } from '../locationConstants';
 
+
 import Link from 'redux-first-router-link';
 import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeUtil';
 
 const useStyles = makeStyles(theme => ({
   whiteLinks: {
-    color: '#DCDCDC'
-  }
+    color: '#DCDCDC',
+    fontWeight: 'bold',
+    textTransform : 'initial',
+    },
+    clickableLink: {
+      display:'block',
+      width: '100%',
+      height:'100%'
+    }
 }));
 
 function RouteScreen(props) {
@@ -43,7 +55,7 @@ function RouteScreen(props) {
     }
   }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
-  const breadCrumbs = (paths, linkClass) => {
+  const breadCrumbs = (paths, whiteLinks) => {
     let link = {
       type:'ROUTESCREEN'
     }
@@ -66,8 +78,8 @@ function RouteScreen(props) {
         link = Object.assign({...link}, {payload:updatedPayload});
         const label = labels(param, path.title);
         return hasNextValue
-        ? ( <span> > <Link to={link} className={linkClass}> {label} </Link> </span> )
-        : ( <span> > {label} </span> )
+        ? ( <Link to={link} className={whiteLinks}> <Typography variant="subtitle1" className={whiteLinks}> {label} </Typography> </Link> )
+        : ( <Typography variant="subtitle1" className={whiteLinks}> {label} </Typography> )
     });
   }
 
@@ -91,19 +103,20 @@ function RouteScreen(props) {
       : null;
 
   const classes = useStyles();
+  const { whiteLinks } = classes;
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
           <div className="page-title">
-        
-            <Link to="/" className={classes.whiteLinks}>{agencyTitle}</Link>
+          <Breadcrumbs separator={ <NavigateNextIcon fontSize="medium"  className={whiteLinks}/> }>
+            <Link to="/" className={whiteLinks} > <Typography variant="subtitle1" className={whiteLinks} >{agencyTitle} </Typography> </Link>
 
             {breadCrumbs([selectedRoute,direction,
               startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
-              endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null],classes.whiteLinks)}
-         
+              endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null], whiteLinks)}
+          </Breadcrumbs>
           </div>
           <DateTimePanel />
         </Toolbar>
