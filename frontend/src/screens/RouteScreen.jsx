@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
@@ -25,6 +25,13 @@ function RouteScreen(props) {
     routes,
     myFetchRoutes,
   } = props;
+
+  const [stopOnHover, setStopOnHover] = useState(null);
+
+  console.log(stopOnHover);
+
+  const handleMouseOver = stop => setStopOnHover(stop);
+  const clearStopOnHover = () => setStopOnHover(null);
 
   useEffect(() => {
     if (!routes) {
@@ -70,11 +77,11 @@ function RouteScreen(props) {
 
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
-          <MapStops routes={routes} />
+          <MapStops routes={routes} stopOnHover={stopOnHover}/>
         </Grid>
         <Grid item xs={12} sm={6}>
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
-          <ControlPanel routes={routes} />
+          <ControlPanel routes={routes} handleMouseOver={handleMouseOver} clearStopOnHover={clearStopOnHover}/>
           {graphData ||
           graphError /* if we have graph data or an error, then show the info component */ ? (
             <Info
