@@ -44,11 +44,11 @@ function loadJson(url)
             }
             catch (e)
             {
-                return reject("Invalid JSON");
+                return reject({message: "Invalid JSON", status: req.status});
             }
             resolve(res);
         });
-        req.onerror = () => reject(req.statusText);
+        req.onerror = () => reject({message: req.statusText, status: req.status});
         req.open("GET", url);
         req.send();
     });
@@ -135,7 +135,8 @@ async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, 
             '/trip-times_'+TripTimesVersion+'_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
         tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
-            sendError("error loading trip times: " + e);
+            e.message = 'error loading trip times: ' + e.message;
+            sendError(e);
             throw e;
         });
     }
@@ -211,7 +212,8 @@ async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr,
         //console.log(s3Url);
 
         waitTimes = waitTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
-            sendError("error loading wait times: " + e);
+            e.message = 'error loading wait times: ' + e.message;
+            sendError(e);
             throw e;
         });
     }
@@ -509,7 +511,9 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
 
                     return loadRoute(routeId)
                         .catch(function(e) {
-                            sendError('error loading route ' + routeId + ": " + e);
+                            e.message = 'error loading route: ' + e.message;
+                            e.routeId = routeId;
+                            sendError(e);
                             throw e;
                         })
                         .then(function(routeInfo) {

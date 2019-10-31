@@ -93,7 +93,7 @@ popular React framework and looks great on mobile.
 - **ESLint** - Linting set in the format of AirBNB Style.
 - **Prettier** - Code formatter to maintain standard code format for the frontend code.
 - **Husky** - Pre-commit hook to trigger Prettier auto formatting before pushing to Github.
- 
+
 ### Backend
 
 - **Flask** - because our data science work was already done in iPython and using

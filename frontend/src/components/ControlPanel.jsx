@@ -3,6 +3,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -11,6 +12,9 @@ import Select from '@material-ui/core/Select';
 import Grid from '@material-ui/core/Grid';
 import { handleGraphParams } from '../actions';
 import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
+import StartStopIcon from '@material-ui/icons/DirectionsTransit';
+import EndStopIcon from '@material-ui/icons/Flag';
+import { Colors } from '../UIConstants';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -185,48 +189,54 @@ function ControlPanel(props) {
         {selectedDirection ? (
           <Grid container>
             <Grid item xs>
-              <FormControl className={classes.formControl}>
-                <InputLabel htmlFor="fromstop">From Stop</InputLabel>
-                <Select
+              <Box ml={1}>
+                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
+                <FormControl className={classes.formControl}>
+                  <InputLabel htmlFor="fromstop">From Stop</InputLabel>
+                  <Select
                   value={graphParams.startStopId || 1}
                   onChange={onSelectFirstStop}
                   input={<Input name="stop" id="fromstop" />}
-                >
-                  {(selectedDirection.stops || []).map(firstStopId => (
-                    <MenuItem key={firstStopId} value={firstStopId}>
-                      {
-                        (
-                          selectedRoute.stops[firstStopId] || {
-                            title: firstStopId,
-                          }
-                        ).title
-                      }
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  >
+                    {(selectedDirection.stops || []).map(firstStopId => (
+                      <MenuItem key={firstStopId} value={firstStopId}>
+                        {
+                          (
+                            selectedRoute.stops[firstStopId] || {
+                              title: firstStopId,
+                            }
+                          ).title
+                        }
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box> 
             </Grid>
             <Grid item xs>
-              <FormControl className={classes.formControl}>
-                <InputLabel htmlFor="tostop">To Stop</InputLabel>
-                <Select
+              <Box ml={1}>
+                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
+                <FormControl className={classes.formControl}>
+                  <InputLabel htmlFor="tostop">To Stop</InputLabel>
+                  <Select
                   value={graphParams.endStopId || 1}
                   onChange={onSelectSecondStop}
                   input={<Input name="stop" id="tostop" />}
-                >
-                  {(secondStopList || []).map(secondStopId => (
-                    <MenuItem key={secondStopId} value={secondStopId}>
-                      {
-                        (
-                          selectedRoute.stops[secondStopId] || {
-                            title: secondStopId,
-                          }
-                        ).title
-                      }
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  >
+                    {(secondStopList || []).map(secondStopId => (
+                      <MenuItem key={secondStopId} value={secondStopId}>
+                        {
+                          (
+                            selectedRoute.stops[secondStopId] || {
+                              title: secondStopId,
+                            }
+                          ).title
+                        }
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
             </Grid>
           </Grid>
         ) : null}
