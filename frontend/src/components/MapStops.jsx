@@ -47,36 +47,8 @@ class MapStops extends Component {
 
     let icon = null;
 
-    if (stop.sid === this.props.stopOnHover) {
-      // If current stop is being hover on the To & From Dropdowns. This is a LARGE white circle with an
-      // svg "v" shape rotated by the given rotation value.
+    if (IconType) {
 
-      icon = L.divIcon({
-        className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
-        iconSize: [240, 35],
-        iconAnchor: [18, 18], // centers icon over position, with text to the right
-        html:
-          `<svg width="32" height="32" viewBox="-10 -10 10 10" transform="rotate(${rotation} 0 0)">` +
-          
-          // First we draw a white circle
-          
-          `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
-          
-          // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
-          
-          `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${
-            Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
-          `</svg>` + 
-           // this is the stop title with a text shadow to outline it in white
-         
-         `<div style="position:relative; top:-29px; left:29px; font-weight:bold; color:` + Colors.INDIGO + `; ` +
-         `text-shadow: -1px 1px 0 #fff,` +
-         `1px 1px 0 #fff,` +
-         `1px -1px 0 #fff,` +
-         `-1px -1px 0 #fff;">${stop.title}</div>`,
-      });
-    } else if (IconType) {
-      
       // Given an IconType indicates start or end stop.  This is a white circle with a black icon, 
       // followed by the title of the stop.
       
@@ -106,7 +78,34 @@ class MapStops extends Component {
          `1px -1px 0 #fff,` +
          `-1px -1px 0 #fff;">${stop.title}</div>`,
       });
-      
+    } else if (stop.sid === this.props.stopOnHover) {
+      // If current stop is being hover on the To & From Dropdowns. This is a LARGE white circle with an
+      // svg "v" shape rotated by the given rotation value.
+
+      icon = L.divIcon({
+        className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
+        iconSize: [240, 35],
+        iconAnchor: [18, 18], // centers icon over position, with text to the right
+        html:
+          `<svg width="32" height="32" viewBox="-10 -10 10 10" transform="rotate(${rotation} 0 0)">` +
+          
+          // First we draw a white circle
+          
+          `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
+          
+          // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
+          
+          `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${
+            Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
+          `</svg>` + 
+           // this is the stop title with a text shadow to outline it in white
+         
+         `<div style="position:relative; top:-29px; left:29px; font-weight:bold; color:` + Colors.INDIGO + `; ` +
+         `text-shadow: -1px 1px 0 #fff,` +
+         `1px 1px 0 #fff,` +
+         `1px -1px 0 #fff,` +
+         `-1px -1px 0 #fff;">${stop.title}</div>`,
+      });
     } else {
       
       // If not given an IconType, this is just a regular stop.  This is a white circle with an
