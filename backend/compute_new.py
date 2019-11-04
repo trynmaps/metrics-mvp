@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, time
 import pytz
 import boto3
 
-from models import nextbus, util, wait_times
+from models import config, util, wait_times
 
 from compute_arrivals import compute_arrivals
 from compute_trip_times import compute_trip_times
@@ -14,72 +14,76 @@ from compute_wait_times import compute_wait_times
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = '')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
+    parser.add_argument('--agency', required=False, help='Agency ID')
 
     args = parser.parse_args()
 
-    agency_id = 'sf-muni'
+    agencies = [config.get_agency(args.agency)] if args.agency is not None else config.agencies
 
     s3_bucket = wait_times.get_s3_bucket()
-    s3_path = f"state_{agency_id}_v1.json"
 
-    def save_state(state):
-        state_str = json.dumps(state)
-        s3 = boto3.resource('s3')
-        print(f'saving state to s3://{s3_bucket}/{s3_path}')
-        object = s3.Object(s3_bucket, s3_path)
-        object.put(
-            Body=bytes(state_str, 'utf-8'),
-            ContentType='application/json',
-            ACL='public-read'
-        )
+    for agency in agencies:
+        agency_id = agency.id
+        s3_path = f"state_{agency_id}_v1.json"
 
-    s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
-    r = requests.get(s3_url)
+        def save_state(state):
+            state_str = json.dumps(state)
+            s3 = boto3.resource('s3')
+            print(f'saving state to s3://{s3_bucket}/{s3_path}')
+            object = s3.Object(s3_bucket, s3_path)
+            object.put(
+                Body=bytes(state_str, 'utf-8'),
+                ContentType='application/json',
+                ACL='public-read'
+            )
 
-    if r.status_code == 404 or r.status_code == 403:
-        state = {}
-    elif r.status_code != 200:
-        raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
-    else:
-        state = json.loads(r.text)
+        s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
+        r = requests.get(s3_url)
 
-    if args.start_date is not None:
-        d = util.parse_date(args.start_date)
-    elif 'last_complete_date' in state:
-        d = util.parse_date(state['last_complete_date']) + timedelta(days=1)
-    else:
-        raise Exception("No compute state, use --start-date parameter the first time")
+        if r.status_code == 404 or r.status_code == 403:
+            state = {}
+        elif r.status_code != 200:
+            raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
+        else:
+            state = json.loads(r.text)
 
-    routes = nextbus.get_route_list(agency_id)
-    route_ids = [route.id for route in routes]
+        if args.start_date is not None:
+            d = util.parse_date(args.start_date)
+        elif 'last_complete_date' in state:
+            d = util.parse_date(state['last_complete_date']) + timedelta(days=1)
+        else:
+            raise Exception(f"No compute state for agency {agency_id}, use --start-date parameter the first time")
 
-    tz = pytz.timezone('America/Los_Angeles')
+        routes = agency.get_route_list()
+        route_ids = [route.id for route in routes]
 
-    now = datetime.now(tz)
-    today = now.date()
+        tz = agency.tz
 
-    if now.time().hour < 3:
-        today -= timedelta(days=1)
+        now = datetime.now(tz)
+        today = now.date()
 
-    while d <= today:
-        compute_start_time = datetime.now(tz)
+        if now.time().hour < agency.default_day_start_hour:
+            today -= timedelta(days=1)
 
-        print(f'computing arrivals for {d}')
-        compute_arrivals(d, tz, agency_id, route_ids)
+        while d <= today:
+            compute_start_time = datetime.now(tz)
 
-        print(f'computing trip times for {d}')
-        compute_trip_times(d, tz, agency_id, routes)
+            print(f'computing arrivals for {d}')
+            compute_arrivals(d, agency, route_ids)
 
-        print(f'computing wait times for {d}')
-        compute_wait_times(d, tz, agency_id, routes)
+            print(f'computing trip times for {d}')
+            compute_trip_times(d, agency, routes)
 
-        date_str = str(d)
+            print(f'computing wait times for {d}')
+            compute_wait_times(d, agency, routes)
 
-        if d < today and ('last_complete_date' not in state or date_str > state['last_complete_date']):
-            state['last_complete_date'] = date_str
-            save_state(state)
-        elif d == today:
-            state['last_partial_date_time'] = str(compute_start_time)
-            save_state(state)
+            date_str = str(d)
 
-        d += timedelta(days=1)
+            if d < today and ('last_complete_date' not in state or date_str > state['last_complete_date']):
+                state['last_complete_date'] = date_str
+                save_state(state)
+            elif d == today:
+                state['last_partial_date_time'] = str(compute_start_time)
+                save_state(state)
+
+            d += timedelta(days=1)

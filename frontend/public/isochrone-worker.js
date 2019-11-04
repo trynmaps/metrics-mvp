@@ -19,8 +19,8 @@ const EarthRadius = 6371000;
 const MaxWalkRadius = 1800;
 const FirstStopMinWaitMinutes = 1.0;
 
-const TripTimesVersion = 'v1a';
-const WaitTimesVersion = 'v1a';
+const TripTimesVersion = 'v1b';
+const WaitTimesVersion = 'v1b';
 
 let curComputeId = null;
 let tripTimesCache = {};

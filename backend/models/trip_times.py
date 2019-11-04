@@ -34,7 +34,7 @@ def get_completed_trip_times(
         return (s2_arrival_time_values[s2_indexes] - s1_departure_time_values[s1_indexes]) / 60
     else:
         return []
-        
+
 def get_matching_trips_and_arrival_times(
     s1_trip_values, s1_departure_time_values,
     s2_trip_values, s2_arrival_time_values):
@@ -70,7 +70,7 @@ def sort_parallel(arr, arr2):
     sort_order = np.argsort(arr)
     return arr[sort_order], arr2[sort_order]
 
-DefaultVersion = 'v1a'
+DefaultVersion = 'v1b'
 
 class CachedTripTimes:
     def __init__(self, trip_times_data):

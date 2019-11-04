@@ -1,9 +1,27 @@
 // Name of the transit agency
 export const agencyTitle = 'SF Muni';
-export const agencyName = 'sf-muni';
+export const agencyName = 'muni';
 
 // Default starting coordinates
 export const STARTING_COORDINATES = { lat: 37.7793, lng: -122.4193 };
+
+/*
+export const agencyTitle = 'Portland Streetcar';
+export const agencyName = 'portland-sc';
+export const STARTING_COORDINATES = { lat: 45.5238029, lng: -122.6815577 };
+*/
+
+/*
+export const agencyTitle = 'Trimet';
+export const agencyName = 'trimet';
+export const STARTING_COORDINATES = { lat: 45.5238029, lng: -122.6815577 };
+*/
+
+/*
+export const agencyTitle = 'TTC';
+export const agencyName = 'ttc';
+export const STARTING_COORDINATES = { lat: 43.6858699, lng: -79.4127544 };
+*/
 
 // List routes to not search for by default
 export const DefaultDisabledRoutes = [
@@ -135,9 +153,9 @@ export const ServiceArea = {
 };
 
 // S3 link to routes
-export const routesUrl = `https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v2_${agencyName}.json.gz`;
+export const routesUrl = `https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v3_${agencyName}.json.gz?yy`;
 
-const tripTimesVersion = 'v1a';
+const tripTimesVersion = 'v1b';
 
 /**
  * Generate S3 url for trips
@@ -153,7 +171,7 @@ export function generateTripURL(dateStr, statPath, timePath) {
   )}/trip-times_${tripTimesVersion}_${agencyName}_${dateStr}_${statPath}${timePath}.json.gz`;
 }
 
-const waitTimesVersion = 'v1a';
+const waitTimesVersion = 'v1b';
 
 /**
  * Generate S3 url for wait times
@@ -169,7 +187,7 @@ export function generateWaitTimeURL(dateStr, statPath, timePath) {
   )}/wait-times_${waitTimesVersion}_${agencyName}_${dateStr}_${statPath}${timePath}.json.gz`;
 }
 
-const arrivalsVersion = 'v4a';
+const arrivalsVersion = 'v4b';
 
 /**
  * Generate S3 url for arrivals

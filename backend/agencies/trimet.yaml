@@ -1,0 +1,5 @@
+id: trimet
+provider: gtfs
+gtfs_url: https://developer.trimet.org/schedule/gtfs.zip
+gtfs_agency_id: TRIMET
+timezone_id: America/Los_Angeles

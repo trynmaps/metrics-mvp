@@ -1,0 +1,6 @@
+id: ttc
+provider: nextbus
+nextbus_agency_id: ttc
+gtfs_url: http://opendata.toronto.ca/TTC/routes/OpenData_TTC_Schedules.zip
+route_id_gtfs_field: route_short_name
+timezone_id: America/Toronto

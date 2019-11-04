@@ -11,9 +11,9 @@ import {
 export function fetchGraphData(params) {
   return function(dispatch) {
 
-    var query = `query($routeId:String, $startStopId:String, $endStopId:String,
-    $directionId:String, $date:String, $startTime:String, $endTime:String) {
-  routeMetrics(routeId:$routeId) {
+    var query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
+    $directionId:String, $date:String!, $startTime:String, $endTime:String) {
+  routeMetrics(agencyId:$agencyId, routeId:$routeId) {
     trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
       interval(dates:[$date], startTime:$startTime, endTime:$endTime) {
         headways {

@@ -1,4 +1,4 @@
-from models import metrics, nextbus, util, arrival_history, trip_times, constants
+from models import metrics, util, arrival_history, trip_times, constants, config
 import json
 import argparse
 from pathlib import Path
@@ -158,11 +158,14 @@ def add_trip_time_stats_for_stop_pair(
             stat_value = get_stat_value(stat_id, all_stat_values)
             interval_trip_time_stats[stat_id][route_id][dir_id][s1][s2] = stat_value
 
-def compute_trip_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids=None):
+def compute_trip_times(d: date, agency: config.Agency, routes, save_to_s3=True, stat_ids=None):
     if stat_ids is None:
         stat_ids = stat_groups.keys()
 
+    tz = agency.tz
+
     print(d)
+
     time_str_intervals = constants.DEFAULT_TIME_STR_INTERVALS.copy()
     time_str_intervals.append(('07:00','19:00'))
 
@@ -186,10 +189,10 @@ def compute_trip_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
         print(route_id)
         t1 = time.time()
 
-        route_config = nextbus.get_route_config(agency_id, route_id)
+        route_config = agency.get_route_config(route_id)
 
         try:
-            history = arrival_history.get_by_date(agency_id, route_id, d)
+            history = arrival_history.get_by_date(agency.id, route_id, d)
         except FileNotFoundError as ex:
             print(ex)
             continue
@@ -215,7 +218,7 @@ def compute_trip_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
                 'routes': all_trip_time_stats[interval_index][stat_id]
             }, separators=(',', ':'))
 
-            cache_path = trip_times.get_cache_path(agency_id, d, stat_id, start_time_str, end_time_str)
+            cache_path = trip_times.get_cache_path(agency.id, d, stat_id, start_time_str, end_time_str)
 
             print(cache_path)
 
@@ -229,7 +232,7 @@ def compute_trip_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
 
             if save_to_s3:
                 s3 = boto3.resource('s3')
-                s3_path = trip_times.get_s3_path(agency_id, d, stat_id, start_time_str, end_time_str)
+                s3_path = trip_times.get_s3_path(agency.id, d, stat_id, start_time_str, end_time_str)
                 s3_bucket = trip_times.get_s3_bucket()
                 print(f'saving to s3://{s3_bucket}/{s3_path}')
                 object = s3.Object(s3_bucket, s3_path)
@@ -243,6 +246,7 @@ def compute_trip_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache trip times')
+    parser.add_argument('--agency', help='Agency ID')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
@@ -252,11 +256,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    agency_id = 'sf-muni'
-
-    tz = pytz.timezone('US/Pacific')
-
-    routes = nextbus.get_route_list(agency_id)
+    agencies = [config.get_agency(args.agency)] if args.agency is not None else config.agencies
 
     if args.date:
         dates = util.get_dates_in_range(args.date, args.date)
@@ -267,5 +267,7 @@ if __name__ == '__main__':
 
     stat_ids = args.stat
 
-    for d in dates:
-        compute_trip_times(d, tz, agency_id, routes, save_to_s3=args.s3, stat_ids=stat_ids)
+    for agency in agencies:
+        routes = agency.get_route_list()
+        for d in dates:
+            compute_trip_times(d, agency, routes, save_to_s3=args.s3, stat_ids=stat_ids)

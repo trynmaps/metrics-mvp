@@ -1,0 +1,10 @@
+id: muni
+provider: nextbus
+nextbus_agency_id: sf-muni
+timezone_id: America/Los_Angeles
+gtfs_url: http://gtfs.sfmta.com/transitdata/google_transit.zip
+route_id_gtfs_field: route_short_name
+default_day_start_hour: 3
+custom_day_start_hours:
+  - start_hour: 0 # owl routes run from 1AM to 5AM so they are associated with the same day
+    routes: ['90', '91', 'K_OWL', 'L_OWL', 'M_OWL', 'N_OWL', 'T_OWL']

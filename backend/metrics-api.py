@@ -10,7 +10,7 @@ import time
 import requests
 import math
 import sys
-from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors, schema
+from models import metrics, util, arrival_history, wait_times, trip_times, constants, errors, schema
 from flask_graphql import GraphQLView
 
 """

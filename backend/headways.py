@@ -2,7 +2,7 @@ import argparse
 import json
 import sys
 from datetime import datetime, timedelta
-from models import nextbus, arrival_history, util, metrics
+from models import config, arrival_history, util, metrics
 import pytz
 import time
 import numpy as np
@@ -12,6 +12,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Compute headways (in minutes) at stop s1 for one or more routes, on one or more dates, optionally at particular times of day'
     )
+    parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument('--route', nargs='+', required=True, help='Route id(s)')
     parser.add_argument('--stop', required=True, help='Stop id')
 
@@ -26,6 +27,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    agency = config.get_agency(args.agency)
+
     version = args.version
     if version is None:
         version = arrival_history.DefaultVersion
@@ -34,8 +37,6 @@ if __name__ == '__main__':
     date_str = args.date
     stop_id = args.stop
 
-    agency = 'sf-muni'
-
     start_time_str = args.start_time
     end_time_str = args.end_time
 
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     route_configs = []
 
     for route_id in route_ids:
-        route_config = nextbus.get_route_config(agency, route_id)
+        route_config = agency.get_route_config(route_id)
 
         stop_info = route_config.get_stop_info(stop_id)
         if stop_info is None:
@@ -56,7 +57,7 @@ if __name__ == '__main__':
         dir_infos.extend([route_config.get_direction_info(dir) for dir in route_dirs])
 
     date_strs = []
-    tz = pytz.timezone('US/Pacific')
+    tz = agency.tz
 
     if args.date:
         dates = util.get_dates_in_range(args.date, args.date)
@@ -86,7 +87,7 @@ if __name__ == '__main__':
         for route_id in route_ids:
             t1 = time.time()*1000
 
-            history = arrival_history.get_by_date(agency, route_id, d, version)
+            history = arrival_history.get_by_date(agency.id, route_id, d, version)
 
             t2 = time.time()*1000
 

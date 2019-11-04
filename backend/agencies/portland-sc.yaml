@@ -1,0 +1,6 @@
+id: portland-sc
+provider: nextbus
+nextbus_agency_id: portland-sc
+gtfs_url: https://developer.trimet.org/schedule/gtfs.zip
+gtfs_agency_id: PSC
+timezone_id: America/Los_Angeles

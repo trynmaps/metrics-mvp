@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta, timezone
 import pytz
 import pandas as pd
 import numpy as np
-from . import nextbus, util
+from . import routeconfig, util, config
 
 def produce_buses(route_state: dict) -> pd.DataFrame:
     buses = pd.io.json.json_normalize(route_state,
@@ -141,7 +141,7 @@ PM = [('12:00', None)]
 AM = [(None, '12:00')]
 
 invalid_direction_times_map = {
-    'sf-muni': {
+    'muni': {
         'NX': {
             'NX___I_F00': PM,
             'NX___O_F00': AM,
@@ -201,13 +201,15 @@ invalid_direction_times_map = {
     },
 }
 
-def get_invalid_direction_times(route_config: nextbus.RouteConfig, direction_id: str):
+def get_invalid_direction_times(agency: config.Agency, route_config: routeconfig.RouteConfig, direction_id: str):
     try:
-        return invalid_direction_times_map[route_config.agency_id][route_config.id][direction_id]
+        return invalid_direction_times_map[agency.id][route_config.id][direction_id]
     except KeyError:
         return []
 
-def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date, tz: pytz.timezone) -> pd.DataFrame:
+def find_arrivals(agency: config.Agency, route_state: dict, route_config: routeconfig.RouteConfig, d: date) -> pd.DataFrame:
+
+    tz = agency.tz
 
     route_id = route_config.id
 
@@ -235,7 +237,6 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
     print(f'{route_id}: {round(time.time() - t0, 1)} computing distances from {len(buses["TIME"].values)} resampled GPS observations to stops')
 
     # datetime not normally needed for computation, but useful for debugging
-    #tz = pytz.timezone('US/Pacific')
     #buses['DATE_TIME'] = buses.TIME.apply(lambda t: datetime.fromtimestamp(t, tz))
 
     possible_arrivals_arr = []
@@ -275,7 +276,7 @@ def find_arrivals(route_state: dict, route_config: nextbus.RouteConfig, d: date,
             valid_buses = valid_buses_by_direction[first_direction]
         else:
             valid_buses = buses
-            for start_time_str, end_time_str in get_invalid_direction_times(route_config, first_direction):
+            for start_time_str, end_time_str in get_invalid_direction_times(agency, route_config, first_direction):
                 if start_time_str is not None:
                     invalid_start_timestamp = util.get_localized_datetime(d, start_time_str, tz).timestamp()
                     print(f"excluding buses after {invalid_start_timestamp} ({start_time_str}) for direction {first_direction}")
@@ -472,7 +473,7 @@ def make_arrivals_frame(rows: list) -> pd.DataFrame:
         'SID','DID','STOP_INDEX','OBS_GROUP','TRIP'
     ])
 
-def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_config: nextbus.RouteConfig) -> tuple:
+def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_config: routeconfig.RouteConfig) -> tuple:
     def make_buses_map():
         return {vid: bus for vid, bus in buses.groupby('VID')}
         '''
@@ -560,7 +561,7 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         direction_id: str,
         obs_group: int,
         bus: pd.DataFrame,
-        route_config: nextbus.RouteConfig
+        route_config: routeconfig.RouteConfig
     ) -> pd.DataFrame:
         dir_arrivals = get_arrivals_with_ascending_stop_index(dir_arrivals)
         dir_arrivals = add_missing_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, bus, route_config)
@@ -688,7 +689,7 @@ def add_missing_arrivals_for_vehicle_direction(
     vehicle_id: str,
     direction_id: str,
     bus: pd.DataFrame,
-    route_config: nextbus.RouteConfig
+    route_config: routeconfig.RouteConfig
 ) -> pd.DataFrame:
 
     # If there is a small gap in STOP_INDEX, try looking for the missing stops

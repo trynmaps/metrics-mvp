@@ -179,7 +179,7 @@ function ControlPanel(props) {
               >
                 {(selectedRoute.directions || []).map(direction => (
                   <MenuItem key={direction.id} value={direction.id}>
-                    {direction.title}
+                      {direction.title}
                   </MenuItem>
                 ))}
               </Select>
@@ -211,7 +211,7 @@ function ControlPanel(props) {
                     ))}
                   </Select>
                 </FormControl>
-              </Box> 
+              </Box>
             </Grid>
             <Grid item xs>
               <Box ml={1}>
