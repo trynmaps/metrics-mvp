@@ -195,7 +195,7 @@ function ControlPanel(props) {
                   value={graphParams.startStopId || 1}
                   onChange={e => {
                     onSelectFirstStop(e);
-                    setTimeout(() => clearStopOnHover(), 200);
+                    setTimeout(() => clearStopOnHover(), 400);
                   }}
                   input={<Input name="stop" id="fromstop" />}
                   onMouseOver={e => handleMouseOver(e.target.getAttribute("data-value"))}
@@ -224,7 +224,7 @@ function ControlPanel(props) {
                   value={graphParams.endStopId || 1}
                   onChange={e => {
                     onSelectSecondStop(e);
-                    setTimeout(() => clearStopOnHover(), 200);
+                    setTimeout(() => clearStopOnHover(), 400);
                   }}
                   input={<Input name="stop" id="tostop" />}
                   onMouseOver={e => handleMouseOver(e.target.getAttribute("data-value"))}
