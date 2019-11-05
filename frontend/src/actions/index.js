@@ -10,8 +10,7 @@ import {
 
 export function fetchGraphData(params) {
   return function(dispatch) {
-
-    var query = `query($routeId:String, $startStopId:String, $endStopId:String,
+    const query = `query($routeId:String, $startStopId:String, $endStopId:String,
     $directionId:String, $date:String, $startTime:String, $endTime:String) {
   routeMetrics(routeId:$routeId) {
     trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
@@ -45,8 +44,9 @@ export function fetchGraphData(params) {
   }
 }`.replace(/\s+/g, ' ');
 
-    axios.get('/api/graphql', {
-        params: { query: query, variables: JSON.stringify(params) },
+    axios
+      .get('/api/graphql', {
+        params: { query, variables: JSON.stringify(params) },
         baseURL: metricsBaseURL,
       })
       .then(response => {

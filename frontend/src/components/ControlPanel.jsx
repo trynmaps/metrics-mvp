@@ -10,11 +10,12 @@ import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import Grid from '@material-ui/core/Grid';
-import { handleGraphParams } from '../actions';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
+import { handleGraphParams } from '../actions';
+import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { Colors } from '../UIConstants';
+import ReactSelect from './ReactSelect';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -68,8 +69,8 @@ function ControlPanel(props) {
     return secondStopInfo.stops.slice(secondStopListIndex + 1);
   }
 
-  function onSelectFirstStop(event) {
-    const stopId = event.target.value;
+  function onSelectFirstStop(option) {
+    const stopId = option.value;
 
     const directionId = props.graphParams.directionId;
     const secondStopId = props.graphParams.endStopId;
@@ -94,8 +95,8 @@ function ControlPanel(props) {
     });
   }
 
-  function onSelectSecondStop(event) {
-    const endStopId = event.target.value;
+  function onSelectSecondStop(option) {
+    const endStopId = option.value;
 
     const path = new Path();
     path.buildPath(TO_STOP, endStopId).commitPath();
@@ -190,51 +191,57 @@ function ControlPanel(props) {
           <Grid container>
             <Grid item xs>
               <Box ml={1}>
-                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
+                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
                 <FormControl className={classes.formControl}>
-                  <InputLabel htmlFor="fromstop">From Stop</InputLabel>
-                  <Select
-                  value={graphParams.startStopId || 1}
-                  onChange={onSelectFirstStop}
-                  input={<Input name="stop" id="fromstop" />}
-                  >
-                    {(selectedDirection.stops || []).map(firstStopId => (
-                      <MenuItem key={firstStopId} value={firstStopId}>
-                        {
-                          (
-                            selectedRoute.stops[firstStopId] || {
-                              title: firstStopId,
-                            }
-                          ).title
-                        }
-                      </MenuItem>
-                    ))}
-                  </Select>
+                  <ReactSelect
+                    onChange={onSelectFirstStop}
+                    inputId="fromstop"
+                    textFieldProps={{
+                      label: 'From Stop',
+                      InputLabelProps: {
+                        htmlFor: 'fromstop',
+                        shrink: true,
+                      },
+                    }}
+                    options={(selectedDirection.stops || []).map(
+                      firstStopId => ({
+                        value: firstStopId,
+                        label: (
+                          selectedRoute.stops[firstStopId] || {
+                            title: firstStopId,
+                          }
+                        ).title,
+                      }),
+                    )}
+                    stopId={graphParams.startStopId}
+                  />
                 </FormControl>
-              </Box> 
+              </Box>
             </Grid>
             <Grid item xs>
               <Box ml={1}>
-                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
+                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
                 <FormControl className={classes.formControl}>
-                  <InputLabel htmlFor="tostop">To Stop</InputLabel>
-                  <Select
-                  value={graphParams.endStopId || 1}
-                  onChange={onSelectSecondStop}
-                  input={<Input name="stop" id="tostop" />}
-                  >
-                    {(secondStopList || []).map(secondStopId => (
-                      <MenuItem key={secondStopId} value={secondStopId}>
-                        {
-                          (
-                            selectedRoute.stops[secondStopId] || {
-                              title: secondStopId,
-                            }
-                          ).title
+                  <ReactSelect
+                    onChange={onSelectSecondStop}
+                    inputId="tostop"
+                    textFieldProps={{
+                      label: 'To Stop',
+                      InputLabelProps: {
+                        htmlFor: 'tostop',
+                        shrink: true,
+                      },
+                    }}
+                    options={(secondStopList || []).map(secondStopId => ({
+                      value: secondStopId,
+                      label: (
+                        selectedRoute.stops[secondStopId] || {
+                          title: secondStopId,
                         }
-                      </MenuItem>
-                    ))}
-                  </Select>
+                      ).title,
+                    }))}
+                    stopId={graphParams.endStopId}
+                  />
                 </FormControl>
               </Box>
             </Grid>
