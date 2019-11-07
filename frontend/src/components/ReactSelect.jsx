@@ -17,10 +17,13 @@ const useStyles = makeStyles({
     flex: 1,
     alignItems: 'center',
   },
-  singleValue: {
+  textContent: {
     display: 'flex',
     flex: 1,
     whiteSpace: 'nowrap',
+  },
+  placeholder: {
+    color: 'hsl(0, 0%, 75%)',
   },
   menu: {
     position: 'absolute',
@@ -115,8 +118,16 @@ export default function ReactSelect(selectProps) {
     return <div className={classes.valueContainer}>{[input, singleValue]}</div>;
   }
 
+  function Placeholder({ children }) {
+    return (
+      <div className={`${classes.textContent} ${classes.placeholder}`}>
+        {children}
+      </div>
+    );
+  }
+
   function SingleValue({ children }) {
-    return <div className={classes.singleValue}>{children}</div>;
+    return <div className={classes.textContent}>{children}</div>;
   }
 
   function DropdownIndicator(props) {
@@ -189,6 +200,7 @@ export default function ReactSelect(selectProps) {
   const replacedComponents = {
     Control,
     ValueContainer,
+    Placeholder,
     SingleValue,
     IndicatorSeparator: () => null,
     DropdownIndicator,
@@ -211,8 +223,7 @@ export default function ReactSelect(selectProps) {
         setMenuToggle(false);
       }}
       styles={selectStyles}
-      tabSelectsValue={false}
-      placeholder=""
+      placeholder="Type here to search..."
       value={selectProps.options.filter(
         option => option.value === selectProps.stopId,
       )}
