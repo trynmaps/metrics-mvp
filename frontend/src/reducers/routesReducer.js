@@ -12,6 +12,7 @@ export const initialState = {
     directionId: null,
     startStopId: null,
     endStopId: null,
+    stopOnHoverId: null,
     startTime: null,
     endTime: null,
     date: momentYesterday.format('YYYY-MM-DD'),

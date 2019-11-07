@@ -78,7 +78,7 @@ class MapStops extends Component {
          `1px -1px 0 #fff,` +
          `-1px -1px 0 #fff;">${stop.title}</div>`,
       });
-    } else if (stop.sid === this.props.stopOnHover) {
+    } else if (stop.sid === this.props.graphParams.stopOnHoverId) {
       // If current stop is being hover on the To & From Dropdowns. This is a LARGE white circle with an
       // svg "v" shape rotated by the given rotation value.
 

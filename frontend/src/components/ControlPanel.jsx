@@ -28,7 +28,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function ControlPanel(props) {
-  const { routes, graphParams, handleMouseOver, clearStopOnHover } = props;
+  const { routes, graphParams } = props;
   let secondStopList = [];
 
   /**
@@ -90,6 +90,7 @@ function ControlPanel(props) {
     props.onGraphParams({
       startStopId: stopId,
       endStopId: secondStopId,
+      stopOnHoverId: null
     });
   }
 
@@ -98,8 +99,22 @@ function ControlPanel(props) {
     const path = new Path();
     path.buildPath(TO_STOP, endStopId).commitPath();
 
-    props.onGraphParams({ endStopId });
+    props.onGraphParams({ endStopId, stopOnHoverId: null });
   }
+
+  function handleMouseOver(event) {
+    props.onGraphParams({
+      ...graphParams,
+      stopOnHoverId: event.target.getAttribute("data-value")
+    });
+  }
+
+  // function clearMouseOver() {
+  //   props.onGraphParams({
+  //     ...graphParams,
+  //     stopOnHoverId: null
+  //   });
+  // }
 
   function setRouteId(event) {
     const routeId = event.target.value;
@@ -194,11 +209,12 @@ function ControlPanel(props) {
                   <Select
                   value={graphParams.startStopId || 1}
                   onChange={e => {
+                    // clearMouseOver();
                     onSelectFirstStop(e);
-                    setTimeout(() => clearStopOnHover(), 400);
+                    // setTimeout(() => clearStopOnHover(), 400);
                   }}
                   input={<Input name="stop" id="fromstop" />}
-                  onMouseOver={e => handleMouseOver(e.target.getAttribute("data-value"))}
+                  onMouseOver={handleMouseOver}
                   >
                     {(selectedDirection.stops || []).map(firstStopId => (
                       <MenuItem key={firstStopId} value={firstStopId}>
@@ -223,11 +239,12 @@ function ControlPanel(props) {
                   <Select
                   value={graphParams.endStopId || 1}
                   onChange={e => {
+                    // clearMouseOver();
                     onSelectSecondStop(e);
-                    setTimeout(() => clearStopOnHover(), 400);
+                    // setTimeout(() => clearStopOnHover(), 400);
                   }}
                   input={<Input name="stop" id="tostop" />}
-                  onMouseOver={e => handleMouseOver(e.target.getAttribute("data-value"))}
+                  onMouseOver={handleMouseOver}
                   >
                     {(secondStopList || []).map(secondStopId => (
                       <MenuItem key={secondStopId} value={secondStopId}>

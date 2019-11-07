@@ -26,11 +26,6 @@ function RouteScreen(props) {
     myFetchRoutes,
   } = props;
 
-  const [stopOnHover, setStopOnHover] = useState(null);
-
-  const handleMouseOver = stop => setStopOnHover(stop);
-  const clearStopOnHover = () => setStopOnHover(null);
-
   useEffect(() => {
     if (!routes) {
       myFetchRoutes();
@@ -75,11 +70,11 @@ function RouteScreen(props) {
 
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
-          <MapStops routes={routes} stopOnHover={stopOnHover}/>
+          <MapStops routes={routes}/>
         </Grid>
         <Grid item xs={12} sm={6}>
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
-          <ControlPanel routes={routes} handleMouseOver={handleMouseOver} clearStopOnHover={clearStopOnHover}/>
+          <ControlPanel routes={routes}/>
           {graphData ||
           graphError /* if we have graph data or an error, then show the info component */ ? (
             <Info
