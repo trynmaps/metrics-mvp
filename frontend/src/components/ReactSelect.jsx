@@ -16,6 +16,8 @@ const useStyles = makeStyles({
     display: 'flex',
     flex: 1,
     alignItems: 'center',
+    minWidth: 0,
+    maxWidth: '100%',
   },
   textContent: {
     display: 'flex',
@@ -41,6 +43,8 @@ const selectStyles = {
     ...provided,
     marginLeft: 0,
     marginRight: 0,
+    maxWidth: '100%',
+    overflow: 'hidden',
   }),
 };
 
@@ -78,10 +82,6 @@ export default function ReactSelect(selectProps) {
     }
   }, [menuToggle, selectProps.inputId, textFieldRect, scrollbarWidth]);
 
-  function inputComponent({ inputRef, ...props }) {
-    return <div ref={inputRef} {...props} />;
-  }
-
   function Control(props) {
     const {
       innerProps,
@@ -94,7 +94,7 @@ export default function ReactSelect(selectProps) {
         id={inputId}
         fullWidth
         InputProps={{
-          inputComponent,
+          inputComponent: 'div',
           inputProps: {
             children,
             ...innerProps,
@@ -134,7 +134,6 @@ export default function ReactSelect(selectProps) {
   }
 
   function Menu(props) {
-    // FIXME: exit timeout not working because component is unmounted?
     return (
       <Grow
         in={props.selectProps.menuIsOpen}
@@ -208,7 +207,10 @@ export default function ReactSelect(selectProps) {
     <Select
       components={replacedComponents}
       onMenuOpen={() => {
-        scrollbarWidth.current = window.innerWidth - document.body.clientWidth;
+        if (!menuToggle) {
+          scrollbarWidth.current =
+            window.innerWidth - document.body.clientWidth;
+        }
         document.body.style.overflow = 'hidden';
         document.body.style.paddingRight = `${scrollbarWidth.current}px`;
         setMenuToggle(true);
@@ -218,6 +220,7 @@ export default function ReactSelect(selectProps) {
         document.body.style.paddingRight = 0;
         setMenuToggle(false);
       }}
+      menuPlacement="auto"
       styles={selectStyles}
       placeholder="Type here to search..."
       value={selectProps.options.filter(
