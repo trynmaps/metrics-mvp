@@ -51,7 +51,7 @@ export default function ReactSelect(selectProps) {
 
   const isInitialMount = useRef(true);
   const menuStyle = useRef({});
-  const scrollbarWidth = useRef(window.innerWidth - document.body.clientWidth);
+  const scrollbarWidth = useRef(0);
   const [menuToggle, setMenuToggle] = useState(false);
 
   useEffect(() => {
@@ -61,10 +61,7 @@ export default function ReactSelect(selectProps) {
       let menuWidth = document.getElementById(`${selectProps.inputId}Menu`);
       if (menuWidth) {
         menuWidth = menuWidth.clientWidth;
-        const windowWidth =
-          window.innerWidth ||
-          document.documentElement.clientWidth ||
-          document.body.clientWidth;
+        const windowWidth = window.innerWidth;
         const rightWillSlice =
           textFieldRect.left + menuWidth + scrollbarWidth.current > windowWidth;
         const leftWillSlice = textFieldRect.right - menuWidth < 0;
@@ -87,7 +84,6 @@ export default function ReactSelect(selectProps) {
 
   function Control(props) {
     const {
-      innerRef: ref,
       innerProps,
       children,
       selectProps: { textFieldProps, inputId },
@@ -100,7 +96,6 @@ export default function ReactSelect(selectProps) {
         InputProps={{
           inputComponent,
           inputProps: {
-            ref,
             children,
             ...innerProps,
             className: classes.input,
@@ -168,7 +163,7 @@ export default function ReactSelect(selectProps) {
     return (
       <components.MenuList
         {...props}
-        maxHeight={`calc(100vh - ${textFieldRect.bottom}px - 16px)`}
+        maxHeight={`calc(${document.body.clientHeight}px - ${textFieldRect.bottom}px - 16px)`}
       >
         {props.children}
       </components.MenuList>
@@ -213,6 +208,7 @@ export default function ReactSelect(selectProps) {
     <Select
       components={replacedComponents}
       onMenuOpen={() => {
+        scrollbarWidth.current = window.innerWidth - document.body.clientWidth;
         document.body.style.overflow = 'hidden';
         document.body.style.paddingRight = `${scrollbarWidth.current}px`;
         setMenuToggle(true);
