@@ -14,12 +14,19 @@ class Agency:
         self.id = conf['id']
         self.provider = conf['provider']
         self.timezone_id = conf['timezone_id']
-        self.gtfs_url = conf.get("gtfs_url", None)
-        self.gtfs_agency_id = conf.get("gtfs_agency_id", None)
         self.tz = pytz.timezone(self.timezone_id)
+
+        self.gtfs_url = conf.get("gtfs_url", None)
+
+        # if the GTFS file at gtfs_url contains data for multiple transit agencies, gtfs_agency_id can be specified
+        # in the config to filter the routes with the matching agency_id
+        self.gtfs_agency_id = conf.get("gtfs_agency_id", None)
+
+        # allow OpenTransit's route id to be another field besides GTFS route_id, e.g. route_short_name.
+        # for Nextbus agencies, OpenTransit's route ID must be the same as Nextbus's route tag.
         self.route_id_gtfs_field = conf.get("route_id_gtfs_field", "route_id")
 
-        # for standard routes start each "day" at 3 AM local time so midnight-3am buses are associated with previous day
+        # by default, start each "day" at 3 AM local time so midnight-3am buses are associated with previous day
         self.default_day_start_hour = conf.get('default_day_start_hour', 3)
         self.custom_day_start_hours = conf.get('custom_day_start_hours', [])
 

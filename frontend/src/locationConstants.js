@@ -1,9 +1,11 @@
 // Name of the transit agency
+
 export const agencyTitle = 'SF Muni';
 export const agencyName = 'muni';
 
 // Default starting coordinates
 export const STARTING_COORDINATES = { lat: 37.7793, lng: -122.4193 };
+
 
 /*
 export const agencyTitle = 'Portland Streetcar';
@@ -22,7 +24,6 @@ export const agencyTitle = 'TTC';
 export const agencyName = 'ttc';
 export const STARTING_COORDINATES = { lat: 43.6858699, lng: -79.4127544 };
 */
-
 // List routes to not search for by default
 export const DefaultDisabledRoutes = [
   'PH',
@@ -219,26 +220,14 @@ export function generateArrivalsURL(dateStr, routeId) {
  *   - S due to lack of regular route and schedule
  *   - Owls due to the date boundary problem.
  * - Routes that have non-code issues with arrivals their first or last stop and so the second or penultimate stop
- *     should be used instead for end-to-end calculations.  Cable car lines are like this.  Also the M has a last
- *     stop that it normally does not go to.
+ *     should be used instead for end-to-end calculations.  Cable car lines are like this.
  * - Possibly special handling for routes with back end issues (currently 5, 9, 9R) as a temporary workaround.
  *   - The 9 has multiple terminals so use the last common stop.
  *   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
  */
 export const routeHeuristics = {
-  J: {
-    directionsToIgnore: ['J____I_D10'], // this is to 23rd and 3rd
-  },
-  L: {
-    directionsToIgnore: ['L____I_U53'],
-  },
-  M: {
-    M____O_D00: {
-      ignoreFirstStop: true, // Embarcadero & Folsom is not a real stop
-    },
-  },
   N: {
-    N____O_F10: {
+    '0': {
       ignoreFirstStop: true, // 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
     },
   },
@@ -246,20 +235,17 @@ export const routeHeuristics = {
     ignoreRoute: true,
   },
   '5': {
-    '5____I_F00': {
+    '1': {
       ignoreFirstStop: '4218', // no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
     },
   },
   '9': {
-    '9____I_N00': {
+    '1': {
       ignoreFirstStop: '7297', // use Bayshore as actual first stop (daytime)
     },
-    '9____O_N00': {
+    '0': {
       ignoreLastStop: '7297', // use Bayshore as actual terminal (daytime)
     },
-  },
-  '24': {
-    directionsToIgnore: ['24___I_D10'],
   },
   '90': {
     ignoreRoute: true,
@@ -283,20 +269,20 @@ export const routeHeuristics = {
     ignoreRoute: true,
   },
   PM: {
-    PM___O_F00: {
+    '0': {
       ignoreLastStop: true, // long time to Taylor and Bay (probably in holding area)
     },
-    PM___I_F00: {
-      ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
+    '1': {
+      ignoreFirstStop: true,
     },
   },
   PH: {
-    PH___I_F00: {
+    '1': {
       ignoreFirstStop: true, // 30 minutes from Hyde & Beach to Hyde & North Point
     },
   },
   C: {
-    C____I_F00: {
+    '1': {
       ignoreLastStop: true, // long time to California & Drumm (probably in holding area)
     },
   },
