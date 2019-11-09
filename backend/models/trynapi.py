@@ -5,6 +5,7 @@ import os
 import re
 import json
 import math
+import time
 from pathlib import Path
 from datetime import date
 
@@ -22,6 +23,12 @@ class CachedState:
             return json.loads(f.read())
 
 def get_state(agency, d: date, start_time, end_time, route_ids) -> CachedState:
+    # don't try to fetch historical vehicle data from the future
+    now = int(time.time())
+    if end_time > now:
+        end_time = now
+        print(f'end_time set to current time ({end_time})')
+
     # saves state to local file system, since keeping the state for all routes in memory
     # while computing arrival times causes causes Python to spend more time doing GC
     state = CachedState()
@@ -148,7 +155,7 @@ def get_state_raw(agency, start_time, end_time, route_ids):
 
     trynapi_url = os.environ.get('TRYNAPI_URL')
     if trynapi_url is None:
-        trynapi_url = "https://06o8rkohub.execute-api.us-west-2.amazonaws.com/dev"
+        trynapi_url = "http://tryn-api"
 
     print(f'fetching state from {trynapi_url}')
     print(params)
@@ -158,5 +165,9 @@ def get_state_raw(agency, start_time, end_time, route_ids):
 
     print(f"   response length = {len(r.text)}")
 
-    return json.loads(r.text)
+    try:
+        return json.loads(r.text)
+    except:
+        print(f'invalid response from {query_url}: {r.text}')
+        raise
 
