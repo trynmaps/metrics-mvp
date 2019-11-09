@@ -19,7 +19,7 @@ def produce_buses(route_state: dict) -> pd.DataFrame:
 
     # adjust each observation time for the number of seconds old the GPS location was when the observation was recorded
     # and convert time from milliseconds since Unix epoch to seconds since Unix epoch
-    buses['TIME'] = (buses['RAW_TIME'].astype(np.int64) - buses['AGE'].fillna(0)) #.astype(np.int64)
+    buses['TIME'] = (buses['RAW_TIME'] - buses['AGE'].fillna(0)) #.astype(np.int64)
 
     buses = buses.drop(['RAW_TIME','AGE'], axis=1)
     buses = buses.sort_values('TIME', axis=0)

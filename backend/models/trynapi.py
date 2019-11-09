@@ -125,16 +125,16 @@ def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> s
         raise Exception(f"Invalid route id: {route_id}")
 
     source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    return os.path.join(source_dir, 'data', f"state_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.json")
+    return os.path.join(source_dir, 'data', f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.json")
 
 def get_state_raw(agency, start_time, end_time, route_ids):
     tryn_agency = 'muni' if agency == 'sf-muni' else agency
 
-    params = f'state(agency: {json.dumps(tryn_agency)}, startTime: {json.dumps(str(int(start_time)))}, endTime: {json.dumps(str(int(end_time)))}, routes: {json.dumps(route_ids)})'
+    params = f'state(agencyId: {json.dumps(tryn_agency)}, startTime: {json.dumps(int(start_time))}, endTime: {json.dumps(int(end_time))}, routes: {json.dumps(route_ids)})'
 
     query = f"""{{
        {params} {{
-        agency
+        agencyId
         startTime
         routes {{
           routeId
