@@ -18,7 +18,6 @@ def produce_buses(route_state: dict) -> pd.DataFrame:
             .reindex(['RAW_TIME', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
 
     # adjust each observation time for the number of seconds old the GPS location was when the observation was recorded
-    # and convert time from milliseconds since Unix epoch to seconds since Unix epoch
     buses['TIME'] = (buses['RAW_TIME'] - buses['AGE'].fillna(0)) #.astype(np.int64)
 
     buses = buses.drop(['RAW_TIME','AGE'], axis=1)
