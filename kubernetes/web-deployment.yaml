@@ -25,6 +25,12 @@ spec:
         resources:
           requests:
             cpu: 0.03
+        env:
+          - name: OPENTRANSIT_CONFIG_YAML
+            valueFrom:
+              configMapKeyRef:
+                name: opentransit
+                key: opentransit_config_yaml
         ports:
           - name: http
             containerPort: 80

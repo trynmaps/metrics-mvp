@@ -157,16 +157,13 @@ def get_cache_path(agency_id: str, route_id: str, d: date, version = DefaultVers
 
     return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency_id}/{date_str}/arrivals_{version}_{agency_id}_{date_str}_{route_id}.json")
 
-def get_s3_bucket() -> str:
-    return 'opentransit-stop-arrivals'
-
 def get_s3_path(agency_id: str, route_id: str, d: date, version = DefaultVersion) -> str:
     if version is None:
         version = DefaultVersion
 
     date_str = str(d)
     date_path = d.strftime("%Y/%m/%d")
-    return f"{version}/{agency_id}/{date_path}/arrivals_{version}_{agency_id}_{date_str}_{route_id}.json.gz"
+    return f"arrivals/{version}/{agency_id}/{date_path}/arrivals_{version}_{agency_id}_{date_str}_{route_id}.json.gz"
 
 def get_by_date(agency_id: str, route_id: str, d: date, version = DefaultVersion) -> ArrivalHistory:
 
@@ -179,7 +176,7 @@ def get_by_date(agency_id: str, route_id: str, d: date, version = DefaultVersion
     except FileNotFoundError as err:
         pass
 
-    s3_bucket = get_s3_bucket()
+    s3_bucket = config.s3_bucket
     s3_path = get_s3_path(agency_id, route_id, d, version)
 
     s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
@@ -220,7 +217,7 @@ def save_for_date(history: ArrivalHistory, d: date, s3=False):
     if s3:
         s3 = boto3.resource('s3')
         s3_path = get_s3_path(agency_id, route_id, d, version)
-        s3_bucket = get_s3_bucket()
+        s3_bucket = config.s3_bucket
         print(f'saving to s3://{s3_bucket}/{s3_path}')
         object = s3.Object(s3_bucket, s3_path)
         object.put(

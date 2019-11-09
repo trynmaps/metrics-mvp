@@ -1,5 +1,7 @@
 // Name of the transit agency
 
+const config = window.OpentransitConfig;
+
 export const agencyTitle = 'SF Muni';
 export const agencyName = 'muni';
 
@@ -153,8 +155,10 @@ export const ServiceArea = {
   ],
 };
 
+const routesVersion = 'v3';
+
 // S3 link to routes
-export const routesUrl = `https://opentransit-precomputed-stats.s3.amazonaws.com/routes_v3_${agencyName}.json.gz?yy`;
+export const routesUrl = `https://${config.s3Bucket}.s3.amazonaws.com/routes/${routesVersion}/routes_${routesVersion}_${agencyName}.json.gz`;
 
 const tripTimesVersion = 'v1b';
 
@@ -166,7 +170,7 @@ const tripTimesVersion = 'v1b';
  * @returns {string} S3 url
  */
 export function generateTripURL(dateStr, statPath, timePath) {
-  return `https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/${tripTimesVersion}/${agencyName}/${dateStr.replace(
+  return `https://${config.s3Bucket}.s3.amazonaws.com/trip-times/${tripTimesVersion}/${agencyName}/${dateStr.replace(
     /-/g,
     '/',
   )}/trip-times_${tripTimesVersion}_${agencyName}_${dateStr}_${statPath}${timePath}.json.gz`;
@@ -182,7 +186,7 @@ const waitTimesVersion = 'v1b';
  * @returns {string} S3 url
  */
 export function generateWaitTimeURL(dateStr, statPath, timePath) {
-  return `https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/${waitTimesVersion}/${agencyName}/${dateStr.replace(
+  return `https://${config.s3Bucket}.s3.amazonaws.com/wait-times/${waitTimesVersion}/${agencyName}/${dateStr.replace(
     /-/g,
     '/',
   )}/wait-times_${waitTimesVersion}_${agencyName}_${dateStr}_${statPath}${timePath}.json.gz`;
@@ -197,7 +201,7 @@ const arrivalsVersion = 'v4b';
  * @returns {string} S3 url
  */
 export function generateArrivalsURL(dateStr, routeId) {
-  return `https://opentransit-stop-arrivals.s3.amazonaws.com/${arrivalsVersion}/${agencyName}/${dateStr.replace(
+  return `https://${config.s3Bucket}.s3.amazonaws.com/arrivals/${arrivalsVersion}/${agencyName}/${dateStr.replace(
     /-/g,
     '/',
   )}/arrivals_${arrivalsVersion}_${agencyName}_${dateStr}_${routeId}.json.gz`;

@@ -5,7 +5,7 @@ import re
 import requests
 from pathlib import Path
 import json
-from . import util
+from . import util, config
 
 def get_completed_trip_times(
     s1_trip_values, s1_departure_time_values,
@@ -109,7 +109,7 @@ def get_cached_trip_times(agency_id, d: date, stat_id: str, start_time_str = Non
     except FileNotFoundError as err:
         pass
 
-    s3_bucket = get_s3_bucket()
+    s3_bucket = config.s3_bucket
     s3_path = get_s3_path(agency_id, d, stat_id, start_time_str, end_time_str, version)
 
     s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
@@ -130,9 +130,6 @@ def get_cached_trip_times(agency_id, d: date, stat_id: str, start_time_str = Non
         f.write(r.text)
 
     return CachedTripTimes(data)
-
-def get_s3_bucket() -> str:
-    return 'opentransit-precomputed-stats'
 
 def get_time_range_path(start_time_str, end_time_str):
     if start_time_str is None and end_time_str is None:

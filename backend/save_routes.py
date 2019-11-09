@@ -371,13 +371,6 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
 
                 start_index = stop_geometry['after_index']
 
-        '''
-        if route_shape_ids is not None:
-            for i, shape_id in enumerate(route_shape_ids):
-                if shape_id not in used_shape_ids:
-                    print(f'  ? = {shape_id} (n={route_shape_id_counts[i]})')
-        '''
-
     if routes_data[0]['sort_order'] is not None:
         sort_key = lambda route_data: route_data['sort_order']
     else:
@@ -398,7 +391,7 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
     if save_to_s3:
         s3 = boto3.resource('s3')
         s3_path = routeconfig.get_s3_path(agency_id)
-        s3_bucket = routeconfig.get_s3_bucket()
+        s3_bucket = config.s3_bucket
         print(f'saving to s3://{s3_bucket}/{s3_path}')
         object = s3.Object(s3_bucket, s3_path)
         object.put(

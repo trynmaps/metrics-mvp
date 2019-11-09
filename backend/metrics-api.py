@@ -1,16 +1,9 @@
 import os
-from flask import Flask, send_from_directory, jsonify, request, Response
+from flask import Flask, send_from_directory, request, Response
 from flask_cors import CORS
 import json
-import numpy as np
-import pandas as pd
-import pytz
-from datetime import datetime, timedelta
-import time
-import requests
-import math
 import sys
-from models import metrics, util, arrival_history, wait_times, trip_times, constants, errors, schema
+from models import schema, config
 from flask_graphql import GraphQLView
 
 """
@@ -38,9 +31,14 @@ def make_error_response(params, error, status):
     }
     return Response(json.dumps(data, indent=2), status=status, mimetype='application/json')
 
-@app.route('/api/config', methods=['GET'])
-def config():
-    res = Response(json.dumps({"mapbox_access_token": os.environ.get('MAPBOX_ACCESS_TOKEN')}), mimetype='application/json')
+@app.route('/api/js_config', methods=['GET'])
+def js_config():
+    data = {
+        's3Bucket': config.s3_bucket,
+        'agencies': [{'id': agency.id} for agency in config.agencies]
+    }
+
+    res = Response(f'var OpentransitConfig = {json.dumps(data)};', mimetype='text/javascript')
     if not DEBUG:
         res.headers['Cache-Control'] = 'max-age=3600'
     return res

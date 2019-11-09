@@ -9,6 +9,8 @@ raw_config = yaml.safe_load(config_yaml)
 
 trynapi_url = raw_config.get("trynapi_url", "https://06o8rkohub.execute-api.us-west-2.amazonaws.com/dev")
 
+s3_bucket = raw_config.get("s3_bucket", 'opentransit-data')
+
 class Agency:
     def __init__(self, conf):
         self.id = conf['id']

@@ -1,5 +1,5 @@
 import re, os, time, requests, json
-from . import util
+from . import util, config
 
 DefaultVersion = 'v3'
 
@@ -75,10 +75,7 @@ def get_cache_path(agency_id, version=DefaultVersion):
     return f'{util.get_data_dir()}/routes_{version}_{agency_id}.json'
 
 def get_s3_path(agency_id, version=DefaultVersion):
-    return f'routes_{version}_{agency_id}.json.gz'
-
-def get_s3_bucket():
-    return 'opentransit-precomputed-stats'
+    return f'routes/{version}/routes_{version}_{agency_id}.json.gz'
 
 def get_route_list(agency_id, version=DefaultVersion):
     if re.match('^[\w\-]+$', agency_id) is None:
@@ -102,7 +99,7 @@ def get_route_list(agency_id, version=DefaultVersion):
     except FileNotFoundError as err:
         pass
 
-    s3_bucket = get_s3_bucket()
+    s3_bucket = config.s3_bucket
     s3_path = get_s3_path(agency_id, version)
 
     s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"

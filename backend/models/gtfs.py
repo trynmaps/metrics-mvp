@@ -153,7 +153,7 @@ class GtfsScraper:
 
     def upload_to_s3(self, s3_path: str, df: pd.DataFrame):
         client = boto3.client('s3')
-        s3_bucket = get_s3_bucket()
+        s3_bucket = config.s3_bucket
         search = client.list_objects(Bucket = s3_bucket, Prefix = s3_path)
 
         s3 = boto3.resource('s3')
@@ -260,9 +260,6 @@ def get_nextbus_stop_id(gtfs_stop_id: str, direction_id: int, routeconfig: nextb
         # for now just return nan (so it'll be effectively ignored)
         # TODO: deal with stops w/o direction (on nextbus)
         return np.nan
-
-def get_s3_bucket():
-    return f"opentransit-timetables"
 
 def get_schedule_dir():
     return f"{util.get_data_dir()}/{get_s3_bucket()}"

@@ -233,7 +233,7 @@ def compute_trip_times(d: date, agency: config.Agency, routes, save_to_s3=True, 
             if save_to_s3:
                 s3 = boto3.resource('s3')
                 s3_path = trip_times.get_s3_path(agency.id, d, stat_id, start_time_str, end_time_str)
-                s3_bucket = trip_times.get_s3_bucket()
+                s3_bucket = config.s3_bucket
                 print(f'saving to s3://{s3_bucket}/{s3_path}')
                 object = s3.Object(s3_bucket, s3_path)
                 object.put(

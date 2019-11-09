@@ -20,11 +20,13 @@ if __name__ == '__main__':
 
     agencies = [config.get_agency(args.agency)] if args.agency is not None else config.agencies
 
-    s3_bucket = wait_times.get_s3_bucket()
+    s3_bucket = config.s3_bucket
+
+    version = 'v1'
 
     for agency in agencies:
         agency_id = agency.id
-        s3_path = f"state_{agency_id}_v1.json"
+        s3_path = f"state/{version}/state_{version}_{agency_id}.json"
 
         def save_state(state):
             state_str = json.dumps(state)
