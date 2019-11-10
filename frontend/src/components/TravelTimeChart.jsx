@@ -61,7 +61,7 @@ function TravelTimeChart(props) {
     const routeId = props.routeId || graphParams.routeId;
     directionId = props.directionId || graphParams.directionId; // also take direction_id from props if given
 
-    if (directionId) {
+    if (directionId != null) {
       tripTimeForDirection = getEndToEndTripTime(
         props.tripCacheTimes,
         graphParams,
@@ -69,6 +69,7 @@ function TravelTimeChart(props) {
         routeId,
         directionId,
       );
+      //console.log("tripTimeForDirection "+directionId+ " = " + tripTimeForDirection);
 
       /* this is the end-to-end speed in the selected direction, not currently used
     if (dist <= 0 || Number.isNaN(tripTime)) { speed = "?"; } // something wrong with the data here
@@ -79,6 +80,7 @@ function TravelTimeChart(props) {
     }
 
     tripData = getTripDataSeries(props, routeId, directionId);
+    console.log(tripData);
   }
 
   const legendItems = [
@@ -137,7 +139,7 @@ function TravelTimeChart(props) {
               strokeWidth="4"
               style={{
                 strokeDasharray: '2 2'
-              }}             
+              }}
             /> */}
 
             <ChartLabel

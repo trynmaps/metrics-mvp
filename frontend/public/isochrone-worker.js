@@ -19,14 +19,18 @@ const EarthRadius = 6371000;
 const MaxWalkRadius = 1800;
 const FirstStopMinWaitMinutes = 1.0;
 
-const TripTimesVersion = 'v1b';
-const WaitTimesVersion = 'v1b';
-
 let curComputeId = null;
 let tripTimesCache = {};
 let waitTimesCache = {};
-let baseUrl = thisUrl.searchParams.get('base');
-let routesUrl = thisUrl.searchParams.get('routes_url');
+
+// todo: support multiple agencies on one map
+const agencyId = thisUrl.searchParams.get('agency_id');
+
+const WaitTimesVersion = thisUrl.searchParams.get('wait_times_version');
+const TripTimesVersion = thisUrl.searchParams.get('trip_times_version');
+const RoutesVersion = thisUrl.searchParams.get('routes_version');
+const BaseUrl = thisUrl.searchParams.get('base');
+const S3Bucket = thisUrl.searchParams.get('s3_bucket');
 
 function loadJson(url)
 {
@@ -62,7 +66,7 @@ function loadRoutes()
     }
     else
     {
-        return loadJson(routesUrl).then(function(data) {
+        return loadJson(`https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz`).then(function(data) {
             allRoutes = data.routes;
             return allRoutes;
         });
@@ -121,20 +125,21 @@ function getTimePath(timeStr)
     return timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_').replace(/\+/g,'%2B')) : '';
 }
 
-async function getTripTimesFromStop(routeId, directionId, startStopId, dateStr, timeStr, stat)
+async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId, dateStr, timeStr, stat)
 {
-    let tripTimes = tripTimesCache[dateStr + timeStr + stat];
+    const cacheKey = agencyId + dateStr + timeStr + stat;
+    let tripTimes = tripTimesCache[cacheKey];
 
     if (!tripTimes)
     {
         let timePath = getTimePath(timeStr);
         let statPath = getStatPath(stat);
 
-        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/trip-times/'+TripTimesVersion+'/sf-muni/'+
+        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/trip-times/'+TripTimesVersion+'/'+agencyId+'/'+
             dateStr.replace(/\-/g, '/')+
-            '/trip-times_'+TripTimesVersion+'_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+            '/trip-times_'+TripTimesVersion+'_'+agencyId+'_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
-        tripTimes = tripTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
+        tripTimes = tripTimesCache[cacheKey] = await loadJson(s3Url).catch(function(e) {
             e.message = 'error loading trip times: ' + e.message;
             sendError(e);
             throw e;
@@ -196,22 +201,24 @@ function getStatPath(stat)
     }
 }
 
-async function getWaitTimeAtStop(routeId, directionId, stopId, dateStr, timeStr, stat)
+async function getWaitTimeAtStop(agencyId, routeId, directionId, stopId, dateStr, timeStr, stat)
 {
-    let waitTimes = waitTimesCache[dateStr + timeStr + stat];
+    const cacheKey = dateStr + timeStr + stat;
+
+    let waitTimes = waitTimesCache[cacheKey];
 
     if (!waitTimes)
     {
         var timePath = getTimePath(timeStr);
         let statPath = getStatPath(stat);
 
-        let s3Url = 'https://opentransit-precomputed-stats.s3.amazonaws.com/wait-times/'+WaitTimesVersion+'/sf-muni/'+
+        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/wait-times/'+WaitTimesVersion+'/'+agencyId+'/'+
             dateStr.replace(/\-/g, '/')+
-            '/wait-times_'+WaitTimesVersion+'_sf-muni_'+dateStr+'_'+statPath+timePath+'.json.gz';
+            '/wait-times_'+WaitTimesVersion+'_'+agencyId+'_'+dateStr+'_'+statPath+timePath+'.json.gz';
 
         //console.log(s3Url);
 
-        waitTimes = waitTimesCache[dateStr + timeStr + stat] = await loadJson(s3Url).catch(function(e) {
+        waitTimes = waitTimesCache[cacheKey] = await loadJson(s3Url).catch(function(e) {
             e.message = 'error loading wait times: ' + e.message;
             sendError(e);
             throw e;
@@ -337,7 +344,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
 
             let stopInfo = routeInfo.stops[stopId];
 
-            let waitMin = await getWaitTimeAtStop(routeInfo.id, direction.id, stopId, dateStr, timeStr, stat);
+            let waitMin = await getWaitTimeAtStop(agencyId, routeInfo.id, direction.id, stopId, dateStr, timeStr, stat);
             if (!waitMin)
             {
                 return;
@@ -345,7 +352,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
 
             let departureMin = tripMin + waitMin;
 
-            let tripTimes = await getTripTimesFromStop(routeInfo.id, direction.id, stopId, dateStr, timeStr, stat);
+            let tripTimes = await getTripTimesFromStop(agencyId, routeInfo.id, direction.id, stopId, dateStr, timeStr, stat);
             if (!tripTimes)
             {
                 return;

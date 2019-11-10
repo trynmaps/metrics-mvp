@@ -33,9 +33,19 @@ def make_error_response(params, error, status):
 
 @app.route('/api/js_config', methods=['GET'])
 def js_config():
+
+    if DEBUG:
+        config.load_agencies() # agency config may have changed on disk
+
     data = {
         's3Bucket': config.s3_bucket,
-        'agencies': [{'id': agency.id} for agency in config.agencies]
+        'agencies': [
+            {
+                'id': agency.id,
+                'timezoneId': agency.timezone_id,
+                **agency.js_properties,
+            } for agency in config.agencies
+        ]
     }
 
     res = Response(f'var OpentransitConfig = {json.dumps(data)};', mimetype='text/javascript')

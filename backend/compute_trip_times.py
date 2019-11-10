@@ -68,6 +68,9 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
 
     route_id = route_config.id
 
+    sid_values = route_df['SID'].values
+    did_values = route_df['DID'].values
+
     for interval_index, _ in enumerate(timestamp_intervals):
         for stat_id in stat_ids:
             all_trip_time_stats[interval_index][stat_id][route_id] = {}
@@ -87,7 +90,7 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
         arrival_time_values_by_stop = {}
 
         for stop_id in stop_ids:
-            stop_df = route_df[route_df['SID'] == stop_id]
+            stop_df = route_df[(sid_values == stop_id) & (did_values == dir_id)]
 
             trip_values = stop_df['TRIP'].values
 

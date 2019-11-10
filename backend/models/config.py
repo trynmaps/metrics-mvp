@@ -15,7 +15,12 @@ class Agency:
     def __init__(self, conf):
         self.id = conf['id']
         self.provider = conf['provider']
+
+        # ID of the time zone that the transit agency operates in.
+        # (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones )
         self.timezone_id = conf['timezone_id']
+
+        self.js_properties = conf.get('js_properties', {})
         self.tz = pytz.timezone(self.timezone_id)
 
         self.gtfs_url = conf.get("gtfs_url", None)
@@ -51,6 +56,14 @@ providers_map = {
     "nextbus": NextbusAgency
 }
 
+agencies = None
+agencies_map = None
+
+def load_agencies():
+    global agencies, agencies_map
+    agencies = [make_agency(agency_conf) for agency_conf in raw_config["agencies"]]
+    agencies_map = {agency.id: agency for agency in agencies}
+
 def make_agency(conf):
     agency_id = conf['id']
     if re.match('^[\w\-]+$', agency_id) is None:
@@ -67,9 +80,7 @@ def make_agency(conf):
     agency_cls = providers_map.get(provider, Agency)
     return agency_cls(conf)
 
-agencies = [make_agency(agency_conf) for agency_conf in raw_config["agencies"]]
-
-agencies_map = {agency.id: agency for agency in agencies}
+load_agencies()
 
 def get_agency(id):
     if id not in agencies_map:

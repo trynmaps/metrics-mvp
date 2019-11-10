@@ -257,49 +257,34 @@ def find_arrivals(agency: config.Agency, route_state: dict, route_config: routec
 
     compute_distances_to_all_stops()
 
-    valid_buses_by_direction = {}
-
     print(f'{route_id}: {round(time.time() - t0, 1)} computing possible arrivals')
 
-    for stop_id in route_config.get_stop_ids():
-        stop_info = route_config.get_stop_info(stop_id)
+    for dir_info in route_config.get_direction_infos():
 
-        stop_direction_ids = route_config.get_directions_for_stop(stop_id)
-        if len(stop_direction_ids) == 0:
-            continue
-
-        first_direction = stop_direction_ids[0]
+        direction_id = dir_info.id
 
         # exclude times of day when bus is not making stops in this direction
         # (e.g. commuter express routes that only serve one direction in the morning/afternoon)
-        if first_direction in valid_buses_by_direction:
-            valid_buses = valid_buses_by_direction[first_direction]
-        else:
-            valid_buses = buses
-            for start_time_str, end_time_str in get_invalid_direction_times(agency, route_config, first_direction):
-                if start_time_str is not None:
-                    invalid_start_timestamp = util.get_localized_datetime(d, start_time_str, tz).timestamp()
-                    print(f"excluding buses after {invalid_start_timestamp} ({start_time_str}) for direction {first_direction}")
-                    valid_buses = valid_buses[valid_buses['TIME'] < invalid_start_timestamp]
-                if end_time_str is not None:
-                    invalid_end_timestamp = util.get_localized_datetime(d, end_time_str, tz).timestamp()
-                    print(f"excluding buses before {invalid_end_timestamp} ({end_time_str}) for direction {first_direction}")
-                    valid_buses = valid_buses[valid_buses['TIME'] >= invalid_end_timestamp]
-            valid_buses_by_direction[first_direction] = valid_buses
+        valid_buses = buses
+        for start_time_str, end_time_str in get_invalid_direction_times(agency, route_config, direction_id):
+            if start_time_str is not None:
+                invalid_start_timestamp = util.get_localized_datetime(d, start_time_str, tz).timestamp()
+                print(f"excluding buses after {invalid_start_timestamp} ({start_time_str}) for direction {direction_id}")
+                valid_buses = valid_buses[valid_buses['TIME'] < invalid_start_timestamp]
+            if end_time_str is not None:
+                invalid_end_timestamp = util.get_localized_datetime(d, end_time_str, tz).timestamp()
+                print(f"excluding buses before {invalid_end_timestamp} ({end_time_str}) for direction {direction_id}")
+                valid_buses = valid_buses[valid_buses['TIME'] >= invalid_end_timestamp]
 
-        is_terminal = False
-        stop_indexes = []
-        radius = 200
-        adjacent_stop_ids = []
+        dir_stops = dir_info.get_stop_ids()
+        num_dir_stops = len(dir_stops)
 
-        for stop_direction_id in stop_direction_ids:
-            dir_info = route_config.get_direction_info(stop_direction_id)
-            dir_stops = dir_info.get_stop_ids()
-            stop_index = dir_stops.index(stop_id)
+        for stop_index, stop_id in enumerate(dir_stops):
+            stop_info = route_config.get_stop_info(stop_id)
 
-            stop_indexes.append(stop_index)
-
-            num_dir_stops = len(dir_stops)
+            is_terminal = False
+            radius = 200
+            adjacent_stop_ids = []
 
             is_terminal = (stop_index == 0) or (stop_index == num_dir_stops - 1)
 
@@ -320,29 +305,19 @@ def find_arrivals(agency: config.Agency, route_state: dict, route_config: routec
                 distance_to_adjacent_stop = util.haver_distance(stop_info.lat, stop_info.lon, adjacent_stop_info.lat, adjacent_stop_info.lon)
                 radius = min(radius, round(distance_to_adjacent_stop))
 
-        #dirs_text = [f'{d}[{i}]' for d, i in zip(stop_direction_ids, stop_indexes)]
-        #print(f"{route_id}: {round(time.time() - t0, 1)} computing arrivals at stop {stop_id} {','.join(dirs_text)}  radius {radius} m  {'(terminal)' if is_terminal else ''}")
+            #dirs_text = [f'{d}[{i}]' for d, i in zip(stop_direction_ids, stop_indexes)]
+            #print(f"{route_id}: {round(time.time() - t0, 1)} computing arrivals at stop {stop_id} {','.join(dirs_text)}  radius {radius} m  {'(terminal)' if is_terminal else ''}")
 
-        use_reported_direction = (len(stop_direction_ids) > 1)
+            possible_arrivals = get_possible_arrivals_for_stop(valid_buses, stop_id,
+                direction_id=direction_id,
+                stop_index=stop_index,
+                adjacent_stop_ids=adjacent_stop_ids,
+                radius=radius,
+                is_terminal=is_terminal,
+                use_reported_direction=False
+            )
 
-        possible_arrivals = get_possible_arrivals_for_stop(valid_buses, stop_id,
-            direction_id=stop_direction_ids[0],
-            stop_index=stop_indexes[0],
-            adjacent_stop_ids=adjacent_stop_ids,
-            radius=radius,
-            is_terminal=is_terminal,
-            use_reported_direction=use_reported_direction
-        )
-
-        if use_reported_direction:
-            # if the stop has multiple directions, assume that the bus is going the direction
-            # it said it was going on Nextbus, if valid. if the bus is not reporting a valid direction
-            # for this stop, just use the first one
-            direction_conditions = [possible_arrivals['DID'] == did for did in stop_direction_ids]
-            possible_arrivals['DID'] = np.select(direction_conditions, stop_direction_ids, default = stop_direction_ids[0])
-            possible_arrivals['STOP_INDEX'] = np.select(direction_conditions, stop_indexes, default = stop_indexes[0])
-
-        possible_arrivals_arr.append(possible_arrivals)
+            possible_arrivals_arr.append(possible_arrivals)
 
     def concat_possible_arrivals():
         return pd.concat(possible_arrivals_arr, ignore_index=True)

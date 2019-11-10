@@ -1,6 +1,5 @@
 /* eslint-disable no-case-declarations */
 import Moment from 'moment';
-import { agencyName } from '../locationConstants';
 
 const momentYesterday = Moment(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -9,7 +8,7 @@ export const initialState = {
   routes: null,
   spiderSelection: [],
   graphParams: {
-    agencyId: agencyName,
+    agencyId: null,
     routeId: null,
     directionId: null,
     startStopId: null,

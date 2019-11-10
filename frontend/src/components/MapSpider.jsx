@@ -21,12 +21,13 @@ import {
   milesBetween,
 } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
+import { Agencies } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 import MapShield from './MapShield';
 
-import { STARTING_COORDINATES } from '../locationConstants';
+//import { STARTING_COORDINATES } from '../locationConstants1';
+// const ZOOM = 13;
 
-const ZOOM = 13;
 const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
 
 // Displays alert when an invalid location is set
@@ -48,6 +49,11 @@ class MapSpider extends Component {
 
   constructor(props) {
     super(props);
+
+    // for now, only supports 1 agency at a time.
+    // todo: support multiple agencies on one map
+    this.agency = Agencies[0];
+
     this.state = {
       // Should be true by default, so that we don't display the snackbar
       isValidLocation: true,
@@ -360,7 +366,7 @@ class MapSpider extends Component {
     //   }),
     // });
     // Set whether the location is valid
-    this.setState({ isValidLocation: isInServiceArea(latlng) });
+    this.setState({ isValidLocation: isInServiceArea(this.agency.id, latlng) });
 
     const stops = this.findStops(latlng); // note: all lowercase name in event.
 
@@ -470,10 +476,10 @@ class MapSpider extends Component {
       <div>
         <ValidLocationAlert showAlert={!isValidLocation} />
         <Map
-          center={position || STARTING_COORDINATES}
-          zoom={zoom || ZOOM}
+          center={position || this.agency.initialMapCenter}
+          zoom={zoom || this.agency.initialMapZoom}
           style={mapClass}
-          minZoom={11}
+          minZoom={5}
           maxZoom={18}
           onClick={this.handleMapClick}
           onLocationfound={this.handleLocationFound}

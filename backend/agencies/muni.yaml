@@ -8,3 +8,215 @@ default_day_start_hour: 3
 custom_day_start_hours:
   - start_hour: 0 # owl routes run from 1AM to 5AM so they are associated with the same day
     routes: ['90', '91', 'K_OWL', 'L_OWL', 'M_OWL', 'N_OWL', 'T_OWL']
+js_properties:
+  title: SF Muni
+  initialMapCenter: { lat: 37.7793, lng: -122.4193 }
+  initialMapZoom: 13
+  defaultDisabledRoutes: [
+      'PH',
+      'C',
+      'PM',
+      'K_OWL',
+      'L_OWL',
+      'M_OWL',
+      'N_OWL',
+      'T_OWL',
+      '41',
+      '88',
+      '90',
+      '91',
+      '714',
+      'S',
+      'NX',
+      '1AX',
+      '1BX',
+      '7X',
+      '8AX',
+      '8BX',
+      '14X',
+      '30X',
+      '31AX',
+      '31BX',
+      '38AX',
+      '38BX',
+      '81X',
+      '82X',
+      '83X',
+    ]
+  serviceArea: {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-122.473526, 37.809919],
+                [-122.478332, 37.809919],
+                [-122.486915, 37.790116],
+                [-122.500991, 37.789302],
+                [-122.509231, 37.788217],
+                [-122.516784, 37.780348],
+                [-122.507514, 37.720898],
+                [-122.499618, 37.689525],
+                [-122.389411, 37.690612],
+                [-122.390785, 37.706775],
+                [-122.371559, 37.708133],
+                [-122.378082, 37.711121],
+                [-122.370529, 37.718454],
+                [-122.361946, 37.715195],
+                [-122.355766, 37.720355],
+                [-122.355422, 37.730131],
+                [-122.367782, 37.734204],
+                [-122.364692, 37.739634],
+                [-122.372589, 37.747507],
+                [-122.373619, 37.752393],
+                [-122.379455, 37.754022],
+                [-122.382545, 37.789031],
+                [-122.399368, 37.808020],
+                [-122.410011, 37.811818],
+                [-122.420310, 37.812089],
+                [-122.463569, 37.805850],
+                [-122.473526, 37.809919],
+              ],
+            ],
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-122.373962, 37.808427],
+                [-122.360916, 37.806528],
+                [-122.359542, 37.808156],
+                [-122.359542, 37.815751],
+                [-122.368469, 37.814123],
+                [-122.368469, 37.815751],
+                [-122.360229, 37.820090],
+                [-122.367782, 37.831480],
+                [-122.373619, 37.832835],
+                [-122.379112, 37.830666],
+                [-122.380485, 37.827954],
+                [-122.372245, 37.815751],
+                [-122.373962, 37.808427],
+              ],
+            ],
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-122.475929, 37.842190],
+                [-122.552490, 37.840427],
+                [-122.551116, 37.833378],
+                [-122.540817, 37.831480],
+                [-122.536697, 37.826327],
+                [-122.538414, 37.824158],
+                [-122.528800, 37.813852],
+                [-122.527427, 37.819276],
+                [-122.522964, 37.824700],
+                [-122.515068, 37.824700],
+                [-122.499618, 37.818734],
+                [-122.490692, 37.826327],
+                [-122.480735, 37.825514],
+                [-122.471809, 37.831208],
+                [-122.471122, 37.838258],
+                [-122.475929, 37.842190],
+              ],
+            ],
+          },
+        },
+      ],
+    }
+ #
+ # Returns a data object with centralized declarations of "per route" heuristic rules
+ # to apply when doing systemwide computations.
+ #
+ # For example, for routes with directions that should be ignored:
+ #
+ # {
+ #   <routeID>: {
+ #     directionsToIgnore: [<directionID>]
+ #   }
+ # }
+ #
+ # Other cases:
+ # - Routes to filter out completely:
+ #   - S due to lack of regular route and schedule
+ #   - Owls due to the date boundary problem.
+ # - Routes that have non-code issues with arrivals their first or last stop and so the second or penultimate stop
+ #     should be used instead for end-to-end calculations.  Cable car lines are like this.
+ # - Possibly special handling for routes with back end issues (currently 5, 9, 9R) as a temporary workaround.
+ #   - The 9 has multiple terminals so use the last common stop.
+ #   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
+  routeHeuristics: {
+      N: {
+        '0': {
+          ignoreFirstStop: true, # 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
+        },
+      },
+      S: {
+        ignoreRoute: true,
+      },
+      '5': {
+        '1': {
+          ignoreFirstStop: '4218', # no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
+        },
+      },
+      '9': {
+        '1': {
+          ignoreFirstStop: '7297', # use Bayshore as actual first stop (daytime)
+        },
+        '0': {
+          ignoreLastStop: '7297', # use Bayshore as actual terminal (daytime)
+        },
+      },
+      '90': {
+        ignoreRoute: true,
+      },
+      '91': {
+        ignoreRoute: true,
+      },
+      K_OWL: {
+        ignoreRoute: true,
+      },
+      L_OWL: {
+        ignoreRoute: true,
+      },
+      M_OWL: {
+        ignoreRoute: true,
+      },
+      N_OWL: {
+        ignoreRoute: true,
+      },
+      T_OWL: {
+        ignoreRoute: true,
+      },
+      PM: {
+        '0': {
+          ignoreLastStop: true, # long time to Taylor and Bay (probably in holding area)
+        },
+        '1': {
+          ignoreFirstStop: true,
+        },
+      },
+      PH: {
+        '1': {
+          ignoreFirstStop: true, # 30 minutes from Hyde & Beach to Hyde & North Point
+        },
+      },
+      C: {
+        '1': {
+          ignoreLastStop: true, # long time to California & Drumm (probably in holding area)
+        },
+      },
+    }

@@ -123,6 +123,8 @@ def compute_wait_times(d: date, agency: config.Agency, routes, save_to_s3=True, 
 
         df = history.get_data_frame()
         df = df.sort_values('TIME', axis=0)
+        sid_values = df['SID'].values
+        did_values = df['DID'].values
 
         for dir_info in route_config.get_direction_infos():
 
@@ -133,10 +135,9 @@ def compute_wait_times(d: date, agency: config.Agency, routes, save_to_s3=True, 
                     all_wait_time_stats[interval_index][stat_id][route_id][dir_id] = {}
 
             stop_ids = dir_info.get_stop_ids()
-            sid_values = df['SID'].values
 
             for i, stop_id in enumerate(stop_ids):
-                stop_df = df[sid_values == stop_id]
+                stop_df = df[(sid_values == stop_id) & (did_values == dir_id)]
 
                 all_time_values = stop_df['TIME'].values
 

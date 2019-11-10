@@ -1,4 +1,5 @@
 import { handleGraphParams } from './actions';
+import { Agencies } from './config';
 import { ROUTE, DIRECTION, FROM_STOP, TO_STOP } from './routeUtil';
 
 export default {
@@ -20,8 +21,10 @@ export default {
       const { location } = getState();
       const { routeId, directionId, startStopId, endStopId } = location.payload;
 
+      // todo: add agency to path to support multiple agencies
       dispatch(
         handleGraphParams({
+          agencyId: Agencies[0].id,
           routeId,
           directionId,
           startStopId,

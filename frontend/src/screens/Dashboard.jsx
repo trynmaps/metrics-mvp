@@ -4,20 +4,26 @@ import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 
 import { connect } from 'react-redux';
+import { Agencies } from '../config';
 import MapSpider from '../components/MapSpider';
 import RouteTable from '../components/RouteTable';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { agencyTitle } from '../locationConstants';
-import { fetchRoutes } from '../actions';
+import { fetchRoutes, handleGraphParams } from '../actions';
 
 function Dashboard(props) {
-  const { routes, myFetchRoutes } = props;
+  const { routes, myFetchRoutes, myHandleGraphParams } = props;
+
+  // for now, only supports 1 agency at a time.
+  // todo: support multiple agencies on one map
+  const agency = Agencies[0];
 
   useEffect(() => {
+    myHandleGraphParams({agencyId: agency.id}); // temporary hack, probably should remove once frontend can show routes from multiple agencies at once
+
     if (!routes) {
-      myFetchRoutes();
+      myFetchRoutes({agencyId: agency.id});
     }
   }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
@@ -26,7 +32,7 @@ function Dashboard(props) {
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className="page-title">{agencyTitle}</div>
+          <div className="page-title">{agency.title}</div>
           <DateTimePanel />
         </Toolbar>
       </AppBar>
@@ -50,7 +56,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: () => dispatch(fetchRoutes()),
+  myFetchRoutes: props => dispatch(fetchRoutes(props)),
+  myHandleGraphParams: props => dispatch(handleGraphParams(props)),
 });
 
 export default connect(

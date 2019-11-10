@@ -9,11 +9,11 @@ import MapStops from '../components/MapStops';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
+import { getAgency } from '../config';
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 
 import { fetchRoutes } from '../actions';
-import { agencyTitle } from '../locationConstants';
 
 function RouteScreen(props) {
   const {
@@ -26,16 +26,21 @@ function RouteScreen(props) {
     myFetchRoutes,
   } = props;
 
+  const agencyId = graphParams ? graphParams.agencyId : null;
+
   useEffect(() => {
-    if (!routes) {
-      myFetchRoutes();
+    if (!routes && agencyId) {
+      myFetchRoutes({agencyId: agencyId});
     }
-  }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
+  }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
+
+  const agency = getAgency(agencyId);
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
-      ? routes.find(route => route.id === graphParams.routeId)
+      ? routes.find(route => (route.id === graphParams.routeId && route.agencyId == agencyId))
       : null;
+
   const direction =
     selectedRoute && graphParams.directionId
       ? selectedRoute.directions.find(
@@ -57,7 +62,7 @@ function RouteScreen(props) {
         <Toolbar>
           <SidebarButton />
           <div className="page-title">
-            {agencyTitle}
+            {agency ? agency.title : null}
             {selectedRoute ? ` > ${selectedRoute.title}` : null}
             {direction ? ` > ${direction.title}` : null}
             &nbsp;
@@ -87,7 +92,6 @@ function RouteScreen(props) {
             />
           ) : (
             /* if no graph data, show the info summary component */
-
             <RouteSummary />
           )}
         </Grid>
@@ -106,7 +110,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: () => dispatch(fetchRoutes()),
+  myFetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
 export default connect(

@@ -15,7 +15,8 @@ import {
   getTripTimesForDirection,
   getAverageOfMedianWaitStat,
 } from './precomputed';
-import { routeHeuristics } from '../locationConstants';
+//import { routeHeuristics } from '../locationConstants3';
+const routeHeuristics = {};
 
 /**
  * Given an array of routes, return only the routes we want to show.
@@ -92,11 +93,12 @@ function getTripTimesUsingHeuristics(
   );
 
   if (!tripTimesForDir || !routes) {
-    // console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
+    //console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
     return { tripTimesForFirstStop: null, directionInfo: null };
   }
-  // console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
+
+  //console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
 
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
@@ -121,8 +123,8 @@ function getTripTimesUsingHeuristics(
   // if this stop doesn't have trip times (like the oddball J direction going to the yard, which we currently ignore)
   // then find the stop with the most trip time entries
 
-  if (!tripTimesForFirstStop) {
-    // console.log("No trip times found for " + routeId + " from stop " + firstStop + ".  Using stop with most entries.");
+  if (!tripTimesForFirstStop || !Object.keys(tripTimesForFirstStop).length) {
+    //console.log("No trip times found for " + routeId + " from stop " + firstStop + ".  Using stop with most entries.");
     tripTimesForFirstStop = Object.values(tripTimesForDir).reduce(
       (accumulator, currentValue) =>
         Object.values(currentValue).length > Object.values(accumulator).length
@@ -227,6 +229,7 @@ export function getTripDataSeries(props, routeId, directionId) {
   );
 
   if (!tripTimesForFirstStop) {
+    //console.log('no trip times for first stop ' + routeId + ' ' + directionId);
     return [];
   } // no precomputed times
 
@@ -240,16 +243,18 @@ export function getTripDataSeries(props, routeId, directionId) {
 
   directionInfo.stops.slice(1).map((stop, index) => {
     if (!directionInfo.stop_geometry[stop]) {
-      // console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
-    }
-    if (tripTimesForFirstStop[stop] && directionInfo.stop_geometry[stop]) {
+      //console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
+    } else if (tripTimesForFirstStop[stop]) {
       dataSeries.push({
         x: metersToMiles(directionInfo.stop_geometry[stop].distance),
         y: tripTimesForFirstStop[stop][1], // median
         title: route.stops[stop].title,
         stopIndex: index,
       });
-    }
+    } /* else {
+      console.log('no trip times for first stop ' + routeId + ' ' + directionId + ' ' + stop);
+    } */
+
     return null;
   });
 
