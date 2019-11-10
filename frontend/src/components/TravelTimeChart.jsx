@@ -63,13 +63,12 @@ function TravelTimeChart(props) {
 
     if (directionId != null) {
       tripTimeForDirection = getEndToEndTripTime(
-        props.tripCacheTimes,
+        props.tripTimesCache,
         graphParams,
         props.routes,
         routeId,
         directionId,
       );
-      //console.log("tripTimeForDirection "+directionId+ " = " + tripTimeForDirection);
 
       /* this is the end-to-end speed in the selected direction, not currently used
     if (dist <= 0 || Number.isNaN(tripTime)) { speed = "?"; } // something wrong with the data here
@@ -80,7 +79,6 @@ function TravelTimeChart(props) {
     }
 
     tripData = getTripDataSeries(props, routeId, directionId);
-    console.log(tripData);
   }
 
   const legendItems = [

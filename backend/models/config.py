@@ -11,14 +11,19 @@ trynapi_url = raw_config.get("trynapi_url", "https://06o8rkohub.execute-api.us-w
 
 s3_bucket = raw_config.get("s3_bucket", 'opentransit-data')
 
+agency_ids = raw_config.get("agency_ids", [])
+
 class Agency:
     def __init__(self, conf):
         self.id = conf['id']
-        self.provider = conf['provider']
+        self.provider = conf.get('provider', 'default')
 
         # ID of the time zone that the transit agency operates in.
         # (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones )
         self.timezone_id = conf['timezone_id']
+
+        # list of objects with start_time/end_time/directions properties; directions is an array of (route id, direction id) tuples
+        self.invalid_direction_times = conf.get('invalid_direction_times', [])
 
         self.js_properties = conf.get('js_properties', {})
         self.tz = pytz.timezone(self.timezone_id)
@@ -53,6 +58,7 @@ class NextbusAgency(Agency):
         self.nextbus_id = conf["nextbus_agency_id"]
 
 providers_map = {
+    "default": Agency,
     "nextbus": NextbusAgency
 }
 
@@ -61,23 +67,23 @@ agencies_map = None
 
 def load_agencies():
     global agencies, agencies_map
-    agencies = [make_agency(agency_conf) for agency_conf in raw_config["agencies"]]
+    agencies = [make_agency(agency_id) for agency_id in agency_ids]
     agencies_map = {agency.id: agency for agency in agencies}
 
-def make_agency(conf):
-    agency_id = conf['id']
+def make_agency(agency_id):
     if re.match('^[\w\-]+$', agency_id) is None:
         raise Exception(f"Invalid agency: {agency_id}")
 
-    # if agency has 'provider' key, use the agency config defined in the environment,
-    # otherwise, load agency config from YAML file in /agencies/ directory
-    if 'provider' not in conf:
-        agency_path = f'{os.path.dirname(os.path.dirname(__file__))}/agencies/{agency_id}.yaml'
-        with open(agency_path) as f:
-            conf = yaml.safe_load(f)
+    agency_path = f'{os.path.dirname(os.path.dirname(__file__))}/agencies/{agency_id}.yaml'
+    with open(agency_path) as f:
+        conf = yaml.safe_load(f)
 
-    provider = conf["provider"]
-    agency_cls = providers_map.get(provider, Agency)
+    provider = conf.get('provider', 'default')
+
+    if provider not in providers_map:
+        raise Exception("Invalid provider for agency {agency_id}: {provider}")
+
+    agency_cls = providers_map[provider]
     return agency_cls(conf)
 
 load_agencies()

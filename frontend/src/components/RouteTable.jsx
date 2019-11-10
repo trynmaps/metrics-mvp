@@ -276,7 +276,7 @@ function RouteTable(props) {
   });
 
   return (
-    <div className={classes.root}>
+    <div>
         <EnhancedTableToolbar numSelected={0} />
         <div className={classes.tableWrapper}>
           <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>

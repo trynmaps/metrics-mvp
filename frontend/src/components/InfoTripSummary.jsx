@@ -62,10 +62,12 @@ export default function InfoTripSummary(props) {
       const startIndex = directionInfo.stops.indexOf(myGraphParams.startStopId);
       const endIndex = directionInfo.stops.indexOf(myGraphParams.endStopId);
 
-      for (let i = startIndex; i < endIndex; i++) {
-        const fromStopInfo = route.stops[directionInfo.stops[i]];
-        const toStopInfo = route.stops[directionInfo.stops[i + 1]];
-        miles += milesBetween(fromStopInfo, toStopInfo);
+      if (startIndex !== -1 && endIndex !== -1) {
+        for (let i = startIndex; i < endIndex; i++) {
+          const fromStopInfo = route.stops[directionInfo.stops[i]];
+          const toStopInfo = route.stops[directionInfo.stops[i + 1]];
+          miles += milesBetween(fromStopInfo, toStopInfo);
+        }
       }
     }
 

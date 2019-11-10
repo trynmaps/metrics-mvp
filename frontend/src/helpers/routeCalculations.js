@@ -15,35 +15,17 @@ import {
   getTripTimesForDirection,
   getAverageOfMedianWaitStat,
 } from './precomputed';
-//import { routeHeuristics } from '../locationConstants3';
-const routeHeuristics = {};
+
+import { getAgency } from '../config';
 
 /**
  * Given an array of routes, return only the routes we want to show.
  */
 export function filterRoutes(routes) {
-  return routes.filter(
-    route =>
-      !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute,
-  );
-}
-
-/**
- * Given directions array for a route and corresponding route ID, return only the valid directions.
- */
-export function filterDirections(directions, routeId) {
-  if (!routeHeuristics[routeId]) {
-    return directions;
-  }
-
-  const directionsToIgnore = routeHeuristics[routeId].directionsToIgnore;
-  if (!directionsToIgnore) {
-    return directions;
-  }
-
-  return directions.filter(
-    direction => !directionsToIgnore.includes(direction.id),
-  );
+  return routes.filter(route => {
+    const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
+    return !routeHeuristics || !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute;
+  });
 }
 
 /**
@@ -52,7 +34,7 @@ export function filterDirections(directions, routeId) {
  * M's actually go to that stop.  For better end to end calculations, need to disregard
  * the first stop.
  */
-export function ignoreFlag(routeId, directionId, flagName) {
+function ignoreFlag(routeHeuristics, routeId, directionId, flagName) {
   if (!routeHeuristics[routeId]) {
     return false;
   }
@@ -66,12 +48,12 @@ export function ignoreFlag(routeId, directionId, flagName) {
   return false;
 }
 
-export function ignoreFirstStop(routeId, directionId) {
-  return ignoreFlag(routeId, directionId, 'ignoreFirstStop');
+function ignoreFirstStop(routeHeuristics, routeId, directionId) {
+  return ignoreFlag(routeHeuristics, routeId, directionId, 'ignoreFirstStop');
 }
 
-export function ignoreLastStop(routeId, directionId) {
-  return ignoreFlag(routeId, directionId, 'ignoreLastStop');
+function ignoreLastStop(routeHeuristics, routeId, directionId) {
+  return ignoreFlag(routeHeuristics, routeId, directionId, 'ignoreLastStop');
 }
 
 /**
@@ -108,7 +90,9 @@ function getTripTimesUsingHeuristics(
     direction => direction.id === directionId,
   );
 
-  const ignoreFirst = ignoreFirstStop(routeId, directionId); // look up heuristic rule
+  const routeHeuristics = getAgency(graphParams.agencyId).routeHeuristics;
+
+  const ignoreFirst = ignoreFirstStop(routeHeuristics, routeId, directionId); // look up heuristic rule
   let firstStop = null;
 
   if (ignoreFirst !== true && ignoreFirst !== false) {
@@ -163,7 +147,9 @@ export function getEndToEndTripTime(
     return '?';
   }
 
-  const ignoreLast = ignoreLastStop(routeId, directionId); // look up heuristic rule
+  const routeHeuristics = getAgency(graphParams.agencyId).routeHeuristics;
+
+  const ignoreLast = ignoreLastStop(routeHeuristics, routeId, directionId); // look up heuristic rule
 
   let lastStop = null;
 
@@ -310,8 +296,7 @@ function getSpeedAndVariabilityForRoute(
 ) {
   const route = routes.find(thisRoute => thisRoute.id === routeId);
 
-  const filteredDirections = filterDirections(route.directions, routeId);
-  let speeds = filteredDirections.map(direction => {
+  let speeds = route.directions.map(direction => {
     const dist = direction.distance;
     const tripTime = getEndToEndTripTime(
       tripTimesCache,
@@ -337,6 +322,7 @@ function getSpeedAndVariabilityForRoute(
     }
 
     const speed = (metersToMiles(Number.parseFloat(dist)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
+
     return {
       speed,
       variability: p90tripTime - tripTime,

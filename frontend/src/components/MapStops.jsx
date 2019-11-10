@@ -496,9 +496,9 @@ class MapStops extends Component {
       }
     }
 
-    let mapInstruction = (!graphParams.startStopId) ? 'Click an origin stop.'
-        : (!graphParams.endStopId) ? 'Click a destination stop.' :
-        (!graphParams.directionId) ? 'Select a direction to see stops in that direction.' : '';
+    let mapInstruction =(!graphParams.directionId) ? 'Select a direction to see stops in that direction.'
+        : (!graphParams.startStopId) ? 'Click an origin stop.'
+        : (!graphParams.endStopId) ? 'Click a destination stop.' : '';
 
     return (
       <Map

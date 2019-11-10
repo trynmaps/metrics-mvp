@@ -8,9 +8,44 @@ default_day_start_hour: 3
 custom_day_start_hours:
   - start_hour: 0 # owl routes run from 1AM to 5AM so they are associated with the same day
     routes: ['90', '91', 'K_OWL', 'L_OWL', 'M_OWL', 'N_OWL', 'T_OWL']
+invalid_direction_times:
+  - start_time: null
+    end_time: "12:00" # directions that aren't scheduled in the morning
+    directions:
+      - ["NX","0"]
+      - ["1AX","0"]
+      - ["1BX","0"]
+      - ["7X","0"]
+      - ["8AX","0"]
+      - ["8BX","0"]
+      - ["14X","0"]
+      - ["30X","0"]
+      - ["31AX","0"]
+      - ["31BX","0"]
+      - ["38AX","0"]
+      - ["38BX","0"]
+      - ["41","0"]
+      - ["82X","0"]
+  - start_time: "12:00" # directions that aren't scheduled in the afternoon
+    end_time: null
+    directions:
+      - ["NX","1"]
+      - ["1AX","1"]
+      - ["1BX","1"]
+      - ["7X","1"]
+      - ["8AX","1"]
+      - ["8BX","1"]
+      - ["14X","1"]
+      - ["30X","1"]
+      - ["31AX","1"]
+      - ["31BX","1"]
+      - ["38AX","1"]
+      - ["38BX","1"]
+      - ["41","1"]
+      - ["82X","1"]
 js_properties:
   title: SF Muni
-  initialMapCenter: { lat: 37.7793, lng: -122.4193 }
+  initialMapCenter: { lat: 37.78, lng: -122.425 }
   initialMapZoom: 13
   defaultDisabledRoutes: [
       'PH',
@@ -137,27 +172,27 @@ js_properties:
         },
       ],
     }
- #
- # Returns a data object with centralized declarations of "per route" heuristic rules
- # to apply when doing systemwide computations.
- #
- # For example, for routes with directions that should be ignored:
- #
- # {
- #   <routeID>: {
- #     directionsToIgnore: [<directionID>]
- #   }
- # }
- #
- # Other cases:
- # - Routes to filter out completely:
- #   - S due to lack of regular route and schedule
- #   - Owls due to the date boundary problem.
- # - Routes that have non-code issues with arrivals their first or last stop and so the second or penultimate stop
- #     should be used instead for end-to-end calculations.  Cable car lines are like this.
- # - Possibly special handling for routes with back end issues (currently 5, 9, 9R) as a temporary workaround.
- #   - The 9 has multiple terminals so use the last common stop.
- #   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
+  #
+  # Returns a data object with centralized declarations of "per route" heuristic rules
+  # to apply when doing systemwide computations.
+  #
+  # For example, for routes with directions that should be ignored:
+  #
+  # {
+  #   <routeID>: {
+  #     directionsToIgnore: [<directionID>]
+  #   }
+  # }
+  #
+  # Other cases:
+  # - Routes to filter out completely:
+  #   - S due to lack of regular route and schedule
+  #   - Owls due to the date boundary problem.
+  # - Routes that have non-code issues with arrivals their first or last stop and so the second or penultimate stop
+  #     should be used instead for end-to-end calculations.  Cable car lines are like this.
+  # - Possibly special handling for routes with back end issues (currently 5, 9, 9R) as a temporary workaround.
+  #   - The 9 has multiple terminals so use the last common stop.
+  #   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
   routeHeuristics: {
       N: {
         '0': {

@@ -30,7 +30,8 @@ class DirectionInfo:
         return [stop['tag'] for stop in self.data['stop']]
 
 class RouteInfo:
-    def __init__(self, data):
+    def __init__(self, nextbus_agency_id, data):
+        self.nextbus_agency_id = nextbus_agency_id
         self.id = data['tag']
         self.title = data['title']
 
@@ -134,15 +135,14 @@ def get_all_stop_locations(nextbus_agency_id) -> StopLocations:
     return StopLocations(nextbus_agency_id, locations_map)
 
 def get_route_list(nextbus_agency_id):
-    # todo - fails on agencies with > 100 routes
 
     if re.match('^[\w\-]+$', nextbus_agency_id) is None:
         raise Exception(f"Invalid agency id: {nextbus_agency_id}")
 
-    cache_path = os.path.join(util.get_data_dir(), f"routeConfigs_{nextbus_agency_id}.json")
+    cache_path = os.path.join(util.get_data_dir(), f"routeList_{nextbus_agency_id}.json")
 
     def route_list_from_data(data):
-        return [RouteConfig(nextbus_agency_id, route) for route in data['route']]
+        return [RouteInfo(nextbus_agency_id, route) for route in data['route']]
 
     try:
         mtime = os.stat(cache_path).st_mtime
@@ -157,7 +157,8 @@ def get_route_list(nextbus_agency_id):
     except FileNotFoundError as err:
         pass
 
-    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeConfig&a={nextbus_agency_id}&t=0&terse")
+    # note: routeList command works for all agencies, while routeConfig fails for agencies with more than 100 routes (like ttc)
+    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeList&a={nextbus_agency_id}&t=0&terse")
 
     data = response.json()
 

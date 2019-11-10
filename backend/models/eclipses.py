@@ -137,75 +137,17 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
 
     return resampled_bus
 
-PM = [('12:00', None)]
-AM = [(None, '12:00')]
-
-invalid_direction_times_map = {
-    'muni': {
-        'NX': {
-            '0': AM,
-            '1': PM,
-        },
-        '1AX': {
-            '0': AM,
-            '1': PM,
-        },
-        '1BX': {
-            '0': AM,
-            '1': PM,
-        },
-        '7X': {
-            '0': AM,
-            '1': PM,
-        },
-        '8AX': {
-            '0': AM,
-            '1': PM,
-        },
-        '8BX': {
-            '0': AM,
-            '1': PM,
-        },
-        '14X': {
-            '0': AM,
-            '1': PM,
-        },
-        '30X': {
-            '0': AM,
-            '1': PM,
-        },
-        '31AX': {
-            '0': AM,
-            '1': PM,
-        },
-        '31BX': {
-            '0': AM,
-            '1': PM,
-        },
-        '38AX': {
-            '0': AM,
-            '1': PM,
-        },
-        '38BX': {
-            '0': AM,
-            '1': PM,
-        },
-        '41': {
-            '0': AM,
-            '1': PM,
-        },
-        '82X': {
-            '0': AM,
-            '1': PM,
-        },
-    },
-}
-
 def get_invalid_direction_times(agency: config.Agency, route_config: routeconfig.RouteConfig, direction_id: str):
-    try:
-        return invalid_direction_times_map[agency.id][route_config.id][direction_id]
-    except KeyError:
-        return []
+    route_id = route_config.id
+    invalid_times = []
+    for invalid_direction_time in agency.invalid_direction_times:
+        for (rid, did) in invalid_direction_time['directions']:
+            if rid == route_id and did == direction_id:
+                invalid_times.append((
+                    invalid_direction_time.get('start_time', None),
+                    invalid_direction_time.get('end_time', None)
+                ))
+    return invalid_times
 
 def find_arrivals(agency: config.Agency, route_state: dict, route_config: routeconfig.RouteConfig, d: date) -> pd.DataFrame:
 

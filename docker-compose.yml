@@ -23,8 +23,8 @@ services:
     environment:
       FLASK_DEBUG: 1
       OPENTRANSIT_CONFIG_YAML: |
-        agencies:
-          - id: muni
+        agency_ids:
+          - muni
   react-dev:
     container_name: metrics-react-dev
     build:

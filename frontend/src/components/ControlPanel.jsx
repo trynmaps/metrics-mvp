@@ -16,8 +16,6 @@ import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { Colors } from '../UIConstants';
 
-import RoutesMap from '../routesMap';
-
 const useStyles = makeStyles(theme => ({
   root: {
     display: 'flex',
@@ -90,6 +88,7 @@ function ControlPanel(props) {
     }
 
     path.commitPath();
+
     props.onGraphParams({
       startStopId: stopId,
       endStopId: secondStopId,
@@ -175,7 +174,7 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.directionId}
+                value={graphParams.directionId || ""}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >

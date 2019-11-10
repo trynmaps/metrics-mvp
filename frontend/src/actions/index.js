@@ -6,7 +6,7 @@ export const RoutesVersion = 'v3';
 
 // S3 URL to route configuration
 export function generateRoutesURL(agencyId) {
-  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz`;
+  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?b`;
 }
 
 export const TripTimesVersion = 'v1b';

@@ -38,7 +38,7 @@ function RouteScreen(props) {
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
-      ? routes.find(route => (route.id === graphParams.routeId && route.agencyId == agencyId))
+      ? routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId))
       : null;
 
   const direction =

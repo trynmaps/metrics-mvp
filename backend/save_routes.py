@@ -172,6 +172,9 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
     stops_df = feed.stops
     stops_map = {stop.stop_id: stop for stop in stops_df.itertuples()}
 
+    if agency.provider == 'nextbus':
+        nextbus_route_order = [route.id for route in nextbus.get_route_list(agency.nextbus_id)]
+
     for route in routes_df.itertuples():
 
         gtfs_route_id = route.route_id
@@ -191,8 +194,6 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
         #color = route.route_color
         #text_color = route.route_text_color
 
-        sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
-
         route_id = getattr(route, agency.route_id_gtfs_field)
 
         if agency.provider == 'nextbus':
@@ -203,6 +204,14 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
             except Exception as ex:
                 print(ex)
                 continue
+
+            try:
+                sort_order = nextbus_route_order.index(route_id)
+            except ValueError as ex:
+                print(ex)
+                sort_order = None
+        else:
+            sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
 
         #if route_id != '39' and route_id != '36' and route_id != '9' and route_id != '30':
         #    continue
