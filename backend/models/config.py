@@ -7,7 +7,7 @@ if config_yaml is None:
 
 raw_config = yaml.safe_load(config_yaml)
 
-trynapi_url = raw_config.get("trynapi_url", "https://06o8rkohub.execute-api.us-west-2.amazonaws.com/dev")
+trynapi_url = raw_config.get("trynapi_url", "http://tryn-api")
 
 s3_bucket = raw_config.get("s3_bucket", 'opentransit-data')
 

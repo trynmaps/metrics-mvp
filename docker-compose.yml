@@ -23,6 +23,7 @@ services:
     environment:
       FLASK_DEBUG: 1
       OPENTRANSIT_CONFIG_YAML: |
+        trynapi_url: http://tryn-api.opentransit.city
         agency_ids:
           - muni
   react-dev:

@@ -40,7 +40,7 @@ export function generateWaitTimesURL(agencyId, dateStr, statPath, timePath) {
   return `https://${S3Bucket}.s3.amazonaws.com/wait-times/${WaitTimesVersion}/${agencyId}/${dateStr.replace(
     /-/g,
     '/',
-  )}/wait-times_${WaitTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?d`;
+  )}/wait-times_${WaitTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?e`;
 }
 
 const ArrivalsVersion = 'v4b';
@@ -55,7 +55,7 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
   return `https://${S3Bucket}.s3.amazonaws.com/arrivals/${ArrivalsVersion}/${agencyId}/${dateStr.replace(
     /-/g,
     '/',
-  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?c`;
+  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?d`;
 }
 
 export function fetchGraphData(params) {
