@@ -7,21 +7,20 @@ from . import nextbus, util
 
 def produce_buses(route_state: dict) -> pd.DataFrame:
     buses = pd.io.json.json_normalize(route_state,
-                                      record_path=['routeStates', 'vehicles'],
-                                      meta=[['routeStates', 'vtime']]) \
+                                      record_path=['states', 'vehicles'],
+                                      meta=[['states', 'timestamp']]) \
             .rename(columns={'lat': 'LAT',
                              'lon': 'LON',
                              'vid': 'VID',
                              'did': 'DID',
                              'secsSinceReport': 'AGE',
-                             'routeStates.vtime': 'RAW_TIME_MS'}) \
-            .reindex(['RAW_TIME_MS', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
+                             'states.timestamp': 'RAW_TIME'}) \
+            .reindex(['RAW_TIME', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
 
     # adjust each observation time for the number of seconds old the GPS location was when the observation was recorded
-    # and convert time from milliseconds since Unix epoch to seconds since Unix epoch
-    buses['TIME'] = (np.round(buses['RAW_TIME_MS'].astype(np.int64)/1000) - buses['AGE'].fillna(0)) #.astype(np.int64)
+    buses['TIME'] = (buses['RAW_TIME'] - buses['AGE'].fillna(0)) #.astype(np.int64)
 
-    buses = buses.drop(['RAW_TIME_MS','AGE'], axis=1)
+    buses = buses.drop(['RAW_TIME','AGE'], axis=1)
     buses = buses.sort_values('TIME', axis=0)
 
     return buses

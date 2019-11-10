@@ -22,6 +22,7 @@ services:
       - ./backend:/app/backend
     environment:
       FLASK_DEBUG: 1
+      TRYNAPI_URL: http://tryn-api.opentransit.city
   react-dev:
     container_name: metrics-react-dev
     build:
