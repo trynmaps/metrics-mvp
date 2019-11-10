@@ -46,71 +46,52 @@ class MapStops extends Component {
   populateStop = (stop, IconType, currentPosition, rotation, onClickHandler, tooltip) => {
 
     let icon = null;
+    // this is the stop title with a text shadow to outline it in white
+    const stopTitle = (top, left) => `<div style="position:relative; top:${top}px; left:${left}px; font-weight:bold; color:` + Colors.INDIGO + `; ` +
+    `text-shadow: -1px 1px 0 #fff,` +
+    `1px 1px 0 #fff,` +
+    `1px -1px 0 #fff,` +
+    `-1px -1px 0 #fff;">${stop.title}</div>`;
 
     if (IconType) {
-
       // Given an IconType indicates start or end stop.  This is a white circle with a black icon, 
       // followed by the title of the stop.
-      
       icon = L.divIcon({
         className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
         iconSize: [240, 24],
         iconAnchor: [12, 12], // centers icon over position, with text to the right
         html:
-          
           `<svg width="24" height="24" viewBox="-10 -10 10 10">` +
           
           // this is a larger white circle
-          
           `<circle cx="-5" cy="-5" r="4.5" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
           
           // this is the passed in icon, which we ask React to render as html (becomes an svg object)
-          
           `</svg><div style="position:relative; top: -26px; left:2px">` +
           ReactDOMServer.renderToString(<IconType style={{color:Colors.INDIGO}} fontSize={'small'}/>) +
-         `</div>` +
-         
-         // this is the stop title with a text shadow to outline it in white
-         
-         `<div style="position:relative; top:-50px; left:25px; font-weight:bold; color:` + Colors.INDIGO + `; ` +
-         `text-shadow: -1px 1px 0 #fff,` +
-         `1px 1px 0 #fff,` +
-         `1px -1px 0 #fff,` +
-         `-1px -1px 0 #fff;">${stop.title}</div>`,
+         `</div>` + stopTitle(-50, 25),
       });
     } else if (stop.sid === this.props.graphParams.stopOnHoverId) {
       // If current stop is being hover on the To & From Dropdowns. This is a LARGE white circle with an
       // svg "v" shape rotated by the given rotation value.
-
       icon = L.divIcon({
         className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
         iconSize: [240, 35],
         iconAnchor: [18, 18], // centers icon over position, with text to the right
         html:
           `<svg width="32" height="32" viewBox="-10 -10 10 10" transform="rotate(${rotation} 0 0)">` +
-          
+
           // First we draw a white circle
-          
           `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
           
           // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
-          
           `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${
             Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
-          `</svg>` + 
-           // this is the stop title with a text shadow to outline it in white
-         
-         `<div style="position:relative; top:-29px; left:29px; font-weight:bold; color:` + Colors.INDIGO + `; ` +
-         `text-shadow: -1px 1px 0 #fff,` +
-         `1px 1px 0 #fff,` +
-         `1px -1px 0 #fff,` +
-         `-1px -1px 0 #fff;">${stop.title}</div>`,
+          `</svg>` + stopTitle(-29, 29),
       });
     } else {
-      
       // If not given an IconType, this is just a regular stop.  This is a white circle with an
       // svg "v" shape rotated by the given rotation value.
-
       icon = L.divIcon({
         className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
         iconSize: [20, 20],
@@ -119,17 +100,14 @@ class MapStops extends Component {
           `<svg viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
           
           // First we draw a white circle
-          
           `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
           
           // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
-          
           `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${
             Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
           `</g>` +
           `</svg>`, 
       });
-
     }
     
     return (

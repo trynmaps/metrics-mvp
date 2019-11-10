@@ -90,7 +90,6 @@ function ControlPanel(props) {
     props.onGraphParams({
       startStopId: stopId,
       endStopId: secondStopId,
-      stopOnHoverId: null
     });
   }
 
@@ -98,23 +97,22 @@ function ControlPanel(props) {
     const endStopId = event.target.value;
     const path = new Path();
     path.buildPath(TO_STOP, endStopId).commitPath();
-
-    props.onGraphParams({ endStopId, stopOnHoverId: null });
+    props.onGraphParams({ endStopId});
   }
 
-  function handleMouseOver(event) {
+  function handleMouseOver(stopId) {
     props.onGraphParams({
       ...graphParams,
-      stopOnHoverId: event.target.getAttribute("data-value")
+      stopOnHoverId: stopId
     });
   }
 
-  // function clearMouseOver() {
-  //   props.onGraphParams({
-  //     ...graphParams,
-  //     stopOnHoverId: null
-  //   });
-  // }
+  function clearHover() {
+    props.onGraphParams({
+      ...graphParams,
+      stopOnHoverId: null
+    });
+  }
 
   function setRouteId(event) {
     const routeId = event.target.value;
@@ -207,17 +205,18 @@ function ControlPanel(props) {
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="fromstop">From Stop</InputLabel>
                   <Select
-                  value={graphParams.startStopId || 1}
-                  onChange={e => {
-                    // clearMouseOver();
-                    onSelectFirstStop(e);
-                    // setTimeout(() => clearStopOnHover(), 400);
-                  }}
-                  input={<Input name="stop" id="fromstop" />}
-                  onMouseOver={handleMouseOver}
+                    value={graphParams.startStopId || 1}
+                    onChange={onSelectFirstStop}
+                    input={<Input name="stop" id="fromstop" />}
+                    onClose={() => clearHover()}
                   >
                     {(selectedDirection.stops || []).map(firstStopId => (
-                      <MenuItem key={firstStopId} value={firstStopId}>
+                      <MenuItem
+                        key={firstStopId}
+                        value={firstStopId}
+                        onMouseOver={() => handleMouseOver(firstStopId)}
+                        onFocus={() => handleMouseOver(firstStopId)}
+                      >
                         {
                           (
                             selectedRoute.stops[firstStopId] || {
@@ -237,17 +236,18 @@ function ControlPanel(props) {
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="tostop">To Stop</InputLabel>
                   <Select
-                  value={graphParams.endStopId || 1}
-                  onChange={e => {
-                    // clearMouseOver();
-                    onSelectSecondStop(e);
-                    // setTimeout(() => clearStopOnHover(), 400);
-                  }}
-                  input={<Input name="stop" id="tostop" />}
-                  onMouseOver={handleMouseOver}
+                    value={graphParams.endStopId || 1}
+                    onChange={onSelectSecondStop}
+                    input={<Input name="stop" id="tostop" />}
+                    onClose={() => clearHover()}
                   >
                     {(secondStopList || []).map(secondStopId => (
-                      <MenuItem key={secondStopId} value={secondStopId}>
+                      <MenuItem
+                        key={secondStopId}
+                        value={secondStopId} 
+                        onMouseOver={() => handleMouseOver(secondStopId)}
+                        onFocus={() => handleMouseOver(secondStopId)}
+                      >
                         {
                           (
                             selectedRoute.stops[secondStopId] || {
