@@ -2,14 +2,15 @@ import argparse
 import json
 import sys
 from datetime import datetime, timedelta
-from models import arrival_history, util, metrics
+from models import arrival_history, util, metrics, config
 import pytz
 import pandas as pd
 import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compare two versions of arrival history')
-    parser.add_argument('--route', nargs='*', help='Route id(s)')
+    parser.add_argument('--agency', required=True, help='Agency ID')
+    parser.add_argument('--route', nargs='*', help='Route ID(s)')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--stop', help='Stop ID')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
@@ -27,7 +28,7 @@ if __name__ == '__main__':
 
     stop_id = args.stop
 
-    agency_id = 'muni'
+    agency_id = args.agency
     agency = config.get_agency(agency_id)
 
     route_ids = args.route

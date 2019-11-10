@@ -13,7 +13,7 @@ If the arrival times for a particular route/day haven't been computed yet, you'l
 To get arrival times for one or more routes/days that haven't been precomputed yet, run `compute_arrivals.py`
 to generate the JSON files locally (if using Docker, run this command from a shell within the metrics-flask-dev Docker container), e.g:
 ```
-python compute_arrivals.py --date=2019-06-06 --route 1 2 47 38 38X
+python compute_arrivals.py --date=2019-06-06 --agency=muni --route 1 2 47 38 38X
 ```
 
 The JSON files with computed arrivals will be stored in your local `data/` directory.
@@ -32,47 +32,47 @@ Docker container via `./docker-shell.sh` (Linux/Mac) or `docker-shell` (Windows)
 
 Show overall statistics for a particular route:
 ```
-python route.py --date=2019-06-06 --route=1
+python route.py --date=2019-06-06 --agency=muni --route=1
 ```
 
 Show headways between buses at a particular stop:
 ```
-python headways.py --date=2019-06-06 --route=1 --stop=6290
+python headways.py --date=2019-06-06 --agency=muni --route=1 --stop=6290
 ```
 
 Show trips between two stops:
 ```
-python trips.py --date=2019-06-06 --route=1 --s1=6314 --s2=6304
+python trips.py --date=2019-06-06 --agency=muni --route=1 --s1=6314 --s2=6304
 ```
 
 Show stops visited by a particular vehicle:
 ```
-python vehicle.py --date=2019-06-06 --route=1 --vid=5760
+python vehicle.py --date=2019-06-06 --agency=muni --route=1 --vid=5760
 ```
 
 Show summary statistics of waiting times at a particular stop:
 ```
-python waits.py --date=2019-06-06 --route=12 --stop=3476
+python waits.py --date=2019-06-06 --agency=muni --route=12 --stop=3476
 ```
 
 Compute wait time statistics for all stops on a particular day:
 ```
-python compute_wait_times.py --date=2019-06-06
+python compute_wait_times.py --agency=muni --date=2019-06-06
 ```
 
 Compute trip time statistics for all pairs of stops on a particular day:
 ```
-python compute_trip_times.py --date=2019-06-06
+python compute_trip_times.py --agency=muni --date=2019-06-06
 ```
 
 Show scheduled timetable for a particular stop:
 ```
-python timetables.py --route=12 --stops=3476 --date=2019-04-12
+python timetables.py --agency=muni --route=12 --stops=3476 --date=2019-04-12
 ```
 
 Compare scheduled timetable to collected arrival data, with 3/5 minutes as the on-time/late thresholds(thresholds optional, the default value are 5/10 minutes)
 ```
-python timetables.py --route=12 --stops=3476 --date=2019-06-06 --comparison --threshold=3,5
+python timetables.py --agency=muni --route=12 --stops=3476 --date=2019-06-06 --comparison --threshold=3,5
 ```
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
@@ -88,7 +88,7 @@ python parse_timepoint_csv.py path/to/next_bus_avl_20180901_20181001.csv path/to
 Compare timepoints from Muni with arrival times computed from Nextbus GPS coordinates,
 and show discrepancies between the two data sets based on differences between arrival times of each bus at each stop:
 ```
-python compare_versions.py --date=2018-11-14 --route=1 t2 v2
+python compare_versions.py --date=2018-11-14 --agency=muni --route=1 t2 v2
 ```
 
 Scrape timetables from GTFS data stored locally in `inpath` and extract them to the `data` directory:
