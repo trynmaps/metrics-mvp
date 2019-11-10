@@ -42,7 +42,7 @@ function DataDiagnostic(props) {
       myFetchRoutes({agencyId: agency.id});
     }
     myFetchPrecomputedWaitAndTripData(graphParams);
-  }, [routes, myFetchRoutes, myFetchPrecomputedWaitAndTripData, graphParams]); // like componentDidMount, this runs only on first render
+  }, [routes, myFetchRoutes, myFetchPrecomputedWaitAndTripData, graphParams, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
 
   const classes = useStyles();
 

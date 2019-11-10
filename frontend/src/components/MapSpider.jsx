@@ -202,7 +202,10 @@ class MapSpider extends Component {
         );
 
         // scale wait rank to 0, 1, or 2
-        const waitScaled = Math.trunc((waitRank / allWaits.length) * 3);
+        let waitScaled = Math.trunc((waitRank / allWaits.length) * 3);
+        if (!isFinite(waitScaled)) {
+          waitScaled = 0;
+        }
 
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           // for each stop

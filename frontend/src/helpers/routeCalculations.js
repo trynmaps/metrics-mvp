@@ -35,7 +35,7 @@ export function filterRoutes(routes) {
  * the first stop.
  */
 function ignoreFlag(routeHeuristics, routeId, directionId, flagName) {
-  if (!routeHeuristics[routeId]) {
+  if (!routeHeuristics || !routeHeuristics[routeId]) {
     return false;
   }
   const direction = routeHeuristics[routeId][directionId];

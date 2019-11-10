@@ -96,6 +96,9 @@ export function isInServiceArea(agencyId, latLng) {
   const point = turf.point([latLng.lng, latLng.lat]);
 
   const serviceArea = getAgency(agencyId).serviceArea;
+  if (!serviceArea) {
+    return true;
+  }
 
   return serviceArea.features.some(feature => {
     return turf.booleanWithin(point, feature);

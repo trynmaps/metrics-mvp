@@ -227,7 +227,9 @@ function RouteTable(props) {
   const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
 
   useEffect(() => {
-    myFetchPrecomputedWaitAndTripData(graphParams);
+    if (graphParams.agencyId && graphParams.date) {
+      myFetchPrecomputedWaitAndTripData(graphParams);
+    }
   }, [graphParams, myFetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
 
   function handleRequestSort(event, property) {

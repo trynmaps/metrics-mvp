@@ -25,7 +25,7 @@ function Dashboard(props) {
     if (!routes) {
       myFetchRoutes({agencyId: agency.id});
     }
-  }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
+  }, [routes, myFetchRoutes, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
 
   return (
     <div className="flex-screen">

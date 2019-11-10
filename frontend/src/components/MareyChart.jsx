@@ -240,7 +240,7 @@ function MareyChart(props) {
       const tripData = processArrivals(arrivals, routes);
       setProcessedArrivals(tripData);
     }
-  }, [arrivals, routes]);
+  }, [arrivals, routes, timezoneId]);
 
   /**
    * This is a render-time helper function.
