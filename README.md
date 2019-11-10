@@ -126,5 +126,5 @@ and CHOKIDAR_USEPOLLING is not necessary on Mac OS X to automatically recompile 
 
 ### Advanced Concepts
 
-Please see [ADVANCED_DEV.md](ADVANCED_DEV.md) for advanced information like computing arrival times and
+Please see [ADVANCED_DEV.md](docs/ADVANCED_DEV.md) for advanced information like computing arrival times and
 deploying to AWS.

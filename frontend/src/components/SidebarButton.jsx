@@ -3,9 +3,12 @@ import Drawer from '@material-ui/core/Drawer';
 import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import MenuIcon from '@material-ui/icons/Menu';
 import { NavLink } from 'redux-first-router-link';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import HomeIcon from '@material-ui/icons/Home';
 
 function SidebarButton() {
   const [drawerOpen, setDrawer] = React.useState(false);
@@ -71,6 +74,19 @@ function SidebarButton() {
               >
                 .{/* Semi-hidden data diagnostic link for developers */}
               </NavLink>
+            </ListItem>
+          </List>
+          {/* Footer content */}
+          <List style={{
+            position: "absolute",
+            width: "100%",
+            bottom: 0,
+          }} >
+            <ListItem button component="a" href="https://sites.google.com/view/opentransit" target="_blank">
+              <ListItemIcon>
+                <HomeIcon />
+              </ListItemIcon>
+              <ListItemText primary="About" />
             </ListItem>
           </List>
         </div>

@@ -90,7 +90,7 @@ class MapStops extends Component {
         iconSize: [20, 20],
         iconAnchor: [10, 10], // centers icon over position, with text to the right
         html:
-          `<svg viewBox="-10 -10 10 10" transform="rotate(${rotation} 0 0)">` +
+          `<svg viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
 
           // First we draw a white circle
 
@@ -100,6 +100,7 @@ class MapStops extends Component {
 
           `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${
             Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
+          `</g>` +
           `</svg>`,
       });
 
