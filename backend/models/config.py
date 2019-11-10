@@ -90,5 +90,6 @@ load_agencies()
 
 def get_agency(id):
     if id not in agencies_map:
-        raise KeyError(f"agency id {id} not defined in config")
+        agencies_map[id] = make_agency(id)
+
     return agencies_map[id]

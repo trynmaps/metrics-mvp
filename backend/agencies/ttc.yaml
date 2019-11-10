@@ -4,3 +4,7 @@ nextbus_agency_id: ttc
 gtfs_url: http://opendata.toronto.ca/TTC/routes/OpenData_TTC_Schedules.zip
 route_id_gtfs_field: route_short_name
 timezone_id: America/Toronto
+js_properties:
+  title: TTC
+  initialMapCenter: { lat: 43.684, lng: -79.39 }
+  initialMapZoom: 12
