@@ -3,8 +3,9 @@ import React, { Fragment, useEffect } from 'react';
 import { connect } from 'react-redux';
 
 import Grid from '@material-ui/core/Grid';
-import { Table, TableBody, TableCell, TableRow } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
+
+import { AppBar, Box, Tab, Tabs, Table, TableBody, TableCell, TableRow } from '@material-ui/core';
+
 import InfoScoreCard from './InfoScoreCard';
 import InfoScoreLegend from './InfoScoreLegend';
 import TravelTimeChart from './TravelTimeChart';
@@ -27,6 +28,7 @@ import { PLANNING_PERCENTILE } from '../UIConstants';
  */
 function RouteSummary(props) {
   const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
+  const [tabValue, setTabValue] = React.useState(0);
 
   useEffect(() => {
     myFetchPrecomputedWaitAndTripData(graphParams);
@@ -191,9 +193,54 @@ function RouteSummary(props) {
     </Fragment>
   ) : null;
 
+  function handleTabChange(event, newValue) {
+    setTabValue(newValue);
+  }
+
+  function a11yProps(index) {
+    return {
+      id: `simple-tab-${index}`,
+      'aria-controls': `simple-tabpanel-${index}`,
+    };
+  }
+
+  const SUMMARY = 0;
+  const TRAVEL_TIME = 1;
+  const MAREY_CHART = 2;
+
   return (
     <Fragment>
-      <div style={{ padding: 24 }}>
+    
+      <br />
+      <AppBar position="static" color="default">
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          aria-label="tab bar"
+          variant="scrollable"
+          scrollButtons="on"
+        >
+          <Tab
+            style={{ minWidth: 72 }}
+            label="Summary"
+            {...a11yProps(SUMMARY)}
+          />
+          <Tab
+            style={{ minWidth: 72 }}
+            label="Travel Time"
+            {...a11yProps(TRAVEL_TIME)}
+          />
+          <Tab
+            style={{ minWidth: 72 }}
+            label="Marey Chart"
+            {...a11yProps(MAREY_CHART)}
+          />
+        </Tabs>
+      </AppBar>    
+    
+    
+      <Box p={2} hidden={tabValue !== SUMMARY}>
+        <div style={{ padding: 8 }}>
         <Grid container spacing={4}>
           <InfoScoreCard
             grades={wait && speed && grades ? grades : null}
@@ -272,10 +319,15 @@ function RouteSummary(props) {
             popoverContent={popoverContentTravelVariance}
           />
 
-          <TravelTimeChart />
-          <MareyChart />
         </Grid>
-      </div>
+        </div>
+        </Box>
+      <Box p={2} hidden={tabValue !== TRAVEL_TIME}>
+        <TravelTimeChart />
+      </Box>
+      <Box p={2} hidden={tabValue !== MAREY_CHART}>
+        <MareyChart hidden={tabValue !== MAREY_CHART}/>
+      </Box>
     </Fragment>
   );
 }

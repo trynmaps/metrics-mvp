@@ -167,6 +167,15 @@ export function fetchArrivals(params) {
   };
 }
 
+/**
+ * Action creator that clears arrival history.
+ */
+export function resetArrivals() {
+  return function(dispatch) {
+    dispatch({ type: 'RESET_ARRIVALS', payload: null });
+  };
+}
+
 export function handleSpiderMapClick(stops, latLng) {
   return function(dispatch) {
     dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: [stops, latLng] });
