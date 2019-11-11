@@ -1,17 +1,10 @@
 import os, re, yaml, pytz
 
-config_yaml = os.environ.get('OPENTRANSIT_CONFIG_YAML')
+trynapi_url = os.environ.get("TRYNAPI_URL", "http://tryn-api")
 
-if config_yaml is None:
-    raise Exception("OPENTRANSIT_CONFIG_YAML environment variable not defined")
+s3_bucket = os.environ.get("OPENTRANSIT_S3_BUCKET", 'opentransit-data')
 
-raw_config = yaml.safe_load(config_yaml)
-
-trynapi_url = raw_config.get("trynapi_url", "http://tryn-api")
-
-s3_bucket = raw_config.get("s3_bucket", 'opentransit-data')
-
-agency_ids = raw_config.get("agency_ids", [])
+agency_ids = os.environ.get("OPENTRANSIT_AGENCY_IDS", 'muni').split(',')
 
 class Agency:
     def __init__(self, conf):

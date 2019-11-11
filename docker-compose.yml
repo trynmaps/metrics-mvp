@@ -22,10 +22,8 @@ services:
       - ./backend:/app/backend
     environment:
       FLASK_DEBUG: 1
-      OPENTRANSIT_CONFIG_YAML: |
-        trynapi_url: http://tryn-api.opentransit.city
-        agency_ids:
-          - muni
+      TRYNAPI_URL: http://tryn-api.opentransit.city
+      OPENTRANSIT_AGENCY_IDS: muni
   react-dev:
     container_name: metrics-react-dev
     build:
