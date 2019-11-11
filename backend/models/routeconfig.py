@@ -45,7 +45,7 @@ class RouteConfig:
                 return None
 
     def get_stop_infos(self):
-        return [StopInfo(self, stop) for stop in self.data['stops']]
+        return [StopInfo(self, stop) for stop in self.data['stops'].values()]
 
     def get_stop_info(self, stop_id):
         if stop_id in self.data['stops']:

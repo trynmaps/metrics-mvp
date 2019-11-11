@@ -10,7 +10,6 @@ ROUND_DIGITS = 3
 class DirectionInfo(ObjectType):
     id = String()
     title = String()
-    name = String()
     stopIds = List(String)
 
     # `parent` is a routeconfig.DirectionInfo object
@@ -20,9 +19,6 @@ class DirectionInfo(ObjectType):
 
     def resolve_title(parent, info):
         return parent.title
-
-    def resolve_name(parent, info):
-        return parent.name
 
     def resolve_stopIds(parent, info):
         return parent.get_stop_ids()
