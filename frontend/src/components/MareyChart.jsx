@@ -65,7 +65,7 @@ function MareyChart(props) {
   const INBOUND = 'Inbound'; // same as directionInfo name
   const OUTBOUND = 'Outbound'; // same as directionInfo name
 
-  const { graphParams, myFetchArrivals, myResetArrivals, arrivals, routes, hidden } = props;
+  const { graphParams, myFetchArrivals, myResetArrivals, arrivals, arrivalsErr, routes, hidden } = props;
 
   const [hintValue, setHintValue] = useState();
   const [tripHighlight, setTripHighlight] = useState();
@@ -248,7 +248,10 @@ function MareyChart(props) {
       // console.log("Processing arrival data.");
       const tripData = processArrivals(arrivals, routes);
       setProcessedArrivals(tripData);
+    } else {
+      setProcessedArrivals(null);
     }
+    
   }, [arrivals, routes]);
 
   /**
@@ -470,13 +473,14 @@ function MareyChart(props) {
             ) : null}
           </XYPlot>
     </Fragment>
-  ) : null;
+  ) : <Fragment>{ arrivalsErr ? arrivalsErr : 'Loading...'}</Fragment>;
 }
 
 const mapStateToProps = state => ({
   routes: state.routes.routes,
   graphParams: state.routes.graphParams,
   arrivals: state.routes.arrivals,
+  arrivalsErr: state.routes.arrivalsErr,
 });
 
 const mapDispatchToProps = dispatch => {

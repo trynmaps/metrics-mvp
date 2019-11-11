@@ -162,6 +162,7 @@ export function fetchArrivals(params) {
         });
       })
       .catch(err => {
+        dispatch({ type: 'RESET_ARRIVALS', payload: 'No data.' });
         console.error(err);
       });
   };
