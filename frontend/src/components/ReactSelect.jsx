@@ -55,12 +55,14 @@ export default function ReactSelect(selectProps) {
   const eventHandlerDelay = 100;
   const scrollbarWidth = useRef(0);
   const isInitialMount = useRef(true);
+  const menuTransition = useRef(true);
   const menuPlacementTop = useRef(false);
   const [textFieldDOMRect, setTextFieldDOMRect] = useState({});
 
   function handleReposition() {
     clearTimeout(window[`${selectProps.inputId}Timeout`]);
     window[`${selectProps.inputId}Timeout`] = setTimeout(() => {
+      menuTransition.current = false;
       setTextFieldDOMRect(
         document.getElementById(selectProps.inputId).getBoundingClientRect(),
       );
@@ -130,8 +132,10 @@ export default function ReactSelect(selectProps) {
 
   function Menu(props) {
     const menuStyle = {};
+    const timeout = menuTransition.current ? transitionDuration : 0;
     const [menuStyleRight, setMenuStyleRight] = useState(0);
     const [menuStyleBottom, setMenuStyleBottom] = useState(0);
+
     menuPlacementTop.current =
       textFieldDOMRect.top >
       document.documentElement.clientHeight - textFieldDOMRect.bottom;
@@ -146,10 +150,9 @@ export default function ReactSelect(selectProps) {
 
     useEffect(() => {
       const menu = document.getElementById(`${selectProps.inputId}Menu`);
-      const inputHeight =
-        textFieldDOMRect.height +
-        document.getElementById(selectProps.inputId).parentElement
-          .previousSibling.clientHeight;
+      const labelHeight = document.getElementById(selectProps.inputId)
+        .parentElement.previousSibling.clientHeight;
+      const inputHeight = textFieldDOMRect.height + labelHeight;
       const rightWillSlice =
         textFieldDOMRect.left + menu.clientWidth + scrollbarWidth.current >
         window.innerWidth;
@@ -183,10 +186,10 @@ export default function ReactSelect(selectProps) {
     return (
       <Grow
         in={props.selectProps.menuIsOpen}
-        timeout={transitionDuration}
+        timeout={timeout}
         style={{ transformOrigin: '0 0 0' }}
       >
-        <Fade in={props.selectProps.menuIsOpen} timeout={transitionDuration}>
+        <Fade in={props.selectProps.menuIsOpen} timeout={timeout}>
           <Paper
             id={`${selectProps.inputId}Menu`}
             style={menuStyle}
@@ -277,6 +280,7 @@ export default function ReactSelect(selectProps) {
         }
         document.body.style.overflow = 'hidden';
         document.body.style.paddingRight = `${scrollbarWidth.current}px`;
+        menuTransition.current = true;
       }}
       onMenuClose={() => {
         document.body.style.overflow = 'visible';
