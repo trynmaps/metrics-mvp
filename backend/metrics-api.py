@@ -3,7 +3,7 @@ from flask import Flask, send_from_directory, request, Response
 from flask_cors import CORS
 import json
 import sys
-from models import schema, config
+from models import schema, config, wait_times, trip_times, routeconfig, arrival_history
 from flask_graphql import GraphQLView
 
 """
@@ -38,8 +38,12 @@ def js_config():
         config.load_agencies() # agency config may have changed on disk
 
     data = {
-        's3Bucket': config.s3_bucket,
-        'agencies': [
+        'S3Bucket': config.s3_bucket,
+        'ArrivalsVersion': arrival_history.DefaultVersion,
+        'WaitTimesVersion': wait_times.DefaultVersion,
+        'TripTimesVersion': trip_times.DefaultVersion,
+        'RoutesVersion': routeconfig.DefaultVersion,
+        'Agencies': [
             {
                 'id': agency.id,
                 'timezoneId': agency.timezone_id,

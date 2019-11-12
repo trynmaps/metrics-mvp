@@ -9,8 +9,8 @@ import AppBar from '@material-ui/core/AppBar';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { fetchRoutes, WaitTimesVersion, TripTimesVersion, RoutesVersion } from '../actions';
-import { S3Bucket, MetricsBaseURL, Agencies } from '../config';
+import { fetchRoutes } from '../actions';
+import { S3Bucket, MetricsBaseURL, Agencies, WaitTimesVersion, TripTimesVersion, RoutesVersion } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 
 import './Isochrone.css';

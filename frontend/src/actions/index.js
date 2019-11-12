@@ -1,15 +1,11 @@
 import axios from 'axios';
-import { MetricsBaseURL, S3Bucket } from '../config';
+import { MetricsBaseURL, S3Bucket, RoutesVersion, TripTimesVersion, WaitTimesVersion, ArrivalsVersion } from '../config';
 import { getTimePath } from '../helpers/precomputed';
-
-export const RoutesVersion = 'v3';
 
 // S3 URL to route configuration
 export function generateRoutesURL(agencyId) {
   return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?b`;
 }
-
-export const TripTimesVersion = 'v1b';
 
 /**
  * Generate S3 url for cached trip time statistics
@@ -26,8 +22,6 @@ export function generateTripTimesURL(agencyId, dateStr, statPath, timePath) {
   )}/trip-times_${TripTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?e`;
 }
 
-export const WaitTimesVersion = 'v1b';
-
 /**
  * Generate S3 url for cached wait time statistics
  * @param agencyId {string} agency ID
@@ -42,8 +36,6 @@ export function generateWaitTimesURL(agencyId, dateStr, statPath, timePath) {
     '/',
   )}/wait-times_${WaitTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?e`;
 }
-
-const ArrivalsVersion = 'v4b';
 
 /**
  * Generate S3 url for arrivals
