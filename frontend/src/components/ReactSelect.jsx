@@ -53,6 +53,7 @@ export default function ReactSelect(selectProps) {
   const theme = createMuiTheme();
   const transitionDuration = 400;
   const eventHandlerDelay = 100;
+  const focusedOption = useRef();
   const scrollbarWidth = useRef(0);
   const isInitialMount = useRef(true);
   const menuTransition = useRef(true);
@@ -178,6 +179,13 @@ export default function ReactSelect(selectProps) {
         setMenuStyleBottom(0);
       }
 
+      if (focusedOption.current) {
+        focusedOption.current.parentNode.scrollTop =
+          focusedOption.current.offsetTop -
+          menu.clientHeight / 2 +
+          focusedOption.current.clientHeight / 2;
+      }
+
       document
         .getElementById(`${selectProps.inputId}Value`)
         .firstChild.firstChild.firstChild.focus();
@@ -230,7 +238,7 @@ export default function ReactSelect(selectProps) {
     const focused = (function() {
       if (props.isFocused && !props.isSelected) {
         return {
-          backgroundColor: 'rgba(0, 0, 0, 0.08)',
+          backgroundColor: theme.palette.action.hover,
         };
       }
       return {};
@@ -238,7 +246,11 @@ export default function ReactSelect(selectProps) {
 
     return (
       <MenuItem
-        ref={props.innerRef}
+        ref={element => {
+          if (props.isSelected) {
+            focusedOption.current = element;
+          }
+        }}
         selected={props.isSelected}
         style={focused}
         {...props.innerProps}
@@ -260,6 +272,24 @@ export default function ReactSelect(selectProps) {
     Option,
   };
 
+  function onMenuOpen() {
+    const overflow = document.body.style.overflow;
+
+    if (overflow === 'visible' || !overflow) {
+      scrollbarWidth.current =
+        window.innerWidth - document.documentElement.clientWidth;
+    }
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.paddingRight = `${scrollbarWidth.current}px`;
+    menuTransition.current = true;
+  }
+
+  function onMenuClose() {
+    document.body.style.overflow = 'visible';
+    document.body.style.paddingRight = 0;
+  }
+
   useEffect(() => {
     window.addEventListener('scroll', handleReposition);
     window.addEventListener('resize', handleReposition);
@@ -272,20 +302,8 @@ export default function ReactSelect(selectProps) {
   return (
     <Select
       components={replacedComponents}
-      onMenuOpen={() => {
-        const overflow = document.body.style.overflow;
-        if (overflow === 'visible' || !overflow) {
-          scrollbarWidth.current =
-            window.innerWidth - document.documentElement.clientWidth;
-        }
-        document.body.style.overflow = 'hidden';
-        document.body.style.paddingRight = `${scrollbarWidth.current}px`;
-        menuTransition.current = true;
-      }}
-      onMenuClose={() => {
-        document.body.style.overflow = 'visible';
-        document.body.style.paddingRight = 0;
-      }}
+      onMenuOpen={onMenuOpen}
+      onMenuClose={onMenuClose}
       styles={selectStyles}
       placeholder="Type here to search..."
       value={selectProps.options.filter(
