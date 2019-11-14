@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React from 'react';
+import React, {useState} from 'react';
 import { connect } from 'react-redux';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
@@ -30,6 +30,7 @@ const useStyles = makeStyles(theme => ({
 function ControlPanel(props) {
   const { routes, graphParams } = props;
   let secondStopList = [];
+  const [allowHover, setAllowHover] = useState(false);
 
   /**
    * Sets the direction
@@ -101,13 +102,16 @@ function ControlPanel(props) {
   }
 
   function handleMouseOver(stopId) {
-    props.onGraphParams({
-      ...graphParams,
-      stopOnHoverId: stopId
-    });
+    if (allowHover) {
+      props.onGraphParams({
+        ...graphParams,
+        stopOnHoverId: stopId
+      });
+    }
   }
 
   function clearHover() {
+    setAllowHover(false);
     props.onGraphParams({
       ...graphParams,
       stopOnHoverId: null
@@ -208,6 +212,7 @@ function ControlPanel(props) {
                     value={graphParams.startStopId || 1}
                     onChange={onSelectFirstStop}
                     input={<Input name="stop" id="fromstop" />}
+                    onOpen={() => setAllowHover(true)}
                     onClose={() => clearHover()}
                   >
                     {(selectedDirection.stops || []).map(firstStopId => (
@@ -239,6 +244,7 @@ function ControlPanel(props) {
                     value={graphParams.endStopId || 1}
                     onChange={onSelectSecondStop}
                     input={<Input name="stop" id="tostop" />}
+                    onOpen={() => setAllowHover(true)}
                     onClose={() => clearHover()}
                   >
                     {(secondStopList || []).map(secondStopId => (
