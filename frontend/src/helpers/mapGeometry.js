@@ -111,12 +111,12 @@ export function clipGeoJsonToServiceArea(geoJson) {
     "features": []
   };
 
-  for (var i = geoJsonFeatures.length - 1; i >= 0; i--) {
-    var geo1 = geoJsonFeatures[i];
-    for (var j = ServiceArea.features.length - 1; j >= 0; j--) {
-      var geo2 = ServiceArea.features[j];
+  for (const geo1 of geoJsonFeatures)  {
+    for (const geo2 of ServiceArea.features) {
+
       if (turf.booleanWithin(geo1, geo2)) {
         outputGeoJson.features.push(geo1);
+        break;
       }
        else {
         try {
