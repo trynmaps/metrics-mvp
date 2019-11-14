@@ -98,3 +98,38 @@ export function isInServiceArea(latLng) {
     return turf.booleanWithin(point, feature);
   });
 }
+
+// Clips any geoJson to the service area.
+// For all geoJson Features, check each Feature in the ServiceArea.
+// If the geoJson feature is completely enclosed in the serviceArea, retain the feature
+// If not, clip it.
+export function clipGeoJsonToServiceArea(geoJson) {
+
+  const geoJsonFeatures = turf.flatten(geoJson).features;
+  var outputGeoJson = {
+    "type": "FeatureCollection",
+    "features": []
+  };
+
+  for (var i = geoJsonFeatures.length - 1; i >= 0; i--) {
+    var geo1 = geoJsonFeatures[i];
+    for (var j = ServiceArea.features.length - 1; j >= 0; j--) {
+      var geo2 = ServiceArea.features[j];
+      if (turf.booleanWithin(geo1, geo2)) {
+        outputGeoJson.features.push(geo1);
+      }
+       else {
+        try {
+          var result = turf.intersect(geo1, geo2);
+          if (result) {
+            result.properties = geo1.properties;
+            outputGeoJson.features.push(result);
+          }
+        } catch (TopologyError) {
+          outputGeoJson.features.push(geo1);
+        }
+      }
+    }
+  }
+  return outputGeoJson;
+}
