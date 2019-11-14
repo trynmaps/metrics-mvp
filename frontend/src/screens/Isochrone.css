@@ -24,6 +24,7 @@
 .isochrone-controls
 {
     padding:5px;
+    min-width: 170px;
 }
 
 .isochrone-legend
@@ -83,7 +84,8 @@
     max-height: 150px;
 }
 
-.isochrone-routes label
+.isochrone-routes li
 {
     margin-bottom:0px;
+    max-height: 30px;
 }

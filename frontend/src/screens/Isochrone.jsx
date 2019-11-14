@@ -6,6 +6,12 @@ import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
+import FormGroup from '@material-ui/core/FormGroup';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
+import Checkbox from '@material-ui/core/Checkbox';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -558,17 +564,17 @@ class Isochrone extends React.Component {
     }
 
     return (
-      <div key={route.id}>
-        <label>
-          <input
-            type="checkbox"
+      <ListItem key={route.id}>
+        <ListItemIcon>
+          <Checkbox
             checked={enabled}
             onChange={this.handleToggleRoute}
             value={route.id}
-          />{' '}
-          {route.id}
-        </label>
-      </div>
+            color="primary"
+          />
+        </ListItemIcon>
+        <ListItemText id={route.id} primary={route.id}/>
+      </ListItem>
     );
   }
 
@@ -630,12 +636,12 @@ class Isochrone extends React.Component {
             url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
           />
           {/* see http://maps.stamen.com for details */}
-          <Control position="topleft">
+          <Control position="topleft" className="">
             <Grid container
               className="isochrone-controls"
               direction="column">
               <Grid item>
-                <Typography variant="button">Statistic</Typography>
+                <Typography variant="subtitle1" color="primary">Statistic</Typography>
               </Grid>
               <Grid item>
                 <Select
@@ -652,9 +658,9 @@ class Isochrone extends React.Component {
               className="isochrone-controls"
               direction="column">
               <Grid item>
-                <Typography variant="button">Max Trip Time</Typography>
+                <Typography variant="subtitle1" color="primary">Max Trip Time</Typography>
               </Grid>
-              <Grid item className="isochrone-controls-select">
+              <Grid item>
                 <Select
                   value={this.state.maxTripMin}
                   onChange={this.handleMaxTripMinChange}
@@ -672,20 +678,20 @@ class Isochrone extends React.Component {
               direction="column"
               alignItems="left">
               <Grid item>
-                <Typography variant="button">Routes</Typography>
+                <Typography variant="subtitle1" color="primary">Routes</Typography>
               </Grid>
               <Grid containter item
                 direction="row"
                 alignItems="flex-start">
                 <Grid item>
-                  <Button className="isochrone-select-all" onClick={this.selectAllRoutesClicked}>all</Button>
+                  <Button onClick={this.selectAllRoutesClicked}>all</Button>
                   <Button onClick={this.selectNoRoutesClicked}>none</Button>
                 </Grid>
               </Grid>
               <Grid item>
-                <div className="isochrone-routes">
+                <List className="isochrone-routes">
                   {(routes || []).map(route => this.makeRouteToggle(route))}
-                </div>
+                </List>
               </Grid>
             </Grid>
           </Control>
@@ -713,13 +719,13 @@ class Isochrone extends React.Component {
             </div>
           </Control>
           <Control position="bottomleft">
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={this.resetMapClicked}
-            >
-              Clear map
-            </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={this.resetMapClicked}
+              >
+                Clear map
+              </Button>
             <br />
             <br />
           </Control>
