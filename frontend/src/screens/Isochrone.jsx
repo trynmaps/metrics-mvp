@@ -12,7 +12,7 @@ import DateTimePanel from '../components/DateTimePanel';
 import { fetchRoutes } from '../actions';
 import { DefaultDisabledRoutes, routesUrl } from '../locationConstants';
 import { metricsBaseURL } from '../config';
-import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
+import { getTripPoints, isInServiceArea, clipGeoJsonToServiceArea } from '../helpers/mapGeometry';
 
 import './Isochrone.css';
 
@@ -173,7 +173,7 @@ class Isochrone extends React.Component {
     const layerOptions = tripMinOptions[`${tripMin}`] || defaultLayerOptions;
 
     const diffLayer = L.geoJson(
-      geoJson,
+      clipGeoJsonToServiceArea(geoJson),
       Object.assign(
         { bubblingMouseEvents: false, fillOpacity: 0.4, stroke: false },
         layerOptions,
@@ -211,6 +211,10 @@ class Isochrone extends React.Component {
   }
 
   showTripInfo(endLatLng, reachableCircles) {
+    if (!isInServiceArea(endLatLng)) {
+      return;
+    }
+
     this.setState({ endLatLng });
 
     const map = this.mapRef.current.leafletElement;
