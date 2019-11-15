@@ -1,5 +1,6 @@
 /* eslint-disable no-case-declarations */
 import Moment from 'moment';
+import { WEEKDAYS, WEEKENDS } from '../UIConstants';
 
 const momentYesterday = Moment(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -15,6 +16,11 @@ export const initialState = {
     startTime: null,
     endTime: null,
     date: momentYesterday.format('YYYY-MM-DD'),
+    daysBack: '1', // see UIConstants.DATE_RANGES, number of days in preconfigured date range including end date
+    startDate: momentYesterday.format('YYYY-MM-DD'), // only used for custom date ranges
+    // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
+    daysOfTheWeek: { ...WEEKDAYS.reduce((map, obj) => { map[obj.value] = true; return map}, {}),
+                     ...WEEKENDS.reduce((map, obj) => { map[obj.value] = true; return map}, {})},
   },
   spiderLatLng: null,
   tripTimesCache: {},

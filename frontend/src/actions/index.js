@@ -7,15 +7,61 @@ import {
   generateWaitTimeURL,
   routesUrl,
 } from '../locationConstants';
+import Moment from 'moment';
+import { CUSTOM_DATE_RANGE, MAX_DATE_RANGE } from '../UIConstants';
+
+/**
+ * Helper function to compute the list of days for the GraphQL query.
+ *
+ * @param graphParams Current UI state.
+ * @returns {Array} List of days to query for.
+ */
+function computeDates(graphParams) {
+  let endMoment = Moment(graphParams.date);
+  const daysBack = graphParams.daysBack;
+
+  let numberOfDaysBack = Number.parseInt(daysBack);
+
+  // If this is a custom date range, compute the number of days back
+  // based on the start date.
+
+  if (daysBack === CUSTOM_DATE_RANGE) {
+    const startMoment = Moment(graphParams.startDate);
+    const deltaDays = endMoment.diff(startMoment, 'days');
+    numberOfDaysBack = Math.abs(deltaDays) + 1; // add one for the end date itself
+    if (deltaDays < 0) { // if the start date is after end date, use the start date as the "end"
+      endMoment = startMoment;
+    }
+  }
+
+  if (numberOfDaysBack > MAX_DATE_RANGE) { // guard rail
+    numberOfDaysBack = MAX_DATE_RANGE;
+  }
+
+  // Generate the list of days, filtering by the days of the week checkboxes.
+
+  let dates = [];
+  for (let i = 0; i < numberOfDaysBack; i++) {
+
+    if (graphParams.daysOfTheWeek[endMoment.day()]) {
+      dates.push(endMoment.format('YYYY-MM-DD'));
+    }
+    endMoment.subtract(1, 'days');
+  }
+  return dates;
+}
 
 export function fetchGraphData(params) {
+
+  const dates = computeDates(params);
+
   return function(dispatch) {
 
     var query = `query($routeId:String, $startStopId:String, $endStopId:String,
-    $directionId:String, $date:String, $startTime:String, $endTime:String) {
+    $directionId:String, $date:[String], $startTime:String, $endTime:String) {
   routeMetrics(routeId:$routeId) {
     trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
-      interval(dates:[$date], startTime:$startTime, endTime:$endTime) {
+      interval(dates:$date, startTime:$startTime, endTime:$endTime) {
         headways {
           count median max
           percentiles(percentiles:[90]) { percentile value }
@@ -32,7 +78,7 @@ export function fetchGraphData(params) {
           histogram { binStart binEnd count }
         }
       }
-      timeRanges(dates:[$date]) {
+      timeRanges(dates:$date) {
         startTime endTime
         waitTimes {
           percentiles(percentiles:[50,90]) { percentile value }
@@ -46,17 +92,23 @@ export function fetchGraphData(params) {
 }`.replace(/\s+/g, ' ');
 
     axios.get('/api/graphql', {
-        params: { query: query, variables: JSON.stringify(params) },
+        params: { query: query, variables: JSON.stringify({...params, date: dates}) }, // computed dates aren't in graphParams so add here
         baseURL: metricsBaseURL,
       })
       .then(response => {
-        dispatch({
-          type: 'RECEIVED_GRAPH_DATA',
-          payload: response.data,
-          graphParams: params,
-        });
+
+        if (response.data && response.data.errors) {
+          // assume there is at least one error, but only show the first one
+          dispatch({ type: 'RECEIVED_GRAPH_ERROR', payload: response.data.errors[0].message });
+        } else {
+          dispatch({
+            type: 'RECEIVED_GRAPH_DATA',
+            payload: response.data,
+            graphParams: params,
+          });
+        }
       })
-      .catch(err => {
+      .catch(err => { // not sure which of the below is still applicable after moving to graphql
         const errStr =
           err.response && err.response.data && err.response.data.error
             ? err.response.data.error

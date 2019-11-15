@@ -58,6 +58,32 @@ export const TIME_RANGES = [
   },
 ];
 
+export const CUSTOM_DATE_RANGE = 'CUSTOM';
+export const MAX_DATE_RANGE = 90; // largest date range allowed, in days (30 might be more performant)
+
+// RadioGroup expects values to be strings, not numbers.
+export const DATE_RANGES = [
+  { value: '1', label: 'One day back' },
+  { value: '7', label: 'One week back' },
+  { value: '30', label: 'One month back' },
+  { value: '90', label: 'Three months back' },
+  { value: CUSTOM_DATE_RANGE, label: 'Custom start date' },
+];
+
+// Values are Moment days of the week (0-6)
+export const WEEKDAYS = [
+  { value: '1', label: 'Monday' },
+  { value: '2', label: 'Tuesday' },
+  { value: '3', label: 'Wednesday' },
+  { value: '4', label: 'Thursday' },
+  { value: '5', label: 'Friday' },
+];
+
+export const WEEKENDS = [
+  { value: '6', label: 'Saturday' },
+  { value: '0', label: 'Sunday' },
+];
+
 // Name of the time zone that the transit agency operates in.
 //
 // Time zone names can be found at:
