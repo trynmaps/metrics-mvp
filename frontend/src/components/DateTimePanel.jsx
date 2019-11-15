@@ -23,8 +23,10 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormLabel from '@material-ui/core/FormLabel';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
-import { TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
-  CUSTOM_DATE_RANGE, MAX_DATE_RANGE, WEEKDAYS, WEEKENDS } from '../UIConstants';
+import {
+  TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
+  CUSTOM_DATE_RANGE, MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
+} from '../UIConstants';
 import { initialState } from '../reducers/routesReducer';
 import { handleGraphParams } from '../actions';
 
@@ -156,7 +158,7 @@ function DateTimePanel(props) {
       });
     }
   };
-  
+
   /**
    * Handler that updates the date string in the state.
    *
@@ -171,51 +173,51 @@ function DateTimePanel(props) {
       });
     }
   };
-    
+
   // daysBack is for preserving radio button state.
   const setDateRange = event => {
-    
+
     const daysBack = event.target.value;
-    
+
     props.handleGraphParams({
       daysBack: daysBack,
     });
-    
+
     // The GraphQL api takes a list of dates, which are generated just before
     // calling the API.
   };
 
   const handleDayChange = event => {
     const day = event.target.value;
-    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek};
-    newDaysOfTheWeek[day] = event.target.checked; 
+    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
+    newDaysOfTheWeek[day] = event.target.checked;
     props.handleGraphParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
   };
-  
+
   /**
    * Bulk toggle.
    */
   const toggleDays = event => {
     const what = event.target.value === 'weekdays' ? WEEKDAYS : WEEKENDS;
-    
-    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek};
+
+    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
 
     // If all false -> set all to true; some false/true -> set all true; all true -> set all false;
     // That is, if all true, set to all false, otherwise set to all true.
 
     const newValue = !allTrue(newDaysOfTheWeek, what);
-    
+
     for (let i = 0; i < what.length; i++) {
       newDaysOfTheWeek[what[i].value] = newValue;
     }
-    
+
     props.handleGraphParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
   }
-  
+
   const allFalse = (dictionary, array) => {
     for (let i = 0; i < array.length; i++) {
       if (dictionary[array[i].value]) {
@@ -224,7 +226,7 @@ function DateTimePanel(props) {
     }
     return true;
   };
-  
+
   const allTrue = (dictionary, array) => {
     for (let i = 0; i < array.length; i++) {
       if (!dictionary[array[i].value]) {
@@ -291,7 +293,7 @@ function DateTimePanel(props) {
                 type="date"
                 defaultValue={graphParams.date}
                 InputProps={{
-                  inputProps:{
+                  inputProps: {
                     max: maxDate,
                   },
                 }}
@@ -318,14 +320,14 @@ function DateTimePanel(props) {
                     value={range.value}
                     control={<Radio />}
                     label={range.label}
-                    
+
                   />
                 ))}
 
               </RadioGroup>
             </FormControl>
           </ListItem>
-          
+
           <Collapse in={graphParams.daysBack === CUSTOM_DATE_RANGE}>
             <ListItem>
               <FormControl className={classes.formControl}>
@@ -335,7 +337,7 @@ function DateTimePanel(props) {
                   type="date"
                   defaultValue={graphParams.startDate}
                   InputProps={{
-                    inputProps:{
+                    inputProps: {
                       max: graphParams.date,
                       min: Moment(graphParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
                     },
@@ -349,56 +351,56 @@ function DateTimePanel(props) {
               </FormControl>
             </ListItem>
           </Collapse>
-          
-          <ListItem>          
-          <FormControl component="fieldset" className={classes.formControl}>
-            <FormLabel component="legend" className={classes.secondaryHeading}>Days of the Week</FormLabel>
-            
-            <Grid container>
-            <Grid item>
-            <FormGroup>
-              <FormControlLabel
-                control={<Checkbox value="weekdays"
-                checked={ !allFalse(graphParams.daysOfTheWeek, WEEKDAYS) }
-                indeterminate={ !allFalse(graphParams.daysOfTheWeek, WEEKDAYS) &&
-                  !allTrue(graphParams.daysOfTheWeek, WEEKDAYS) } 
-                onChange={toggleDays} />}
-                label="Weekdays"
-             />
-            
-              {WEEKDAYS.map(day =>
-              <FormControlLabel
-                control={<Checkbox checked={ graphParams.daysOfTheWeek[day.value] } onChange={handleDayChange} value={day.value} />}
-                key={day.value}
-                label={day.label}
-             />)}
-             </FormGroup>
-             </Grid>
-             <Grid item>
-             <FormGroup>
-             
-              <FormControlLabel
-                control={<Checkbox value="weekends"
-                checked={ !allFalse(graphParams.daysOfTheWeek, WEEKENDS) }
-                indeterminate={ !allFalse(graphParams.daysOfTheWeek, WEEKENDS) &&
-                  !allTrue(graphParams.daysOfTheWeek, WEEKENDS) } 
-                onChange={toggleDays} />}                
-                label="Weekends"
-             />
-            
-              {WEEKENDS.map(day =>
-              <FormControlLabel
-                control={<Checkbox checked={ graphParams.daysOfTheWeek[day.value] } onChange={handleDayChange} value={day.value} />}
-                key={day.value}
-                label={day.label}
-             />)}
-             </FormGroup>
-             
-             </Grid>
-             </Grid>
-          </FormControl>
-          
-          </ListItem>                    
+
+          <ListItem>
+            <FormControl component="fieldset" className={classes.formControl}>
+              <FormLabel component="legend" className={classes.secondaryHeading}>Days of the Week</FormLabel>
+
+              <Grid container>
+                <Grid item>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={<Checkbox value="weekdays"
+                        checked={!allFalse(graphParams.daysOfTheWeek, WEEKDAYS)}
+                        indeterminate={!allFalse(graphParams.daysOfTheWeek, WEEKDAYS) &&
+                          !allTrue(graphParams.daysOfTheWeek, WEEKDAYS)}
+                        onChange={toggleDays} />}
+                      label="Weekdays"
+                    />
+
+                    {WEEKDAYS.map(day =>
+                      <FormControlLabel
+                        control={<Checkbox checked={graphParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
+                        key={day.value}
+                        label={day.label}
+                      />)}
+                  </FormGroup>
+                </Grid>
+                <Grid item>
+                  <FormGroup>
+
+                    <FormControlLabel
+                      control={<Checkbox value="weekends"
+                        checked={!allFalse(graphParams.daysOfTheWeek, WEEKENDS)}
+                        indeterminate={!allFalse(graphParams.daysOfTheWeek, WEEKENDS) &&
+                          !allTrue(graphParams.daysOfTheWeek, WEEKENDS)}
+                        onChange={toggleDays} />}
+                      label="Weekends"
+                    />
+
+                    {WEEKENDS.map(day =>
+                      <FormControlLabel
+                        control={<Checkbox checked={graphParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
+                        key={day.value}
+                        label={day.label}
+                      />)}
+                  </FormGroup>
+
+                </Grid>
+              </Grid>
+            </FormControl>
+
+          </ListItem>
 
           <ListItem>
             <FormControl className={classes.formControl}>
