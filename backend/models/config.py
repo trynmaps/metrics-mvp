@@ -31,9 +31,24 @@ class Agency:
         # for Nextbus agencies, OpenTransit's route ID must be the same as Nextbus's route tag.
         self.route_id_gtfs_field = conf.get("route_id_gtfs_field", "route_id")
 
+        # allow OpenTransit's stop id to be another field besides GTFS stop_id, e.g. stop_code.
+        self.stop_id_gtfs_field = conf.get("stop_id_gtfs_field", "stop_id")
+
         # by default, start each "day" at 3 AM local time so midnight-3am buses are associated with previous day
         self.default_day_start_hour = conf.get('default_day_start_hour', 3)
         self.custom_day_start_hours = conf.get('custom_day_start_hours', [])
+
+        # custom_directions property is a map of GTFS route ID (string) to array of direction metadata objects for that route.
+        # each direction metadata object must contain `id` and `gtfs_direction_id` properties, and may contain `title`,
+        # `stop_ids` (list of stop IDs which must appear in the direction in order),
+        # and `not_stop_ids` (list of stop IDs which must not appear in the direction).
+        # If custom direction metadata is not present for a route, save_routes.py will determine directions by default
+        # by finding the most common GTFS shape_id for each direction_id.
+        self.custom_directions = conf.get('custom_directions', {})
+
+        # map of GTFS direction_id (string) to object with metadata about that direction ID.
+        # `title_prefix` property will be prepended to the title of the direction for display in the UI.
+        self.default_directions = conf.get('default_directions', {})
 
         self.conf = conf
 

@@ -9,11 +9,11 @@ import requests
 import json
 import boto3
 import gzip
+import hashlib
 import math
 import zipfile
 
 # Downloads and parses the GTFS specification (hardcoded for Muni for now),
-# matches up GTFS shapes with Nextbus directions and stops,
 # and saves the configuration for all routes to S3.
 # The S3 object contains data merged from Nextbus and GTFS.
 # The frontend can then request this S3 URL directly without hitting the Python backend.
@@ -44,11 +44,6 @@ import zipfile
 # In order to match a Nextbus direction with a GTFS shape_id, this finds the GTFS shape_id for that route where
 # distance(first coordinate of shape, first stop location) + distance(last coordinate of shape, last stop location)
 # is a minimum.
-#
-# In order to determine where a Nextbus stop appears along a GTFS shape, this finds the closest coordinate of the
-# GTFS shape to the Nextbus stop, then determines whether the stop is closer to the line between that GTFS shape coordinate
-# and the previous GTFS coordinate, or the line between that GTFS shape coordinate and the next GTFS coordinate.
-# (This may not always be correct for shapes that loop back on themselves.)
 #
 # Currently the script just overwrites the one S3 path, but this process could be extended in the future to
 # store different paths for different dates, to allow fetching historical data for route configurations.
@@ -123,6 +118,72 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
         'offset': int(best_offset) # distance in meters between this stop and the closest line segment of shape
     }
 
+def get_unique_shapes(direction_trips_df, stop_times_df, stops_map, normalize_gtfs_stop_id):
+
+    stop_times_trip_id_values = stop_times_df['trip_id'].values
+
+    direction_shape_id_values = direction_trips_df['shape_id'].values
+
+    unique_shapes_map = {}
+
+    direction_shape_ids, direction_shape_id_counts = np.unique(direction_shape_id_values, return_counts=True)
+    direction_shape_id_order = np.argsort(-1 * direction_shape_id_counts)
+
+    direction_shape_ids = direction_shape_ids[direction_shape_id_order]
+    direction_shape_id_counts = direction_shape_id_counts[direction_shape_id_order]
+
+    for shape_id, shape_id_count in zip(direction_shape_ids, direction_shape_id_counts):
+        shape_trip = direction_trips_df[direction_shape_id_values == shape_id].iloc[0]
+        shape_trip_id = shape_trip.trip_id
+        shape_trip_stop_times = stop_times_df[stop_times_trip_id_values == shape_trip_id].sort_values('stop_sequence')
+
+        shape_trip_stop_ids = [
+            normalize_gtfs_stop_id(gtfs_stop_id)
+            for gtfs_stop_id in shape_trip_stop_times['stop_id'].values
+        ]
+
+        unique_shape_key = hashlib.sha256(json.dumps(shape_trip_stop_ids).encode('utf-8')).hexdigest()[0:12]
+
+        #print(f'  shape {shape_id} ({shape_id_count})')
+
+        if unique_shape_key not in unique_shapes_map:
+            for other_shape_key, other_shape_info in unique_shapes_map.items():
+                #print(f"   checking match with {shape_id} and {other_shape_info['shape_id']}")
+                if is_subsequence(shape_trip_stop_ids, other_shape_info['stop_ids']):
+                    print(f"    shape {shape_id} is subsequence of shape {other_shape_info['shape_id']}")
+                    unique_shape_key = other_shape_key
+                    break
+                elif is_subsequence(other_shape_info['stop_ids'], shape_trip_stop_ids):
+                    print(f"    shape {other_shape_info['shape_id']} is subsequence of shape {shape_id}")
+                    shape_id_count += other_shape_info['count']
+                    del unique_shapes_map[other_shape_key]
+                    break
+
+        if unique_shape_key not in unique_shapes_map:
+            unique_shapes_map[unique_shape_key] = {
+                'count': 0,
+                'shape_id': shape_id,
+                'stop_ids': shape_trip_stop_ids
+            }
+
+        unique_shapes_map[unique_shape_key]['count'] += shape_id_count
+
+    sorted_shapes = sorted(unique_shapes_map.values(), key=lambda shape: -1 * shape['count'])
+
+    for shape_info in sorted_shapes:
+        count = shape_info['count']
+        shape_id = shape_info['shape_id']
+        stop_ids = shape_info['stop_ids']
+
+        first_stop_id = stop_ids[0]
+        last_stop_id = stop_ids[-1]
+        first_stop = stops_map[first_stop_id]
+        last_stop = stops_map[last_stop_id]
+
+        print(f'  shape_id: {shape_id} ({count}x) stops:{len(stop_ids)} from {first_stop_id} {first_stop.stop_name} to {last_stop_id} {last_stop.stop_name} {",".join(stop_ids)}')
+
+    return sorted_shapes
+
 def download_gtfs_data(agency: config.Agency, gtfs_cache_dir):
     gtfs_url = agency.gtfs_url
     if gtfs_url is None:
@@ -143,6 +204,23 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir):
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(gtfs_cache_dir)
+
+def is_subsequence(smaller, bigger):
+    smaller_len = len(smaller)
+    bigger_len = len(bigger)
+    if smaller_len > bigger_len:
+        return False
+
+    try:
+        start_pos = bigger.index(smaller[0])
+    except ValueError:
+        return False
+
+    end_pos = start_pos+smaller_len
+    if end_pos > bigger_len:
+        return False
+
+    return smaller == bigger[start_pos:end_pos]
 
 def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
     agency_id = agency.id
@@ -170,7 +248,24 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
 
     print(f"Loading {agency_id} stops...")
     stops_df = feed.stops
-    stops_map = {stop.stop_id: stop for stop in stops_df.itertuples()}
+
+    # gtfs_stop_ids_map allows looking up row from stops.txt via GTFS stop_id
+    gtfs_stop_ids_map = {stop.stop_id: stop for stop in stops_df.itertuples()}
+
+    stop_id_gtfs_field = agency.stop_id_gtfs_field
+
+    # get OpenTransit stop ID for GTFS stop_id (may be the same)
+    def normalize_gtfs_stop_id(gtfs_stop_id):
+        if stop_id_gtfs_field != 'stop_id':
+            return getattr(gtfs_stop_ids_map[gtfs_stop_id], stop_id_gtfs_field)
+        else:
+            return gtfs_stop_id
+
+    # stops_map allows looking up row from stops.txt via OpenTransit stop ID
+    if stop_id_gtfs_field != 'stop_id':
+        stops_map = {getattr(stop, stop_id_gtfs_field): stop for stop in stops_df.itertuples()}
+    else:
+        stops_map = gtfs_stop_ids_map
 
     if agency.provider == 'nextbus':
         nextbus_route_order = [route.id for route in nextbus.get_route_list(agency.nextbus_id)]
@@ -213,9 +308,6 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
         else:
             sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
 
-        #if route_id != '39' and route_id != '36' and route_id != '9' and route_id != '30':
-        #    continue
-
         print(f'route {route_id} {title}')
 
         route_data = {
@@ -243,69 +335,138 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
 
         route_trips_df = trips_df[trips_df['route_id'] == gtfs_route_id]
 
-        route_direction_ids = np.unique(route_trips_df['direction_id'].values)
+        route_direction_id_values = route_trips_df['direction_id'].values
 
-        route_shape_ids, route_shape_id_counts = np.unique(route_trips_df['shape_id'].values, return_counts=True)
+        def add_custom_direction(custom_direction_info):
+            direction_id = custom_direction_info['id']
+            print(f' custom direction = {direction_id}')
 
-        # sort from most common -> least common (used as tiebreak for two shapes with the same total distance to first/last stop)
-        route_shape_id_order = np.argsort(-1 * route_shape_id_counts)
+            gtfs_direction_id = custom_direction_info['gtfs_direction_id']
 
-        route_shape_ids = route_shape_ids[route_shape_id_order]
-        route_shape_id_counts = route_shape_id_counts[route_shape_id_order]
+            direction_trips_df = route_trips_df[route_direction_id_values == gtfs_direction_id]
 
-        used_shape_ids = {}
+            contains_stop_ids = custom_direction_info.get('stop_ids', [])
+            not_stop_ids = custom_direction_info.get('not_stop_ids', [])
 
-        for direction_id in route_direction_ids:
+            shapes = get_unique_shapes(
+                direction_trips_df=direction_trips_df,
+                stop_times_df=stop_times_df,
+                stops_map=stops_map,
+                normalize_gtfs_stop_id=normalize_gtfs_stop_id
+            )
 
-            print(f' direction = {direction_id}')
+            def contains_required_stops(shape_stop_ids):
+                min_index = 0
+                for stop_id in contains_stop_ids:
+                    try:
+                        index = shape_stop_ids.index(stop_id, min_index)
+                    except ValueError:
+                        return False
+                    min_index = index + 1
+                return True
 
-            direction_trips_df = route_trips_df[route_trips_df['direction_id'] == direction_id]
-            direction_shape_ids, direction_shape_id_counts = np.unique(direction_trips_df['shape_id'].values, return_counts=True)
-            direction_common_shape_id_index = np.argmax(direction_shape_id_counts)
-            direction_common_shape_id = direction_shape_ids[direction_common_shape_id_index]
+            def contains_prohibited_stop(shape_stop_ids):
+                for stop_id in not_stop_ids:
+                    try:
+                        index = shape_stop_ids.index(stop_id)
+                        return True
+                    except ValueError:
+                        pass
+                return False
 
-            print(f'  most common shape = {direction_common_shape_id} ({direction_shape_id_counts[direction_common_shape_id_index]} times)')
+            matching_shapes = []
+            for shape in shapes:
+                shape_stop_ids = shape['stop_ids']
+                if contains_required_stops(shape_stop_ids) and not contains_prohibited_stop(shape_stop_ids):
+                    matching_shapes.append(shape)
 
-            example_trip = direction_trips_df[direction_trips_df['shape_id'] == direction_common_shape_id].iloc[0]
-            example_trip_id = example_trip.trip_id
+            if len(matching_shapes) != 1:
+                matching_shape_ids = [shape['shape_id'] for shape in matching_shapes]
+                stops_desc = ''
+                if len(contains_stop_ids) > 0:
+                    stops_desc += f" containing {','.join(contains_stop_ids)}"
 
-            route_direction = route_directions_df[route_directions_df['direction_id'] == direction_id] if route_directions_df is not None else None
+                if len(not_stop_ids) > 0:
+                    stops_desc += f" not containing {','.join(not_stop_ids)}"
 
-            if route_direction is not None and not route_direction.empty:
-                direction_title = route_direction['direction_name'].values[0]
-            elif hasattr(example_trip, 'trip_headsign'):
-                direction_title = example_trip.trip_headsign
-            else:
-                direction_title = f'Direction {direction_id}'
+                raise Exception(f"{len(matching_shapes)} shapes found for route {route_id} with GTFS direction ID {gtfs_direction_id}{stops_desc}: {','.join(matching_shape_ids)}")
 
-            dir_stop_ids = []
+            matching_shape = matching_shapes[0]
+            matching_shape_id = matching_shape['shape_id']
+            matching_shape_count = matching_shape['count']
+
+            print(f'  matching shape = {matching_shape_id} ({matching_shape_count} times)')
+
+            add_direction(
+                id=direction_id,
+                gtfs_shape_id=matching_shape_id,
+                gtfs_direction_id=gtfs_direction_id,
+                stop_ids=matching_shape['stop_ids'],
+                title=custom_direction_info.get('title', None)
+            )
+
+        def add_default_direction(direction_id):
+            print(f' default direction = {direction_id}')
+
+            direction_trips_df = route_trips_df[route_direction_id_values == direction_id]
+
+            shapes = get_unique_shapes(
+                direction_trips_df=direction_trips_df,
+                stop_times_df=stop_times_df,
+                stops_map=stops_map,
+                normalize_gtfs_stop_id=normalize_gtfs_stop_id)
+
+            best_shape = shapes[0]
+            best_shape_id = best_shape['shape_id']
+            best_shape_count = best_shape['count']
+
+            print(f'  most common shape = {best_shape_id} ({best_shape_count} times)')
+
+            add_direction(
+                id=direction_id,
+                gtfs_shape_id=best_shape_id,
+                gtfs_direction_id=direction_id,
+                stop_ids=best_shape['stop_ids']
+            )
+
+        def add_direction(id, gtfs_shape_id, gtfs_direction_id, stop_ids, title = None):
+
+            if title is None:
+                default_direction_info = agency.default_directions.get(gtfs_direction_id, {})
+                title_prefix = default_direction_info.get('title_prefix', None)
+
+                last_stop_id = stop_ids[-1]
+                last_stop = stops_map[last_stop_id]
+
+                if title_prefix is not None:
+                    title = f"{title_prefix} to {last_stop.stop_name}"
+                else:
+                    title = f"To {last_stop.stop_name}"
+
+            print(f'  title = {title}')
 
             dir_data = {
-                'id': direction_id,
-                'title': direction_title,
-                'gtfs_shape_id': direction_common_shape_id,
-                #'name': dir_info.name,
-                'stops': dir_stop_ids,
+                'id': id,
+                'title': title,
+                'gtfs_shape_id': gtfs_shape_id,
+                'gtfs_direction_id': gtfs_direction_id,
+                'stops': stop_ids,
                 'stop_geometry': {},
             }
             route_data['directions'].append(dir_data)
 
-            example_trip_stop_times = stop_times_df[stop_times_df['trip_id'] == example_trip_id].sort_values('stop_sequence')
-
-            for stop_time in example_trip_stop_times.itertuples():
-                stop = stops_map[stop_time.stop_id]
-                #print(stop)
+            for stop_id in stop_ids:
+                stop = stops_map[stop_id]
                 stop_data = {
-                    'id': stop.stop_id,
+                    'id': stop_id,
                     'lat': round(stop.geometry.y, 5), # stop_lat in gtfs
                     'lon': round(stop.geometry.x, 5), # stop_lon in gtfs
                     'title': stop.stop_name,
                     'url': stop.stop_url if hasattr(stop, 'stop_url') and isinstance(stop.stop_url, str) else None,
                 }
-                route_data['stops'][stop.stop_id] = stop_data
-                dir_stop_ids.append(stop.stop_id)
+                route_data['stops'][stop_id] = stop_data
 
-            geometry = shapes_df[shapes_df['shape_id'] == direction_common_shape_id]['geometry'].values[0]
+            geometry = shapes_df[shapes_df['shape_id'] == gtfs_shape_id]['geometry'].values[0]
 
             # partridge returns GTFS geometries for each shape_id as a shapely LineString
             # (https://shapely.readthedocs.io/en/stable/manual.html#linestrings).
@@ -321,8 +482,7 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
                 # match nextbus direction IDs with GTFS direction IDs
                 best_nextbus_dir_info, best_terminal_dist = match_nextbus_direction(nextbus_route_config, geometry)
                 print(f'  {direction_id} = {best_nextbus_dir_info.id} (terminal_dist={int(best_terminal_dist)}) {" (questionable match)" if best_terminal_dist > 300 else ""}')
-
-                dir_data['title'] = best_nextbus_dir_info.title
+                # dir_data['title'] = best_nextbus_dir_info.title
                 dir_data['nextbus_direction_id'] = best_nextbus_dir_info.id
 
             start_lat = geometry.coords[0][1]
@@ -362,7 +522,7 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
             # Find each stop along the route shape, so that the frontend can draw line segments between stops along the shape
             start_index = 0
 
-            for stop_id in dir_stop_ids:
+            for stop_id in stop_ids:
                 stop_info = route_data['stops'][stop_id]
 
                 # Need to project lon/lat coords to x/y in order for shapely to determine the distance between
@@ -379,6 +539,13 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
                 dir_data['stop_geometry'][stop_id] = stop_geometry
 
                 start_index = stop_geometry['after_index']
+
+        if route_id in agency.custom_directions:
+            for custom_direction_info in agency.custom_directions[route_id]:
+                add_custom_direction(custom_direction_info)
+        else:
+            for direction_id in np.unique(route_direction_id_values):
+                add_default_direction(direction_id)
 
     if routes_data[0]['sort_order'] is not None:
         sort_key = lambda route_data: route_data['sort_order']
