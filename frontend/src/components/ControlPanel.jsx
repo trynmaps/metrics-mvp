@@ -132,19 +132,25 @@ function ControlPanel(props) {
       endStopId: null,
     });
   }
-
-  function handleMouseOver(node, title) {
+  /**
+   * Handle mouseover event on Select TO & From dropdown list item.
+   */
+  function handleItemMouseOver(node, title) {
     if (node && allowHover) {
       node.classList.add('on-hover');
       node.style.setProperty('--stop-name', `"${title}"`);
     }
   }
-
-  function handleMouseOut(node) {
+  /**
+   * Handle mouseout event on Select TO & From dropdown list item.
+   */
+  function handleItemMouseOut(node) {
     node && node.classList.remove('on-hover');
   }
-
-  function handleOnClose() {
+  /**
+   * Handle Select component close
+   */
+  function handleSelectClose() {
     setAllowHover(false);
     const nodeList = document.querySelectorAll('.on-hover');
     nodeList.forEach(node => node.classList.remove('on-hover'));
@@ -216,7 +222,7 @@ function ControlPanel(props) {
                     onChange={onSelectFirstStop}
                     input={<Input name="stop" id="fromstop" />}
                     onOpen={() => setAllowHover(true)}
-                    onClose={handleOnClose}
+                    onClose={handleSelectClose}
                   >
                     {(selectedDirection.stops || []).map(firstStopId => {
                       const icon = document.querySelector(`.id${firstStopId}`);
@@ -229,10 +235,10 @@ function ControlPanel(props) {
                         <MenuItem
                           key={firstStopId}
                           value={firstStopId}
-                          onMouseOver={() => handleMouseOver(icon, title)}
-                          onFocus={() => handleMouseOver(icon, title)}
-                          onMouseOut={() => handleMouseOut(icon)}
-                          onBlur={() => handleMouseOut(icon)}
+                          onMouseOver={() => handleItemMouseOver(icon, title)}
+                          onFocus={() => handleItemMouseOver(icon, title)}
+                          onMouseOut={() => handleItemMouseOut(icon)}
+                          onBlur={() => handleItemMouseOut(icon)}
                         >
                           {title}
                         </MenuItem>
@@ -252,7 +258,7 @@ function ControlPanel(props) {
                     onChange={onSelectSecondStop}
                     input={<Input name="stop" id="tostop" />}
                     onOpen={() => setAllowHover(true)}
-                    onClose={handleOnClose}
+                    onClose={handleSelectClose}
                   >
                     {(secondStopList || []).map(secondStopId => {
                       const icon = document.querySelector(`.id${secondStopId}`);
@@ -265,10 +271,10 @@ function ControlPanel(props) {
                         <MenuItem
                           key={secondStopId}
                           value={secondStopId}
-                          onMouseOver={() => handleMouseOver(icon, title)}
-                          onFocus={() => handleMouseOver(icon, title)}
-                          onMouseOut={() => handleMouseOut(icon)}
-                          onBlur={() => handleMouseOut(icon)}
+                          onMouseOver={() => handleItemMouseOver(icon, title)}
+                          onFocus={() => handleItemMouseOver(icon, title)}
+                          onMouseOut={() => handleItemMouseOut(icon)}
+                          onBlur={() => handleItemMouseOut(icon)}
                         >
                           {title}
                         </MenuItem>
