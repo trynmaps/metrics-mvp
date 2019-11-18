@@ -40,8 +40,8 @@ class Agency:
 
         # custom_directions property is a map of GTFS route ID (string) to array of direction metadata objects for that route.
         # each direction metadata object must contain `id` and `gtfs_direction_id` properties, and may contain `title`,
-        # `stop_ids` (list of stop IDs which must appear in the direction in order),
-        # and `not_stop_ids` (list of stop IDs which must not appear in the direction).
+        # `included_stop_ids` (list of stop IDs which must appear in the direction in order),
+        # and `excluded_stop_ids` (list of stop IDs which must not appear in the direction).
         # If custom direction metadata is not present for a route, save_routes.py will determine directions by default
         # by finding the most common GTFS shape_id for each direction_id.
         self.custom_directions = conf.get('custom_directions', {})

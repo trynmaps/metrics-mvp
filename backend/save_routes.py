@@ -345,8 +345,8 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
 
             direction_trips_df = route_trips_df[route_direction_id_values == gtfs_direction_id]
 
-            contains_stop_ids = custom_direction_info.get('stop_ids', [])
-            not_stop_ids = custom_direction_info.get('not_stop_ids', [])
+            included_stop_ids = custom_direction_info.get('included_stop_ids', [])
+            excluded_stop_ids = custom_direction_info.get('excluded_stop_ids', [])
 
             shapes = get_unique_shapes(
                 direction_trips_df=direction_trips_df,
@@ -355,18 +355,18 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
                 normalize_gtfs_stop_id=normalize_gtfs_stop_id
             )
 
-            def contains_required_stops(shape_stop_ids):
+            def contains_included_stops(shape_stop_ids):
                 min_index = 0
-                for stop_id in contains_stop_ids:
+                for stop_id in included_stop_ids:
                     try:
                         index = shape_stop_ids.index(stop_id, min_index)
                     except ValueError:
                         return False
-                    min_index = index + 1
+                    min_index = index + 1 # stops must appear in same order as in included_stop_ids
                 return True
 
-            def contains_prohibited_stop(shape_stop_ids):
-                for stop_id in not_stop_ids:
+            def contains_excluded_stop(shape_stop_ids):
+                for stop_id in excluded_stop_ids:
                     try:
                         index = shape_stop_ids.index(stop_id)
                         return True
@@ -377,19 +377,22 @@ def save_routes_for_agency(agency: config.Agency, save_to_s3=True):
             matching_shapes = []
             for shape in shapes:
                 shape_stop_ids = shape['stop_ids']
-                if contains_required_stops(shape_stop_ids) and not contains_prohibited_stop(shape_stop_ids):
+                if contains_included_stops(shape_stop_ids) and not contains_excluded_stop(shape_stop_ids):
                     matching_shapes.append(shape)
 
             if len(matching_shapes) != 1:
                 matching_shape_ids = [shape['shape_id'] for shape in matching_shapes]
-                stops_desc = ''
-                if len(contains_stop_ids) > 0:
-                    stops_desc += f" containing {','.join(contains_stop_ids)}"
+                error_message = f'{len(matching_shapes)} shapes found for route {route_id} with GTFS direction ID {gtfs_direction_id}'
+                if len(included_stop_ids) > 0:
+                    error_message += f" including {','.join(included_stop_ids)}"
 
-                if len(not_stop_ids) > 0:
-                    stops_desc += f" not containing {','.join(not_stop_ids)}"
+                if len(excluded_stop_ids) > 0:
+                    error_message += f" excluding {','.join(excluded_stop_ids)}"
 
-                raise Exception(f"{len(matching_shapes)} shapes found for route {route_id} with GTFS direction ID {gtfs_direction_id}{stops_desc}: {','.join(matching_shape_ids)}")
+                if len(matching_shape_ids) > 0:
+                    error_message += f": {','.join(matching_shape_ids)}"
+
+                raise Exception(error_message)
 
             matching_shape = matching_shapes[0]
             matching_shape_id = matching_shape['shape_id']

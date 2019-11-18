@@ -15,49 +15,49 @@ custom_directions:
     - id: "1-48th"
       title: "Inbound from 48th Ave & Point Lobos Ave to Transit Center"
       gtfs_direction_id: "1"
-      stop_ids: ["13608"]
+      included_stop_ids: ["13608"]
     - id: "1-VA"
       title: "Inbound from V.A. Hospital to Transit Center"
       gtfs_direction_id: "1"
-      stop_ids: ["15511"]
+      included_stop_ids: ["15511"]
     - id: "0-32nd"
       gtfs_direction_id: "0"
-      stop_ids: ["14275"]
+      included_stop_ids: ["14275"]
     - id: "0-48th"
       gtfs_direction_id: "0"
-      stop_ids: ["13608"]
-      not_stop_ids: ["15511"]
+      included_stop_ids: ["13608"]
+      excluded_stop_ids: ["15511"]
     - id: "0-VA"
       title: "Outbound to 48th Ave & Point Lobos Ave via V.A. Hospital"
       gtfs_direction_id: "0"
-      stop_ids: ["15511","13608"]
+      included_stop_ids: ["15511","13608"]
   '47':
     - id: "1"
       gtfs_direction_id: "1"
-      not_stop_ids: ["14967"]
+      excluded_stop_ids: ["14967"]
     - id: "1-3rd"
       title: "Inbound to Powell St & Beach St via 3rd St"
       gtfs_direction_id: "1"
-      stop_ids: ["14967"]
+      included_stop_ids: ["14967"]
     - id: "0"
       gtfs_direction_id: "0"
-      stop_ids: ["13723"]
+      included_stop_ids: ["13723"]
   '81X':
     - id: "1"
       gtfs_direction_id: "1"
-      stop_ids: ["16694"]
+      included_stop_ids: ["16694"]
   '83X':
     - id: "0"
       gtfs_direction_id: "0"
-      stop_ids: ["17776"]
+      included_stop_ids: ["17776"]
     - id: "1-18010"
       title: "Inbound to 9th St & Market St via Brannan St & 8th St"
       gtfs_direction_id: "1"
-      stop_ids: ["18010"]
+      included_stop_ids: ["18010"]
     - id: "1-17683"
       title: "Inbound to 9th St & Market St via Townsend St & 8th St"
       gtfs_direction_id: "1"
-      stop_ids: ["17683"]
+      included_stop_ids: ["17683"]
 default_day_start_hour: 3
 custom_day_start_hours:
   - start_hour: 0 # owl routes run from 1AM to 5AM so they are associated with the same day
