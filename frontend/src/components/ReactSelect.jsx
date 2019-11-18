@@ -56,10 +56,15 @@ export default function ReactSelect(selectProps) {
   const focusedOption = useRef();
   const scrollbarWidth = useRef(0);
   const isInitialMount = useRef(true);
+  // determines whether transitionDuration is used, otherwise 0. Set to false on resize
   const menuTransition = useRef(true);
   const menuPlacementTop = useRef(false);
   const [textFieldDOMRect, setTextFieldDOMRect] = useState({});
 
+  /**
+   * updates textfield location after resize/scroll
+   * re-renders menu if open which updates menu placement and max height
+   */
   function handleReposition() {
     clearTimeout(window[`${selectProps.inputId}Timeout`]);
     window[`${selectProps.inputId}Timeout`] = setTimeout(() => {
@@ -163,6 +168,11 @@ export default function ReactSelect(selectProps) {
         document.documentElement.clientWidth +
         scrollbarWidth.current;
 
+      /**
+       * check if the right side of the menu will be outside the view
+       * if so change the 'right' property of the style object
+       * but only if the left side is not cut off in the process, otherwise default positon
+       */
       if (rightWillSlice && !leftWillSlice) {
         if (menuStyleRight !== idealRightPosition) {
           setMenuStyleRight(idealRightPosition);
@@ -179,6 +189,10 @@ export default function ReactSelect(selectProps) {
         setMenuStyleBottom(0);
       }
 
+      /**
+       * temporary fix to react-select issue not setting focus to selected value by default
+       * may or may not be needed after fixing issue with default focus option
+       */
       if (focusedOption.current) {
         focusedOption.current.parentNode.scrollTop =
           focusedOption.current.offsetTop -
@@ -186,6 +200,10 @@ export default function ReactSelect(selectProps) {
           focusedOption.current.clientHeight / 2;
       }
 
+      /**
+       * set focus back to input element after resize
+       * currently doesn't allow virtual keyboard to close without closing menu via blur
+       */
       document
         .getElementById(`${selectProps.inputId}Value`)
         .firstChild.firstChild.firstChild.focus();
@@ -214,6 +232,7 @@ export default function ReactSelect(selectProps) {
   function MenuList(props) {
     let maxHeight;
 
+    // calculates appropriate max height depending on top or bottom menu placement
     if (menuPlacementTop.current) {
       maxHeight =
         textFieldDOMRect.top -
