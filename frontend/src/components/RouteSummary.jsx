@@ -89,13 +89,13 @@ function RouteSummary(props) {
 
   const popoverContentTotalScore = grades ? (
     <Fragment>
-      Trip score of {grades.totalScore} is the average of the following
+      Route score of {grades.totalScore} is the average of the following
       subscores:
       <Box pt={2}>
         <Table>
           <TableBody>
             <TableRow>
-              <TableCell>Median Wait</TableCell>
+              <TableCell>Median wait</TableCell>
               <TableCell align="right">{grades.medianWaitScore}</TableCell>
             </TableRow>
             <TableRow>
@@ -107,7 +107,7 @@ function RouteSummary(props) {
               <TableCell align="right"> {grades.speedScore}</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell>Extra travel</TableCell>
+              <TableCell>Travel variance</TableCell>
               <TableCell align="right"> {grades.travelVarianceScore}</TableCell>
             </TableRow>
           </TableBody>
@@ -174,7 +174,9 @@ function RouteSummary(props) {
 
   const popoverContentTravelVariance = grades ? (
     <Fragment>
-      Extra travel time of{' '}
+      Variance is the travel time above the median time, for 90% of trips.
+      In other words, most trips will take up to this much additional travel time.
+      Variance of{' '}
       {variability === null ? '--' : variability.toFixed(1)} min gets a score of{' '}
       {grades.travelVarianceScore}.
       <Box pt={2}>
@@ -265,7 +267,7 @@ function RouteSummary(props) {
           <InfoScoreCard
             grades={speed && grades ? grades : null}
             gradeName="travelVarianceScore"
-            title="Extra Travel"
+            title="Travel Variance"
             largeValue={variability === null ? '--' : variability.toFixed(0)}
             smallValue="&nbsp;min"
             bottomContent={`In ${PLANNING_PERCENTILE}% of trips`}

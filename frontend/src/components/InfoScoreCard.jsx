@@ -38,6 +38,7 @@ export default function InfoScoreCard(props) {
   const useStyles = makeStyles(theme => ({
     popover: {
       padding: theme.spacing(2),
+      maxWidth: 500,
     },
   }));
 

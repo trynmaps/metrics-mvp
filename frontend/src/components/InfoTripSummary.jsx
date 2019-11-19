@@ -2,7 +2,7 @@
  * Stop to stop trip summary component.
  */
 
-import React, { Fragment } from 'react';
+import React, { Fragment, useState } from 'react';
 
 import {
   Table,
@@ -12,7 +12,9 @@ import {
   Typography,
 } from '@material-ui/core';
 import Grid from '@material-ui/core/Grid';
+import IconButton from '@material-ui/core/IconButton';
 import Paper from '@material-ui/core/Paper';
+import Popover from '@material-ui/core/Popover';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import {
@@ -24,6 +26,7 @@ import { PLANNING_PERCENTILE } from '../UIConstants';
 import { getPercentileValue } from '../helpers/graphData';
 import InfoScoreCard from './InfoScoreCard';
 import InfoScoreLegend from './InfoScoreLegend';
+import InfoIcon from '@material-ui/icons/InfoOutlined';
 
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.
@@ -31,6 +34,17 @@ import InfoScoreLegend from './InfoScoreLegend';
  * @param {any} props
  */
 export default function InfoTripSummary(props) {
+  
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  function handleClick(event) {
+    setAnchorEl(event.currentTarget);
+  }
+
+  function handleClose() {
+    setAnchorEl(null);
+  }
+  
   const { graphData, graphParams, routes } = props;
   const waitTimes = graphData ? graphData.waitTimes : null;
   const tripTimes = graphData ? graphData.tripTimes : null;
@@ -121,6 +135,9 @@ export default function InfoTripSummary(props) {
     uncolored: {
       margin: theme.spacing(1),
     },
+    popover: {
+      padding: theme.spacing(2),
+    },
   }));
 
   const classes = useStyles();
@@ -142,7 +159,7 @@ export default function InfoTripSummary(props) {
         <Table>
           <TableBody>
             <TableRow>
-              <TableCell>Median Wait</TableCell>
+              <TableCell>Median wait</TableCell>
               <TableCell align="right">{grades.medianWaitScore}</TableCell>
             </TableRow>
             <TableRow>
@@ -154,7 +171,7 @@ export default function InfoTripSummary(props) {
               <TableCell align="right"> {grades.speedScore}</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell>Extra travel</TableCell>
+              <TableCell>Travel variance</TableCell>
               <TableCell align="right"> {grades.travelVarianceScore}</TableCell>
             </TableRow>
           </TableBody>
@@ -220,7 +237,9 @@ export default function InfoTripSummary(props) {
 
   const popoverContentTravelVariance = grades ? (
     <Fragment>
-      Extra travel time of {planningTravel - typicalTravel} min gets a score of{' '}
+      Variance is the travel time above the median time, for 90% of trips.
+      In other words, most trips will take up to this much additional travel time.
+      Variance of {planningTravel - typicalTravel} min gets a score of{' '}
       {grades.travelVarianceScore}.
       <Box pt={2}>
         <InfoScoreLegend
@@ -245,20 +264,28 @@ export default function InfoTripSummary(props) {
               {' '}
               {/* spacing doesn't work exactly right here, just pads the Papers */}
               <Grid item xs component={Paper} className={classes.uncolored}>
-                <Typography variant="overline">90% of trips</Typography>
+                <Typography variant="overline">Most Trips</Typography>
                 <br />
 
                 <Typography variant="h3" display="inline">
-                  {planningWait + planningTravel}
+                  &lt;{planningWait + planningTravel}
                 </Typography>
                 <Typography variant="h5" display="inline">
                   &nbsp;min
                 </Typography>
 
-                <Box pt={2}>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="flex-end"
+                  pt={2}
+                >
                   <Typography variant="body1">
                     {planningWait} min wait + {planningTravel} min
                   </Typography>
+                  <IconButton size="small" onClick={handleClick}>
+                    <InfoIcon fontSize="small" />
+                  </IconButton>
                 </Box>
               </Grid>
               <Grid item xs component={Paper} className={classes.uncolored}>
@@ -322,13 +349,30 @@ export default function InfoTripSummary(props) {
               <InfoScoreCard
                 grades={grades}
                 gradeName="travelVarianceScore"
-                title="Extra Travel"
+                title="Travel Variance"
                 largeValue={planningTravel - typicalTravel}
                 smallValue="&nbsp;min"
                 bottomContent={`In ${PLANNING_PERCENTILE}% of trips`}
                 popoverContent={popoverContentTravelVariance}
               />
             </Grid>
+
+            <Popover
+              open={Boolean(anchorEl)}
+              anchorEl={anchorEl}
+              onClose={handleClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'center',
+              }}
+            >
+              <div className={classes.popover}>90% of trips took this amount of time or less.</div>
+            </Popover>
+
           </Fragment>
         ) : (
           `No trip summary (${whyNoData})`

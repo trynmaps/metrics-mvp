@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles } from '@material-ui/core/styles';
+import Popover from '@material-ui/core/Popover';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -14,6 +15,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import { createMuiTheme } from '@material-ui/core/styles';
 import FilterListIcon from '@material-ui/icons/FilterList';
+import InfoIcon from '@material-ui/icons/InfoOutlined';
 import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
 import {
@@ -104,7 +106,7 @@ const headRows = [
     id: 'variability',
     numeric: true,
     disablePadding: false,
-    label: 'Extra Travel (min)',
+    label: 'Travel Variance (min)',
   },
 ];
 
@@ -168,11 +170,25 @@ const useToolbarStyles = makeStyles(theme => ({
   title: {
     flex: '0 0 auto',
   },
+  popover: {
+    padding: theme.spacing(2),
+    maxWidth: 500,
+  },
 }));
 
 const EnhancedTableToolbar = props => {
   const classes = useToolbarStyles();
   const { numSelected } = props;
+  
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  function handleClick(event) {
+    setAnchorEl(event.currentTarget);
+  }
+
+  function handleClose() {
+    setAnchorEl(null);
+  }  
 
   return (
     <Toolbar
@@ -188,6 +204,9 @@ const EnhancedTableToolbar = props => {
         ) : (
           <Typography variant="h6" id="tableTitle">
             Routes
+                  <IconButton size="small" onClick={handleClick}>
+                    <InfoIcon fontSize="small" />
+                  </IconButton>
           </Typography>
         )}
       </div>
@@ -199,6 +218,36 @@ const EnhancedTableToolbar = props => {
           </IconButton>
         </Tooltip>
       </div>
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+      >
+        <div className={classes.popover}><b>Score</b> is the average of subscores (0-100) for median wait,
+          20 minute wait probability, median speed, and travel variance.  Click on a route to see its metrics
+          and explanations of how the subscores are calculated.
+          <p/>
+          <b>Wait</b> is the 50th percentile (typical) wait time between vehicles.
+          <p/>
+          The <b>20 minute wait %</b> (probability) is the chance of having a long wait after getting to a stop.
+          <p/>
+          <b>Speed</b> is the 50th percentile speed of vehicles end to end on the route, averaged
+          for all directions.
+          <p/>
+          <b>Travel variance</b> is the end to end travel time above the median travel time, for 90% of trips.
+          In other words, most trips will take up to this much additional travel time.
+        </div>
+      </Popover>
+
     </Toolbar>
   );
 };
