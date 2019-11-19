@@ -1,4 +1,5 @@
 import React, { Fragment, useEffect } from 'react';
+import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
@@ -58,14 +59,20 @@ function RouteScreen(props) {
           <SidebarButton />
           <div className="page-title">
             {agencyTitle}
-            {selectedRoute ? ` > ${selectedRoute.title}` : null}
+          </div>
+          <div style={{flexGrow: 1}}/>
+          <DateTimePanel />
+        </Toolbar>
+        
+          <Box pl={3} pr={2} pb={2} className="page-title">
+            {selectedRoute ? `${selectedRoute.title}` : null}
             {direction ? ` > ${direction.title}` : null}
             &nbsp;
             {startStopInfo ? `(from ${startStopInfo.title}` : null}
             {endStopInfo ? ` to ${endStopInfo.title})` : null}
-          </div>
-          <DateTimePanel />
-        </Toolbar>
+          </Box>
+
+        
       </AppBar>
 
       <Grid container spacing={0}>

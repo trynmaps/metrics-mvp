@@ -13,14 +13,17 @@ export const initialState = {
     directionId: null,
     startStopId: null,
     endStopId: null,
-    startTime: null,
-    endTime: null,
-    date: momentYesterday.format('YYYY-MM-DD'),
-    daysBack: '1', // see UIConstants.DATE_RANGES, number of days in preconfigured date range including end date
-    startDate: momentYesterday.format('YYYY-MM-DD'), // only used for custom date ranges
-    // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
-    daysOfTheWeek: { ...WEEKDAYS.reduce((map, obj) => { map[obj.value] = true; return map}, {}),
-                     ...WEEKENDS.reduce((map, obj) => { map[obj.value] = true; return map}, {})},
+    firstDateRange: {
+      startTime: null,
+      endTime: null,
+      date: momentYesterday.format('YYYY-MM-DD'),
+      daysBack: '1', // see UIConstants.DATE_RANGES, number of days in preconfigured date range including end date
+      startDate: momentYesterday.format('YYYY-MM-DD'), // only used for custom date ranges
+      // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
+      daysOfTheWeek: { ...WEEKDAYS.reduce((map, obj) => { map[obj.value] = true; return map}, {}),
+                       ...WEEKENDS.reduce((map, obj) => { map[obj.value] = true; return map}, {})},
+    },
+    secondDateRange: null,
   },
   spiderLatLng: null,
   tripTimesCache: {},

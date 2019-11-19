@@ -8,6 +8,7 @@ import Popover from '@material-ui/core/Popover';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import { connect } from 'react-redux';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -62,7 +63,6 @@ const useStyles = makeStyles(theme => ({
   closeButton: {
     position: 'absolute',
     right: theme.spacing(1),
-    top: theme.spacing(1),
     color: theme.palette.grey[500],
   },
 }));
@@ -79,6 +79,9 @@ const useStyles = makeStyles(theme => ({
  */
 function DateTimePanel(props) {
   const { graphParams } = props;
+  const targetRange = 'firstDateRange';
+  const dateRangeParams = graphParams[targetRange];
+  
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const maxDate = Moment(Date.now()).format('YYYY-MM-DD');
@@ -90,16 +93,19 @@ function DateTimePanel(props) {
   function handleClose() {
     setAnchorEl(null);
   }
-
+  
+  function handleDateRangeParams(datePayload) {
+    const newDateRangeParams = Object.assign({}, dateRangeParams, datePayload);
+    
+    const payload = {};
+    payload[targetRange] = newDateRangeParams;
+    props.handleGraphParams(payload);
+  }
+  
   function handleReset() {
-    const initialParams = initialState.graphParams;
+    const initialParams = initialState.graphParams.firstDateRange;
     props.handleGraphParams({
-      date: initialParams.date,
-      startTime: initialParams.startTime,
-      endTime: initialParams.endTime,
-      daysBack: initialParams.daysBack,
-      startDate: initialParams.date,
-      daysOfTheWeek: initialParams.daysOfTheWeek,
+      firstDateRange: initialParams,
     });
     handleClose(); // this forces the native date picker to reset, otherwise it doesn't stay in sync
   }
@@ -108,21 +114,25 @@ function DateTimePanel(props) {
    * convert yyyy/mm/dd to mm/dd/yyyy
    */
   function convertDate(ymdString) {
-    const date = new Date(ymdString);
-    return `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date
-      .getUTCDate()
-      .toString()
-      .padStart(2, '0')}/${date.getUTCFullYear()}`;
+    return Moment(ymdString).format('MM/DD/YYYY');
   }
 
   // convert the state's current time range to a string or the sentinel value
   const timeRange =
-    graphParams.startTime && graphParams.endTime
-      ? `${graphParams.startTime}-${graphParams.endTime}`
+    dateRangeParams.startTime && dateRangeParams.endTime
+      ? `${dateRangeParams.startTime}-${dateRangeParams.endTime}`
       : TIME_RANGE_ALL_DAY;
 
   // these are the read-only representations of the date and time range
-  const dateLabel = convertDate(graphParams.date);
+  let dateLabel = convertDate(dateRangeParams.date);
+  
+  if (dateRangeParams.daysBack === CUSTOM_DATE_RANGE) {
+    dateLabel = convertDate(dateRangeParams.startDate) + ' - ' + dateLabel; 
+  } else if (dateRangeParams.daysBack !== '1') {
+    const startMoment = Moment(dateRangeParams.date).subtract(Number.parseInt(dateRangeParams.daysBack) - 1, 'days');
+    dateLabel = startMoment.format('MM/DD/YYYY') + ' - ' + dateLabel; 
+  }
+  
   const timeLabel = TIME_RANGES.find(range => range.value === timeRange)
     .shortLabel;
 
@@ -134,10 +144,10 @@ function DateTimePanel(props) {
    */
   const setTimeRange = myTimeRange => {
     if (myTimeRange.target.value === TIME_RANGE_ALL_DAY) {
-      props.handleGraphParams({ startTime: null, endTime: null });
+      handleDateRangeParams({ startTime: null, endTime: null });
     } else {
       const timeRangeParts = myTimeRange.target.value.split('-');
-      props.handleGraphParams({
+      handleDateRangeParams({
         startTime: timeRangeParts[0],
         endTime: timeRangeParts[1],
       });
@@ -153,7 +163,7 @@ function DateTimePanel(props) {
     if (!myDate.target.value) {
       // ignore empty date and leave at current value
     } else {
-      props.handleGraphParams({
+      handleDateRangeParams({
         date: myDate.target.value,
       });
     }
@@ -168,7 +178,7 @@ function DateTimePanel(props) {
     if (!myDate.target.value) {
       // ignore empty date and leave at current value
     } else {
-      props.handleGraphParams({
+      handleDateRangeParams({
         startDate: myDate.target.value,
       });
     }
@@ -179,7 +189,7 @@ function DateTimePanel(props) {
 
     const daysBack = event.target.value;
 
-    props.handleGraphParams({
+    handleDateRangeParams({
       daysBack: daysBack,
     });
 
@@ -189,9 +199,9 @@ function DateTimePanel(props) {
 
   const handleDayChange = event => {
     const day = event.target.value;
-    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
+    const newDaysOfTheWeek = { ...graphParams[targetRange].daysOfTheWeek };
     newDaysOfTheWeek[day] = event.target.checked;
-    props.handleGraphParams({
+    handleDateRangeParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
   };
@@ -202,7 +212,7 @@ function DateTimePanel(props) {
   const toggleDays = event => {
     const what = event.target.value === 'weekdays' ? WEEKDAYS : WEEKENDS;
 
-    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
+    const newDaysOfTheWeek = { ...graphParams[targetRange].daysOfTheWeek };
 
     // If all false -> set all to true; some false/true -> set all true; all true -> set all false;
     // That is, if all true, set to all false, otherwise set to all true.
@@ -213,7 +223,7 @@ function DateTimePanel(props) {
       newDaysOfTheWeek[what[i].value] = newValue;
     }
 
-    props.handleGraphParams({
+    handleDateRangeParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
   }
@@ -247,9 +257,9 @@ function DateTimePanel(props) {
         onClick={handleClick}
       >
         <div className={classes.column}>
-          <Typography className={classes.secondaryHeading}>
+          {/*<Typography className={classes.secondaryHeading}>
             Date-Time Range&nbsp;
-          </Typography>
+          </Typography> */}
         </div>
         <div className={classes.nowrap}>
           <Typography className={classes.heading} display="inline">
@@ -257,7 +267,7 @@ function DateTimePanel(props) {
           </Typography>
           <Typography className={classes.secondaryHeading} display="inline">
             {timeLabel}
-            <ExpandMoreIcon />
+            {open ? <ExpandLessIcon /> : <ExpandMoreIcon /> } 
           </Typography>
         </div>
       </Button>
@@ -283,15 +293,15 @@ function DateTimePanel(props) {
         >
           <CloseIcon />
         </IconButton>
-        <br />
-        <List style={{ color: 'black' }}>
+
+        <List style={{ color: 'black', marginTop: 24, paddingTop: 0 }}>
           <ListItem>
             <FormControl className={classes.formControl}>
               <TextField
                 id="date"
                 label="Date"
                 type="date"
-                defaultValue={graphParams.date}
+                defaultValue={dateRangeParams.date}
                 InputProps={{
                   inputProps: {
                     max: maxDate,
@@ -310,7 +320,7 @@ function DateTimePanel(props) {
             <FormControl component="fieldset" className={classes.formControl}>
               <FormLabel component="legend" className={classes.secondaryHeading}>Date Range for Stop to Stop Info</FormLabel>
               <RadioGroup
-                value={graphParams.daysBack}
+                value={dateRangeParams.daysBack}
                 onChange={setDateRange}
                 aria-label="date range" name="dateRange">
 
@@ -328,18 +338,18 @@ function DateTimePanel(props) {
             </FormControl>
           </ListItem>
 
-          <Collapse in={graphParams.daysBack === CUSTOM_DATE_RANGE}>
+          <Collapse in={dateRangeParams.daysBack === CUSTOM_DATE_RANGE}>
             <ListItem>
               <FormControl className={classes.formControl}>
                 <TextField
                   id="startDate"
                   label="Start Date"
                   type="date"
-                  defaultValue={graphParams.startDate}
+                  defaultValue={dateRangeParams.startDate}
                   InputProps={{
                     inputProps: {
-                      max: graphParams.date,
-                      min: Moment(graphParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
+                      max: dateRangeParams.date,
+                      min: Moment(dateRangeParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
                     },
                   }}
                   className={classes.textField}
@@ -361,16 +371,16 @@ function DateTimePanel(props) {
                   <FormGroup>
                     <FormControlLabel
                       control={<Checkbox value="weekdays"
-                        checked={!allFalse(graphParams.daysOfTheWeek, WEEKDAYS)}
-                        indeterminate={!allFalse(graphParams.daysOfTheWeek, WEEKDAYS) &&
-                          !allTrue(graphParams.daysOfTheWeek, WEEKDAYS)}
+                        checked={!allFalse(dateRangeParams.daysOfTheWeek, WEEKDAYS)}
+                        indeterminate={!allFalse(dateRangeParams.daysOfTheWeek, WEEKDAYS) &&
+                          !allTrue(dateRangeParams.daysOfTheWeek, WEEKDAYS)}
                         onChange={toggleDays} />}
                       label="Weekdays"
                     />
 
                     {WEEKDAYS.map(day =>
                       <FormControlLabel
-                        control={<Checkbox checked={graphParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
+                        control={<Checkbox checked={dateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
                         key={day.value}
                         label={day.label}
                       />)}
@@ -381,16 +391,16 @@ function DateTimePanel(props) {
 
                     <FormControlLabel
                       control={<Checkbox value="weekends"
-                        checked={!allFalse(graphParams.daysOfTheWeek, WEEKENDS)}
-                        indeterminate={!allFalse(graphParams.daysOfTheWeek, WEEKENDS) &&
-                          !allTrue(graphParams.daysOfTheWeek, WEEKENDS)}
+                        checked={!allFalse(dateRangeParams.daysOfTheWeek, WEEKENDS)}
+                        indeterminate={!allFalse(dateRangeParams.daysOfTheWeek, WEEKENDS) &&
+                          !allTrue(dateRangeParams.daysOfTheWeek, WEEKENDS)}
                         onChange={toggleDays} />}
                       label="Weekends"
                     />
 
                     {WEEKENDS.map(day =>
                       <FormControlLabel
-                        control={<Checkbox checked={graphParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
+                        control={<Checkbox checked={dateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
                         key={day.value}
                         label={day.label}
                       />)}

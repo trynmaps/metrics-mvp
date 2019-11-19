@@ -65,8 +65,8 @@ function DataDiagnostic(props) {
           <DateTimePanel />
         </Toolbar>
       </AppBar>
-      Date: {graphParams.date} Time: {graphParams.startTime} -{' '}
-      {graphParams.endTime}
+      Date: {graphParams.firstDateRange.date} Time: {graphParams.firstDateRage.startTime} -{' '}
+      {graphParams.firstDateRange.endTime}
       <QuadrantChart />
       <Grid container spacing={0}>
         {charts}

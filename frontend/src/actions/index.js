@@ -17,8 +17,9 @@ import { CUSTOM_DATE_RANGE, MAX_DATE_RANGE } from '../UIConstants';
  * @returns {Array} List of days to query for.
  */
 function computeDates(graphParams) {
-  let endMoment = Moment(graphParams.date);
-  const daysBack = graphParams.daysBack;
+  const dateRangeParams = graphParams.firstDateRange;
+  let endMoment = Moment(dateRangeParams.date);
+  const daysBack = dateRangeParams.daysBack;
 
   let numberOfDaysBack = Number.parseInt(daysBack);
 
@@ -26,7 +27,7 @@ function computeDates(graphParams) {
   // based on the start date.
 
   if (daysBack === CUSTOM_DATE_RANGE) {
-    const startMoment = Moment(graphParams.startDate);
+    const startMoment = Moment(dateRangeParams.startDate);
     const deltaDays = endMoment.diff(startMoment, 'days');
     numberOfDaysBack = Math.abs(deltaDays) + 1; // add one for the end date itself
     if (deltaDays < 0) { // if the start date is after end date, use the start date as the "end"
@@ -43,7 +44,7 @@ function computeDates(graphParams) {
   let dates = [];
   for (let i = 0; i < numberOfDaysBack; i++) {
 
-    if (graphParams.daysOfTheWeek[endMoment.day()]) {
+    if (dateRangeParams.daysOfTheWeek[endMoment.day()]) {
       dates.push(endMoment.format('YYYY-MM-DD'));
     }
     endMoment.subtract(1, 'days');
@@ -139,10 +140,10 @@ export function fetchRoutes() {
 
 export function fetchPrecomputedWaitAndTripData(params) {
   return function(dispatch, getState) {
-    const timeStr = params.startTime
-      ? `${params.startTime}-${params.endTime}`
+    const timeStr = params.firstDateRange.startTime
+      ? `${params.firstDateRange.startTime}-${params.firstDateRange.endTime}`
       : '';
-    const dateStr = params.date;
+    const dateStr = params.firstDateRange.date;
 
     const tripStatGroup = 'p10-median-p90'; // blocked; // 'median'
     const tripTimesCache = getState().routes.tripTimesCache;
@@ -201,7 +202,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
  */
 export function fetchArrivals(params) {
   return function(dispatch) {
-    const dateStr = params.date;
+    const dateStr = params.firstDateRange.date;
 
     const s3Url = generateArrivalsURL(dateStr, params.routeId);
 
@@ -234,7 +235,7 @@ export function handleGraphParams(params) {
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
 
-    if (graphParams.date) {
+    if (graphParams.firstDateRange.date) {
       dispatch(fetchPrecomputedWaitAndTripData(graphParams));
     }
 
