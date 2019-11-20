@@ -13,9 +13,9 @@ import hashlib
 import math
 import zipfile
 
-# Downloads and parses the GTFS specification (hardcoded for Muni for now),
+# Downloads and parses the GTFS specification
 # and saves the configuration for all routes to S3.
-# The S3 object contains data merged from Nextbus and GTFS.
+# The S3 object contains data merged from GTFS and the Nextbus API (for agencies using Nextbus).
 # The frontend can then request this S3 URL directly without hitting the Python backend.
 
 # For each direction, the JSON object contains a coords array defining the shape of the route,
@@ -50,6 +50,7 @@ import zipfile
 #
 
 def match_nextbus_direction(nextbus_route_config, geometry):
+
     shape_start = geometry.coords[0]
     shape_end = geometry.coords[-1]
 
@@ -83,6 +84,9 @@ def match_nextbus_direction(nextbus_route_config, geometry):
     return best_nextbus_dir_info, best_terminal_dist
 
 def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_index):
+    # Finds the first position of a particular stop along a shape (after the start_index'th line segment in shape_lines_xy),
+    # using XY coordinates in meters.
+    # The returned dict is used by the frontend to draw line segments along a route between two stops.
 
     num_shape_lines = len(shape_lines_xy)
 
@@ -119,6 +123,9 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
     }
 
 def get_unique_shapes(direction_trips_df, stop_times_df, stops_map, normalize_gtfs_stop_id):
+    # Finds the unique shapes associated with a GTFS route/direction, merging shapes that contain common subsequences of stops.
+    # These unique shapes may represent multiple branches of a route.
+    # Returns a list of dicts with properties 'shape_id', 'count', and 'stop_ids', sorted by count in descending order.
 
     stop_times_trip_id_values = stop_times_df['trip_id'].values
 

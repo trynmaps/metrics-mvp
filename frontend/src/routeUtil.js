@@ -2,9 +2,9 @@ import { push } from 'redux-first-router';
 
 // path constants
 export const ROUTE = 'route';
-export const DIRECTION = 'dir';
-export const FROM_STOP = 'from';
-export const TO_STOP = 'to';
+export const DIRECTION = 'direction';
+export const FROM_STOP = 'fromStop';
+export const TO_STOP = 'toStop';
 
 export class Path {
   constructor() {

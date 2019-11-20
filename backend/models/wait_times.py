@@ -398,6 +398,8 @@ def get_cached_wait_times(agency_id, d: date, stat_id: str, start_time_str = Non
 
     if r.status_code == 404:
         raise FileNotFoundError(f"{s3_url} not found")
+    if r.status_code == 403:
+        raise FileNotFoundError(f"{s3_url} not found or access denied")
     if r.status_code != 200:
         raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
 
