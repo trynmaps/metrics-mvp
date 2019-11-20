@@ -25,6 +25,7 @@ export const CHART_COLORS = [Colors.GRAY, Colors.PURPLE];
 // long the trip will "usually" take.  So for 90th percentile
 // this would be the historic performance 9 times out of 10.
 export const PLANNING_PERCENTILE = 90;
+export const TENTH_PERCENTILE = 10;
 
 // a commonly used style option for react-vis
 // Crosshairs (hovers) where we don't want a crosshair line

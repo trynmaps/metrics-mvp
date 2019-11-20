@@ -184,6 +184,8 @@ export function getEndToEndTripTime(
   let statIndex = 1; // default to median (p10-median-p90)
   if (stat === 'p90') {
     statIndex = 2;
+  } else if (stat === 'p10') {
+    statIndex = 0;
   }
 
   let tripTime = null;
@@ -325,6 +327,15 @@ function getSpeedAndVariabilityForRoute(
       'p90',
     );
 
+    const p10tripTime = getEndToEndTripTime(
+        tripTimesCache,
+        graphParams,
+        routes,
+        route.id,
+        direction.id,
+        'p10',
+      );
+
     if (dist <= 0 || Number.isNaN(tripTime)) {
       // something wrong with the data here
       // console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + routeId + ' ' + direction.id);
@@ -334,7 +345,7 @@ function getSpeedAndVariabilityForRoute(
     const speed = (metersToMiles(Number.parseFloat(dist)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
     return {
       speed,
-      variability: p90tripTime - tripTime,
+      variability: (p90tripTime - p10tripTime) / 2.0,
     };
   });
 
@@ -440,7 +451,7 @@ export function computeGrades(
   //
   // grade score for travel time variability
   //
-  // where variance is planning percentile time minus average time
+  // where variability is half of (90th percentile time minus 10th percentile)
   //
 
   const variabilityScoreScale = d3
@@ -518,7 +529,14 @@ export function getAllScores(routes, waits, speeds) {
         speedObj.speed,
         speedObj.variability,
       );
-      allScores.push({ routeId: route.id, totalScore: grades.totalScore });
+      allScores.push({
+        routeId: route.id,
+        totalScore: grades.totalScore,
+        medianWaitScore: grades.medianWaitScore,
+        longWaitScore: grades.longWaitScore,
+        speedScore: grades.speedScore,
+        travelVarianceScore: grades.travelVarianceScore,
+      });
     }
   });
 
@@ -536,10 +554,16 @@ export const quartileBackgroundColor = d3
   .domain([0.25, 0.5, 0.75])
   .range([red[300], yellow[300], lightGreen[800], green[900]]);
 
-export const quartileForegroundColor = d3
+export const quartileContrastColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
   .range(['black', 'black', 'white', 'white']);
+
+// for coloring the route table's white columns, to emphasize low scoring cells
+export const quartileTextColor = d3
+  .scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range(['black', 'black', '#8a8a8a', '#8a8a8a']);
 
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon

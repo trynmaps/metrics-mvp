@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Fragment } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles } from '@material-ui/core/styles';
@@ -24,7 +24,8 @@ import {
   getAllSpeeds,
   getAllScores,
   quartileBackgroundColor,
-  quartileForegroundColor,
+  quartileContrastColor,
+  quartileTextColor,
 } from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
@@ -92,21 +93,21 @@ function getSorting(order, orderBy) {
 }
 
 const headRows = [
-  { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
+  { id: 'title', numeric: false, disablePadding: false, label: 'Name' },
   { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
-  { id: 'wait', numeric: true, disablePadding: false, label: 'Wait (min)' },
+  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait (min)' },
   {
     id: 'longWait',
     numeric: true,
-    disablePadding: false,
-    label: '20 min wait %',
+    disablePadding: true,
+    label: 'Long Wait %',
   },
-  { id: 'speed', numeric: true, disablePadding: false, label: 'Speed (mph)' },
+  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed (mph)' },
   {
     id: 'variability',
     numeric: true,
-    disablePadding: false,
-    label: 'Travel Variance (min)',
+    disablePadding: true,
+    label: 'Travel Time Variability (min)',
   },
 ];
 
@@ -233,18 +234,21 @@ const EnhancedTableToolbar = props => {
         }}
       >
         <div className={classes.popover}><b>Score</b> is the average of subscores (0-100) for median wait,
-          20 minute wait probability, median speed, and travel variance.  Click on a route to see its metrics
+          long wait probability, average speed, and travel time variability.  Click on a route to see its metrics
           and explanations of how the subscores are calculated.
           <p/>
-          <b>Wait</b> is the 50th percentile (typical) wait time between vehicles.
+          <b>Median Wait</b> is the 50th percentile (typical) wait time for a rider arriving
+          randomly at a stop while the route is running.
           <p/>
-          The <b>20 minute wait %</b> (probability) is the chance of having a long wait after getting to a stop.
+          <b>Long wait probability</b> is the chance a rider has of a wait of twenty minutes
+          or longer after arriving randomly at a stop. 
           <p/>
-          <b>Speed</b> is the 50th percentile speed of vehicles end to end on the route, averaged
+          <b>Average speed</b> is the speed of the 50th percentile (typical) end to end trip, averaged
           for all directions.
           <p/>
-          <b>Travel variance</b> is the end to end travel time above the median travel time, for 90% of trips.
-          In other words, most trips will take up to this much additional travel time.
+          <b>Travel time variability</b> is the 90th percentile end to end travel time minus the 10th percentile
+          travel time.  This measures how much extra travel time is needed for some trips.
+          
         </div>
       </Popover>
 
@@ -321,6 +325,10 @@ function RouteTable(props) {
       speed: speedObj ? speedObj.speed : NaN,
       variability: speedObj ? speedObj.variability : NaN,
       totalScore: scoreObj ? scoreObj.totalScore : NaN,
+      medianWaitScore: scoreObj ? scoreObj.medianWaitScore : NaN,
+      longWaitScore: scoreObj ? scoreObj.longWaitScore : NaN,
+      speedScore: scoreObj ? scoreObj.speedScore : NaN,
+      travelVarianceScore: scoreObj ? scoreObj.travelVarianceScore : NaN,
     };
   });
 
@@ -370,7 +378,7 @@ function RouteTable(props) {
                     <TableCell
                       align="right"
                       style={{
-                        color: quartileForegroundColor(row.totalScore / 100),
+                        color: quartileContrastColor(row.totalScore / 100),
                         backgroundColor: quartileBackgroundColor(
                           row.totalScore / 100,
                         ),
@@ -378,21 +386,51 @@ function RouteTable(props) {
                     >
                       {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell
+                      align="right"
+                      padding="none"
+                      style={{
+                        color: quartileTextColor(row.medianWaitScore / 100),
+                      }}
+                    >
                       {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell
+                      align="right"
+                      padding="none"
+                      style={{
+                        color: quartileTextColor(row.longWaitScore / 100),
+                      }}
+                    >
                       {Number.isNaN(row.longWait)
                         ? '--'
-                        : `${(row.longWait * 100).toFixed(0)}%`}
+                        : <Fragment>
+                            {(row.longWait * 100).toFixed(0)}<font style={{color:"#8a8a8a"}}>%</font>
+                          </Fragment>
+                      }
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell
+                      align="right"
+                      padding="none"
+                      style={{
+                        color: quartileTextColor(row.speedScore / 100),
+                      }}
+                    >
                       {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell
+                      align="right"
+                      padding="none"
+                      style={{
+                        color: quartileTextColor(row.travelVarianceScore / 100),
+                      }}
+                    >
                       {Number.isNaN(row.variability)
                         ? '--'
-                        : row.variability.toFixed(0)}
+                        : <Fragment>
+                            <font style={{color:"#8a8a8a"}}>{'\u00b1'} </font>{row.variability.toFixed(0)}
+                          </Fragment>
+                      }
                     </TableCell>
                   </TableRow>
                 );
