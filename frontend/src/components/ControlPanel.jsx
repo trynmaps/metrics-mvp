@@ -89,6 +89,7 @@ function ControlPanel(props) {
     }
 
     path.commitPath();
+
     props.onGraphParams({
       startStopId: stopId,
       endStopId: secondStopId,
@@ -119,7 +120,7 @@ function ControlPanel(props) {
       mySelectedRoute.directions.length > 0
         ? mySelectedRoute.directions[0].id
         : null;
-    // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
+
     const path = new Path();
     path
       .buildPath(ROUTE, routeId)
@@ -197,13 +198,13 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.directionId || 1}
+                value={graphParams.directionId || ""}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >
                 {(selectedRoute.directions || []).map(direction => (
                   <MenuItem key={direction.id} value={direction.id}>
-                    {direction.title}
+                      {direction.title}
                   </MenuItem>
                 ))}
               </Select>

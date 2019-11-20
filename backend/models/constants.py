@@ -1,4 +1,3 @@
-import pytz
 
 DEFAULT_TIME_STR_INTERVALS = [
   ('03:00','07:00'),
@@ -7,7 +6,3 @@ DEFAULT_TIME_STR_INTERVALS = [
   ('16:00','19:00'),
   ('19:00','03:00+1'),
 ]
-
-PACIFIC_TIMEZONE = pytz.timezone('US/Pacific')
-
-AGENCY = 'sf-muni'

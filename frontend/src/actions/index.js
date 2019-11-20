@@ -1,19 +1,61 @@
 import axios from 'axios';
-import { metricsBaseURL } from '../config';
+import { MetricsBaseURL, S3Bucket, RoutesVersion, TripTimesVersion, WaitTimesVersion, ArrivalsVersion } from '../config';
 import { getTimePath } from '../helpers/precomputed';
-import {
-  generateArrivalsURL,
-  generateTripURL,
-  generateWaitTimeURL,
-  routesUrl,
-} from '../locationConstants';
+
+// S3 URL to route configuration
+export function generateRoutesURL(agencyId) {
+  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?f`;
+}
+
+/**
+ * Generate S3 url for cached trip time statistics
+ * @param agencyId {string} agency ID
+ * @param dateStr {string} date
+ * @param statPath {string} the statistical measure (e.g. median)
+ * @param timePath {string} the time of day
+ * @returns {string} S3 url
+ */
+export function generateTripTimesURL(agencyId, dateStr, statPath, timePath) {
+  return `https://${S3Bucket}.s3.amazonaws.com/trip-times/${TripTimesVersion}/${agencyId}/${dateStr.replace(
+    /-/g,
+    '/',
+  )}/trip-times_${TripTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?e`;
+}
+
+/**
+ * Generate S3 url for cached wait time statistics
+ * @param agencyId {string} agency ID
+ * @param dateStr {string} date
+ * @param statPath {string} the statistical measure (e.g. median)
+ * @param timePath {string} the time of day
+ * @returns {string} S3 url
+ */
+export function generateWaitTimesURL(agencyId, dateStr, statPath, timePath) {
+  return `https://${S3Bucket}.s3.amazonaws.com/wait-times/${WaitTimesVersion}/${agencyId}/${dateStr.replace(
+    /-/g,
+    '/',
+  )}/wait-times_${WaitTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?e`;
+}
+
+/**
+ * Generate S3 url for arrivals
+ * @param dateStr {string} date
+ * @param routeId {string} route id
+ * @returns {string} S3 url
+ */
+export function generateArrivalsURL(agencyId, dateStr, routeId) {
+  return `https://${S3Bucket}.s3.amazonaws.com/arrivals/${ArrivalsVersion}/${agencyId}/${dateStr.replace(
+    /-/g,
+    '/',
+  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?d`;
+}
 
 export function fetchGraphData(params) {
   return function(dispatch) {
 
-    var query = `query($routeId:String, $startStopId:String, $endStopId:String,
-    $directionId:String, $date:String, $startTime:String, $endTime:String) {
-  routeMetrics(routeId:$routeId) {
+    var query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
+    $directionId:String, $date:String!, $startTime:String, $endTime:String) {
+  routeMetrics(agencyId:$agencyId, routeId:$routeId) {
     trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
       interval(dates:[$date], startTime:$startTime, endTime:$endTime) {
         headways {
@@ -47,7 +89,7 @@ export function fetchGraphData(params) {
 
     axios.get('/api/graphql', {
         params: { query: query, variables: JSON.stringify(params) },
-        baseURL: metricsBaseURL,
+        baseURL: MetricsBaseURL,
       })
       .then(response => {
         dispatch({
@@ -72,12 +114,17 @@ export function resetGraphData() {
   };
 }
 
-export function fetchRoutes() {
+export function fetchRoutes(params) {
   return function(dispatch) {
+    const agencyId = params.agencyId;
     axios
-      .get(routesUrl)
+      .get(generateRoutesURL(agencyId))
       .then(response => {
-        dispatch({ type: 'RECEIVED_ROUTES', payload: response.data.routes });
+        var routes = response.data.routes;
+        routes.forEach(route => {
+          route.agencyId = agencyId;
+        });
+        dispatch({ type: 'RECEIVED_ROUTES', payload: routes });
       })
       .catch(err => {
         dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });
@@ -91,24 +138,27 @@ export function fetchPrecomputedWaitAndTripData(params) {
       ? `${params.startTime}-${params.endTime}`
       : '';
     const dateStr = params.date;
+    const agencyId = params.agencyId;
 
     const tripStatGroup = 'p10-median-p90'; // blocked; // 'median'
     const tripTimesCache = getState().routes.tripTimesCache;
 
-    const tripTimes = tripTimesCache[`${dateStr + timeStr}${tripStatGroup}`];
+    const tripTimesCacheKey = `${agencyId}-${dateStr + timeStr}-${tripStatGroup}`;
+
+    const tripTimes = tripTimesCache[tripTimesCacheKey];
 
     if (!tripTimes) {
       const timePath = getTimePath(timeStr);
       const statPath = tripStatGroup;
 
-      const s3Url = generateTripURL(dateStr, statPath, timePath);
+      const s3Url = generateTripTimesURL(agencyId, dateStr, statPath, timePath);
 
       axios
         .get(s3Url)
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
-            payload: [response.data, `${dateStr + timeStr}${tripStatGroup}`],
+            payload: [response.data, tripTimesCacheKey],
           });
         })
         .catch(() => {
@@ -117,21 +167,23 @@ export function fetchPrecomputedWaitAndTripData(params) {
     }
 
     const waitStatGroup = 'median-p90-plt20m';
+    const waitTimesCacheKey = `${agencyId}-${dateStr + timeStr}-${waitStatGroup}`;
+
     const waitTimesCache = getState().routes.waitTimesCache;
-    const waitTimes = waitTimesCache[`${dateStr + timeStr}${waitStatGroup}`];
+    const waitTimes = waitTimesCache[waitTimesCacheKey];
 
     if (!waitTimes) {
       const timePath = getTimePath(timeStr);
       const statPath = waitStatGroup; // for now, nothing clever about selecting smaller files here //getStatPath(statGroup);
 
-      const s3Url = generateWaitTimeURL(dateStr, statPath, timePath);
+      const s3Url = generateWaitTimesURL(agencyId, dateStr, statPath, timePath);
 
       axios
         .get(s3Url)
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
-            payload: [response.data, `${dateStr + timeStr}${waitStatGroup}`],
+            payload: [response.data, waitTimesCacheKey],
           });
         })
         .catch(() => {
@@ -150,8 +202,9 @@ export function fetchPrecomputedWaitAndTripData(params) {
 export function fetchArrivals(params) {
   return function(dispatch) {
     const dateStr = params.date;
+    const agencyId = params.agencyId;
 
-    const s3Url = generateArrivalsURL(dateStr, params.routeId);
+    const s3Url = generateArrivalsURL(agencyId, dateStr, params.routeId);
 
     axios
       .get(s3Url)
@@ -182,11 +235,12 @@ export function handleGraphParams(params) {
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
 
-    if (graphParams.date) {
+    if (graphParams.date && graphParams.agencyId) {
       dispatch(fetchPrecomputedWaitAndTripData(graphParams));
     }
 
     if (
+      graphParams.agencyId &&
       graphParams.routeId &&
       graphParams.directionId &&
       graphParams.startStopId &&

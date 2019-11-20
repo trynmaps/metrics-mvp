@@ -227,7 +227,9 @@ function RouteTable(props) {
   const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
 
   useEffect(() => {
-    myFetchPrecomputedWaitAndTripData(graphParams);
+    if (graphParams.agencyId && graphParams.date) {
+      myFetchPrecomputedWaitAndTripData(graphParams);
+    }
   }, [graphParams, myFetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
 
   function handleRequestSort(event, property) {
@@ -276,7 +278,7 @@ function RouteTable(props) {
   });
 
   return (
-    <div className={classes.root}>
+    <div>
         <EnhancedTableToolbar numSelected={0} />
         <div className={classes.tableWrapper}>
           <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
@@ -308,6 +310,7 @@ function RouteTable(props) {
                         to={{
                           type: 'ROUTESCREEN',
                           payload: {
+                            agencyId: row.agencyId,
                             routeId: row.id,
                             directionId: null,
                             startStopId: null,

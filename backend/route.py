@@ -1,4 +1,4 @@
-from models import metrics, eclipses, nextbus, util, arrival_history
+from models import metrics, eclipses, config, util, arrival_history
 import json
 import argparse
 from datetime import datetime, date
@@ -9,8 +9,8 @@ import numpy as np
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Show overall arrival history for a particular route')
+    parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument('--route', required=True, help='Route id')
-
     parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
 
     parser.add_argument('--version')
@@ -18,9 +18,9 @@ if __name__ == '__main__':
     parser.add_argument('--start-time', help='hh:mm of first local time to include each day')
     parser.add_argument('--end-time', help='hh:mm of first local time to exclude each day')
 
-    agency_id = 'sf-muni'
-
     args = parser.parse_args()
+
+    agency = config.get_agency(args.agency)
 
     version = args.version
     if version is None:
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     start_time_str = args.start_time
     end_time_str = args.end_time
 
-    tz = pytz.timezone('US/Pacific')
+    tz = agency.tz
 
     route_ids = [route_id]
 
@@ -46,10 +46,10 @@ if __name__ == '__main__':
         return '----' if np.isnan(dist) else ('%3dm' % dist)
 
     for route_id in route_ids:
-        route_config = nextbus.get_route_config(agency_id, route_id)
+        route_config = agency.get_route_config(route_id)
 
         df = pd.concat([
-            arrival_history.get_by_date(agency_id, route_id, d, version) \
+            arrival_history.get_by_date(agency.id, route_id, d, version) \
                 .get_data_frame(
                     start_time = util.get_timestamp_or_none(d, start_time_str, tz),
                     end_time = util.get_timestamp_or_none(d, end_time_str, tz)

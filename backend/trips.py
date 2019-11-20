@@ -2,13 +2,14 @@ import argparse
 import json
 import sys
 from datetime import datetime, timedelta
-from models import nextbus, arrival_history, util, metrics, trip_times
+from models import config, arrival_history, util, metrics, trip_times
 import pytz
 import numpy as np
 import pandas as pd
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute trip lengths (in minutes) from stop s1 to stop s2 along a route, for one or more dates, optionally at particular times of day')
+    parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument('--route', required=True, help='Route id')
     parser.add_argument('--s1', required=True, help='Initial stop id')
     parser.add_argument('--s2', required=True, help='Destination stop id')
@@ -33,12 +34,12 @@ if __name__ == '__main__':
     s1 = args.s1
     s2 = args.s2
 
-    agency = 'sf-muni'
+    agency = config.get_agency(args.agency)
 
     start_time_str = args.start_time
     end_time_str = args.end_time
 
-    route_config = nextbus.get_route_config(agency, route_id)
+    route_config = agency.get_route_config(route_id)
 
     s1_info = route_config.get_stop_info(s1)
     s1_dirs = route_config.get_directions_for_stop(s1)
@@ -67,7 +68,7 @@ if __name__ == '__main__':
             raise Exception(f"stop {s1} comes after stop {s2} in the {dir_info.name} direction")
 
     date_strs = []
-    tz = pytz.timezone('US/Pacific')
+    tz = agency.tz
 
     if args.date:
         dates = util.get_dates_in_range(args.date, args.date)
@@ -86,7 +87,7 @@ if __name__ == '__main__':
     completed_trips_arr = []
 
     for d in dates:
-        history = arrival_history.get_by_date(agency, route_id, d, version)
+        history = arrival_history.get_by_date(agency.id, route_id, d, version)
 
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)
