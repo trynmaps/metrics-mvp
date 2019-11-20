@@ -86,7 +86,7 @@ class MapStops extends Component {
       // svg "v" shape rotated by the given rotation value.
 
       icon = L.divIcon({
-        className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
+        className: `id${stop.sid}`, // this is needed to turn off the default icon styling (blank square)
         iconSize: [20, 20],
         iconAnchor: [10, 10], // centers icon over position, with text to the right
         html:
