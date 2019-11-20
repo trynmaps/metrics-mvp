@@ -284,7 +284,7 @@ export default function InfoTripSummary(props) {
             <Grid container spacing={4}>
               {/* spacing doesn't work exactly right here, just pads the Papers */}
               <Grid item xs component={Paper} className={classes.uncolored}>
-                <Typography variant="overline">typical journey</Typography>
+                <Typography variant="overline">Typical journey</Typography>
                 <br />
 
                 <Typography variant="h3" display="inline">
@@ -318,7 +318,7 @@ export default function InfoTripSummary(props) {
                 <br />
 
                 <Typography variant="h3" display="inline">
-                  &lt;{planningWait + planningTravel}
+                  {planningWait + planningTravel}
                 </Typography>
                 <Typography variant="h5" display="inline">
                   &nbsp;min
