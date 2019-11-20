@@ -24,7 +24,8 @@ ENV PORT 5000
 CMD gunicorn --bind 0.0.0.0:$PORT metrics-api:app
 
 FROM react-dev as react-build
-RUN cd /app/frontend && npm run build && sed -i 's/%REACT_APP_METRICS_BASE_URL%//g' build/index.html
+ENV REACT_APP_METRICS_BASE_URL=
+RUN cd /app/frontend && npm run build
 
 FROM flask AS all-in-one
 ENV METRICS_ALL_IN_ONE 1
