@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState, Fragment } from 'react';
 import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
-import Collapse from '@material-ui/core/Collapse';
 import Grid from '@material-ui/core/Grid';
 import Popover from '@material-ui/core/Popover';
 import Typography from '@material-ui/core/Typography';
@@ -17,15 +16,15 @@ import FormGroup from '@material-ui/core/FormGroup';
 import Select from '@material-ui/core/Select';
 import { List, ListItem } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormLabel from '@material-ui/core/FormLabel';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
+import InfoIcon from '@material-ui/icons/InfoOutlined';
+
 import {
   TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
-  CUSTOM_DATE_RANGE, MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
+  MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
 } from '../UIConstants';
 import { initialState } from '../reducers/routesReducer';
 import { handleGraphParams } from '../actions';
@@ -65,6 +64,11 @@ const useStyles = makeStyles(theme => ({
     top: theme.spacing(1),
     color: theme.palette.grey[500],
   },
+  popover: {
+    padding: theme.spacing(2),
+    maxWidth: 400,
+  },
+  
 }));
 
 /**
@@ -78,17 +82,26 @@ const useStyles = makeStyles(theme => ({
  * @param {any} props
  */
 function DateTimePanel(props) {
-  const { graphParams } = props;
+  const { graphParams, dateRangeSupported } = props;
   const classes = useStyles();
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [infoAnchorEl, setInfoAnchorEl] = useState(null);
   const maxDate = Moment(Date.now()).format('YYYY-MM-DD');
-
+  
   function handleClick(event) {
     setAnchorEl(event.currentTarget);
   }
 
   function handleClose() {
     setAnchorEl(null);
+  }
+
+  function handleInfoClick(event) {
+    setInfoAnchorEl(event.currentTarget);
+  }
+
+  function handleInfoClose() {
+    setInfoAnchorEl(null);
   }
 
   function handleReset() {
@@ -122,7 +135,48 @@ function DateTimePanel(props) {
       : TIME_RANGE_ALL_DAY;
 
   // these are the read-only representations of the date and time range
-  const dateLabel = convertDate(graphParams.date);
+  let dateLabel = convertDate(graphParams.date);
+  let rangeInfo = null;
+  
+  //
+  // If a date range is set, either update the date label to the full
+  // range if we support it, or else show an info icon that explains
+  // that we are only showing one day's data.
+  //
+  
+  if (graphParams.startDate !== graphParams.date) {
+    if (dateRangeSupported) {
+
+      dateLabel = convertDate(graphParams.startDate) + ' - ' + dateLabel;
+
+    } else {
+      
+      rangeInfo =
+        <Fragment>
+          <IconButton size="small" color="inherit" onClick={handleInfoClick}>
+            <InfoIcon fontSize="small" />
+          </IconButton>
+          <Popover
+            open={Boolean(infoAnchorEl)}
+            anchorEl={infoAnchorEl}
+            onClose={handleInfoClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'center',
+            }}
+          >
+            <div className={classes.popover}>Date ranges are implemented for
+            Dashboard statistics when a route, direction, and stops are selected.
+            Currently showing data for one day.</div>
+          </Popover>          
+        </Fragment>
+    }
+  }
+
   const timeLabel = TIME_RANGES.find(range => range.value === timeRange)
     .shortLabel;
 
@@ -174,13 +228,14 @@ function DateTimePanel(props) {
     }
   };
 
-  // daysBack is for preserving radio button state.
-  const setDateRange = event => {
-
-    const daysBack = event.target.value;
-
+  const setDateRange = daysBack => {
+    const initialParams = initialState.graphParams;
+    const date = initialParams.date;
+    const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
+    
     props.handleGraphParams({
-      daysBack: daysBack,
+      date: date,
+      startDate: startMoment.format('YYYY-MM-DD'),
     });
 
     // The GraphQL api takes a list of dates, which are generated just before
@@ -241,16 +296,12 @@ function DateTimePanel(props) {
 
   return (
     <div className={classes.root}>
+      { rangeInfo }
       <Button
         variant="contained"
         className={classes.button}
         onClick={handleClick}
       >
-        <div className={classes.column}>
-          <Typography className={classes.secondaryHeading}>
-            Date-Time Range&nbsp;
-          </Typography>
-        </div>
         <div className={classes.nowrap}>
           <Typography className={classes.heading} display="inline">
             {dateLabel}&nbsp;
@@ -283,15 +334,38 @@ function DateTimePanel(props) {
         >
           <CloseIcon />
         </IconButton>
-        <br />
-        <List style={{ color: 'black' }}>
+
+        <List style={{ color: 'black', marginTop: 32 }}>
+        
+            <ListItem>
+              <FormControl className={classes.formControl}>
+                <TextField
+                  id="startDate"
+                  label="Start Date"
+                  type="date"
+                  value={graphParams.startDate}
+                  InputProps={{
+                    inputProps: {
+                      max: graphParams.date,
+                      min: Moment(graphParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
+                    },
+                  }}
+                  className={classes.textField}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  onChange={setStartDate}
+                />
+              </FormControl>
+            </ListItem>
+        
           <ListItem>
             <FormControl className={classes.formControl}>
               <TextField
                 id="date"
-                label="Date"
+                label="End Date"
                 type="date"
-                defaultValue={graphParams.date}
+                value={graphParams.date}
                 InputProps={{
                   inputProps: {
                     max: maxDate,
@@ -307,50 +381,22 @@ function DateTimePanel(props) {
           </ListItem>
 
           <ListItem>
-            <FormControl component="fieldset" className={classes.formControl}>
-              <FormLabel component="legend" className={classes.secondaryHeading}>Date Range for Stop to Stop Info</FormLabel>
-              <RadioGroup
-                value={graphParams.daysBack}
-                onChange={setDateRange}
-                aria-label="date range" name="dateRange">
-
+            <Grid container style={{maxWidth:250}}>
                 {DATE_RANGES.map(range => (
-                  <FormControlLabel
+                  
+                  <Grid item xs={6} key = {range.value}>
+                  <Button
                     key={range.value}
-                    value={range.value}
-                    control={<Radio />}
-                    label={range.label}
+                    onClick={ () => { setDateRange(range.value) } }
+                  >
+                  {range.label}
+                  </Button>
+                  </Grid>
 
-                  />
                 ))}
-
-              </RadioGroup>
-            </FormControl>
+            </Grid>
           </ListItem>
 
-          <Collapse in={graphParams.daysBack === CUSTOM_DATE_RANGE}>
-            <ListItem>
-              <FormControl className={classes.formControl}>
-                <TextField
-                  id="startDate"
-                  label="Start Date"
-                  type="date"
-                  defaultValue={graphParams.startDate}
-                  InputProps={{
-                    inputProps: {
-                      max: graphParams.date,
-                      min: Moment(graphParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
-                    },
-                  }}
-                  className={classes.textField}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  onChange={setStartDate}
-                />
-              </FormControl>
-            </ListItem>
-          </Collapse>
 
           <ListItem>
             <FormControl component="fieldset" className={classes.formControl}>

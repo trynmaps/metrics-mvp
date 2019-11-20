@@ -8,7 +8,7 @@ import {
   routesUrl,
 } from '../locationConstants';
 import Moment from 'moment';
-import { CUSTOM_DATE_RANGE, MAX_DATE_RANGE } from '../UIConstants';
+import { MAX_DATE_RANGE } from '../UIConstants';
 
 /**
  * Helper function to compute the list of days for the GraphQL query.
@@ -18,21 +18,16 @@ import { CUSTOM_DATE_RANGE, MAX_DATE_RANGE } from '../UIConstants';
  */
 function computeDates(graphParams) {
   let endMoment = Moment(graphParams.date);
-  const daysBack = graphParams.daysBack;
-
-  let numberOfDaysBack = Number.parseInt(daysBack);
 
   // If this is a custom date range, compute the number of days back
   // based on the start date.
 
-  if (daysBack === CUSTOM_DATE_RANGE) {
     const startMoment = Moment(graphParams.startDate);
     const deltaDays = endMoment.diff(startMoment, 'days');
-    numberOfDaysBack = Math.abs(deltaDays) + 1; // add one for the end date itself
+    let numberOfDaysBack = Math.abs(deltaDays) + 1; // add one for the end date itself
     if (deltaDays < 0) { // if the start date is after end date, use the start date as the "end"
       endMoment = startMoment;
     }
-  }
 
   if (numberOfDaysBack > MAX_DATE_RANGE) { // guard rail
     numberOfDaysBack = MAX_DATE_RANGE;

@@ -58,16 +58,14 @@ export const TIME_RANGES = [
   },
 ];
 
-export const CUSTOM_DATE_RANGE = 'CUSTOM';
 export const MAX_DATE_RANGE = 90; // largest date range allowed, in days (30 might be more performant)
 
 // RadioGroup expects values to be strings, not numbers.
 export const DATE_RANGES = [
-  { value: '1', label: 'One day back' },
-  { value: '7', label: 'One week back' },
-  { value: '30', label: 'One month back' },
-  { value: '90', label: 'Three months back' },
-  { value: CUSTOM_DATE_RANGE, label: 'Custom start date' },
+  { value: '1', label: 'Yesterday' },
+  { value: '7', label: 'Last week' },
+  { value: '30', label: 'Last 30 days' },
+  { value: '90', label: 'Last 90 days' },
 ];
 
 // Values are Moment days of the week (0-6)

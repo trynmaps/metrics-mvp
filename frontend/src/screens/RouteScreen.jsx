@@ -64,7 +64,7 @@ function RouteScreen(props) {
             {startStopInfo ? `(from ${startStopInfo.title}` : null}
             {endStopInfo ? ` to ${endStopInfo.title})` : null}
           </div>
-          <DateTimePanel />
+          <DateTimePanel dateRangeSupported={graphData || graphError}/>
         </Toolbar>
       </AppBar>
 
