@@ -8,6 +8,9 @@ import TextField from '@material-ui/core/TextField';
 import MenuItem from '@material-ui/core/MenuItem';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 
+const transitionDuration = 400;
+const eventHandlerDelay = 100;
+const theme = createMuiTheme();
 const useStyles = makeStyles({
   input: {
     display: 'flex',
@@ -48,11 +51,245 @@ const selectStyles = {
   }),
 };
 
+function Control(props) {
+  const {
+    children,
+    innerProps,
+    selectProps: {
+      inputId,
+      classes,
+      textFieldProps,
+      isInitialMount,
+      onInitialMount,
+    },
+  } = props;
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      onInitialMount(document.getElementById(inputId).getBoundingClientRect());
+    }
+  });
+
+  return (
+    <TextField
+      id={inputId}
+      fullWidth
+      InputProps={{
+        inputComponent: 'div',
+        inputProps: {
+          children,
+          ...innerProps,
+          className: classes.input,
+        },
+      }}
+      {...textFieldProps}
+    />
+  );
+}
+
+function ValueContainer({ children, selectProps: { inputId, classes } }) {
+  const input = children[1];
+  const singleValue = children[0];
+
+  return (
+    <div id={`${inputId}Value`} className={classes.valueContainer}>
+      {[input, singleValue]}
+    </div>
+  );
+}
+
+function Placeholder({ children, selectProps: { classes } }) {
+  return (
+    <div className={`${classes.textContent} ${classes.placeholder}`}>
+      {children}
+    </div>
+  );
+}
+
+function SingleValue({ children, selectProps: { classes } }) {
+  return <div className={classes.textContent}>{children}</div>;
+}
+
+function DropdownIndicator(props) {
+  return (
+    <components.DropdownIndicator {...props}>
+      <ArrowDropDownIcon color="action" />
+    </components.DropdownIndicator>
+  );
+}
+
+function Menu(props) {
+  const {
+    children,
+    innerProps,
+    selectProps: {
+      classes,
+      focusedOption,
+      inputId,
+      menuIsOpen,
+      menuPlacementTop,
+      menuTransition,
+      scrollbarWidth,
+      textFieldDOMRect,
+    },
+  } = props;
+  const menuStyle = {};
+  const timeout = menuTransition.current ? transitionDuration : 0;
+  const [menuStyleRight, setMenuStyleRight] = useState(0);
+  const [menuStyleBottom, setMenuStyleBottom] = useState(0);
+
+  menuPlacementTop.current =
+    textFieldDOMRect.top >
+    document.documentElement.clientHeight - textFieldDOMRect.bottom;
+
+  if (menuStyleRight) {
+    menuStyle.right = menuStyleRight;
+  }
+
+  if (menuStyleBottom) {
+    menuStyle.bottom = menuStyleBottom;
+  }
+
+  useEffect(() => {
+    const menu = document.getElementById(`${inputId}Menu`);
+    // TODO: get label ref via callback? also in menu list
+    const labelHeight = document.getElementById(inputId).parentElement
+      .previousSibling.clientHeight;
+    const inputHeight = textFieldDOMRect.height + labelHeight;
+    const rightWillSlice =
+      textFieldDOMRect.left + menu.clientWidth + scrollbarWidth.current >
+      window.innerWidth;
+    const leftWillSlice = textFieldDOMRect.right - menu.clientWidth < 0;
+    const idealRightPosition =
+      textFieldDOMRect.right -
+      document.documentElement.clientWidth +
+      scrollbarWidth.current;
+
+    /**
+     * check if the right side of the menu will be outside the view
+     * if so change the 'right' property of the style object
+     * but only if the left side is not cut off in the process, otherwise default positon
+     */
+    if (rightWillSlice && !leftWillSlice) {
+      if (menuStyleRight !== idealRightPosition) {
+        setMenuStyleRight(idealRightPosition);
+      }
+    } else if (menuStyleRight) {
+      setMenuStyleRight(0);
+    }
+
+    if (menuPlacementTop.current) {
+      if (menuStyleBottom !== inputHeight) {
+        setMenuStyleBottom(inputHeight);
+      }
+    } else if (menuStyleBottom) {
+      setMenuStyleBottom(0);
+    }
+
+    /**
+     * temporary fix to react-select issue not setting focus to selected value by default
+     * may or may not be needed after fixing issue with default focus option
+     */
+    if (focusedOption.current) {
+      focusedOption.current.parentNode.scrollTop =
+        focusedOption.current.offsetTop -
+        menu.clientHeight / 2 +
+        focusedOption.current.clientHeight / 2;
+    }
+  }, [
+    focusedOption,
+    inputId,
+    menuPlacementTop,
+    menuStyleBottom,
+    menuStyleRight,
+    scrollbarWidth,
+    textFieldDOMRect,
+  ]);
+
+  return (
+    <Grow
+      in={menuIsOpen}
+      timeout={timeout}
+      style={{ transformOrigin: '0 0 0' }}
+    >
+      <Fade in={menuIsOpen} timeout={timeout}>
+        <Paper
+          id={`${inputId}Menu`}
+          style={menuStyle}
+          className={classes.menu}
+          {...innerProps}
+        >
+          {children}
+        </Paper>
+      </Fade>
+    </Grow>
+  );
+}
+
+function MenuList(props) {
+  const {
+    children,
+    selectProps: { inputId, menuPlacementTop, textFieldDOMRect },
+  } = props;
+  let maxHeight;
+
+  // calculates appropriate max height depending on top or bottom menu placement
+  if (menuPlacementTop.current) {
+    maxHeight =
+      textFieldDOMRect.top -
+      document.getElementById(inputId).parentElement.previousSibling
+        .clientHeight -
+      theme.spacing(2);
+  } else {
+    maxHeight =
+      document.documentElement.clientHeight -
+      textFieldDOMRect.bottom -
+      theme.spacing(2);
+  }
+
+  return (
+    <components.MenuList {...props} maxHeight={maxHeight}>
+      {children}
+    </components.MenuList>
+  );
+}
+
+function Option(props) {
+  const {
+    children,
+    innerProps,
+    isFocused,
+    isSelected,
+    selectProps: { focusedOption },
+  } = props;
+  const focused = (function() {
+    if (isFocused && !isSelected) {
+      return {
+        backgroundColor: theme.palette.action.hover,
+      };
+    }
+    return {};
+  })();
+
+  return (
+    <MenuItem
+      ref={element => {
+        if (isSelected) {
+          focusedOption.current = element;
+        }
+      }}
+      selected={isSelected}
+      style={focused}
+      {...innerProps}
+    >
+      {children}
+    </MenuItem>
+  );
+}
+
 export default function ReactSelect(selectProps) {
   const classes = useStyles();
-  const theme = createMuiTheme();
-  const transitionDuration = 400;
-  const eventHandlerDelay = 100;
   const focusedOption = useRef();
   const scrollbarWidth = useRef(0);
   const isInitialMount = useRef(true);
@@ -62,7 +299,7 @@ export default function ReactSelect(selectProps) {
   const [textFieldDOMRect, setTextFieldDOMRect] = useState({});
 
   /**
-   * updates textfield location after resize/scroll
+   * updates textfield location on input focus or window resize
    * re-renders menu if open which updates menu placement and max height
    */
   function handleReposition() {
@@ -73,210 +310,6 @@ export default function ReactSelect(selectProps) {
         document.getElementById(selectProps.inputId).getBoundingClientRect(),
       );
     }, eventHandlerDelay);
-  }
-
-  function Control({ children, innerProps }) {
-    useEffect(() => {
-      if (isInitialMount.current) {
-        isInitialMount.current = false;
-        setTextFieldDOMRect(
-          document.getElementById(selectProps.inputId).getBoundingClientRect(),
-        );
-      }
-    });
-
-    return (
-      <TextField
-        id={selectProps.inputId}
-        fullWidth
-        InputProps={{
-          inputComponent: 'div',
-          inputProps: {
-            children,
-            ...innerProps,
-            className: classes.input,
-          },
-        }}
-        {...selectProps.textFieldProps}
-      />
-    );
-  }
-
-  function ValueContainer({ children }) {
-    const input = children[1];
-    const singleValue = children[0];
-
-    return (
-      <div
-        id={`${selectProps.inputId}Value`}
-        className={classes.valueContainer}
-      >
-        {[input, singleValue]}
-      </div>
-    );
-  }
-
-  function Placeholder({ children }) {
-    return (
-      <div className={`${classes.textContent} ${classes.placeholder}`}>
-        {children}
-      </div>
-    );
-  }
-
-  function SingleValue({ children }) {
-    return <div className={classes.textContent}>{children}</div>;
-  }
-
-  function DropdownIndicator(props) {
-    return (
-      <components.DropdownIndicator {...props}>
-        <ArrowDropDownIcon color="action" />
-      </components.DropdownIndicator>
-    );
-  }
-
-  function Menu(props) {
-    const menuStyle = {};
-    const timeout = menuTransition.current ? transitionDuration : 0;
-    const [menuStyleRight, setMenuStyleRight] = useState(0);
-    const [menuStyleBottom, setMenuStyleBottom] = useState(0);
-
-    menuPlacementTop.current =
-      textFieldDOMRect.top >
-      document.documentElement.clientHeight - textFieldDOMRect.bottom;
-
-    if (menuStyleRight) {
-      menuStyle.right = menuStyleRight;
-    }
-
-    if (menuStyleBottom) {
-      menuStyle.bottom = menuStyleBottom;
-    }
-
-    useEffect(() => {
-      const menu = document.getElementById(`${selectProps.inputId}Menu`);
-      const labelHeight = document.getElementById(selectProps.inputId)
-        .parentElement.previousSibling.clientHeight;
-      const inputHeight = textFieldDOMRect.height + labelHeight;
-      const rightWillSlice =
-        textFieldDOMRect.left + menu.clientWidth + scrollbarWidth.current >
-        window.innerWidth;
-      const leftWillSlice = textFieldDOMRect.right - menu.clientWidth < 0;
-      const idealRightPosition =
-        textFieldDOMRect.right -
-        document.documentElement.clientWidth +
-        scrollbarWidth.current;
-
-      /**
-       * check if the right side of the menu will be outside the view
-       * if so change the 'right' property of the style object
-       * but only if the left side is not cut off in the process, otherwise default positon
-       */
-      if (rightWillSlice && !leftWillSlice) {
-        if (menuStyleRight !== idealRightPosition) {
-          setMenuStyleRight(idealRightPosition);
-        }
-      } else if (menuStyleRight) {
-        setMenuStyleRight(0);
-      }
-
-      if (menuPlacementTop.current) {
-        if (menuStyleBottom !== inputHeight) {
-          setMenuStyleBottom(inputHeight);
-        }
-      } else if (menuStyleBottom) {
-        setMenuStyleBottom(0);
-      }
-
-      /**
-       * temporary fix to react-select issue not setting focus to selected value by default
-       * may or may not be needed after fixing issue with default focus option
-       */
-      if (focusedOption.current) {
-        focusedOption.current.parentNode.scrollTop =
-          focusedOption.current.offsetTop -
-          menu.clientHeight / 2 +
-          focusedOption.current.clientHeight / 2;
-      }
-
-      /**
-       * set focus back to input element after resize
-       * currently doesn't allow virtual keyboard to close without closing menu via blur
-       */
-      document
-        .getElementById(`${selectProps.inputId}Value`)
-        .firstChild.firstChild.firstChild.focus();
-    }, [menuStyleRight, menuStyleBottom]);
-
-    return (
-      <Grow
-        in={props.selectProps.menuIsOpen}
-        timeout={timeout}
-        style={{ transformOrigin: '0 0 0' }}
-      >
-        <Fade in={props.selectProps.menuIsOpen} timeout={timeout}>
-          <Paper
-            id={`${selectProps.inputId}Menu`}
-            style={menuStyle}
-            className={classes.menu}
-            {...props.innerProps}
-          >
-            {props.children}
-          </Paper>
-        </Fade>
-      </Grow>
-    );
-  }
-
-  function MenuList(props) {
-    let maxHeight;
-
-    // calculates appropriate max height depending on top or bottom menu placement
-    if (menuPlacementTop.current) {
-      maxHeight =
-        textFieldDOMRect.top -
-        document.getElementById(selectProps.inputId).parentElement
-          .previousSibling.clientHeight -
-        theme.spacing(2);
-    } else {
-      maxHeight =
-        document.documentElement.clientHeight -
-        textFieldDOMRect.bottom -
-        theme.spacing(2);
-    }
-
-    return (
-      <components.MenuList {...props} maxHeight={maxHeight}>
-        {props.children}
-      </components.MenuList>
-    );
-  }
-
-  function Option(props) {
-    const focused = (function() {
-      if (props.isFocused && !props.isSelected) {
-        return {
-          backgroundColor: theme.palette.action.hover,
-        };
-      }
-      return {};
-    })();
-
-    return (
-      <MenuItem
-        ref={element => {
-          if (props.isSelected) {
-            focusedOption.current = element;
-          }
-        }}
-        selected={props.isSelected}
-        style={focused}
-        {...props.innerProps}
-      >
-        {props.children}
-      </MenuItem>
-    );
   }
 
   const replacedComponents = {
@@ -307,6 +340,8 @@ export default function ReactSelect(selectProps) {
   function onMenuClose() {
     document.body.style.overflow = 'visible';
     document.body.style.paddingRight = 0;
+    menuTransition.current = true;
+    document.activeElement.blur();
   }
 
   useEffect(() => {
@@ -320,11 +355,19 @@ export default function ReactSelect(selectProps) {
 
   return (
     <Select
+      classes={classes}
       components={replacedComponents}
+      focusedOption={focusedOption}
+      isInitialMount={isInitialMount}
+      menuPlacementTop={menuPlacementTop}
+      menuTransition={menuTransition}
+      onInitialMount={setTextFieldDOMRect}
       onMenuOpen={onMenuOpen}
       onMenuClose={onMenuClose}
-      styles={selectStyles}
       placeholder="Type here to search..."
+      styles={selectStyles}
+      scrollbarWidth={scrollbarWidth}
+      textFieldDOMRect={textFieldDOMRect}
       value={selectProps.options.filter(
         option => option.value === selectProps.stopId,
       )}
