@@ -1,12 +1,6 @@
 import axios from 'axios';
 import { MetricsBaseURL, S3Bucket, RoutesVersion, TripTimesVersion, WaitTimesVersion, ArrivalsVersion } from '../config';
 import { getTimePath } from '../helpers/precomputed';
-import {
-  generateArrivalsURL,
-  generateTripURL,
-  generateWaitTimeURL,
-  routesUrl,
-} from '../locationConstants';
 import Moment from 'moment';
 import { MAX_DATE_RANGE } from '../UIConstants';
 
@@ -44,6 +38,7 @@ function computeDates(graphParams) {
     endMoment.subtract(1, 'days');
   }
   return dates;
+}
 
 // S3 URL to route configuration
 export function generateRoutesURL(agencyId) {
