@@ -1,4 +1,4 @@
-from . import nextbus, constants, metrics, util
+from . import constants, metrics, util, config
 from graphene import ObjectType, String, Int, Float, List, Field, Boolean, Schema
 from datetime import date
 import sys
@@ -10,19 +10,15 @@ ROUND_DIGITS = 3
 class DirectionInfo(ObjectType):
     id = String()
     title = String()
-    name = String()
     stopIds = List(String)
 
-    # `parent` is a nextbus.DirectionInfo object
+    # `parent` is a routeconfig.DirectionInfo object
 
     def resolve_id(parent, info):
         return parent.id
 
     def resolve_title(parent, info):
         return parent.title
-
-    def resolve_name(parent, info):
-        return parent.name
 
     def resolve_stopIds(parent, info):
         return parent.get_stop_ids()
@@ -33,7 +29,7 @@ class StopInfo(ObjectType):
     lat = Float()
     lon = Float()
 
-    # `parent` is a nextbus.StopInfo object
+    # `parent` is a routeconfig.StopInfo object
 
     def resolve_id(parent, info):
         return parent.id
@@ -55,7 +51,7 @@ class RouteConfig(ObjectType):
     stopInfo = Field(StopInfo, stopId = String())
     directionInfo = Field(DirectionInfo, directionId = String())
 
-    # `parent` is a nextbus.RouteConfig object
+    # `parent` is a routeconfig.RouteConfig object
 
     def resolve_id(parent, info):
         return parent.id
@@ -80,7 +76,7 @@ class RouteInfo(ObjectType):
     title = String()
     config = Field(RouteConfig)
 
-    # `parent` is a nextbus.RouteInfo object
+    # `parent` is a routeconfig.RouteConfig object
 
     def resolve_id(parent, info):
         return parent.id
@@ -89,7 +85,8 @@ class RouteInfo(ObjectType):
         return parent.title
 
     def resolve_config(parent, info):
-        return nextbus.get_route_config(constants.AGENCY, parent.id)
+        #agency = config.get_agency(parent.agency_id)
+        return parent #agency.get_route_config(parent.id)
 
 def get_percentiles_data(percentiles, percentile_values):
     return [{"percentile": percentile, "value": round(value, ROUND_DIGITS)}
@@ -372,11 +369,13 @@ class TripMetrics(ObjectType):
     def resolve_interval(parent, info, date_strs, start_time = None, end_time = None):
         dates = [util.parse_date(date_str) for date_str in date_strs]
 
+        agency = config.get_agency(parent['route_metrics'].agency_id)
+
         rng = metrics.Range(
             dates,
             start_time,
             end_time,
-            constants.PACIFIC_TIMEZONE
+            agency.tz
         )
 
         return {
@@ -387,12 +386,14 @@ class TripMetrics(ObjectType):
     def resolve_timeRanges(parent, info, date_strs):
         dates = [util.parse_date(date_str) for date_str in date_strs]
 
+        agency = config.get_agency(parent['route_metrics'].agency_id)
+
         return [{
                 'range': metrics.Range(
                     dates,
                     start_time,
                     end_time,
-                    constants.PACIFIC_TIMEZONE
+                    agency.tz
                 ),
                 **parent
             }
@@ -401,7 +402,7 @@ class TripMetrics(ObjectType):
 
 class RouteMetrics(ObjectType):
     trip = Field(TripMetrics,
-        startStopId = String(),
+        startStopId = String(required=True),
         endStopId = String(required = False),
         directionId = String(required = False)
     )
@@ -417,17 +418,26 @@ class RouteMetrics(ObjectType):
         }
 
 class Query(ObjectType):
-    routes = List(RouteInfo)
-    routeConfig = Field(RouteConfig, routeId = String())
-    routeMetrics = Field(RouteMetrics, routeId = String())
+    routes = List(RouteInfo,
+        agency_id = String(required=True)
+    )
+    routeConfig = Field(RouteConfig,
+        agency_id = String(required=True),
+        route_id = String(required=True)
+    )
+    routeMetrics = Field(RouteMetrics,
+        agency_id = String(required=True),
+        route_id = String(required=True))
 
-    def resolve_routes(parent, info):
-        return nextbus.get_route_list(constants.AGENCY)
+    def resolve_routes(parent, info, agency_id):
+        agency = config.get_agency(agency_id)
+        return agency.get_route_list()
 
-    def resolve_routeConfig(parent, info, routeId):
-        return nextbus.get_route_config(constants.AGENCY, routeId)
+    def resolve_routeConfig(parent, info, agency_id, route_id):
+        agency = config.get_agency(agency_id)
+        return agency.get_route_config(route_id)
 
-    def resolve_routeMetrics(parent, info, routeId):
-        return metrics.RouteMetrics(constants.AGENCY, routeId)
+    def resolve_routeMetrics(parent, info, agency_id, route_id):
+        return metrics.RouteMetrics(agency_id, route_id)
 
 metrics_api = Schema(query = Query)

@@ -6,13 +6,13 @@ import AppBar from '@material-ui/core/AppBar';
 import { connect } from 'react-redux';
 
 import { makeStyles } from '@material-ui/core/styles';
+import { Agencies } from '../config';
 import TravelTimeChart from '../components/TravelTimeChart';
 import QuadrantChart from '../components/QuadrantChart';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { fetchRoutes, fetchPrecomputedWaitAndTripData } from '../actions';
-import { agencyTitle } from '../locationConstants';
+import { fetchRoutes, fetchPrecomputedWaitAndTripData, handleGraphParams } from '../actions';
 
 const useStyles = makeStyles({
   title: {
@@ -30,14 +30,19 @@ function DataDiagnostic(props) {
     routes,
     myFetchRoutes,
     myFetchPrecomputedWaitAndTripData,
+    myHandleGraphParams,
   } = props;
 
+  const agency = Agencies[0];
+
   useEffect(() => {
+    myHandleGraphParams({agencyId: agency.id});
+
     if (!routes) {
-      myFetchRoutes();
+      myFetchRoutes({agencyId: agency.id});
     }
     myFetchPrecomputedWaitAndTripData(graphParams);
-  }, [routes, myFetchRoutes, myFetchPrecomputedWaitAndTripData, graphParams]); // like componentDidMount, this runs only on first render
+  }, [routes, myFetchRoutes, myFetchPrecomputedWaitAndTripData, graphParams, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
 
   const classes = useStyles();
 
@@ -61,7 +66,7 @@ function DataDiagnostic(props) {
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className={classes.title}>{agencyTitle}</div>
+          <div className={classes.title}>{agency.title}</div>
           <DateTimePanel />
         </Toolbar>
       </AppBar>
@@ -83,9 +88,10 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: () => dispatch(fetchRoutes()),
+  myFetchRoutes: props => dispatch(fetchRoutes(props)),
   myFetchPrecomputedWaitAndTripData: params =>
     dispatch(fetchPrecomputedWaitAndTripData(params)),
+  myHandleGraphParams: props => dispatch(handleGraphParams(props)),
 });
 
 export default connect(

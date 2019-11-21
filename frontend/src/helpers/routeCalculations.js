@@ -15,34 +15,17 @@ import {
   getTripTimesForDirection,
   getAverageOfMedianWaitStat,
 } from './precomputed';
-import { routeHeuristics } from '../locationConstants';
+
+import { getAgency } from '../config';
 
 /**
  * Given an array of routes, return only the routes we want to show.
  */
 export function filterRoutes(routes) {
-  return routes.filter(
-    route =>
-      !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute,
-  );
-}
-
-/**
- * Given directions array for a route and corresponding route ID, return only the valid directions.
- */
-export function filterDirections(directions, routeId) {
-  if (!routeHeuristics[routeId]) {
-    return directions;
-  }
-
-  const directionsToIgnore = routeHeuristics[routeId].directionsToIgnore;
-  if (!directionsToIgnore) {
-    return directions;
-  }
-
-  return directions.filter(
-    direction => !directionsToIgnore.includes(direction.id),
-  );
+  return routes.filter(route => {
+    const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
+    return !routeHeuristics || !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute;
+  });
 }
 
 /**
@@ -51,8 +34,8 @@ export function filterDirections(directions, routeId) {
  * M's actually go to that stop.  For better end to end calculations, need to disregard
  * the first stop.
  */
-export function ignoreFlag(routeId, directionId, flagName) {
-  if (!routeHeuristics[routeId]) {
+function ignoreFlag(routeHeuristics, routeId, directionId, flagName) {
+  if (!routeHeuristics || !routeHeuristics[routeId]) {
     return false;
   }
   const direction = routeHeuristics[routeId][directionId];
@@ -65,12 +48,12 @@ export function ignoreFlag(routeId, directionId, flagName) {
   return false;
 }
 
-export function ignoreFirstStop(routeId, directionId) {
-  return ignoreFlag(routeId, directionId, 'ignoreFirstStop');
+function ignoreFirstStop(routeHeuristics, routeId, directionId) {
+  return ignoreFlag(routeHeuristics, routeId, directionId, 'ignoreFirstStop');
 }
 
-export function ignoreLastStop(routeId, directionId) {
-  return ignoreFlag(routeId, directionId, 'ignoreLastStop');
+function ignoreLastStop(routeHeuristics, routeId, directionId) {
+  return ignoreFlag(routeHeuristics, routeId, directionId, 'ignoreLastStop');
 }
 
 /**
@@ -92,11 +75,12 @@ function getTripTimesUsingHeuristics(
   );
 
   if (!tripTimesForDir || !routes) {
-    // console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
+    //console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
     return { tripTimesForFirstStop: null, directionInfo: null };
   }
-  // console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
+
+  //console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
 
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
@@ -106,7 +90,9 @@ function getTripTimesUsingHeuristics(
     direction => direction.id === directionId,
   );
 
-  const ignoreFirst = ignoreFirstStop(routeId, directionId); // look up heuristic rule
+  const routeHeuristics = getAgency(graphParams.agencyId).routeHeuristics;
+
+  const ignoreFirst = ignoreFirstStop(routeHeuristics, routeId, directionId); // look up heuristic rule
   let firstStop = null;
 
   if (ignoreFirst !== true && ignoreFirst !== false) {
@@ -121,8 +107,8 @@ function getTripTimesUsingHeuristics(
   // if this stop doesn't have trip times (like the oddball J direction going to the yard, which we currently ignore)
   // then find the stop with the most trip time entries
 
-  if (!tripTimesForFirstStop) {
-    // console.log("No trip times found for " + routeId + " from stop " + firstStop + ".  Using stop with most entries.");
+  if (!tripTimesForFirstStop || !Object.keys(tripTimesForFirstStop).length) {
+    //console.log("No trip times found for " + routeId + " from stop " + firstStop + ".  Using stop with most entries.");
     tripTimesForFirstStop = Object.values(tripTimesForDir).reduce(
       (accumulator, currentValue) =>
         Object.values(currentValue).length > Object.values(accumulator).length
@@ -161,7 +147,9 @@ export function getEndToEndTripTime(
     return '?';
   }
 
-  const ignoreLast = ignoreLastStop(routeId, directionId); // look up heuristic rule
+  const routeHeuristics = getAgency(graphParams.agencyId).routeHeuristics;
+
+  const ignoreLast = ignoreLastStop(routeHeuristics, routeId, directionId); // look up heuristic rule
 
   let lastStop = null;
 
@@ -184,6 +172,8 @@ export function getEndToEndTripTime(
   let statIndex = 1; // default to median (p10-median-p90)
   if (stat === 'p90') {
     statIndex = 2;
+  } else if (stat === 'p10') {
+    statIndex = 0;
   }
 
   let tripTime = null;
@@ -227,6 +217,7 @@ export function getTripDataSeries(props, routeId, directionId) {
   );
 
   if (!tripTimesForFirstStop) {
+    //console.log('no trip times for first stop ' + routeId + ' ' + directionId);
     return [];
   } // no precomputed times
 
@@ -240,16 +231,18 @@ export function getTripDataSeries(props, routeId, directionId) {
 
   directionInfo.stops.slice(1).map((stop, index) => {
     if (!directionInfo.stop_geometry[stop]) {
-      // console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
-    }
-    if (tripTimesForFirstStop[stop] && directionInfo.stop_geometry[stop]) {
+      //console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
+    } else if (tripTimesForFirstStop[stop]) {
       dataSeries.push({
         x: metersToMiles(directionInfo.stop_geometry[stop].distance),
         y: tripTimesForFirstStop[stop][1], // median
         title: route.stops[stop].title,
         stopIndex: index,
       });
-    }
+    } /* else {
+      console.log('no trip times for first stop ' + routeId + ' ' + directionId + ' ' + stop);
+    } */
+
     return null;
   });
 
@@ -305,8 +298,7 @@ function getSpeedAndVariabilityForRoute(
 ) {
   const route = routes.find(thisRoute => thisRoute.id === routeId);
 
-  const filteredDirections = filterDirections(route.directions, routeId);
-  let speeds = filteredDirections.map(direction => {
+  let speeds = route.directions.map(direction => {
     const dist = direction.distance;
     const tripTime = getEndToEndTripTime(
       tripTimesCache,
@@ -325,6 +317,15 @@ function getSpeedAndVariabilityForRoute(
       'p90',
     );
 
+    const p10tripTime = getEndToEndTripTime(
+        tripTimesCache,
+        graphParams,
+        routes,
+        route.id,
+        direction.id,
+        'p10',
+      );
+
     if (dist <= 0 || Number.isNaN(tripTime)) {
       // something wrong with the data here
       // console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + routeId + ' ' + direction.id);
@@ -332,9 +333,10 @@ function getSpeedAndVariabilityForRoute(
     }
 
     const speed = (metersToMiles(Number.parseFloat(dist)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
+
     return {
       speed,
-      variability: p90tripTime - tripTime,
+      variability: (p90tripTime - p10tripTime) / 2.0,
     };
   });
 
@@ -440,7 +442,7 @@ export function computeGrades(
   //
   // grade score for travel time variability
   //
-  // where variance is planning percentile time minus average time
+  // where variability is half of (90th percentile time minus 10th percentile)
   //
 
   const variabilityScoreScale = d3
@@ -518,7 +520,14 @@ export function getAllScores(routes, waits, speeds) {
         speedObj.speed,
         speedObj.variability,
       );
-      allScores.push({ routeId: route.id, totalScore: grades.totalScore });
+      allScores.push({
+        routeId: route.id,
+        totalScore: grades.totalScore,
+        medianWaitScore: grades.medianWaitScore,
+        longWaitScore: grades.longWaitScore,
+        speedScore: grades.speedScore,
+        travelVarianceScore: grades.travelVarianceScore,
+      });
     }
   });
 
@@ -536,10 +545,16 @@ export const quartileBackgroundColor = d3
   .domain([0.25, 0.5, 0.75])
   .range([red[300], yellow[300], lightGreen[800], green[900]]);
 
-export const quartileForegroundColor = d3
+export const quartileContrastColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
   .range(['black', 'black', 'white', 'white']);
+
+// for coloring the route table's white columns, to emphasize low scoring cells
+export const quartileTextColor = d3
+  .scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range(['black', 'black', '#8a8a8a', '#8a8a8a']);
 
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon

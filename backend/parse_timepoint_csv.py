@@ -1,4 +1,4 @@
-from models import arrival_history, util, trynapi, nextbus
+from models import arrival_history, util, trynapi
 import json
 import math
 import argparse
@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser.set_defaults(s3=False)
 
     args = parser.parse_args()
-    agency = 'sf-muni'
+    agency_id = 'muni'
     history_version = 't2'
 
     paths = args.file
@@ -105,5 +105,5 @@ if __name__ == '__main__':
                 for direction, arrivals in stop_data["arrivals"].items():
                     arrivals.sort(key=time_key)
 
-            history = arrival_history.ArrivalHistory(agency, route_id, start_time=start_time, end_time=end_time, stops_data=stops_data, version=history_version)
+            history = arrival_history.ArrivalHistory(agency_id, route_id, start_time=start_time, end_time=end_time, stops_data=stops_data, version=history_version)
             arrival_history.save_for_date(history, d, args.s3)

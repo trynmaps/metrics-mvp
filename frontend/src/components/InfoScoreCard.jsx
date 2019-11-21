@@ -15,7 +15,7 @@ import Rating from '@material-ui/lab/Rating';
 import Box from '@material-ui/core/Box';
 import {
   quartileBackgroundColor,
-  quartileForegroundColor,
+  quartileContrastColor,
 } from '../helpers/routeCalculations';
 
 /**
@@ -38,6 +38,7 @@ export default function InfoScoreCard(props) {
   const useStyles = makeStyles(theme => ({
     popover: {
       padding: theme.spacing(2),
+      maxWidth: 500,
     },
   }));
 
@@ -59,7 +60,7 @@ export default function InfoScoreCard(props) {
         ? quartileBackgroundColor(myGrades[myGradeName] / 100.0)
         : 'gray',
       color: myGrades
-        ? quartileForegroundColor(myGrades[myGradeName] / 100.0)
+        ? quartileContrastColor(myGrades[myGradeName] / 100.0)
         : 'black',
       margin: 4,
     };

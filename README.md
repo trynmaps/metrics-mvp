@@ -30,6 +30,26 @@ You can run command line scripts like `backend/compute_arrivals.py` and `backend
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
 
+## Configuring the displayed transit agency
+
+By default, the app shows statistics for San Francisco Muni. You can configure the transit agency displayed in the web app by setting the OPENTRANSIT_AGENCY_IDS environment variable.
+
+Other available agency IDs include:
+- `trimet` (TriMet in Portland, Oregon)
+- `portland-sc` (Portland Streetcar)
+
+To set this environment variable in development when using Docker, create a file named docker-compose.override.yml file in the root directory of this repository, like so:
+
+```
+version: "3.7"
+services:
+  flask-dev:
+    environment:
+      OPENTRANSIT_AGENCY_IDS: trimet
+```
+
+After changing docker-compose.override.yml, you will need to re-run `docker-compose up` for the changes to take effect.
+
 ## Contributing
 
 Make sure you've been added to the trynmaps organization on GitHub.

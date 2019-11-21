@@ -31,7 +31,8 @@ import MomentTZ from 'moment-timezone/builds/moment-timezone-with-data-10-year-r
 
 import * as d3 from 'd3';
 import { fetchArrivals, resetArrivals } from '../actions';
-import { TIME_ZONE_NAME, DWELL_THRESHOLD_SECS } from '../UIConstants';
+import { getAgency } from '../config';
+import { DWELL_THRESHOLD_SECS } from '../UIConstants';
 
 import { metersToMiles } from '../helpers/routeCalculations';
 
@@ -62,8 +63,8 @@ import { metersToMiles } from '../helpers/routeCalculations';
  */
 function MareyChart(props) {
   const INBOUND_AND_OUTBOUND = 'Inbound_and_outbound';
-  const INBOUND = 'Inbound'; // same as directionInfo name
-  const OUTBOUND = 'Outbound'; // same as directionInfo name
+  const INBOUND = '1'; // same as directionInfo id
+  const OUTBOUND = '0'; // same as directionInfo id
 
   const { graphParams, myFetchArrivals, myResetArrivals, arrivals, arrivalsErr, routes, hidden } = props;
 
@@ -71,6 +72,9 @@ function MareyChart(props) {
   const [tripHighlight, setTripHighlight] = useState();
   const [processedArrivals, setProcessedArrivals] = useState(); // where the tripData gets stored
   const [selectedOption, setSelectedOption] = useState(INBOUND_AND_OUTBOUND);
+
+  const agency = getAgency(graphParams.agencyId);
+  const timezoneId = agency ? agency.timezoneId : 'UTC';
 
   // Clear out stale data.  We have arrivals for a different route or
   // different day versus what is currently selected.
@@ -86,7 +90,7 @@ function MareyChart(props) {
       
   // Request missing arrival data lazily, only when this chart is tabbed into view.
   // This makes the app more responsive to route and date changes if we are hidden.
-  
+
   useEffect(() => {
       
     if (!arrivals && graphParams.routeId && !hidden) {
@@ -143,12 +147,12 @@ function MareyChart(props) {
         // the length of the outbound direction.  This does not line up exactly with the
         // inbound direction length.
 
-        if (directionInfo.name === 'Outbound') {
+        if (directionInfo.id === '0') {
           distance = directionInfo.distance - distance;
         }
         distance = metersToMiles(distance);
 
-        const arrivalMoment = Moment.unix(arrival.t).tz(TIME_ZONE_NAME);
+        const arrivalMoment = Moment.unix(arrival.t).tz(timezoneId);
         const yValue = (arrival.t - startTime) / 60 / 60 + startHourOfDay; // time of arrival in fractional hours
 
         myTripData.byTripId[tripId].series.push({
@@ -178,7 +182,7 @@ function MareyChart(props) {
         // so we can see the vehicle's exit in the data series.
 
         if (arrival.e - arrival.t > DWELL_THRESHOLD_SECS) {
-          const exitMoment = Moment.unix(arrival.e).tz(TIME_ZONE_NAME);
+          const exitMoment = Moment.unix(arrival.e).tz(timezoneId);
           const exitYValue = (arrival.e - startTime) / 60 / 60 + startHourOfDay; // time of arrival in fractional hours
 
           myTripData.byTripId[tripId].series.push({
@@ -212,7 +216,7 @@ function MareyChart(props) {
       const stops = myArrivals.stops;
       const startTime = myArrivals.start_time;
       const startHourOfDay = Moment.unix(startTime)
-        .tz(TIME_ZONE_NAME)
+        .tz(timezoneId)
         .hour();
 
       const routeId = myArrivals.route_id;
@@ -251,8 +255,7 @@ function MareyChart(props) {
     } else {
       setProcessedArrivals(null);
     }
-    
-  }, [arrivals, routes]);
+  }, [arrivals, routes, timezoneId]);
 
   /**
    * This is a render-time helper function.
@@ -275,7 +278,7 @@ function MareyChart(props) {
 
       if (
         selectedOption === INBOUND_AND_OUTBOUND ||
-        (trip.directionInfo && trip.directionInfo.name === selectedOption)
+        (trip.directionInfo && trip.directionInfo.id === selectedOption)
       ) {
         const dataSeries = trip.series.sort((a, b) => {
           const deltaY = b.y - a.y;
