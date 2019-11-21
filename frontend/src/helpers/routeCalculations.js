@@ -556,6 +556,16 @@ export const quartileTextColor = d3
   .domain([0.25, 0.5, 0.75])
   .range(['black', 'black', '#8a8a8a', '#8a8a8a']);
 
+export const quartileLightBackgroundColor = d3
+  .scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range([red[50], yellow[50], lightGreen[100], green[100]]);
+
+export const quartileLightContrastColor = d3
+  .scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range(['black', 'black', 'black', 'black']);
+
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon
  * from bird eye view; seems to be +- 8 meters difference from geopy distance.

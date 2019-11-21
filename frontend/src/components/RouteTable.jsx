@@ -25,6 +25,8 @@ import {
   getAllScores,
   quartileBackgroundColor,
   quartileContrastColor,
+  quartileLightBackgroundColor,
+  quartileLightContrastColor,
 } from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
@@ -392,8 +394,8 @@ function RouteTable(props) {
                       align="right"
                       style={{
                         //color: quartileTextColor(row.medianWaitScore / 100),
-                        color: quartileContrastColor(row.medianWaitScore / 100),
-                        backgroundColor: quartileBackgroundColor(
+                        color: quartileLightContrastColor(row.medianWaitScore / 100),
+                        backgroundColor: quartileLightBackgroundColor(
                           row.medianWaitScore / 100
                         ),
                       }}
@@ -404,8 +406,8 @@ function RouteTable(props) {
                       align="right"
                       style={{
                         //color: quartileTextColor(row.longWaitScore / 100),
-                        color: quartileContrastColor(row.longWaitScore / 100),
-                        backgroundColor: quartileBackgroundColor(
+                        color: quartileLightContrastColor(row.longWaitScore / 100),
+                        backgroundColor: quartileLightBackgroundColor(
                           row.longWaitScore / 100,
                         ),
                       }}
@@ -421,8 +423,8 @@ function RouteTable(props) {
                       align="right"
                       style={{
                         //color: quartileTextColor(row.speedScore / 100),
-                        color: quartileContrastColor(row.speedScore / 100),
-                        backgroundColor: quartileBackgroundColor(
+                        color: quartileLightContrastColor(row.speedScore / 100),
+                        backgroundColor: quartileLightBackgroundColor(
                           row.speedScore / 100,
                         ),
                       }}
@@ -433,8 +435,8 @@ function RouteTable(props) {
                       align="right"
                       style={{
                         //color: quartileTextColor(row.travelVarianceScore / 100),
-                        color: quartileContrastColor(row.travelVarianceScore / 100),
-                        backgroundColor: quartileBackgroundColor(
+                        color: quartileLightContrastColor(row.travelVarianceScore / 100),
+                        backgroundColor: quartileLightBackgroundColor(
                           row.travelVarianceScore / 100,
                         ),
                       }}
