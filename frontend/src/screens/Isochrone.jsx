@@ -9,8 +9,7 @@ import Typography from '@material-ui/core/Typography';
 import FormGroup from '@material-ui/core/FormGroup';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -565,15 +564,17 @@ class Isochrone extends React.Component {
 
     return (
       <ListItem key={route.id}>
-        <ListItemIcon>
-          <Checkbox
-            checked={enabled}
-            onChange={this.handleToggleRoute}
-            value={route.id}
-            color="primary"
-          />
-        </ListItemIcon>
-        <ListItemText id={route.id} primary={route.id}/>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={enabled}
+              onChange={this.handleToggleRoute}
+              value={route.id}
+              color="primary"
+            />
+          }
+          label={route.id}
+        />
       </ListItem>
     );
   }
@@ -680,7 +681,7 @@ class Isochrone extends React.Component {
               <Grid item>
                 <Typography variant="subtitle1" color="primary">Routes</Typography>
               </Grid>
-              <Grid containter item
+              <Grid container item
                 direction="row"
                 alignItems="flex-start">
                 <Grid item>

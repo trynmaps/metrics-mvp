@@ -38,14 +38,6 @@
     padding:4px 4px;
 }
 
-.isochrone-select-all span
-{
-    color:#0078A8;
-    padding-right:2px;
-    text-decoration:none;
-    cursor:pointer;
-}
-
 .isochrone-legend-colors
 {
     line-height:1.0;
@@ -87,5 +79,5 @@
 .isochrone-routes li
 {
     margin-bottom:0px;
-    max-height: 30px;
+    max-height: 25px;
 }
