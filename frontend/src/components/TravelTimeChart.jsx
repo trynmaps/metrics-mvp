@@ -61,9 +61,9 @@ function TravelTimeChart(props) {
     const routeId = props.routeId || graphParams.routeId;
     directionId = props.directionId || graphParams.directionId; // also take direction_id from props if given
 
-    if (directionId) {
+    if (directionId != null) {
       tripTimeForDirection = getEndToEndTripTime(
-        props.tripCacheTimes,
+        props.tripTimesCache,
         graphParams,
         props.routes,
         routeId,
@@ -137,7 +137,7 @@ function TravelTimeChart(props) {
               strokeWidth="4"
               style={{
                 strokeDasharray: '2 2'
-              }}             
+              }}
             /> */}
 
             <ChartLabel

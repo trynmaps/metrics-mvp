@@ -8,11 +8,11 @@ from io import StringIO
 import pandas as pd
 import numpy as np
 
-from . import nextbus, arrival_history, util, gtfs, constants, errors
+from . import config, arrival_history, util, gtfs, constants, errors
 
 class Timetable:
-    def __init__(self, agency, route_id, timetable, date):
-        self.agency = agency
+    def __init__(self, agency_id, route_id, timetable, date):
+        self.agency_id = agency_id
         self.route_id = route_id
         self.timetable = timetable
         self.date = date
@@ -27,7 +27,7 @@ class Timetable:
         except AttributeError:
             print(f"No timetable found for {self.route_id} on {self.date.isoformat()}.")
             raise errors.TimetableError(f"No timetable found for route {self.route_id} on {self.date.isoformat()}.")
-        
+
         midnight = datetime.combine(self.date, time(), tzinfo = pytz.timezone('America/Los_Angeles'))
         df.index = range(len(df))
         # convert to timestamps for faster computation
@@ -44,7 +44,9 @@ class Timetable:
         df = self.get_data_frame(stop_id = stop_id, direction = direction)
 
         if len(df) > 0:
-            df[["arrival_time", "departure_time"]] = df[["arrival_time", "departure_time"]].applymap(lambda x: datetime.fromtimestamp(x, constants.PACIFIC_TIMEZONE).time())
+            tz = config.get_agency(self.agency_id).tz
+
+            df[["arrival_time", "departure_time"]] = df[["arrival_time", "departure_time"]].applymap(lambda x: datetime.fromtimestamp(x, tz).time())
             df[["arrival_headway", "departure_headway"]] = df[["arrival_headway", "departure_headway"]].applymap(lambda x: timedelta(minutes = x) if not pd.isna(x) else np.nan)
             df = df[["arrival_time", "arrival_headway", "departure_time", "departure_headway"]]
 
@@ -58,7 +60,7 @@ class Timetable:
         else:
             print(f"No timetable found for {stop_id} on route {self.route_id} on {self.date} going {self.get_stop_direction(stop_id)}.")
 
-def read_file(agency: str, local_path: str, s3_path: str, filename: str):
+def read_file(agency_id: str, local_path: str, s3_path: str, filename: str):
     path = util.get_data_dir()
 
     # checks for a local file; if it doesn't exist, pull it from the s3 bucket and cache it locally
@@ -74,25 +76,25 @@ def read_file(agency: str, local_path: str, s3_path: str, filename: str):
 
     return pd.read_csv(StringIO(data), dtype = {'stop_id': str, 'nextbus_id': str})
 
-def get_timetable_from_csv(agency: str, route_id: str, d: date, ver = 'v1'):
-    date_period = get_date_period(agency, d, ver)
+def get_timetable_from_csv(agency_id: str, route_id: str, d: date, ver = 'v1'):
+    date_period = get_date_period(agency_id, d, ver)
     date_range_str = f"{date_period[0].date().isoformat()}_to_{date_period[-1].date().isoformat()}"
     local_path = f"{gtfs.get_s3_bucket()}/{date_range_str}"
     s3_path = f"{date_range_str}/"
-    filename = f"{agency}_route_{route_id}_{date_range_str}_timetable_{ver}.csv"
-    
-    timetable = read_file(agency, local_path, s3_path, filename)
-    return Timetable(agency, route_id, timetable, d)
+    filename = f"{agency_id}_route_{route_id}_{date_range_str}_timetable_{ver}.csv"
 
-def get_date_ranges(agency: str, ver: str):
+    timetable = read_file(agency_id, local_path, s3_path, filename)
+    return Timetable(agency_id, route_id, timetable, d)
+
+def get_date_ranges(agency_id: str, ver: str):
     local_path = f"{gtfs.get_s3_bucket()}/"
     s3_path = ""
     filename = f"date_ranges_{ver}.csv"
 
-    return read_file(agency, local_path, s3_path, filename)
+    return read_file(agency_id, local_path, s3_path, filename)
 
-def get_date_period(agency: str, d: date, ver: str):
-    date_ranges = get_date_ranges(agency, ver)
+def get_date_period(agency_id: str, d: date, ver: str):
+    date_ranges = get_date_ranges(agency_id, ver)
 
     date_ranges["date_range"] = date_ranges.apply(lambda x: pd.date_range(start = x.start_date, end = x.end_date), axis = "columns")
 

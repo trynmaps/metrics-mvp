@@ -4,17 +4,17 @@ import os
 import json
 import requests
 import pandas as pd
-from . import nextbus, eclipses, util
+from . import eclipses, util, config
 import boto3
 from pathlib import Path
 import gzip
 import numpy as np
 
-DefaultVersion = 'v4a'
+DefaultVersion = 'v4b'
 
 class ArrivalHistory:
-    def __init__(self, agency, route_id, stops_data, start_time = None, end_time = None, version = DefaultVersion):
-        self.agency = agency
+    def __init__(self, agency_id: str, route_id, stops_data, start_time = None, end_time = None, version = DefaultVersion):
+        self.agency_id = agency_id
         self.route_id = route_id
         self.start_time = start_time
         self.end_time = end_time
@@ -94,7 +94,7 @@ class ArrivalHistory:
     @classmethod
     def from_data(cls, data):
         return cls(
-            agency = data['agency'],
+            agency_id = data['agency'],
             route_id = data['route_id'],
             start_time = data['start_time'],
             end_time = data['end_time'],
@@ -105,16 +105,16 @@ class ArrivalHistory:
     def get_data(self):
         return {
             'version': self.version,
-            'agency': self.agency,
+            'agency': self.agency_id,
             'route_id': self.route_id,
             'start_time': self.start_time,
             'end_time': self.end_time,
             'stops': self.stops_data,
         }
 
-def from_data_frame(agency, route_id, arrivals_df: pd.DataFrame, start_time, end_time) -> ArrivalHistory:
+def from_data_frame(agency_id: str, route_id, arrivals_df: pd.DataFrame, start_time, end_time) -> ArrivalHistory:
     # note: arrival_history module uses timestamps in seconds, but tryn-api uses ms
-    return ArrivalHistory(agency, route_id, stops_data=make_stops_data(arrivals_df), start_time=start_time, end_time=end_time)
+    return ArrivalHistory(agency_id, route_id, stops_data=make_stops_data(arrivals_df), start_time=start_time, end_time=end_time)
 
 def make_stops_data(arrivals: pd.DataFrame):
     stops_data = {}
@@ -138,13 +138,13 @@ def make_stops_data(arrivals: pd.DataFrame):
             }
     return stops_data
 
-def get_cache_path(agency: str, route_id: str, d: date, version = DefaultVersion) -> str:
+def get_cache_path(agency_id: str, route_id: str, d: date, version = DefaultVersion) -> str:
     if version is None:
         version = DefaultVersion
 
     date_str = str(d)
-    if re.match('^[\w\-]+$', agency) is None:
-        raise Exception(f"Invalid agency: {agency}")
+    if re.match('^[\w\-]+$', agency_id) is None:
+        raise Exception(f"Invalid agency id: {agency_id}")
 
     if re.match('^[\w\-]+$', route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
@@ -155,22 +155,19 @@ def get_cache_path(agency: str, route_id: str, d: date, version = DefaultVersion
     if re.match('^[\w\-]+$', version) is None:
         raise Exception(f"Invalid version: {version}")
 
-    return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency}/{date_str}/arrivals_{version}_{agency}_{date_str}_{route_id}.json")
+    return os.path.join(util.get_data_dir(), f"arrivals_{version}_{agency_id}/{date_str}/arrivals_{version}_{agency_id}_{date_str}_{route_id}.json")
 
-def get_s3_bucket() -> str:
-    return 'opentransit-stop-arrivals'
-
-def get_s3_path(agency: str, route_id: str, d: date, version = DefaultVersion) -> str:
+def get_s3_path(agency_id: str, route_id: str, d: date, version = DefaultVersion) -> str:
     if version is None:
         version = DefaultVersion
 
     date_str = str(d)
     date_path = d.strftime("%Y/%m/%d")
-    return f"{version}/{agency}/{date_path}/arrivals_{version}_{agency}_{date_str}_{route_id}.json.gz"
+    return f"arrivals/{version}/{agency_id}/{date_path}/arrivals_{version}_{agency_id}_{date_str}_{route_id}.json.gz"
 
-def get_by_date(agency: str, route_id: str, d: date, version = DefaultVersion) -> ArrivalHistory:
+def get_by_date(agency_id: str, route_id: str, d: date, version = DefaultVersion) -> ArrivalHistory:
 
-    cache_path = get_cache_path(agency, route_id, d, version)
+    cache_path = get_cache_path(agency_id, route_id, d, version)
 
     try:
         with open(cache_path, "r") as f:
@@ -179,14 +176,16 @@ def get_by_date(agency: str, route_id: str, d: date, version = DefaultVersion) -
     except FileNotFoundError as err:
         pass
 
-    s3_bucket = get_s3_bucket()
-    s3_path = get_s3_path(agency, route_id, d, version)
+    s3_bucket = config.s3_bucket
+    s3_path = get_s3_path(agency_id, route_id, d, version)
 
     s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
     r = requests.get(s3_url)
 
     if r.status_code == 404:
         raise FileNotFoundError(f"{s3_url} not found")
+    if r.status_code == 403:
+        raise FileNotFoundError(f"{s3_url} not found or access denied")
     if r.status_code != 200:
         raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
 
@@ -205,10 +204,10 @@ def save_for_date(history: ArrivalHistory, d: date, s3=False):
     data_str = json.dumps(history.get_data())
 
     version = history.version
-    agency = history.agency
+    agency_id = history.agency_id
     route_id = history.route_id
 
-    cache_path = get_cache_path(agency, route_id, d, version)
+    cache_path = get_cache_path(agency_id, route_id, d, version)
 
     cache_dir = Path(cache_path).parent
     if not cache_dir.exists():
@@ -219,8 +218,8 @@ def save_for_date(history: ArrivalHistory, d: date, s3=False):
 
     if s3:
         s3 = boto3.resource('s3')
-        s3_path = get_s3_path(agency, route_id, d, version)
-        s3_bucket = get_s3_bucket()
+        s3_path = get_s3_path(agency_id, route_id, d, version)
+        s3_bucket = config.s3_bucket
         print(f'saving to s3://{s3_bucket}/{s3_path}')
         object = s3.Object(s3_bucket, s3_path)
         object.put(

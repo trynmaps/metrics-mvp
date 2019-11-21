@@ -10,8 +10,7 @@ import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { fetchRoutes } from '../actions';
-import { DefaultDisabledRoutes, routesUrl } from '../locationConstants';
-import { metricsBaseURL } from '../config';
+import { S3Bucket, MetricsBaseURL, Agencies, WaitTimesVersion, TripTimesVersion, RoutesVersion } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 
 import './Isochrone.css';
@@ -57,6 +56,15 @@ class Isochrone extends React.Component {
   constructor(props) {
     super(props);
 
+    // for now, only supports 1 agency at a time.
+    // todo: support multiple agencies on one map
+    const agency = Agencies[0];
+    this.agencyId = agency.id;
+
+    this.initialZoom = agency.initialMapZoom;
+    this.initialCenter = agency.initialMapCenter;
+    const defaultDisabledRoutes = agency.defaultDisabledRoutes || [];
+
     this.state = {
       stat: 'median',
       maxTripMin: 90,
@@ -73,11 +81,15 @@ class Isochrone extends React.Component {
     let workerUrl = `${
       process.env.PUBLIC_URL
     }/isochrone-worker.js?v=${Math.random()}`;
-    if (metricsBaseURL) {
-      workerUrl += `&base=${encodeURIComponent(metricsBaseURL)}`;
+    if (MetricsBaseURL) {
+      workerUrl += `&base=${encodeURIComponent(MetricsBaseURL)}`;
     }
 
-    workerUrl += `&routes_url=${encodeURIComponent(routesUrl)}`;
+    workerUrl += `&s3_bucket=${encodeURIComponent(S3Bucket)}`;
+    workerUrl += `&agency_id=${encodeURIComponent(this.agencyId)}`;
+    workerUrl += `&routes_version=${encodeURIComponent(RoutesVersion)}`;
+    workerUrl += `&wait_times_version=${encodeURIComponent(WaitTimesVersion)}`;
+    workerUrl += `&trip_times_version=${encodeURIComponent(TripTimesVersion)}`;
 
     const isochroneWorker = new Worker(workerUrl);
 
@@ -88,7 +100,7 @@ class Isochrone extends React.Component {
     this.tripLayers = [];
     this.mapRef = React.createRef();
 
-    DefaultDisabledRoutes.forEach(routeId => {
+    defaultDisabledRoutes.forEach(routeId => {
       this.state.enabledRoutes[routeId] = false;
     });
 
@@ -108,7 +120,7 @@ class Isochrone extends React.Component {
 
   componentDidMount() {
     if (!this.props.routes) {
-      this.props.fetchRoutes();
+      this.props.fetchRoutes({agencyId: this.agencyId});
     }
   }
 
@@ -338,7 +350,7 @@ class Isochrone extends React.Component {
   }
 
   computeIsochrones(latLng, endLatLng) {
-    if (!isInServiceArea(latLng)) {
+    if (!isInServiceArea(this.agencyId, latLng)) {
       return;
     }
 
@@ -600,8 +612,6 @@ class Isochrone extends React.Component {
     }
     tripMins.push(90);
 
-    const center = { lat: 37.772, lng: -122.442 };
-
     return (
       <div className="flex-screen">
         <AppBar position="relative">
@@ -612,10 +622,10 @@ class Isochrone extends React.Component {
           </Toolbar>
         </AppBar>
         <Map
-          center={center}
-          zoom={13}
+          center={this.initialCenter}
+          zoom={this.initialZoom}
           className="isochrone-map"
-          minZoom={11}
+          minZoom={5}
           maxZoom={18}
           onClick={this.handleMapClick}
           ref={this.mapRef}
@@ -706,7 +716,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: () => dispatch(fetchRoutes()),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
 export default connect(

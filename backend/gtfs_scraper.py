@@ -11,12 +11,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Get timetables from GTFS data")
     parser.add_argument("--inpath", required = True, help = "Path to directory containing GTFS data")
     parser.add_argument("--s3", dest = "s3", action = "store_true", help = "Option to upload files to the s3 bucket")
-    parser.add_argument("--agency", help = "Agency name - default is 'sf-muni'")
+    parser.add_argument("--agency", help = "Agency name - default is 'muni'")
     parser.add_argument("--version", help = "Version number for timetable")
     parser.set_defaults(s3 = False)
-    parser.set_defaults(agency = "sf-muni")
+    parser.set_defaults(agency = "muni")
     parser.set_defaults(version = "v1")
-    
+
     args = parser.parse_args()
     inpath = args.inpath
     outpath = util.get_data_dir()

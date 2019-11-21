@@ -15,9 +15,9 @@ class NoRouteError(Exception):
     pass
 
 class GtfsScraper:
-    def __init__(self, inpath, agency, version):
+    def __init__(self, inpath, agency_id, version):
         self.inpath = inpath
-        self.agency = agency
+        self.agency_id = agency_id
         self.version = version
         self.feed = ptg.load_geo_feed(self.inpath, {})
 
@@ -33,8 +33,8 @@ class GtfsScraper:
             raise NoRouteError(f"No gtfs route id found for route {route}.")
 
     def get_gtfs_route_ids(self):
-        routes = self.feed.routes        
-        nextbus_route_ids = [route.id for route in nextbus.get_route_list(self.agency)]
+        routes = self.feed.routes
+        nextbus_route_ids = [route.id for route in nextbus.get_route_list(self.agency_id)]
         # convert nextbus naming convention for OWL routes to gtfs naming convention
         # example - T_OWL in nextbus is T-OWL in gtfs
         gtfs_route_ids = [
@@ -68,14 +68,14 @@ class GtfsScraper:
             service_ids = service_ids[~(service_ids.isin(removed_services))]
 
         trips_df = self.feed.trips
-        trips = trips_df[(trips_df.route_id == self.get_gtfs_route_id(route_id)) & 
+        trips = trips_df[(trips_df.route_id == self.get_gtfs_route_id(route_id)) &
                           (trips_df.service_id.apply(lambda x: x in service_ids.values))]
         return trips
 
     def get_stop_times(self, route_id, d, route_config, direction):
         # convert "inbound" or "outbound" to gtfs direction id
         gtfs_direction = get_gtfs_direction_id(direction)
-            
+
         trips = self.get_route_trips_by_date(route_id, d)
 
         if len(trips) > 0:
@@ -91,7 +91,7 @@ class GtfsScraper:
 
         if len(stop_times) > 0:
             # account for discrepancies in gtfs/nextbus naming
-            stop_times["direction"] = direction 
+            stop_times["direction"] = direction
 
             # get nextbus stop_ids
             stop_times["nextbus_id"] = stop_times["stop_id"].apply(lambda x: get_nextbus_stop_id(x, gtfs_direction, route_config))
@@ -103,9 +103,9 @@ class GtfsScraper:
 
     def get_excluded_stops(self, route_id, stop_times_df, route_config, direction, d):
         stop_dirs = {
-            stop.id:get_gtfs_direction_id(route_config.get_directions_for_stop(stop.id)[0]) 
+            stop.id:get_gtfs_direction_id(route_config.get_directions_for_stop(stop.id)[0])
                     if len(route_config.get_directions_for_stop(stop.id)) > 0
-                    else "N/A" 
+                    else "N/A"
             for stop in route_config.get_stop_infos()
         }
         # make feed with the trips on one route in one direction
@@ -153,7 +153,7 @@ class GtfsScraper:
 
     def upload_to_s3(self, s3_path: str, df: pd.DataFrame):
         client = boto3.client('s3')
-        s3_bucket = get_s3_bucket()
+        s3_bucket = config.s3_bucket
         search = client.list_objects(Bucket = s3_bucket, Prefix = s3_path)
 
         s3 = boto3.resource('s3')
@@ -164,7 +164,7 @@ class GtfsScraper:
             ContentType = 'text/csv',
             ACL = 'public-read'
         )
-        
+
         print(f"{datetime.now().time().isoformat()}: Uploaded {s3_path} to s3 bucket.")
 
     # uploads date ranges df to s3 and saves a copy locally as a csv
@@ -198,7 +198,7 @@ class GtfsScraper:
                 local_path = f"{get_schedule_dir()}/{date_range_string}"
                 Path(local_path).mkdir(parents = True, exist_ok = True)
 
-                filename = f"{self.agency}_route_{nextbus_route_id}_{date_range_string}_timetable_{self.version}.csv"
+                filename = f"{self.agency_id}_route_{nextbus_route_id}_{date_range_string}_timetable_{self.version}.csv"
                 csv_path = f"{local_path}/{filename}"
                 local_file_exists = Path(csv_path).is_file()
                 stops = []
@@ -206,10 +206,10 @@ class GtfsScraper:
                 if local_file_exists:
                     print(f"{datetime.now().time().isoformat()}: The file {filename} already exists, skipping.")
                 else:
-                    rc = nextbus.get_route_config(self.agency, nextbus_route_id)
+                    rc = nextbus.get_route_config(self.agency_id, nextbus_route_id)
                     for direction in ["inbound", "outbound"]:
                         stops.append(self.get_stop_times(nextbus_route_id, start_date, rc, direction))
-                    
+
                     df = pd.concat(stops)
                     df.to_csv(Path(csv_path))
 
@@ -261,9 +261,6 @@ def get_nextbus_stop_id(gtfs_stop_id: str, direction_id: int, routeconfig: nextb
         # TODO: deal with stops w/o direction (on nextbus)
         return np.nan
 
-def get_s3_bucket():
-    return f"opentransit-timetables"
-
 def get_schedule_dir():
     return f"{util.get_data_dir()}/{get_s3_bucket()}"
-    
+

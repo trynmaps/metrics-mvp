@@ -7,8 +7,8 @@ The GraphQL API is available publicly at https://muni.opentransit.city/api/graph
 For example, the following GraphQL query would return some statistics about headways and wait times for a particular stop on one day:
 
 ```
-query($routeId:String, $startStopId:String, $date:String) {
-  routeMetrics(routeId:$routeId) {
+query($agencyId: String!, $routeId:String!, $startStopId:String!, $date:String) {
+  routeMetrics(agencyId:$agencyId, routeId:$routeId) {
     trip(startStopId:$startStopId) {
       interval(dates:[$date]) {
         headways { median max }
@@ -21,7 +21,7 @@ query($routeId:String, $startStopId:String, $date:String) {
 
 To run the above query with the variables `$routeId` = "1", `$startStopId` = "6307", and `$date` = "2019-10-12", you can make a GET request to the URL below:
 
-https://muni.opentransit.city/api/graphql?query=query(%24routeId%3AString%2C+%24startStopId%3AString%2C+%24date%3AString)+%7B+routeMetrics(routeId%3A%24routeId)+%7B+trip(startStopId%3A%24startStopId)+%7B+interval(dates%3A%5B%24date%5D)+%7B+headways+%7B+median+max+%7D+waitTimes+%7B+median+%7D+%7D+%7D+%7D+%7D&variables=%7B"routeId":"1","startStopId":"6307","date":"2019-10-12"%7D
+http://muni.opentransit.city/api/graphql?query=query(%24agencyId%3AString!%2C+%24routeId%3AString!%2C+%24startStopId%3AString!%2C+%24date%3AString)+%7B+routeMetrics(agencyId%3A%24agencyId%2C+routeId%3A%24routeId)+%7B+trip(startStopId%3A%24startStopId)+%7B+interval(dates%3A%5B%24date%5D)+%7B+headways+%7B+median+max+%7D+waitTimes+%7B+median+%7D+%7D+%7D+%7D+%7D&variables=%7B"agencyId":"muni","routeId":"1","startStopId":"6307","date":"2019-11-09"%7D
 
 Queries can also be sent via POST, with the Content-Type `application/json`, and a request body like this:
 
@@ -49,7 +49,7 @@ The structure of a GraphQL query reflects this nested structure - in a query, th
 
 ```graphql
 query {
-  routes {
+  routes(agencyId:"muni") {
     id
     title
   }
@@ -81,7 +81,7 @@ Note that all the innermost elements of the query have to be primitive types. Si
 
 ```graphql
 query {
-  routes {
+  routes(agencyId:"muni") {
     id
     title
     config
@@ -93,7 +93,7 @@ will return an error. This query **doesn't** work because it isn't requesting an
 
 ```graphql
 query {
-  routes {
+  routes(agencyId:"muni") {
     id
     title
     config {
@@ -142,7 +142,7 @@ Querying information about a particular route or stop requires input parameters.
 
 ```graphql
 query {
-  routeMetrics(routeId:"1") {
+  routeMetrics(agencyId:"muni",routeId:"1") {
     trip(startStopId:"4015") {
       interval(dates:["2019-10-11"]) {
         waitTimes {
@@ -182,11 +182,11 @@ A list of parameters for the `routeConfig` and `routeMetrics` fields is given [b
 
 ```graphql
 query {
-  routes {
+  routes(agencyId:"muni") {
     id
     title
     config {
-     	directions { id title name stopIds }
+     	directions { id title stopIds }
     	stops { id title lat lon }
     }
   }
@@ -207,7 +207,6 @@ Response:
             {
               "id": "E____O_F00",
               "title": "Outbound to Mission Bay",
-              "name": "Outbound",
               "stopIds": [
                 "5184",
                 "3092",
@@ -221,10 +220,10 @@ Response:
 
 ```graphql
 query {
-  routeConfig(routeId:"12") {
+  routeConfig(agencyId:"muni", routeId:"12") {
     id
     title
-    directions { id title name stopIds }
+    directions { id title stopIds }
     stops { id title lat lon }
   }
 }
@@ -255,7 +254,7 @@ Response:
 
 ```graphql
 query {
-  routeMetrics(routeId:"1") {
+  routeMetrics(agencyId:"muni", routeId:"1") {
     trip(startStopId:"4015", endStopId:"6304") {
       interval(dates:["2019-10-11"], startTime:"08:00", endTime:"20:00") {
         waitTimes {
@@ -336,7 +335,7 @@ Response:
 
 ```graphql
 query {
-  routeMetrics(routeId:"1") {
+  routeMetrics(agencyId:"muni", routeId:"1") {
     trip(startStopId:"4015", endStopId:"6304") {
       timeRanges(dates:["2019-10-11"]) {
         startTime
@@ -437,7 +436,7 @@ fragment intervalFields on IntervalMetrics {
    waitTimes { median }
 }
 query {
-  routeMetrics(routeId:"1") {
+  routeMetrics(agencyId:"muni", routeId:"1") {
     trip1: trip(startStopId:"4015", endStopId:"6304") {
       allDay: interval(dates:["2019-10-11"]) {
         ...intervalFields
@@ -507,16 +506,24 @@ The root query object for the API. The `routeConfig` and `routeMetrics` fields r
 | `routeConfig` | [`RouteConfig`](#routeconfig) | Returns data for a particular route. |
 | `routeMetrics` | [`RouteMetrics`](#routemetrics) | Returns metrics data for a particular route.
 
+#### Parameters for `routes`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `agencyId` | `String!` | ID of the transit agency to return routes from. |
+
 #### Parameters for `routeConfig`
 
 | Parameter Name | Type | Description |
 | --- | --- | --- |
+| `agencyId` | `String!` | ID of the transit agency associated with this route. |
 | `routeId` | `String!` | ID of the route to return data from. |
 
 #### Parameters for `routeMetrics`
 
 | Parameter Name | Type | Description |
 | --- | --- | --- |
+| `agencyId` | `String!` | ID of the transit agency to return metrics data from. |
 | `routeId` | `String!` | ID of the route to return metrics data from. |
 
 ### RouteInfo

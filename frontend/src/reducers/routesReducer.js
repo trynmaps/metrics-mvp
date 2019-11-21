@@ -9,6 +9,7 @@ export const initialState = {
   routes: null,
   spiderSelection: [],
   graphParams: {
+    agencyId: null,
     routeId: null,
     directionId: null,
     startStopId: null,

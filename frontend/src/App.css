@@ -1,3 +1,7 @@
+:root {
+  --stop-name: "";
+}
+
 .App {
   text-align: center;
 }
@@ -57,4 +61,21 @@
     max-width:180px;
     padding:8px;
     opacity:1.0;
+}
+
+.on-hover > svg {
+  transform: scale(1.6);
+}
+
+.on-hover::after {
+  z-index: 1000;
+  content: var(--stop-name);
+  position: absolute;
+  width: 240px;
+  top: 1px;
+  left: 23px;
+  font-weight: bold;
+  color: #5c6bc0;
+  text-shadow: -1px 1px 0 #fff, 1px 1px 0 #fff, 1px -1px 0 #fff,
+    -1px -1px 0 #fff;
 }

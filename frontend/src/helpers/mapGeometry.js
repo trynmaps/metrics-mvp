@@ -4,7 +4,7 @@
 
 import * as turf from '@turf/turf';
 import { milesBetween, metersToMiles } from './routeCalculations';
-import { ServiceArea } from '../locationConstants';
+import { getAgency } from '../config';
 
 /**
  * Gets coordinates that can be consumed by a Leaflet Polyline.  Uses
@@ -87,14 +87,20 @@ export function getDistanceInMiles(
 }
 
 /**
- * Determines whether a given coordinate is within our service area
+ * Determines whether a given coordinate is within an agency's service area
+ * @param agencyId - ID of agency in the config
  * @param latLng - coordinate as latitude and longitude
  * @returns {boolean} - true if the coordinate is in the service area
  */
-export function isInServiceArea(latLng) {
+export function isInServiceArea(agencyId, latLng) {
   const point = turf.point([latLng.lng, latLng.lat]);
 
-  return ServiceArea.features.some(feature => {
+  const serviceArea = getAgency(agencyId).serviceArea;
+  if (!serviceArea) {
+    return true;
+  }
+
+  return serviceArea.features.some(feature => {
     return turf.booleanWithin(point, feature);
   });
 }
