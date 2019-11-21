@@ -8,7 +8,13 @@ import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import MenuIcon from '@material-ui/icons/Menu';
 import { NavLink } from 'redux-first-router-link';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
-import HomeIcon from '@material-ui/icons/Home';
+import TimelineRoundedIcon from '@material-ui/icons/TimelineRounded';
+import MapRoundedIcon from '@material-ui/icons/MapRounded';
+import CodeRoundedIcon from '@material-ui/icons/CodeRounded';
+import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
+import Typography from '@material-ui/core/Typography'
+
+
 
 function SidebarButton() {
   const [drawerOpen, setDrawer] = React.useState(false);
@@ -24,6 +30,13 @@ function SidebarButton() {
     cursor: 'default',
   };
 
+  const inactiveStyle = {
+    fontWeight: 'normal',
+    color: '#3f51b5',
+    textDecoration: 'none',
+    cursor: 'pointer',
+  };
+
   return (
     <div>
       <IconButton
@@ -34,7 +47,7 @@ function SidebarButton() {
       >
         <MenuIcon />
       </IconButton>
-      <Drawer variant="persistent" anchor="left" open={drawerOpen}>
+      <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer}>
         <div style={{ width: 250 }}>
           <IconButton
             color="inherit"
@@ -42,38 +55,50 @@ function SidebarButton() {
             onClick={toggleDrawer}
             edge="start"
           >
-            <ChevronLeftIcon />
+            <ChevronLeftIcon color="primary"/>
           </IconButton>
           <List>
-            <ListItem>
-              <NavLink
-                to={{ type: 'DASHBOARD' }}
-                activeStyle={activeStyle}
-                exact
-                strict
-              >
-                Dashboard
-              </NavLink>
+            <ListItem
+              button
+              component={NavLink}
+              to={{ type: 'DASHBOARD' }}
+              activeStyle={activeStyle}
+              exact
+              strict
+              style={inactiveStyle}
+            >
+              <ListItemIcon>
+                <TimelineRoundedIcon color="primary"/>
+              </ListItemIcon>
+              Dashboard
             </ListItem>
-            <ListItem>
-              <NavLink
-                to={{ type: 'ISOCHRONE' }}
-                activeStyle={activeStyle}
-                exact
-                strict
-              >
-                Isochrone
-              </NavLink>
+            <ListItem
+              button
+              component={NavLink}
+              to={{ type: 'ISOCHRONE' }}
+              activeStyle={activeStyle}
+              exact
+              strict
+              style={inactiveStyle}
+            >
+              <ListItemIcon>
+                <MapRoundedIcon color="primary"/>
+              </ListItemIcon>
+              Isochrone
             </ListItem>
-            <ListItem>
-              <NavLink
-                to={{ type: 'DATADIAGNOSTIC' }}
-                activeStyle={activeStyle}
-                exact
-                strict
-              >
-                .{/* Semi-hidden data diagnostic link for developers */}
-              </NavLink>
+            <ListItem
+              button
+              component={NavLink}
+              to={{ type: 'DATADIAGNOSTIC' }}
+              activeStyle={activeStyle}
+              exact
+              strict
+              style={inactiveStyle}
+            >
+              <ListItemIcon>
+                <CodeRoundedIcon color="primary"/>
+              </ListItemIcon>
+              Developer Tools
             </ListItem>
           </List>
           {/* Footer content */}
@@ -82,11 +107,17 @@ function SidebarButton() {
             width: "100%",
             bottom: 0,
           }} >
-            <ListItem button component="a" href="https://sites.google.com/view/opentransit" target="_blank">
+            <ListItem
+              button
+              component="a"
+              href="https://sites.google.com/view/opentransit"
+              target="_blank"
+              onClick={toggleDrawer}
+            >
               <ListItemIcon>
-                <HomeIcon />
+                <InfoRoundedIcon color="primary"/>
               </ListItemIcon>
-              <ListItemText primary="About" />
+              <ListItemText primary="About" color="primary"/>
             </ListItem>
           </List>
         </div>
