@@ -25,7 +25,6 @@ import {
   getAllScores,
   quartileBackgroundColor,
   quartileContrastColor,
-  quartileTextColor,
 } from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
@@ -391,47 +390,59 @@ function RouteTable(props) {
                     </TableCell>
                     <TableCell
                       align="right"
-                      padding="none"
                       style={{
-                        color: quartileTextColor(row.medianWaitScore / 100),
+                        //color: quartileTextColor(row.medianWaitScore / 100),
+                        color: quartileContrastColor(row.medianWaitScore / 100),
+                        backgroundColor: quartileBackgroundColor(
+                          row.medianWaitScore / 100
+                        ),
                       }}
                     >
-                      {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
+                      {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0) + ' min'}
                     </TableCell>
                     <TableCell
                       align="right"
-                      padding="none"
                       style={{
-                        color: quartileTextColor(row.longWaitScore / 100),
+                        //color: quartileTextColor(row.longWaitScore / 100),
+                        color: quartileContrastColor(row.longWaitScore / 100),
+                        backgroundColor: quartileBackgroundColor(
+                          row.longWaitScore / 100,
+                        ),
                       }}
                     >
                       {Number.isNaN(row.longWait)
                         ? '--'
                         : <Fragment>
-                            {(row.longWait * 100).toFixed(0)}<font style={{color:"#8a8a8a"}}>%</font>
+                            {(row.longWait * 100).toFixed(0)}{'%'}
                           </Fragment>
                       }
                     </TableCell>
                     <TableCell
                       align="right"
-                      padding="none"
                       style={{
-                        color: quartileTextColor(row.speedScore / 100),
+                        //color: quartileTextColor(row.speedScore / 100),
+                        color: quartileContrastColor(row.speedScore / 100),
+                        backgroundColor: quartileBackgroundColor(
+                          row.speedScore / 100,
+                        ),
                       }}
                     >
-                      {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
+                      {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0) + ' mph'}
                     </TableCell>
                     <TableCell
                       align="right"
-                      padding="none"
                       style={{
-                        color: quartileTextColor(row.travelVarianceScore / 100),
+                        //color: quartileTextColor(row.travelVarianceScore / 100),
+                        color: quartileContrastColor(row.travelVarianceScore / 100),
+                        backgroundColor: quartileBackgroundColor(
+                          row.travelVarianceScore / 100,
+                        ),
                       }}
                     >
                       {Number.isNaN(row.variability)
                         ? '--'
                         : <Fragment>
-                            <font style={{color:"#8a8a8a"}}>{'\u00b1'} </font>{row.variability.toFixed(0)}
+                            {'\u00b1'} {row.variability.toFixed(0)}
                           </Fragment>
                       }
                     </TableCell>
