@@ -313,13 +313,18 @@ function DateTimePanel(props) {
   return (
     <div className={classes.root}>
     
-      <Box p={1} >
-        <CircularProgress
-          variant={ props.isLoading ? 'indeterminate' : 'determinate' }
-          style={{color: 'white'}}
-          size={24}
-        />
-      </Box>      
+      { props.isLoading
+        ?
+          <Box p={1}>
+            <CircularProgress
+              variant='indeterminate'
+              disableShrink
+              style={{color: 'white'}}
+              size={24}
+            />
+          </Box>
+        : null
+      }      
 
       { rangeInfo }
       <Button
