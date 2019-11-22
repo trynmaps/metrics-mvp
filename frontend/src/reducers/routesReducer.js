@@ -42,7 +42,7 @@ export default (state = initialState, action) => {
         ...state,
         graphParams: Object.assign({}, state.graphParams, action.payload),
       };
-    case 'RECEIVED_ROUTES_ERROR':
+    case 'ERROR_ROUTES':
       return state;
     case 'RECEIVED_PRECOMPUTED_TRIP_TIMES':
       return {

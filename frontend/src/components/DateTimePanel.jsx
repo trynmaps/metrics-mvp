@@ -1,7 +1,9 @@
 import React, { useState, Fragment } from 'react';
 import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
 import Checkbox from '@material-ui/core/Checkbox';
+import CircularProgress from '@material-ui/core/CircularProgress';      
 import Divider from '@material-ui/core/Divider';
 import Grid from '@material-ui/core/Grid';
 import Popover from '@material-ui/core/Popover';
@@ -28,6 +30,7 @@ import {
   MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
 } from '../UIConstants';
 import { initialState } from '../reducers/routesReducer';
+import { isLoadingRequest } from '../reducers/loadingReducer';
 import { handleGraphParams } from '../actions';
 
 const useStyles = makeStyles(theme => ({
@@ -309,6 +312,15 @@ function DateTimePanel(props) {
 
   return (
     <div className={classes.root}>
+    
+      <Box p={1} >
+        <CircularProgress
+          variant={ props.isLoading ? 'indeterminate' : 'determinate' }
+          style={{color: 'white'}}
+          size={24}
+        />
+      </Box>      
+
       { rangeInfo }
       <Button
         variant="contained"
@@ -325,6 +337,7 @@ function DateTimePanel(props) {
           </Typography>
         </div>
       </Button>
+
       <Popover
         id={id}
         open={open}
@@ -493,6 +506,7 @@ function DateTimePanel(props) {
 
 const mapStateToProps = state => ({
   graphParams: state.routes.graphParams,
+  isLoading: isLoadingRequest(state), 
 });
 
 const mapDispatchToProps = dispatch => {

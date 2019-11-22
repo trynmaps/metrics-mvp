@@ -128,6 +128,7 @@ export function fetchGraphData(params) {
   }
 }`.replace(/\s+/g, ' ');
 
+    dispatch({ type: 'REQUEST_GRAPH_DATA' });
     axios.get('/api/graphql', {
         params: { query: query, variables: JSON.stringify({...params, date: dates}) }, // computed dates aren't in graphParams so add here
         baseURL: MetricsBaseURL,
@@ -136,7 +137,7 @@ export function fetchGraphData(params) {
 
         if (response.data && response.data.errors) {
           // assume there is at least one error, but only show the first one
-          dispatch({ type: 'RECEIVED_GRAPH_ERROR', payload: response.data.errors[0].message });
+          dispatch({ type: 'ERROR_GRAPH_DATA', payload: response.data.errors[0].message });
         } else {
           dispatch({
             type: 'RECEIVED_GRAPH_DATA',
@@ -150,7 +151,7 @@ export function fetchGraphData(params) {
           err.response && err.response.data && err.response.data.error
             ? err.response.data.error
             : err.message;
-        dispatch({ type: 'RECEIVED_GRAPH_ERROR', payload: errStr });
+        dispatch({ type: 'ERROR_GRAPH_DATA', payload: errStr });
       });
   };
 }
@@ -164,6 +165,7 @@ export function resetGraphData() {
 export function fetchRoutes(params) {
   return function(dispatch) {
     const agencyId = params.agencyId;
+    dispatch({ type: 'REQUEST_ROUTES' });
     axios
       .get(generateRoutesURL(agencyId))
       .then(response => {
@@ -174,7 +176,7 @@ export function fetchRoutes(params) {
         dispatch({ type: 'RECEIVED_ROUTES', payload: routes });
       })
       .catch(err => {
-        dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });
+        dispatch({ type: 'ERROR_ROUTES', payload: err });
       });
   };
 }
@@ -200,6 +202,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
 
       const s3Url = generateTripTimesURL(agencyId, dateStr, statPath, timePath);
 
+      dispatch({ type: 'REQUEST_PRECOMPUTED_TRIP_TIMES' });
       axios
         .get(s3Url)
         .then(response => {
@@ -209,6 +212,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
           });
         })
         .catch(() => {
+          dispatch({ type: 'ERROR_PRECOMPUTED_TRIP_TIMES' });
           /* do something? */
         });
     }
@@ -225,6 +229,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
 
       const s3Url = generateWaitTimesURL(agencyId, dateStr, statPath, timePath);
 
+      dispatch({ type: 'REQUEST_PRECOMPUTED_WAIT_TIMES' });
       axios
         .get(s3Url)
         .then(response => {
@@ -234,6 +239,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
           });
         })
         .catch(() => {
+          dispatch({ type: 'ERROR_PRECOMPUTED_WAIT_TIMES' });
           /* do something? */
         });
     }
@@ -253,6 +259,7 @@ export function fetchArrivals(params) {
 
     const s3Url = generateArrivalsURL(agencyId, dateStr, params.routeId);
 
+    dispatch({ type: 'REQUEST_ARRIVALS' });
     axios
       .get(s3Url)
       .then(response => {
@@ -262,6 +269,7 @@ export function fetchArrivals(params) {
         });
       })
       .catch(err => {
+        dispatch({ type: 'ERROR_ARRIVALS' });
         console.error(err);
       });
   };
