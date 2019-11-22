@@ -79,7 +79,7 @@ export default function InfoScoreCard(props) {
           justifyContent="flex-start"
           height="100%"
         >
-          <Typography variant="overline">{title}</Typography>
+          <Typography style={{whiteSpace:'nowrap'}} variant="overline">{title}</Typography>
 
           <Box flexGrow={1}>
             {' '}
@@ -90,9 +90,9 @@ export default function InfoScoreCard(props) {
             <Typography variant="h5" display="inline">
               {smallValue}
             </Typography>
-            {hideRating ? null : (
+            {/*hideRating ? null : (
               <Rating readOnly size="small" value={rating} precision={0.5} />
-            )}
+            )*/}
           </Box>
           <Box
             display="flex"

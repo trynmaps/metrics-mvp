@@ -37,7 +37,7 @@ import WatchLaterOutlinedIcon from '@material-ui/icons/WatchLaterOutlined';
  * @param {any} props
  */
 export default function InfoTripSummary(props) {
-  
+
   const [typicalAnchorEl, setTypicalAnchorEl] = useState(null);
   const [planningAnchorEl, setPlanningAnchorEl] = useState(null);
 
@@ -56,7 +56,7 @@ export default function InfoTripSummary(props) {
   function handlePlanningClose() {
     setPlanningAnchorEl(null);
   }
-  
+
   const { graphData, graphParams, routes } = props;
   const waitTimes = graphData ? graphData.waitTimes : null;
   const tripTimes = graphData ? graphData.tripTimes : null;
@@ -165,7 +165,7 @@ export default function InfoTripSummary(props) {
     getPercentileValue(tripTimes, PLANNING_PERCENTILE),
   );
   const travelVariability = Math.round(
-    (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -      
+    (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
      getPercentileValue(tripTimes, TENTH_PERCENTILE)) / 2.0,
   );
 
@@ -222,7 +222,7 @@ export default function InfoTripSummary(props) {
   const popoverContentLongWait = grades ? (
     <Fragment>
       Long wait probability is the chance a rider has of a wait of twenty minutes or
-      longer after arriving randomly at the "from" stop. 
+      longer after arriving randomly at the "from" stop.
       Probability of{' '}
       {(longWaitProbability * 100).toFixed(1) /* be more precise than card */}%
       gets a score of {grades.longWaitScore}.
@@ -286,7 +286,7 @@ export default function InfoTripSummary(props) {
             <Grid container spacing={4}>
               {/* spacing doesn't work exactly right here, just pads the Papers */}
               <Grid item xs component={Paper} className={classes.uncolored}>
-                <Typography variant="overline">Typical journey</Typography>
+                <Typography variant="overline" style={{whiteSpace:'nowrap'}}>Typical journey</Typography>
                 <br />
 
                 <Typography variant="h3" display="inline">
@@ -314,9 +314,9 @@ export default function InfoTripSummary(props) {
                   </IconButton>
                  </Box>
               </Grid>
-              
+
               <Grid item xs component={Paper} className={classes.uncolored}>
-                <Typography variant="overline">Journey planning</Typography>
+                <Typography variant="overline" style={{whiteSpace:'nowrap'}}>Journey planning</Typography>
                 <br />
 
                 <Typography variant="h3" display="inline">
@@ -335,7 +335,7 @@ export default function InfoTripSummary(props) {
                   <Typography variant="body1">
                     <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
                     {planningWait} min
-                    <br/> 
+                    <br/>
                     <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
                     {planningTravel} min
                   </Typography>
@@ -344,7 +344,7 @@ export default function InfoTripSummary(props) {
                   </IconButton>
                 </Box>
               </Grid>
-              <InfoScoreCard
+              {/*<InfoScoreCard
                 grades={grades}
                 gradeName="totalScore"
                 hideRating
@@ -353,7 +353,7 @@ export default function InfoTripSummary(props) {
                 smallValue={`/${grades ? grades.highestPossibleScore : '--'}`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTotalScore}
-              />
+              />*/}
               <InfoScoreCard
                 grades={grades}
                 gradeName="medianWaitScore"

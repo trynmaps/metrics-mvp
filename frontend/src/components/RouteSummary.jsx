@@ -199,7 +199,7 @@ function RouteSummary(props) {
     <Fragment>
       <div style={{ padding: 24 }}>
         <Grid container spacing={4}>
-          <InfoScoreCard
+            {/* <InfoScoreCard
             grades={wait && speed && grades ? grades : null}
             gradeName="totalScore"
             hideRating
@@ -212,7 +212,7 @@ function RouteSummary(props) {
                 : 'No data'
             }
             popoverContent={popoverContentTotalScore}
-          />
+            />*/}
 
           <InfoScoreCard
             grades={wait && grades ? grades : null}

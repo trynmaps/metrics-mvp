@@ -10,6 +10,7 @@ import red from '@material-ui/core/colors/red';
 import yellow from '@material-ui/core/colors/yellow';
 import lightGreen from '@material-ui/core/colors/lightGreen';
 import green from '@material-ui/core/colors/green';
+import orange from '@material-ui/core/colors/orange';
 import {
   getTripTimeStat,
   getTripTimesForDirection,
@@ -554,7 +555,8 @@ export const quartileContrastColor = d3
 export const quartileTextColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
-  .range(['black', 'black', '#8a8a8a', '#8a8a8a']);
+  .range([red[900], orange[800], lightGreen[700], green[900]]);
+  //.range(['black', 'black', '#8a8a8a', '#8a8a8a']);
 
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon
