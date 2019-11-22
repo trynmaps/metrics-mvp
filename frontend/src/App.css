@@ -53,6 +53,17 @@
     flex-direction:column;
 }
 
+.grid-container {
+  height: 100%;
+}
+
+.grid-info-box
+{
+  height: 90%;
+  overflow-y: auto;
+  padding-bottom: 50px;
+}
+
 .map-instructions
 {
     border:1px solid #ccc;

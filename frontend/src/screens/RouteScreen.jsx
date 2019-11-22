@@ -73,11 +73,11 @@ function RouteScreen(props) {
         </Toolbar>
       </AppBar>
 
-      <Grid container spacing={0}>
+      <Grid container spacing={0} className="grid-container">
         <Grid item xs={12} sm={6}>
           <MapStops routes={routes} />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} className="grid-info-box">
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
           <ControlPanel routes={routes} />
           {graphData ||
