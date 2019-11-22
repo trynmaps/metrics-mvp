@@ -2,6 +2,7 @@ import React, { useState, Fragment } from 'react';
 import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
+import Divider from '@material-ui/core/Divider';
 import Grid from '@material-ui/core/Grid';
 import Popover from '@material-ui/core/Popover';
 import Typography from '@material-ui/core/Typography';
@@ -199,22 +200,34 @@ function DateTimePanel(props) {
   };
 
   /**
-   * Handler that updates the date string in the state.
+   * Handler that updates the (end) date string in the state.
+   * Also keeps startDate no later than date.
    *
    * @param {any} myDate
    */
   const setDate = myDate => {
-    if (!myDate.target.value) {
+    const newDate = myDate.target.value;
+    if (!newDate) {
       // ignore empty date and leave at current value
     } else {
-      props.handleGraphParams({
-        date: myDate.target.value,
-      });
+      const newMoment = Moment(newDate);
+      const startMoment = Moment(graphParams.startDate);
+      
+      const payload = {
+        date: newDate
+      };      
+      
+      if (newMoment.isBefore(graphParams.startDate)) {
+        payload.startDate = newDate; 
+      } else if (newMoment.diff(startMoment, 'days') > MAX_DATE_RANGE) {
+        payload.startDate = newMoment.subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD');
+      }
+      props.handleGraphParams(payload);
     }
   };
 
   /**
-   * Handler that updates the date string in the state.
+   * Handler that updates the start date string in the state.
    *
    * @param {any} myDate
    */
@@ -414,6 +427,8 @@ function DateTimePanel(props) {
                       label="Weekdays"
                     />
 
+                    <Divider variant="middle" style={{ marginLeft: 0 } /* divider with a right margin */}/>
+
                     {WEEKDAYS.map(day =>
                       <FormControlLabel
                         control={<Checkbox checked={graphParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
@@ -433,6 +448,8 @@ function DateTimePanel(props) {
                         onChange={toggleDays} />}
                       label="Weekends"
                     />
+
+                    <Divider variant="middle" style={{ marginLeft: 0 } /* divider with a right margin */}/>
 
                     {WEEKENDS.map(day =>
                       <FormControlLabel
