@@ -642,7 +642,7 @@ class Isochrone extends React.Component {
               className="isochrone-controls"
               direction="column">
               <Grid item>
-                <Typography variant="subtitle1" color="primary">Statistic</Typography>
+                <Typography variant="subtitle1">Statistic</Typography>
               </Grid>
               <Grid item>
                 <Select
@@ -659,7 +659,7 @@ class Isochrone extends React.Component {
               className="isochrone-controls"
               direction="column">
               <Grid item>
-                <Typography variant="subtitle1" color="primary">Max Trip Time</Typography>
+                <Typography variant="subtitle1">Max Trip Time</Typography>
               </Grid>
               <Grid item>
                 <Select
@@ -676,10 +676,9 @@ class Isochrone extends React.Component {
             </Grid>
             <Grid container
               className="isochrone-controls"
-              direction="column"
-              alignItems="left">
+              direction="column">
               <Grid item>
-                <Typography variant="subtitle1" color="primary">Routes</Typography>
+                <Typography variant="subtitle1">Routes</Typography>
               </Grid>
               <Grid container item
                 direction="row"
