@@ -754,6 +754,12 @@ Contains summary statistics for a single metric.
 | `percentiles` | [`[PercentileData]`](#percentiledata) | Data for percentile values of the computed metric. |
 | `histogram` | [`[HistogramBin]`](#histogrambin) | Data for rendering histograms on the frontend. |
 
+#### Parameters for `percentiles`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `percentiles` | `[Float]` | List of percentiles to return. |
+
 #### Parameters for `histogram`
 
 | Parameter Name | Type | Description |
