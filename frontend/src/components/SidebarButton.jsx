@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'redux-first-router-link';
 import Drawer from '@material-ui/core/Drawer';
 import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
@@ -6,15 +7,12 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import MenuIcon from '@material-ui/icons/Menu';
-import { NavLink } from 'redux-first-router-link';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
-import TimelineRoundedIcon from '@material-ui/icons/TimelineRounded';
 import MapRoundedIcon from '@material-ui/icons/MapRounded';
+import TimelineRoundedIcon from '@material-ui/icons/TimelineRounded';
 import CodeRoundedIcon from '@material-ui/icons/CodeRounded';
 import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
-import Typography from '@material-ui/core/Typography'
-
-
+import Divider from '@material-ui/core/Divider';
 
 function SidebarButton() {
   const [drawerOpen, setDrawer] = React.useState(false);
@@ -32,7 +30,7 @@ function SidebarButton() {
 
   const inactiveStyle = {
     fontWeight: 'normal',
-    color: '#3f51b5',
+    color: '#000000',
     textDecoration: 'none',
     cursor: 'pointer',
   };
@@ -59,56 +57,43 @@ function SidebarButton() {
           </IconButton>
           <List>
             <ListItem
-              button
               component={NavLink}
               to={{ type: 'DASHBOARD' }}
               activeStyle={activeStyle}
               exact
-              strict
-              style={inactiveStyle}
-            >
-              <ListItemIcon>
-                <TimelineRoundedIcon color="primary"/>
-              </ListItemIcon>
-              Dashboard
-            </ListItem>
-            <ListItem
-              button
-              component={NavLink}
-              to={{ type: 'ISOCHRONE' }}
-              activeStyle={activeStyle}
-              exact
-              strict
               style={inactiveStyle}
             >
               <ListItemIcon>
                 <MapRoundedIcon color="primary"/>
               </ListItemIcon>
-              Isochrone
+              <ListItemText primary="Dashboard"/>
             </ListItem>
             <ListItem
-              button
+              component={NavLink}
+              to={{ type: 'ISOCHRONE' }}
+              activeStyle={activeStyle}
+              exact
+              style={inactiveStyle}
+            >
+              <ListItemIcon>
+                <TimelineRoundedIcon color="primary"/>
+              </ListItemIcon>
+              <ListItemText primary="Isochrone"/>
+            </ListItem>
+            <ListItem
               component={NavLink}
               to={{ type: 'DATADIAGNOSTIC' }}
               activeStyle={activeStyle}
               exact
-              strict
               style={inactiveStyle}
             >
               <ListItemIcon>
                 <CodeRoundedIcon color="primary"/>
               </ListItemIcon>
-              Developer Tools
+              <ListItemText primary="Developer Tools"/>
             </ListItem>
-          </List>
-          {/* Footer content */}
-          <List style={{
-            position: "absolute",
-            width: "100%",
-            bottom: 0,
-          }} >
+            <Divider light />
             <ListItem
-              button
               component="a"
               href="https://sites.google.com/view/opentransit"
               target="_blank"
@@ -117,7 +102,7 @@ function SidebarButton() {
               <ListItemIcon>
                 <InfoRoundedIcon color="primary"/>
               </ListItemIcon>
-              <ListItemText primary="About" color="primary"/>
+              <ListItemText primary="About" style={inactiveStyle}/>
             </ListItem>
           </List>
         </div>
