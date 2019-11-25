@@ -326,10 +326,10 @@ function RouteSummary(props) {
         </Grid>
         </div>
         </Box>
-      <Box p={2} hidden={tabValue !== TRAVEL_TIME}>
+      <Box p={2} hidden={tabValue !== TRAVEL_TIME} style={{overflowX: 'auto'}}>
         <TravelTimeChart />
       </Box>
-      <Box p={2} hidden={tabValue !== MAREY_CHART}>
+      <Box p={2} hidden={tabValue !== MAREY_CHART} style={{overflowX: 'auto'}}>
         <MareyChart hidden={tabValue !== MAREY_CHART}/>
       </Box>
     </Fragment>
