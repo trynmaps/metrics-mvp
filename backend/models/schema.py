@@ -1,4 +1,4 @@
-from . import nextbus, constants, metrics, util, wait_times, trip_times
+from . import nextbus, constants, metrics, util, wait_times, trip_times, config
 from graphene import ObjectType, String, Int, Float, List, Field, Boolean, Schema
 from datetime import date
 import sys
