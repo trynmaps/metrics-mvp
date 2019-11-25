@@ -148,3 +148,7 @@ and CHOKIDAR_USEPOLLING is not necessary on Mac OS X to automatically recompile 
 
 Please see [ADVANCED_DEV.md](docs/ADVANCED_DEV.md) for advanced information like computing arrival times and
 deploying to AWS.
+
+See [agencies.md](docs/agencies.md) for configuring for different agencies, and how the front end gets the
+configuration information.  Important for testing with other devices against your dev machine.
+

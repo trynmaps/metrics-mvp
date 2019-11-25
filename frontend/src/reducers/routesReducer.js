@@ -58,7 +58,14 @@ export default (state = initialState, action) => {
     case 'RECEIVED_ARRIVALS':
       return {
         ...state,
-        arrivals: action.payload[0],
+        arrivals: { ...action.payload[0], date: action.payload[1] }, // augment with date to simplify detection of date change
+        arrivalsErr: null,
+      };
+    case 'RESET_ARRIVALS':
+      return {
+        ...state,
+        arrivals: null,
+        arrivalsErr: action.payload,
       };
     default:
       return state;

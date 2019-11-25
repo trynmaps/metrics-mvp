@@ -215,8 +215,18 @@ export function fetchArrivals(params) {
         });
       })
       .catch(err => {
+        dispatch({ type: 'RESET_ARRIVALS', payload: 'No data.' });
         console.error(err);
       });
+  };
+}
+
+/**
+ * Action creator that clears arrival history.
+ */
+export function resetArrivals() {
+  return function(dispatch) {
+    dispatch({ type: 'RESET_ARRIVALS', payload: null });
   };
 }
 
