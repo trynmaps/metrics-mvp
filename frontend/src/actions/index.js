@@ -269,9 +269,18 @@ export function fetchArrivals(params) {
         });
       })
       .catch(err => {
-        dispatch({ type: 'ERROR_ARRIVALS' });
+        dispatch({ type: 'ERROR_ARRIVALS', payload: 'No data.' });
         console.error(err);
       });
+  };
+}
+
+/**
+ * Action creator that clears arrival history.
+ */
+export function resetArrivals() {
+  return function(dispatch) {
+    dispatch({ type: 'ERROR_ARRIVALS', payload: null });
   };
 }
 

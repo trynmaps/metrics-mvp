@@ -83,6 +83,8 @@ If a route is not included in custom_directions, OpenTransit will use the shape 
 
 Agency-specific configuration is not compiled directly into the React JavaScript code. Instead, the HTML page hosting the React code first loads a script tag from the backend at the URL /api/js_config , which sets the global variable `window.OpentransitConfig`. The `config` React module reads this variable and exposes the constants `Agencies` (array of agency objects) and `S3Bucket` (name of the S3 bucket where route configuration, arrival times, cached wait time stats, and cached trip time stats are stored).
 
+Note: for testing with other devices on your local network, update `REACT_APP_METRICS_BASE_URL` in docker-compose.yml to refer to the right network address, rather than localhost.
+
 Currently the frontend only displays routes from the first agency in the Agencies array (for the first agency listed in `OPENTRANSIT_AGENCY_IDS`). However, a future version of the frontend could use this configuration to display statistics from multiple transit agencies in the same region.
 
 To make it easy to pass arbitrary agency-specific data to javascript, the `js_properties` setting in the agency configuration file can be an object with arbitrary key/value pairs. Currently the frontend uses the keys `routeHeuristics`, `serviceArea`, `defaultDisabledRoutes`, `title`, `initialMapCenter`, and `initialMapZoom`. The `timezone_id` setting in the agency configuration file is also passed to the backend as `timezoneId`.
