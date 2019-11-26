@@ -24,6 +24,7 @@
 .isochrone-controls
 {
     padding:5px;
+    min-width: 170px;
 }
 
 .isochrone-legend
@@ -35,14 +36,6 @@
 .isochrone-trip
 {
     padding:4px 4px;
-}
-
-.isochrone-select-all span
-{
-    color:#0078A8;
-    padding-right:2px;
-    text-decoration:none;
-    cursor:pointer;
 }
 
 .isochrone-legend-colors
@@ -83,7 +76,8 @@
     max-height: 150px;
 }
 
-.isochrone-routes label
+.isochrone-routes li
 {
     margin-bottom:0px;
+    max-height: 25px;
 }

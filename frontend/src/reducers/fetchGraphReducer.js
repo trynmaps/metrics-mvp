@@ -21,7 +21,7 @@ export default (state = initialState, action) => {
       };
     case 'RESET_GRAPH_DATA':
       return { ...state, err: null, graphData: null };
-    case 'RECEIVED_GRAPH_ERROR':
+    case 'ERROR_GRAPH_DATA':
       return { ...state, err: action.payload, graphData: null };
     default:
       break;

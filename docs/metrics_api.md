@@ -7,8 +7,8 @@ The GraphQL API is available publicly at https://muni.opentransit.city/api/graph
 For example, the following GraphQL query would return some statistics about headways and wait times for a particular stop on one day:
 
 ```
-query($routeId:String, $startStopId:String, $date:String) {
-  routeMetrics(routeId:$routeId) {
+query($agencyId: String!, $routeId:String!, $startStopId:String!, $date:String) {
+  routeMetrics(agencyId:$agencyId, routeId:$routeId) {
     trip(startStopId:$startStopId) {
       interval(dates:[$date]) {
         headways { median max }
@@ -21,7 +21,7 @@ query($routeId:String, $startStopId:String, $date:String) {
 
 To run the above query with the variables `$routeId` = "1", `$startStopId` = "6307", and `$date` = "2019-10-12", you can make a GET request to the URL below:
 
-https://muni.opentransit.city/api/graphql?query=query(%24routeId%3AString%2C+%24startStopId%3AString%2C+%24date%3AString)+%7B+routeMetrics(routeId%3A%24routeId)+%7B+trip(startStopId%3A%24startStopId)+%7B+interval(dates%3A%5B%24date%5D)+%7B+headways+%7B+median+max+%7D+waitTimes+%7B+median+%7D+%7D+%7D+%7D+%7D&variables=%7B"routeId":"1","startStopId":"6307","date":"2019-10-12"%7D
+http://muni.opentransit.city/api/graphql?query=query(%24agencyId%3AString!%2C+%24routeId%3AString!%2C+%24startStopId%3AString!%2C+%24date%3AString)+%7B+routeMetrics(agencyId%3A%24agencyId%2C+routeId%3A%24routeId)+%7B+trip(startStopId%3A%24startStopId)+%7B+interval(dates%3A%5B%24date%5D)+%7B+headways+%7B+median+max+%7D+waitTimes+%7B+median+%7D+%7D+%7D+%7D+%7D&variables=%7B"agencyId":"muni","routeId":"1","startStopId":"6307","date":"2019-11-09"%7D
 
 Queries can also be sent via POST, with the Content-Type `application/json`, and a request body like this:
 
@@ -49,7 +49,7 @@ The structure of a GraphQL query reflects this nested structure - in a query, th
 
 ```graphql
 query {
-  routes {
+  routes(agencyId:"muni") {
     id
     title
   }
@@ -81,7 +81,7 @@ Note that all the innermost elements of the query have to be primitive types. Si
 
 ```graphql
 query {
-  routes {
+  routes(agencyId:"muni") {
     id
     title
     config
@@ -93,7 +93,7 @@ will return an error. This query **doesn't** work because it isn't requesting an
 
 ```graphql
 query {
-  routes {
+  routes(agencyId:"muni") {
     id
     title
     config {
@@ -142,7 +142,7 @@ Querying information about a particular route or stop requires input parameters.
 
 ```graphql
 query {
-  routeMetrics(routeId:"1") {
+  routeMetrics(agencyId:"muni",routeId:"1") {
     trip(startStopId:"4015") {
       interval(dates:["2019-10-11"]) {
         waitTimes {
@@ -182,12 +182,12 @@ A list of parameters for the `routeConfig` and `routeMetrics` fields is given [b
 
 ```graphql
 query {
-  routes {
+  routes(agencyId:"muni") {
     id
     title
     config {
-     	directions { id title name stopIds }
-    	stops { id title lat lon }
+       directions { id title stopIds }
+      stops { id title lat lon }
     }
   }
 }
@@ -207,7 +207,6 @@ Response:
             {
               "id": "E____O_F00",
               "title": "Outbound to Mission Bay",
-              "name": "Outbound",
               "stopIds": [
                 "5184",
                 "3092",
@@ -221,10 +220,10 @@ Response:
 
 ```graphql
 query {
-  routeConfig(routeId:"12") {
+  routeConfig(agencyId:"muni", routeId:"12") {
     id
     title
-    directions { id title name stopIds }
+    directions { id title stopIds }
     stops { id title lat lon }
   }
 }
@@ -255,7 +254,7 @@ Response:
 
 ```graphql
 query {
-  routeMetrics(routeId:"1") {
+  routeMetrics(agencyId:"muni", routeId:"1") {
     trip(startStopId:"4015", endStopId:"6304") {
       interval(dates:["2019-10-11"], startTime:"08:00", endTime:"20:00") {
         waitTimes {
@@ -333,10 +332,9 @@ Response:
 
 ### Return metrics data for multiple time intervals in one day
 
-
 ```graphql
 query {
-  routeMetrics(routeId:"1") {
+  routeMetrics(agencyId:"muni", routeId:"1") {
     trip(startStopId:"4015", endStopId:"6304") {
       timeRanges(dates:["2019-10-11"]) {
         startTime
@@ -428,6 +426,72 @@ Response:
 }
 ```
 
+### Return metrics data for range of dates
+
+```graphql
+query {
+  routeMetrics(routeId:"1", agencyId:"muni") {
+    trip(startStopId:"13547", endStopId:"13549" directionId:"0") {
+      byDay(startTime:"03:00", endTime:"07:00", dates:["2019-11-18","2019-11-19"]) {
+        dates
+        startTime
+        endTime
+        tripTimes {
+          percentile(percentile:90)
+        }
+        waitTimes {
+          median
+          probabilityLessThan(minutes:5)
+        }
+      }
+    }
+  }
+}
+```
+
+Response:
+
+```
+{
+  "data": {
+    "routeMetrics": {
+      "trip": {
+        "byDay": [
+          {
+            "dates": [
+              "2019-11-18"
+            ],
+            "startTime": "03:00",
+            "endTime": "07:00",
+            "tripTimes": {
+              "percentile": 0.5
+            },
+            "waitTimes": {
+              "median": 6,
+              "probabilityLessThan": 0.44
+            }
+          },
+          {
+            "dates": [
+              "2019-11-19"
+            ],
+            "startTime": "03:00",
+            "endTime": "07:00",
+            "tripTimes": {
+              "percentile": 0.6
+            },
+            "waitTimes": {
+              "median": 5.5,
+              "probabilityLessThan": 0.46
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
 ### Returning statistics for multiple sets of parameters in a single query
 
 You can create aliases of any property in order to return data e.g. multiple pairs of stops, multiple date ranges in a single GraphQL query. You can also create reusable fragments to reduce duplication in queries:
@@ -437,7 +501,7 @@ fragment intervalFields on IntervalMetrics {
    waitTimes { median }
 }
 query {
-  routeMetrics(routeId:"1") {
+  routeMetrics(agencyId:"muni", routeId:"1") {
     trip1: trip(startStopId:"4015", endStopId:"6304") {
       allDay: interval(dates:["2019-10-11"]) {
         ...intervalFields
@@ -507,16 +571,24 @@ The root query object for the API. The `routeConfig` and `routeMetrics` fields r
 | `routeConfig` | [`RouteConfig`](#routeconfig) | Returns data for a particular route. |
 | `routeMetrics` | [`RouteMetrics`](#routemetrics) | Returns metrics data for a particular route.
 
+#### Parameters for `routes`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `agencyId` | `String!` | ID of the transit agency to return routes from. |
+
 #### Parameters for `routeConfig`
 
 | Parameter Name | Type | Description |
 | --- | --- | --- |
+| `agencyId` | `String!` | ID of the transit agency associated with this route. |
 | `routeId` | `String!` | ID of the route to return data from. |
 
 #### Parameters for `routeMetrics`
 
 | Parameter Name | Type | Description |
 | --- | --- | --- |
+| `agencyId` | `String!` | ID of the transit agency to return metrics data from. |
 | `routeId` | `String!` | ID of the route to return metrics data from. |
 
 ### RouteInfo
@@ -586,6 +658,7 @@ Given a stop or pair of stops, allows querying metrics data for a date/time rang
 | --- | --- | --- |
 | `interval` | [`IntervalMetrics`](#intervalmetrics) | Contains metrics data for a given time interval. |
 | `timeRanges` | [`[IntervalMetrics]`](#intervalmetrics) | Returns metrics data for multiple time ranges on the given days. |
+| `byDay` | [`[BasicIntervalMetrics]`](#basicIntervalmetrics) | Returns metrics data for multiple dates at the given start and end time. |
 
 #### Parameters for `interval`
 
@@ -601,6 +674,14 @@ Given a stop or pair of stops, allows querying metrics data for a date/time rang
 | --- | --- | --- |
 | `dates` | `[String]` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
 
+#### Parameters for `byDay`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `dates` | `[String]` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
+| `startTime` | `String` | Start time for each date to return metrics data from. Times use `HH:MM` format with an optional suffix "+1" to indicate times after midnight that are associated with the previous day;  e.g. `00:00`, `23:59`, `03:00+1`. |
+| `endTime` | `String` | End time for each date to return metrics data from. |
+
 ### IntervalMetrics
 
 Contains metrics data a particular pair of stops on a single route in a particular time range.
@@ -614,6 +695,49 @@ Contains metrics data a particular pair of stops on a single route in a particul
 | `tripTimes` | [`BasicStats`](#basicstats) | Contains metrics data for trip times (will be `None` if `endStopId` isn't given). |
 | `timetableHeadways` | [`BasicStats`](#basicstats) | Contains metrics data for timetable/scheduled headways. |
 | `timetableComparison` | [`ComparisonStats`](#comparisonstats) | Contains metrics data for comparisons between scheduled arrivals and arrival data. |
+
+### BasicIntervalMetrics
+
+Contains metrics data at a particular pair of stops on a single route at a particular time range and list of dates.
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `dates` | `[String]` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
+| `startTime` | `String` | Start time of interval. |
+| `endTime` | `String` | End time of interval. |
+| `waitTimes` | [`BasicWaitTimeStats`](#basicwaittimestats) | Contains metrics data for wait times. |
+| `tripTimes` | [`BasicTripTimeStats`](#basictriptimestats) | Contains metrics data for trip times. |
+
+### BasicWaitTimeStats
+
+Contains summary statistics for a single metric for wait times on a certain date, start time, and stop time.
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `median` | `Float` | The median value of the wait time. |
+| `percentile` | `Float` | Percentile value of the trip time. Currently percentile one of: 10, 50, or 90. |
+| `probabilityLessThan` | `Float` | Data for probability wait time will be less than passed minute value. Currently minutes one of: 5, 10, 15, 20, 25, 30. |
+
+#### Parameters for `percentiles`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `percentiles` | `[Float]` | List of percentiles to return. |
+
+#### Parameters for `probabilityLessThan`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `minutes` | `Int` | The minute value, gives cumulative probability from 0 to minute. |
+
+### BasicTripTimeStats
+
+Contains summary statistics for a single metric for trip times on a certain date, start time, and stop time.
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `median` | `Float` | The median value of the trip time. |
+| `percentile` | `Float` | Percentile value of the trip time. Currently percentile one of: 10, 50, or 90. |
 
 ### BasicStats
 
@@ -629,12 +753,6 @@ Contains summary statistics for a single metric.
 | `std` | `Float` | The standard deviation of the computed metric. |
 | `percentiles` | [`[PercentileData]`](#percentiledata) | Data for percentile values of the computed metric. |
 | `histogram` | [`[HistogramBin]`](#histogrambin) | Data for rendering histograms on the frontend. |
-
-#### Parameters for `percentiles`
-
-| Parameter Name | Type | Description |
-| --- | --- | --- |
-| `percentiles` | `[Float]` | List of percentiles to return. |
 
 #### Parameters for `histogram`
 
@@ -652,6 +770,7 @@ Contains data for a single percentile value.
 | --- | --- | --- |
 | `percentile` | `Int` | The percentile. |
 | `value` | `Float` | The value of the percentile. |
+
 
 ### HistogramBin
 

@@ -9,7 +9,11 @@ import pandas as pd
 class StopInfo:
     def __init__(self, route, data):
         self.id = data['tag']
-        self.location_id = data['stopId']
+
+        if 'stopId' in data:
+            self.location_id = data['stopId']
+        else:
+            self.location_id = self.id
         self.title = data['title']
         self.lat = float(data['lat'])
         self.lon = float(data['lon'])
@@ -26,13 +30,14 @@ class DirectionInfo:
         return [stop['tag'] for stop in self.data['stop']]
 
 class RouteInfo:
-    def __init__(self, data):
+    def __init__(self, nextbus_agency_id, data):
+        self.nextbus_agency_id = nextbus_agency_id
         self.id = data['tag']
         self.title = data['title']
 
 class RouteConfig:
-    def __init__(self, agency_id, data):
-        self.agency_id = agency_id
+    def __init__(self, nextbus_agency_id, data):
+        self.nextbus_agency_id = nextbus_agency_id
         self.data = data
         self.id = data['tag']
         self.title = data['title']
@@ -101,8 +106,8 @@ class StopLocationInfo:
         self.stop_infos.append(stop_info)
 
 class StopLocations:
-    def __init__(self, agency_id, locations_map):
-        self.agency_id = agency_id
+    def __init__(self, nextbus_agency_id, locations_map):
+        self.nextbus_agency_id = nextbus_agency_id
         self.locations_map = locations_map
         self.loc_df = pd.DataFrame([(loc.id, loc.lat, loc.lon) for id, loc in locations_map.items()],
             columns=['LOCATION_ID','LAT','LON']
@@ -117,27 +122,27 @@ class StopLocations:
         else:
             return None
 
-def get_all_stop_locations(agency_id) -> StopLocations:
-    routes = get_route_list(agency_id)
+def get_all_stop_locations(nextbus_agency_id) -> StopLocations:
+    routes = get_route_list(nextbus_agency_id)
     locations_map = {}
     for route in routes:
-        route_config = get_route_config(agency_id, route.id)
+        route_config = get_route_config(nextbus_agency_id, route.id)
         for stop_info in route_config.get_stop_infos():
             location_id = stop_info.location_id
             if not location_id in locations_map:
                 locations_map[location_id] = StopLocationInfo(stop_info.location_id, stop_info.lat, stop_info.lon, stop_info.title)
             locations_map[location_id].add_stop_info(stop_info)
-    return StopLocations(agency_id, locations_map)
+    return StopLocations(nextbus_agency_id, locations_map)
 
-def get_route_list(agency_id):
+def get_route_list(nextbus_agency_id):
 
-    if re.match('^[\w\-]+$', agency_id) is None:
-        raise Exception(f"Invalid agency id: {agency_id}")
+    if re.match('^[\w\-]+$', nextbus_agency_id) is None:
+        raise Exception(f"Invalid agency id: {nextbus_agency_id}")
 
-    cache_path = os.path.join(util.get_data_dir(), f"routeConfigs_{agency_id}.json")
+    cache_path = os.path.join(util.get_data_dir(), f"routeList_{nextbus_agency_id}.json")
 
     def route_list_from_data(data):
-        return [RouteConfig(agency_id, route) for route in data['route']]
+        return [RouteInfo(nextbus_agency_id, route) for route in data['route']]
 
     try:
         mtime = os.stat(cache_path).st_mtime
@@ -152,7 +157,8 @@ def get_route_list(agency_id):
     except FileNotFoundError as err:
         pass
 
-    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeConfig&a={agency_id}&t=0&terse")
+    # note: routeList command works for all agencies, while routeConfig fails for agencies with more than 100 routes (like ttc)
+    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeList&a={nextbus_agency_id}&t=0&terse")
 
     data = response.json()
 
@@ -167,21 +173,16 @@ def get_route_list(agency_id):
 
     return route_list_from_data(data)
 
-# TODO: if we stay with fetching all the route configs at once, then
-# this method can be refactored with get_route_list since they are now
-# mostly identical.  That is, get_route_config can call get_route_list,
-# then return only the requested RouteConfig.
+def get_route_config(nextbus_agency_id, route_id) -> RouteConfig:
 
-def get_route_config(agency_id, route_id) -> RouteConfig:
-
-    if re.match('^[\w\-]+$', agency_id) is None:
-        raise Exception(f"Invalid agency id: {agency_id}")
+    if re.match('^[\w\-]+$', nextbus_agency_id) is None:
+        raise Exception(f"Invalid agency id: {nextbus_agency_id}")
 
     if re.match('^[\w\-]+$', route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
 
     # cache route config locally to reduce number of requests to nextbus API and improve performance
-    cache_path = os.path.join(util.get_data_dir(), f"routeConfigs_{agency_id}.json")
+    cache_path = os.path.join(util.get_data_dir(), f"nextbus_routeConfig_{nextbus_agency_id}_{route_id}.json")
 
     try:
         mtime = os.stat(cache_path).st_mtime
@@ -192,16 +193,14 @@ def get_route_config(agency_id, route_id) -> RouteConfig:
             with open(cache_path, mode='r', encoding='utf-8') as f:
                 data_str = f.read()
                 try:
-                    jsonData = json.loads(data_str)['route']
-                    for jsonRoute in jsonData:
-                        if route_id == jsonRoute['tag']:
-                            return RouteConfig(agency_id, jsonRoute)
+                    jsonRoute = json.loads(data_str)['route']
+                    return RouteConfig(nextbus_agency_id, jsonRoute)
                 except Exception as err:
                     print(err)
     except FileNotFoundError as err:
         pass
 
-    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeConfig&a={agency_id}&t=0&terse")
+    response = requests.get(f"http://webservices.nextbus.com/service/publicJSONFeed?command=routeConfig&a={nextbus_agency_id}&r={route_id}&t=0&terse")
 
     data = response.json()
 
@@ -214,6 +213,4 @@ def get_route_config(agency_id, route_id) -> RouteConfig:
     with open(cache_path, mode='w', encoding='utf-8') as f:
         f.write(response.text)
 
-    for jsonRoute in data['route']:
-        if route_id == jsonRoute['tag']:
-            return RouteConfig(agency_id, jsonRoute)
+    return RouteConfig(nextbus_agency_id, data['route'])

@@ -73,16 +73,17 @@ export function getTripTimesForDirection(
     return null;
   }
 
-  const tripTimes = tripTimesCache[`${dateStr + timeStr}p10-median-p90`]; // 'median'
+  const agencyId = graphParams.agencyId;
+  const tripTimes = tripTimesCache[`${agencyId}-${dateStr + timeStr}-p10-median-p90`]; // 'median'
 
   if (!tripTimes) {
-    // console.log('no trip times');
+    //console.log('no trip times');
     return null;
   }
 
   const routeTripTimes = tripTimes.routes[routeId];
   if (!routeTripTimes) {
-    // console.log('no trip times for route');
+    //console.log('no trip times for route ' + routeId);
     return null;
   }
 
@@ -173,7 +174,9 @@ export function getWaitTimeForDirection(
 ) {
   const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
 
-  const waitTimes = waitTimesCache[`${dateStr + timeStr}median-p90-plt20m`];
+  const agencyId = graphParams.agencyId;
+
+  const waitTimes = waitTimesCache[`${agencyId}-${dateStr + timeStr}-median-p90-plt20m`];
 
   if (!waitTimes) {
     return null;

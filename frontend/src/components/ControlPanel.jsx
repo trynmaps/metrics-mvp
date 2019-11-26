@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React from 'react';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
@@ -10,10 +10,10 @@ import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import Grid from '@material-ui/core/Grid';
-import { handleGraphParams } from '../actions';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
+import { handleGraphParams } from '../actions';
+import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { Colors } from '../UIConstants';
 
 const useStyles = makeStyles(theme => ({
@@ -30,6 +30,7 @@ const useStyles = makeStyles(theme => ({
 function ControlPanel(props) {
   const { routes, graphParams } = props;
   let secondStopList = [];
+  const [allowHover, setAllowHover] = useState(false);
 
   /**
    * Sets the direction
@@ -88,6 +89,7 @@ function ControlPanel(props) {
     }
 
     path.commitPath();
+
     props.onGraphParams({
       startStopId: stopId,
       endStopId: secondStopId,
@@ -118,7 +120,7 @@ function ControlPanel(props) {
       mySelectedRoute.directions.length > 0
         ? mySelectedRoute.directions[0].id
         : null;
-    // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
+
     const path = new Path();
     path
       .buildPath(ROUTE, routeId)
@@ -130,6 +132,29 @@ function ControlPanel(props) {
       startStopId: null,
       endStopId: null,
     });
+  }
+  /**
+   * Handle mouseover event on Select TO & From dropdown list item.
+   */
+  function handleItemMouseOver(node, title) {
+    if (node && allowHover) {
+      node.classList.add('on-hover');
+      node.style.setProperty('--stop-name', `"${title}"`);
+    }
+  }
+  /**
+   * Handle mouseout event on Select TO & From dropdown list item.
+   */
+  function handleItemMouseOut(node) {
+    node && node.classList.remove('on-hover');
+  }
+  /**
+   * Handle Select component close
+   */
+  function handleSelectClose() {
+    setAllowHover(false);
+    const nodeList = document.querySelectorAll('.on-hover');
+    nodeList.forEach(node => node.classList.remove('on-hover'));
   }
 
   let selectedDirection = null;
@@ -173,13 +198,13 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.directionId || 1}
+                value={graphParams.directionId || ""}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >
                 {(selectedRoute.directions || []).map(direction => (
                   <MenuItem key={direction.id} value={direction.id}>
-                    {direction.title}
+                      {direction.title}
                   </MenuItem>
                 ))}
               </Select>
@@ -190,50 +215,72 @@ function ControlPanel(props) {
           <Grid container>
             <Grid item xs>
               <Box ml={1}>
-                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
+                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="fromstop">From Stop</InputLabel>
                   <Select
-                  value={graphParams.startStopId || 1}
-                  onChange={onSelectFirstStop}
-                  input={<Input name="stop" id="fromstop" />}
+                    value={graphParams.startStopId || 1}
+                    onChange={onSelectFirstStop}
+                    input={<Input name="stop" id="fromstop" />}
+                    onOpen={() => setAllowHover(true)}
+                    onClose={handleSelectClose}
                   >
-                    {(selectedDirection.stops || []).map(firstStopId => (
-                      <MenuItem key={firstStopId} value={firstStopId}>
-                        {
-                          (
-                            selectedRoute.stops[firstStopId] || {
-                              title: firstStopId,
-                            }
-                          ).title
+                    {(selectedDirection.stops || []).map(firstStopId => {
+                      const icon = document.querySelector(`.id${firstStopId}`);
+                      const title = (
+                        selectedRoute.stops[firstStopId] || {
+                          title: firstStopId,
                         }
-                      </MenuItem>
-                    ))}
+                      ).title;
+                      return (
+                        <MenuItem
+                          key={firstStopId}
+                          value={firstStopId}
+                          onMouseOver={() => handleItemMouseOver(icon, title)}
+                          onFocus={() => handleItemMouseOver(icon, title)}
+                          onMouseOut={() => handleItemMouseOut(icon)}
+                          onBlur={() => handleItemMouseOut(icon)}
+                        >
+                          {title}
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 </FormControl>
-              </Box> 
+              </Box>
             </Grid>
             <Grid item xs>
               <Box ml={1}>
-                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO}/>
+                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
                 <FormControl className={classes.formControl}>
                   <InputLabel htmlFor="tostop">To Stop</InputLabel>
                   <Select
-                  value={graphParams.endStopId || 1}
-                  onChange={onSelectSecondStop}
-                  input={<Input name="stop" id="tostop" />}
+                    value={graphParams.endStopId || 1}
+                    onChange={onSelectSecondStop}
+                    input={<Input name="stop" id="tostop" />}
+                    onOpen={() => setAllowHover(true)}
+                    onClose={handleSelectClose}
                   >
-                    {(secondStopList || []).map(secondStopId => (
-                      <MenuItem key={secondStopId} value={secondStopId}>
-                        {
-                          (
-                            selectedRoute.stops[secondStopId] || {
-                              title: secondStopId,
-                            }
-                          ).title
+                    {(secondStopList || []).map(secondStopId => {
+                      const icon = document.querySelector(`.id${secondStopId}`);
+                      const title = (
+                        selectedRoute.stops[secondStopId] || {
+                          title: secondStopId,
                         }
-                      </MenuItem>
-                    ))}
+                      ).title;
+                      return (
+                        <MenuItem
+                          key={secondStopId}
+                          value={secondStopId}
+                          onMouseOver={() => handleItemMouseOver(icon, title)}
+                          onFocus={() => handleItemMouseOver(icon, title)}
+                          onMouseOut={() => handleItemMouseOut(icon)}
+                          onBlur={() => handleItemMouseOut(icon)}
+                        >
+                          {title}
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 </FormControl>
               </Box>
