@@ -70,9 +70,10 @@ function ControlPanel(props) {
 
     const unidirectionalSecondStopsList = secondStopInfo.stops.slice(secondStopListIndex + 1);
 
-    const circularSecondStopsList = unidirectionalSecondStopsList.concat(secondStopInfo.stops.slice(0, secondStopListIndex));
-
-    return isLoopRoute ? circularSecondStopsList : unidirectionalSecondStopsList;
+    if (!isLoopRoute) {
+      return unidirectionalSecondStopsList;
+    }
+    return unidirectionalSecondStopsList.concat(secondStopInfo.stops.slice(1, secondStopListIndex));
   }
 
   function onSelectFirstStop(event) {
