@@ -1,5 +1,6 @@
 /* eslint-disable no-case-declarations */
 import Moment from 'moment';
+import { WEEKDAYS, WEEKENDS } from '../UIConstants';
 
 const momentYesterday = Moment(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -15,7 +16,11 @@ export const initialState = {
     endStopId: null,
     startTime: null,
     endTime: null,
-    date: momentYesterday.format('YYYY-MM-DD'),
+    date: momentYesterday.format('YYYY-MM-DD'), // used where date ranges are not supported
+    startDate: momentYesterday.format('YYYY-MM-DD'),
+    // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
+    daysOfTheWeek: { ...WEEKDAYS.reduce((map, obj) => { map[obj.value] = true; return map}, {}),
+                     ...WEEKENDS.reduce((map, obj) => { map[obj.value] = true; return map}, {})},
   },
   spiderLatLng: null,
   tripTimesCache: {},
@@ -37,7 +42,7 @@ export default (state = initialState, action) => {
         ...state,
         graphParams: Object.assign({}, state.graphParams, action.payload),
       };
-    case 'RECEIVED_ROUTES_ERROR':
+    case 'ERROR_ROUTES':
       return state;
     case 'RECEIVED_PRECOMPUTED_TRIP_TIMES':
       return {
@@ -61,7 +66,7 @@ export default (state = initialState, action) => {
         arrivals: { ...action.payload[0], date: action.payload[1] }, // augment with date to simplify detection of date change
         arrivalsErr: null,
       };
-    case 'RESET_ARRIVALS':
+    case 'ERROR_ARRIVALS':
       return {
         ...state,
         arrivals: null,
