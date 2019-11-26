@@ -17,6 +17,8 @@ class DirectionInfo:
         self.title = data['title']
         #self.name = data['name']
         self.data = data
+        self.gtfs_direction_id = data['gtfs_direction_id']
+        self.gtfs_shape_id = data['gtfs_shape_id']
 
     def get_stop_ids(self):
         return self.data['stops']
@@ -30,6 +32,7 @@ class RouteConfig:
         self.url = data['url']
         self.type = data['type']
         self.sort_order = data['sort_order']
+        self.gtfs_route_id = data['gtfs_route_id']
 
     def get_direction_ids(self):
         return [direction['id'] for direction in self.data['directions']]

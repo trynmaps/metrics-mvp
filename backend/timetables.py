@@ -6,119 +6,140 @@ import pandas as pd
 import numpy as np
 import partridge as ptg
 
-from models import metrics, timetable, arrival_history, util, constants, errors
+from models import metrics, timetables, arrival_history, util, constants, errors, config
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Get the timetable for stops on a given route")
     parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument("--route", required = True, help = "Route id")
-    parser.add_argument("--stops", required = True, help = "Comma-separated list of stops on the route (ex '3413,4416'")
+    parser.add_argument("--stop", required = True, help = "Stop ID")
+    parser.add_argument("--dir", help = "Direction ID")
     parser.add_argument("--date", required = True, help = "Date - YYYY-MM-DD")
     parser.add_argument("--comparison", dest = "comparison", action = "store_true", help = "option to compare timetables to actual data - true or false")
-    parser.add_argument("--thresholds", help = "comma-separated list of thresholds to define late/very late arrivals (ex '5,10')")
-    # add version param for later
+    parser.add_argument("--early-min", type=int, default=1, help = "number of minutes before schedule defined as early")
+    parser.add_argument("--late-min", type=int, default=5, help = "number of minutes after schedule defined as late")
+    parser.add_argument('--verbose', dest='verbose', action='store_true', help='verbose output')
+    parser.set_defaults(verbose=False)
     parser.set_defaults(comparison = False)
     parser.set_defaults(thresholds = '5,10')
 
     args = parser.parse_args()
-    route = args.route
-    stops = [stop for stop in args.stops.split(",") if len(stop) > 0]
+    route_id = args.route
+    stop_id = args.stop
     d = date.fromisoformat(args.date)
     comparison = args.comparison
 
+    early_min = args.early_min
+    late_min = args.late_min
+
     agency = config.get_agency(args.agency)
-
-    ver = "v1"
-
-    try:
-        thresholds = [int(x) for x in args.thresholds.split(',') if len(x) > 0]
-
-        if len(thresholds) != 2:
-            raise errors.InvalidInputError
-    except (TypeError, errors.InvalidInputError):
-        print("Invalid thresholds, using the default of 5/10 minutes.")
-        thresholds = [5, 10]
 
     agency_id = agency.id
 
     start_time = datetime.now()
     print(f"Start: {start_time}")
 
-    tt = timetable.get_timetable_from_csv(agency_id, route, d, ver)
-    rc = agency.get_route_config(route)
+    timetable = timetables.get_by_date(agency_id, route_id, d)
+    route_config = agency.get_route_config(route_id)
 
-    for stop in stops:
-        # get direction
-        nextbus_dir = rc.get_directions_for_stop(stop)
-        if len(nextbus_dir) == 0:
-            print(f"Stop {stop} has no directions.")
+    tz = agency.tz
+
+    direction_id = args.dir
+
+    timetable_df = timetable.get_data_frame(stop_id=stop_id, direction_id=direction_id)
+
+    early_sec = early_min * 60
+    late_sec = late_min * 60
+
+    timetable_df['scheduled_headway'] = np.r_[np.nan, metrics.compute_headway_minutes(timetable_df['TIME'].values)]
+
+    if comparison:
+        history = arrival_history.get_by_date(agency_id, route_id, d)
+        arrivals_df = history.get_data_frame(stop_id=stop_id, direction_id=direction_id)
+
+        comparison_df = timetables.match_arrivals(timetable_df['TIME'].values, arrivals_df['TIME'].values, early_sec=early_sec, late_sec=late_sec)
+
+        timetable_df = pd.concat([timetable_df, comparison_df], axis=1)
+
+    timetable_df['DATE_TIME'] = timetable_df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
+
+    gap_threshold = 1.5
+    bunch_threshold = 0.5
+
+    for row in timetable_df.itertuples():
+        did = row.DID
+        dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
+
+        scheduled_headway = f'{round(row.scheduled_headway, 1)}'.rjust(4)
+
+        if args.comparison:
+            matching_arrival_time = datetime.fromtimestamp(row.matching_arrival, tz).time() if not np.isnan(row.matching_arrival) else None
+
+            status_text = ''
+
+            if args.verbose:
+                prev_arrival_time = datetime.fromtimestamp(row.prev_arrival, tz).time() if not np.isnan(row.prev_arrival) else None
+                next_arrival_time = datetime.fromtimestamp(row.next_arrival, tz).time() if not np.isnan(row.next_arrival) else None
+                closest_arrival_time = datetime.fromtimestamp(row.closest_arrival, tz).time() if not np.isnan(row.closest_arrival) else None
+
+                arrival_info = f'p:{prev_arrival_time} n:{next_arrival_time} c:{closest_arrival_time} m:{matching_arrival_time}'
+            else:
+                arrival_info = f'actual: {matching_arrival_time}'
+
+            if not row.no_match:
+                if row.on_time:
+                    status_text = ''
+                elif row.late:
+                    status_text = 'late'
+                elif row.early:
+                    status_text = 'early'
+
+                matching_arrival_headway = f'{round(row.matching_arrival_headway,1)}'.rjust(5)
+                matching_delta_min = f'{"+" if row.matching_arrival_delta > 0 else ""}{round(row.matching_arrival_delta/60,1)}'.rjust(5)
+
+                headway_ratio = row.matching_arrival_headway/row.scheduled_headway if row.scheduled_headway > 0 else None
+                headway_ratio_str = f"({round(headway_ratio, 1)}x)" if row.scheduled_headway > 0 else ""
+
+                if headway_ratio is not None:
+                    if headway_ratio > gap_threshold:
+                        headway_ratio_str += " - gap"
+                    if headway_ratio < bunch_threshold:
+                        headway_ratio_str += " - bunch"
+
+                arrival_info += f'  {status_text.ljust(5)} {matching_delta_min} min   {matching_arrival_headway} min headway {headway_ratio_str}'
         else:
-            for direction in nextbus_dir:
-                tt.pretty_print(stop, direction)
+            arrival_info = ''
 
-                if comparison:
-                    route_metrics = metrics.RouteMetrics(agency_id, route)
-                    df = route_metrics.get_comparison_to_timetable(d, stop, direction)
+        print(f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time}   {scheduled_headway} min headway   {arrival_info}")
 
-                    if len(df) > 0:
-                        df = df.rename({
-                            "arrival_time": "Scheduled Arrival",
-                            "arrival_headway": "Scheduled Headway",
-                            "next_arrival": "Next Arrival",
-                            "next_arrival_delta": "Delta (Next Arrival)",
-                            "next_arrival_headway": "Next Arrival Headway",
-                            "closest_arrival": "Closest Arrival",
-                            "closest_arrival_delta": "Delta (Closest Arrival)",
-                            "closest_arrival_headway": "Closest Arrival Headway"
-                        }, axis = "columns")
+    num_scheduled = len(timetable_df)
+    print('-----')
+    print(f'{num_scheduled} scheduled arrivals')
 
-                        times_df = df[["Scheduled Arrival", "Closest Arrival", "Delta (Closest Arrival)", "Next Arrival", "Delta (Next Arrival)"]].copy(deep = True)
-                        times_df[["Scheduled Arrival", "Closest Arrival", "Next Arrival"]] = times_df[["Scheduled Arrival", "Closest Arrival", "Next Arrival"]].applymap(lambda x: datetime.fromtimestamp(x, agency.tz).time() if not pd.isna(x) else np.nan)
-                        times_df[["Delta (Closest Arrival)", "Delta (Next Arrival)"]] = times_df[["Delta (Closest Arrival)", "Delta (Next Arrival)"]].applymap(lambda x: f"{round(x/60, 2)} min")
+    if comparison:
+        on_time_rate = np.average(timetable_df['on_time'])
+        late_rate = np.average(timetable_df['late'])
+        early_rate = np.average(timetable_df['early'])
+        missing_rate = np.average(timetable_df['no_match'])
 
-                        headways_df = df[["Scheduled Arrival", "Scheduled Headway", "Closest Arrival Headway", "Next Arrival Headway"]].copy(deep = True)
-                        headways_df["Scheduled Arrival"] = headways_df["Scheduled Arrival"].apply(lambda x: datetime.fromtimestamp(x, agency.tz).time() if not pd.isna(x) else np.nan)
-                        headways_df[["Scheduled Headway", "Closest Arrival Headway", "Next Arrival Headway"]] = headways_df[["Scheduled Headway", "Closest Arrival Headway", "Next Arrival Headway"]].applymap(lambda x: f"{round(x, 2) if not pd.isna(x) else np.nan} min")
+        print(f"On-time  : {round(on_time_rate * 100, 1)}% ({np.sum(timetable_df['on_time'])}/{num_scheduled})")
+        print(f"Late     : {round(late_rate * 100, 1)}% ({np.sum(timetable_df['late'])}/{num_scheduled}) more than {late_min} min late")
+        print(f"Early    : {round(early_rate * 100, 1)}% ({np.sum(timetable_df['early'])}/{num_scheduled}) more than {early_min} min early")
+        print(f"Missing  : {round(missing_rate * 100, 1)}% ({np.sum(timetable_df['no_match'])}/{num_scheduled})")
 
-                        with pd.option_context("display.max_rows", None, "display.max_columns", None, 'display.expand_frame_repr', False):
-                            print("-----------")
-                            print("Comparison of timetable schedule and actual arrival data:")
-                            print(times_df.rename({
-                                "Delta (Closest Arrival)": "Delta",
-                                "Delta (Next Arrival)": "Delta"
-                            }, axis = "columns"))
 
-                            print("-----------")
-                            print("Delta comparisons (in minutes)")
-                            print(df[["Delta (Closest Arrival)", "Delta (Next Arrival)"]].describe().applymap(lambda x: round(x/60, 2)))
-                            print("-----------")
+    '''
+    scheduled_headways = timetable_df['scheduled_headway']
+    matching_arrival_headways = timetable_df['matching_arrival_headway']
+    valid_headway_indexes = (scheduled_headways > 0) & np.isfinite(matching_arrival_headways)
 
-                            closest_arrival_metrics = metrics.compare_delta_metrics(df["Delta (Closest Arrival)"]/60, thresholds)
+    headway_ratio = matching_arrival_headways[valid_headway_indexes] / scheduled_headways[valid_headway_indexes]
 
-                            print("Comparison between scheduled arrival times and closest arrival times:")
-                            for k, v in closest_arrival_metrics.items():
-                                print(f"{k}: {round(v, 1)}%")
+    num_valid_headways = len(headway_ratio)
 
-                            print("-----------")
+    gaps = headway_ratio > gap_threshold
+    bunches = headway_ratio < bunch_threshold
 
-                            next_arrival_metrics = metrics.compare_delta_metrics(df["Delta (Next Arrival)"]/60, thresholds)
-
-                            print("Comparison between scheduled arrival times and next arrival times:")
-                            for k, v in next_arrival_metrics.items():
-                                print(f"{k}: {round(v, 1)}%")
-
-                            print("-----------")
-
-                            print("Comparison between scheduled arrival headways and actual arrival headways:")
-
-                            print(headways_df.rename({
-                                "Delta (Closest Headway)": "Delta",
-                                "Delta (First After Headway)": "Delta"
-                            }, axis = "columns"))
-                    else:
-                        print(f"Comparison failed - no arrival data was found for {stop}.")
-
-    end_time = datetime.now()
-    print("-----------")
-    print(f"Done: {end_time}")
-    print(f"Elapsed time: {end_time - start_time}")
+    gap_rate = np.average(gaps)
+    bunch_rate = np.average(bunches)
+    '''

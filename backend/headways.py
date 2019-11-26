@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
             t2 = time.time()*1000
 
-            route_df = history.get_data_frame(stop_id,
+            route_df = history.get_data_frame(stop_id=stop_id,
                 start_time=util.get_timestamp_or_none(d, start_time_str, tz),
                 end_time=util.get_timestamp_or_none(d, end_time_str, tz)
             )

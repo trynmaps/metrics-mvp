@@ -147,12 +147,17 @@ python compute_trip_times.py --agency=muni --date=2019-11-19
 
 Show scheduled timetable for a particular stop:
 ```
-python timetables.py --agency=muni --route=12 --stops=3476 --date=2019-04-12
+python timetables.py --agency=muni --route=12 --stop=13476 --date=2019-11-19
 ```
 
-Compare scheduled timetable to collected arrival data, with 3/5 minutes as the on-time/late thresholds(thresholds optional, the default value are 5/10 minutes)
+Compare scheduled timetable to actual arrival data, and show schedule adherence:
 ```
-python timetables.py --agency=muni --route=12 --stops=3476 --date=2019-06-06 --comparison --threshold=3,5
+python timetables.py --agency=muni --route=12 --stop=13476 --date=2019-11-19 --comparison
+```
+
+Parse route configuration and timetables from GTFS feed:
+```
+python save_routes.py --agency=muni
 ```
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
@@ -171,7 +176,3 @@ and show discrepancies between the two data sets based on differences between ar
 python compare_versions.py --date=2018-11-14 --agency=muni --route=1 t2 v2
 ```
 
-Scrape timetables from GTFS data stored locally in `inpath` and extract them to the `data` directory:
-```
-python gtfs_scraper.py --inpath=path/to/google_transit
-```

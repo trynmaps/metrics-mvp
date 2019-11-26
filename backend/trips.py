@@ -92,8 +92,8 @@ if __name__ == '__main__':
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)
 
-        s1_df = history.get_data_frame(s1, start_time = start_time, end_time = end_time)
-        s2_df = history.get_data_frame(s2, start_time = start_time)
+        s1_df = history.get_data_frame(stop_id=s1, start_time = start_time, end_time = end_time)
+        s2_df = history.get_data_frame(stop_id=s2, start_time = start_time)
 
         s1_df['trip_min'], s1_df['dest_arrival_time'] = trip_times.get_matching_trips_and_arrival_times(
             s1_df['TRIP'].values,

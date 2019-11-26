@@ -35,7 +35,7 @@ class BasicWaitTimeStats(ObjectType):
             return percentiles_arr[2]
         else:
             raise Exception(f"User requested a percentile other than [ 10 | 50 | 90 ].")
-    
+
     def resolve_probabilityLessThan(parent, info, minutes):
         first_date = util.parse_date(parent["date_str"])
         wait_time_probability = wait_times.get_cached_wait_times(parent['route_metrics'].agency_id, first_date, "plt5m-30m", parent["start_time"], parent["end_time"])
@@ -83,7 +83,7 @@ class BasicIntervalMetrics(ObjectType):
 
     def resolve_startTime(parent, info):
         return parent["start_time"]
-    
+
     def resolve_endTime(parent, info):
         return parent["end_time"]
 
@@ -373,16 +373,47 @@ class WaitTimeStats(ObjectType):
         else:
             return None
 
+class ScheduleAdherence(ObjectType):
+    onTimeRate = Float()
+    onTimeCount = Int()
 
-class ComparisonStats(ObjectType):
-    closestDeltaStats = Field(BasicStats)
-    nextDeltaStats = Field(BasicStats)
+    lateRate = Float()
+    lateCount = Int()
 
-    def resolve_closestDeltaStats(parent, info):
-        return {"values": parent["closest_arrival_deltas"]}
+    earlyRate = Float()
+    earlyCount = Int()
 
-    def resolve_nextDeltaStats(parent, info):
-        return {"values": parent["next_arrival_deltas"]}
+    missingRate = Float()
+    missingCount = Int()
+
+    totalCount = Int()
+
+    def resolve_onTimeRate(parent, info):
+        return np.average(parent['on_time'])
+
+    def resolve_onTimeCount(parent, info):
+        return np.sum(parent['on_time'])
+
+    def resolve_lateRate(parent, info):
+        return np.average(parent['late'])
+
+    def resolve_lateCount(parent, info):
+        return np.sum(parent['late'])
+
+    def resolve_earlyRate(parent, info):
+        return np.average(parent['early'])
+
+    def resolve_earlyCount(parent, info):
+        return np.sum(parent['early'])
+
+    def resolve_missingRate(parent, info):
+        return np.average(parent['no_match'])
+
+    def resolve_missingCount(parent, info):
+        return np.sum(parent['no_match'])
+
+    def resolve_totalCount(parent, info):
+        return len(parent)
 
 class IntervalMetrics(ObjectType):
     startTime = String()
@@ -390,8 +421,16 @@ class IntervalMetrics(ObjectType):
     waitTimes = Field(WaitTimeStats)
     headways = Field(BasicStats)
     tripTimes = Field(BasicStats)
-    timetableHeadways = Field(BasicStats)
-    timetableComparison = Field(ComparisonStats)
+
+    #arrivals = Int()
+    scheduledArrivals = Int()
+
+    scheduledHeadways = Field(BasicStats)
+
+    scheduleAdherence = Field(ScheduleAdherence,
+        early_sec = Int(required=False, default_value=60),
+        late_sec = Int(required=False, default_value=300),
+    )
 
     def resolve_waitTimes(parent, info):
         return {'wait_stats_arr':
@@ -421,19 +460,29 @@ class IntervalMetrics(ObjectType):
             )
         }
 
-    def resolve_timetableHeadways(parent, info):
+    def resolve_scheduledHeadways(parent, info):
         return {
-            'values': parent["route_metrics"].get_timetable_headways(
+            'values': parent["route_metrics"].get_scheduled_headways(
                 direction_id = parent["direction_id"],
                 stop_id = parent["start_stop_id"],
                 rng = parent["range"]
             )
         }
 
-    def resolve_timetableComparison(parent, info):
-        return parent["route_metrics"].get_timetable_comparisons(
+
+    def resolve_scheduledArrivals(parent, info):
+        return parent["route_metrics"].get_scheduled_arrivals(
             direction_id = parent["direction_id"],
             stop_id = parent["start_stop_id"],
+            rng = parent["range"]
+        )
+
+    def resolve_scheduleAdherence(parent, info, early_sec, late_sec):
+        return parent["route_metrics"].match_arrivals_to_timetable(
+            direction_id = parent["direction_id"],
+            stop_id = parent["start_stop_id"],
+            early_sec = early_sec,
+            late_sec = late_sec,
             rng = parent["range"]
         )
 
@@ -497,9 +546,9 @@ class TripMetrics(ObjectType):
         ]
 
     def resolve_byDay(parent, info, date_strs, start_time, end_time):
-        return [{**parent, 
-                "start_time": start_time, 
-                "end_time": end_time, 
+        return [{**parent,
+                "start_time": start_time,
+                "end_time": end_time,
                 "date_str": date_str
             }
             for date_str in date_strs

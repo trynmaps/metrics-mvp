@@ -21,7 +21,7 @@ class ArrivalHistory:
         self.stops_data = stops_data
         self.version = version
 
-    def get_data_frame(self, stop_id = None, vehicle_id = None, direction_id = None,
+    def get_data_frame(self, direction_id = None, stop_id = None, vehicle_id = None,
             start_time = None, end_time = None) -> pd.DataFrame:
         '''
         Returns a data frame for a subset of this arrival history, after filtering by the provided parameters:
