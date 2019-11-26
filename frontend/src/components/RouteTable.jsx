@@ -92,7 +92,7 @@ function getSorting(order, orderBy) {
 }
 
 const headRows = [
-  { id: 'title', numeric: false, disablePadding: false, label: 'Name' },
+  { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'totalScore', numeric: true, disablePadding: true, label: 'Score' },
   { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait' },
   {
@@ -124,6 +124,7 @@ function EnhancedTableHead(props) {
             key={row.id}
             align={row.numeric ? 'right' : 'left'}
             padding={row.disablePadding ? 'none' : 'default'}
+            style={{ paddingRight: 12 }}
             sortDirection={orderBy === row.id ? order : false}
           >
             <TableSortLabel
