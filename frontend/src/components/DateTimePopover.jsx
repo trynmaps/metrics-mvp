@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
-import Collapse from '@material-ui/core/Collapse';
+import Divider from '@material-ui/core/Divider';
 import Grid from '@material-ui/core/Grid';
 import Popover from '@material-ui/core/Popover';
 import Button from '@material-ui/core/Button';
@@ -15,15 +15,13 @@ import FormGroup from '@material-ui/core/FormGroup';
 import Select from '@material-ui/core/Select';
 import { List, ListItem } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormLabel from '@material-ui/core/FormLabel';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import {
   TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
-  CUSTOM_DATE_RANGE, MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
+  MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
 } from '../UIConstants';
 import { initialState } from '../reducers/routesReducer';
 import { handleGraphParams } from '../actions';
@@ -129,14 +127,25 @@ function DateTimePopover(props) {
    * @param {any} myDate
    */
   const setDate = myDate => {
-    if (!myDate.target.value) {
+    const newDate = myDate.target.value;
+    if (!newDate) {
       // ignore empty date and leave at current value
     } else {
-      handleDateRangeParams({
-        date: myDate.target.value,
-      });
+      const newMoment = Moment(newDate);
+      const startMoment = Moment(graphParams.startDate);
+
+      const payload = {
+        date: newDate
+      };      
+
+      if (newMoment.isBefore(graphParams.startDate)) {
+        payload.startDate = newDate; 
+      } else if (newMoment.diff(startMoment, 'days') > MAX_DATE_RANGE) {
+        payload.startDate = newMoment.subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD');
+      }
+      props.handleGraphParams(payload);
     }
-  };
+  };  
 
   /**
    * Handler that updates the date string in the state.
@@ -154,12 +163,15 @@ function DateTimePopover(props) {
   };
 
   // daysBack is for preserving radio button state.
-  const setDateRange = event => {
+  const setDateRange = daysBack => {
 
-    const daysBack = event.target.value;
+    const initialParams = initialState.graphParams;
+    const date = initialParams.date;
+    const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
 
     handleDateRangeParams({
-      daysBack: daysBack,
+      date: date,
+      startDate: startMoment.format('YYYY-MM-DD'),
     });
 
     // The GraphQL api takes a list of dates, which are generated just before
@@ -242,12 +254,35 @@ function DateTimePopover(props) {
           <CloseIcon />
         </IconButton>
 
-        <List style={{ color: 'black', marginTop: 24, paddingTop: 0 }}>
+        <List style={{ color: 'black', marginTop: 32 }}>
+
+          <ListItem>
+            <FormControl className={classes.formControl}>
+              <TextField
+                id="startDate"
+                label="Start Date"
+                type="date"
+                value={graphParams.startDate}
+                InputProps={{
+                  inputProps: {
+                    max: graphParams.date,
+                    min: Moment(graphParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
+                  },
+                }}
+                className={classes.textField}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                onChange={setStartDate}
+              />
+            </FormControl>
+          </ListItem>
+
           <ListItem>
             <FormControl className={classes.formControl}>
               <TextField
                 id="date"
-                label="Date"
+                label="End Date"
                 type="date"
                 value={dateRangeParams.date}
                 InputProps={{
@@ -265,50 +300,21 @@ function DateTimePopover(props) {
           </ListItem>
 
           <ListItem>
-            <FormControl component="fieldset" className={classes.formControl}>
-              <FormLabel component="legend" className={classes.secondaryHeading}>Date Range for Stop to Stop Info</FormLabel>
-              <RadioGroup
-                value={dateRangeParams.daysBack}
-                onChange={setDateRange}
-                aria-label="date range" name="dateRange">
-
+            <Grid container style={{maxWidth:250}}>
                 {DATE_RANGES.map(range => (
-                  <FormControlLabel
+
+                  <Grid item xs={6} key = {range.value}>
+                  <Button
                     key={range.value}
-                    value={range.value}
-                    control={<Radio />}
-                    label={range.label}
+                    onClick={ () => { setDateRange(range.value) } }
+                  >
+                  {range.label}
+                  </Button>
+                  </Grid>
 
-                  />
                 ))}
-
-              </RadioGroup>
-            </FormControl>
+            </Grid>
           </ListItem>
-
-          <Collapse in={dateRangeParams.daysBack === CUSTOM_DATE_RANGE}>
-            <ListItem>
-              <FormControl className={classes.formControl}>
-                <TextField
-                  id="startDate"
-                  label="Start Date"
-                  type="date"
-                  defaultValue={dateRangeParams.startDate}
-                  InputProps={{
-                    inputProps: {
-                      max: dateRangeParams.date,
-                      min: Moment(dateRangeParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
-                    },
-                  }}
-                  className={classes.textField}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  onChange={setStartDate}
-                />
-              </FormControl>
-            </ListItem>
-          </Collapse>
 
           <ListItem>
             <FormControl component="fieldset" className={classes.formControl}>
@@ -325,6 +331,8 @@ function DateTimePopover(props) {
                         onChange={toggleDays} />}
                       label="Weekdays"
                     />
+
+                    <Divider variant="middle" style={{ marginLeft: 0 } /* divider with a right margin */}/>
 
                     {WEEKDAYS.map(day =>
                       <FormControlLabel
@@ -346,6 +354,8 @@ function DateTimePopover(props) {
                       label="Weekends"
                     />
 
+                    <Divider variant="middle" style={{ marginLeft: 0 } /* divider with a right margin */}/>
+                    
                     {WEEKENDS.map(day =>
                       <FormControlLabel
                         control={<Checkbox checked={dateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
@@ -392,6 +402,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => {
   return {
     handleGraphParams: params => dispatch(handleGraphParams(params)),
+ /* todo isLoading: isLoadingRequest(state),*/     
   };
 };
 
