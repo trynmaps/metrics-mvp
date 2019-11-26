@@ -66,14 +66,17 @@ function ControlPanel(props) {
     const secondStopListIndex = stopId
       ? secondStopInfo.stops.indexOf(stopId)
       : 0;
-    const isLoopRoute = secondStopInfo.stops[0] === secondStopInfo.stops[secondStopInfo.stops.length - 1];
 
-    const unidirectionalSecondStopsList = secondStopInfo.stops.slice(secondStopListIndex + 1);
+    const stopsList = secondStopInfo.stops;
+    // loop routes start and stop at same stop
+    const isLoopRoute = stopsList[0] === stopsList[stopsList.length - 1];
+    const oneWaySecondStopsList = stopsList.slice(secondStopListIndex + 1);
 
     if (!isLoopRoute) {
-      return unidirectionalSecondStopsList;
+      return oneWaySecondStopsList;
     }
-    return unidirectionalSecondStopsList.concat(secondStopInfo.stops.slice(1, secondStopListIndex));
+    // loop routes display all subsequent routes up to origin stop
+    return oneWaySecondStopsList.concat(stopsList.slice(1, secondStopListIndex));
   }
 
   function onSelectFirstStop(event) {
