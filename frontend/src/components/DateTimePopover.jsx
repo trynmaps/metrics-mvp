@@ -25,6 +25,7 @@ import {
 } from '../UIConstants';
 import { initialState } from '../reducers/routesReducer';
 import { handleGraphParams } from '../actions';
+import { allTrue, allFalse } from '../helpers/dateTime';
 
 const useStyles = makeStyles(theme => ({
   secondaryHeading: {
@@ -61,9 +62,10 @@ function DateTimePopover(props) {
   const { graphParams, anchorEl, setAnchorEl } = props;
   const targetRange = anchorEl ? anchorEl.id : 'firstDateRange';
   
-  // Initialize our local state to the appropriate date range object.
+  // Initialize our dateRangeParams state to the appropriate date range object.
   
-  const [ dateRangeParams, setDateRangeParams ] = useState(graphParams[targetRange] || initialState.graphParams.firstDateRange);
+  const [ dateRangeParams, setDateRangeParams ] = useState(graphParams[targetRange] ||
+    initialState.graphParams.firstDateRange);
 
   // Whenever targetRange changes, we need to resync our local state with Redux
    
@@ -122,33 +124,52 @@ function DateTimePopover(props) {
   };
 
   /**
-   * Handler that updates the date string in the state.
+   * Normalizes date input strings.  Keeps them to the past and today.
+   *
+   * @param {String} date 
+   * @returns {Object} Moment object
+   */
+  const normalizedMoment = date => {
+    const maxMoment = Moment(Date.now()); 
+    let moment = Moment(date);
+
+    // end date cannot be later than now, so set to now
+    if (moment.isAfter(maxMoment)) {
+      moment = maxMoment;
+    }
+    return moment;
+  }
+  
+  /**
+   * Handler that updates the end date in the state.
    *
    * @param {any} myDate
    */
-  const setDate = myDate => {
+  const setEndDate = myDate => {
     const newDate = myDate.target.value;
     if (!newDate) {
       // ignore empty date and leave at current value
     } else {
-      const newMoment = Moment(newDate);
-      const startMoment = Moment(graphParams.startDate);
+      const startMoment = Moment(dateRangeParams.startDate);
+      let newMoment = normalizedMoment(newDate);
 
       const payload = {
-        date: newDate
+        date: newMoment.format('YYYY-MM-DD'),
       };      
 
-      if (newMoment.isBefore(graphParams.startDate)) {
+      if (newMoment.isBefore(startMoment)) {
+        // end date cannot before start, so adjust the start
         payload.startDate = newDate; 
       } else if (newMoment.diff(startMoment, 'days') > MAX_DATE_RANGE) {
+        // end date cannot be more than 90 from start, so adjust the start 
         payload.startDate = newMoment.subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD');
       }
-      props.handleGraphParams(payload);
+      handleDateRangeParams(payload);
     }
   };  
 
   /**
-   * Handler that updates the date string in the state.
+   * Handler that updates the start date in the state.
    *
    * @param {any} myDate
    */
@@ -156,16 +177,16 @@ function DateTimePopover(props) {
     if (!myDate.target.value) {
       // ignore empty date and leave at current value
     } else {
+      const startMoment = normalizedMoment(myDate.target.value); 
       handleDateRangeParams({
-        startDate: myDate.target.value,
+        startDate: startMoment.format('YYYY-MM-DD'),
       });
     }
   };
 
-  // daysBack is for preserving radio button state.
   const setDateRange = daysBack => {
 
-    const initialParams = initialState.graphParams;
+    const initialParams = initialState.graphParams.firstDateRange;
     const date = initialParams.date;
     const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
 
@@ -173,9 +194,6 @@ function DateTimePopover(props) {
       date: date,
       startDate: startMoment.format('YYYY-MM-DD'),
     });
-
-    // The GraphQL api takes a list of dates, which are generated just before
-    // calling the API.
   };
 
   const handleDayChange = event => {
@@ -208,24 +226,6 @@ function DateTimePopover(props) {
       daysOfTheWeek: newDaysOfTheWeek,
     });
   }
-
-  const allFalse = (dictionary, array) => {
-    for (let i = 0; i < array.length; i++) {
-      if (dictionary[array[i].value]) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const allTrue = (dictionary, array) => {
-    for (let i = 0; i < array.length; i++) {
-      if (!dictionary[array[i].value]) {
-        return false;
-      }
-    }
-    return true;
-  };
 
   const open = Boolean(anchorEl);
   const id = open ? 'simple-popover' : undefined;
@@ -262,11 +262,11 @@ function DateTimePopover(props) {
                 id="startDate"
                 label="Start Date"
                 type="date"
-                value={graphParams.startDate}
+                value={dateRangeParams.startDate}
                 InputProps={{
                   inputProps: {
-                    max: graphParams.date,
-                    min: Moment(graphParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
+                    max: dateRangeParams.date,
+                    min: Moment(dateRangeParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
                   },
                 }}
                 className={classes.textField}
@@ -294,7 +294,7 @@ function DateTimePopover(props) {
                 InputLabelProps={{
                   shrink: true,
                 }}
-                onChange={setDate}
+                onChange={setEndDate}
               />
             </FormControl>
           </ListItem>
