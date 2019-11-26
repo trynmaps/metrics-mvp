@@ -94,19 +94,19 @@ function getSorting(order, orderBy) {
 const headRows = [
   { id: 'title', numeric: false, disablePadding: false, label: 'Name' },
   { id: 'totalScore', numeric: true, disablePadding: true, label: 'Score' },
-  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait (min)' },
+  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait' },
   {
     id: 'longWait',
     numeric: true,
     disablePadding: true,
     label: 'Long Wait %',
   },
-  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed (mph)' },
+  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed' },
   { 
     id: 'variability',
     numeric: true,
     disablePadding: true,
-    label: 'Travel Time Variability (min)',
+    label: 'Travel Time Variability',
   },
 ];
 
