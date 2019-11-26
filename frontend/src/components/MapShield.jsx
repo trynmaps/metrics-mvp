@@ -21,7 +21,7 @@ export default function MapShield(props) {
 
     html =
       `<div style="width:${r * 2}px; height:${r * 2}px; ` +
-      `border-radius: ${r}px; `;
+      `border-radius: ${r+1}px; `;
   }
 
   html +=
@@ -30,7 +30,7 @@ export default function MapShield(props) {
     `border-width: ${waitScaled / 1.5 + 1.0}px;` +
     `background-color:white;` +
     `text-align:center; font-size:${75 + waitScaled * 15}%; font-weight: ${400 +
-      waitScaled * 75}">${routeText}</div>`;
+      waitScaled * 75}"><span style="vertical-align: -15%">${routeText}</span></div>`;
 
   return html;
 }

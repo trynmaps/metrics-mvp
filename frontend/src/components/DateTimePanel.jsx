@@ -338,7 +338,7 @@ function DateTimePanel(props) {
           </Typography>
           <Typography className={classes.secondaryHeading} display="inline">
             {timeLabel}
-            <ExpandMoreIcon />
+            <ExpandMoreIcon style={{verticalAlign: '-20%'}} />
           </Typography>
         </div>
       </Button>
