@@ -186,8 +186,8 @@ query {
     id
     title
     config {
-     	directions { id title stopIds }
-    	stops { id title lat lon }
+       directions { id title stopIds }
+      stops { id title lat lon }
     }
   }
 }
@@ -332,7 +332,6 @@ Response:
 
 ### Return metrics data for multiple time intervals in one day
 
-
 ```graphql
 query {
   routeMetrics(agencyId:"muni", routeId:"1") {
@@ -418,6 +417,72 @@ Response:
             "tripTimes": {
               "median": 11.825,
               "max": 15.05
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### Return metrics data for range of dates
+
+```graphql
+query {
+  routeMetrics(routeId:"1", agencyId:"muni") {
+    trip(startStopId:"13547", endStopId:"13549" directionId:"0") {
+      byDay(startTime:"03:00", endTime:"07:00", dates:["2019-11-18","2019-11-19"]) {
+        dates
+        startTime
+        endTime
+        tripTimes {
+          percentile(percentile:90)
+        }
+        waitTimes {
+          median
+          probabilityLessThan(minutes:5)
+        }
+      }
+    }
+  }
+}
+```
+
+Response:
+
+```
+{
+  "data": {
+    "routeMetrics": {
+      "trip": {
+        "byDay": [
+          {
+            "dates": [
+              "2019-11-18"
+            ],
+            "startTime": "03:00",
+            "endTime": "07:00",
+            "tripTimes": {
+              "percentile": 0.5
+            },
+            "waitTimes": {
+              "median": 6,
+              "probabilityLessThan": 0.44
+            }
+          },
+          {
+            "dates": [
+              "2019-11-19"
+            ],
+            "startTime": "03:00",
+            "endTime": "07:00",
+            "tripTimes": {
+              "percentile": 0.6
+            },
+            "waitTimes": {
+              "median": 5.5,
+              "probabilityLessThan": 0.46
             }
           }
         ]
@@ -593,6 +658,7 @@ Given a stop or pair of stops, allows querying metrics data for a date/time rang
 | --- | --- | --- |
 | `interval` | [`IntervalMetrics`](#intervalmetrics) | Contains metrics data for a given time interval. |
 | `timeRanges` | [`[IntervalMetrics]`](#intervalmetrics) | Returns metrics data for multiple time ranges on the given days. |
+| `byDay` | [`[BasicIntervalMetrics]`](#basicIntervalmetrics) | Returns metrics data for multiple dates at the given start and end time. |
 
 #### Parameters for `interval`
 
@@ -608,6 +674,14 @@ Given a stop or pair of stops, allows querying metrics data for a date/time rang
 | --- | --- | --- |
 | `dates` | `[String]` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
 
+#### Parameters for `byDay`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `dates` | `[String]` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
+| `startTime` | `String` | Start time for each date to return metrics data from. Times use `HH:MM` format with an optional suffix "+1" to indicate times after midnight that are associated with the previous day;  e.g. `00:00`, `23:59`, `03:00+1`. |
+| `endTime` | `String` | End time for each date to return metrics data from. |
+
 ### IntervalMetrics
 
 Contains metrics data a particular pair of stops on a single route in a particular time range.
@@ -621,6 +695,49 @@ Contains metrics data a particular pair of stops on a single route in a particul
 | `tripTimes` | [`BasicStats`](#basicstats) | Contains metrics data for trip times (will be `None` if `endStopId` isn't given). |
 | `timetableHeadways` | [`BasicStats`](#basicstats) | Contains metrics data for timetable/scheduled headways. |
 | `timetableComparison` | [`ComparisonStats`](#comparisonstats) | Contains metrics data for comparisons between scheduled arrivals and arrival data. |
+
+### BasicIntervalMetrics
+
+Contains metrics data at a particular pair of stops on a single route at a particular time range and list of dates.
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `dates` | `[String]` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
+| `startTime` | `String` | Start time of interval. |
+| `endTime` | `String` | End time of interval. |
+| `waitTimes` | [`BasicWaitTimeStats`](#basicwaittimestats) | Contains metrics data for wait times. |
+| `tripTimes` | [`BasicTripTimeStats`](#basictriptimestats) | Contains metrics data for trip times. |
+
+### BasicWaitTimeStats
+
+Contains summary statistics for a single metric for wait times on a certain date, start time, and stop time.
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `median` | `Float` | The median value of the wait time. |
+| `percentile` | `Float` | Percentile value of the trip time. Currently percentile one of: 10, 50, or 90. |
+| `probabilityLessThan` | `Float` | Data for probability wait time will be less than passed minute value. Currently minutes one of: 5, 10, 15, 20, 25, 30. |
+
+#### Parameters for `percentiles`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `percentiles` | `[Float]` | List of percentiles to return. |
+
+#### Parameters for `probabilityLessThan`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `minutes` | `Int` | The minute value, gives cumulative probability from 0 to minute. |
+
+### BasicTripTimeStats
+
+Contains summary statistics for a single metric for trip times on a certain date, start time, and stop time.
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `median` | `Float` | The median value of the trip time. |
+| `percentile` | `Float` | Percentile value of the trip time. Currently percentile one of: 10, 50, or 90. |
 
 ### BasicStats
 
@@ -636,12 +753,6 @@ Contains summary statistics for a single metric.
 | `std` | `Float` | The standard deviation of the computed metric. |
 | `percentiles` | [`[PercentileData]`](#percentiledata) | Data for percentile values of the computed metric. |
 | `histogram` | [`[HistogramBin]`](#histogrambin) | Data for rendering histograms on the frontend. |
-
-#### Parameters for `percentiles`
-
-| Parameter Name | Type | Description |
-| --- | --- | --- |
-| `percentiles` | `[Float]` | List of percentiles to return. |
 
 #### Parameters for `histogram`
 
@@ -659,6 +770,7 @@ Contains data for a single percentile value.
 | --- | --- | --- |
 | `percentile` | `Int` | The percentile. |
 | `value` | `Float` | The value of the percentile. |
+
 
 ### HistogramBin
 

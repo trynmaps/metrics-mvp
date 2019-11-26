@@ -1,6 +1,44 @@
 import axios from 'axios';
 import { MetricsBaseURL, S3Bucket, RoutesVersion, TripTimesVersion, WaitTimesVersion, ArrivalsVersion } from '../config';
 import { getTimePath } from '../helpers/precomputed';
+import Moment from 'moment';
+import { MAX_DATE_RANGE } from '../UIConstants';
+
+/**
+ * Helper function to compute the list of days for the GraphQL query.
+ *
+ * @param graphParams Current UI state.
+ * @returns {Array} List of days to query for.
+ */
+function computeDates(graphParams) {
+  let endMoment = Moment(graphParams.date);
+
+  // If this is a custom date range, compute the number of days back
+  // based on the start date.
+
+    const startMoment = Moment(graphParams.startDate);
+    const deltaDays = endMoment.diff(startMoment, 'days');
+    let numberOfDaysBack = Math.abs(deltaDays) + 1; // add one for the end date itself
+    if (deltaDays < 0) { // if the start date is after end date, use the start date as the "end"
+      endMoment = startMoment;
+    }
+
+  if (numberOfDaysBack > MAX_DATE_RANGE) { // guard rail
+    numberOfDaysBack = MAX_DATE_RANGE;
+  }
+
+  // Generate the list of days, filtering by the days of the week checkboxes.
+
+  let dates = [];
+  for (let i = 0; i < numberOfDaysBack; i++) {
+
+    if (graphParams.daysOfTheWeek[endMoment.day()]) {
+      dates.push(endMoment.format('YYYY-MM-DD'));
+    }
+    endMoment.subtract(1, 'days');
+  }
+  return dates;
+}
 
 // S3 URL to route configuration
 export function generateRoutesURL(agencyId) {
@@ -51,13 +89,16 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
 }
 
 export function fetchGraphData(params) {
+
+  const dates = computeDates(params);
+
   return function(dispatch) {
 
     var query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
-    $directionId:String, $date:String!, $startTime:String, $endTime:String) {
+    $directionId:String, $date:[String!], $startTime:String, $endTime:String) {
   routeMetrics(agencyId:$agencyId, routeId:$routeId) {
     trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
-      interval(dates:[$date], startTime:$startTime, endTime:$endTime) {
+      interval(dates:$date, startTime:$startTime, endTime:$endTime) {
         headways {
           count median max
           percentiles(percentiles:[90]) { percentile value }
@@ -74,7 +115,7 @@ export function fetchGraphData(params) {
           histogram { binStart binEnd count }
         }
       }
-      timeRanges(dates:[$date]) {
+      timeRanges(dates:$date) {
         startTime endTime
         waitTimes {
           percentiles(percentiles:[50,90]) { percentile value }
@@ -87,23 +128,30 @@ export function fetchGraphData(params) {
   }
 }`.replace(/\s+/g, ' ');
 
+    dispatch({ type: 'REQUEST_GRAPH_DATA' });
     axios.get('/api/graphql', {
-        params: { query: query, variables: JSON.stringify(params) },
+        params: { query: query, variables: JSON.stringify({...params, date: dates}) }, // computed dates aren't in graphParams so add here
         baseURL: MetricsBaseURL,
       })
       .then(response => {
-        dispatch({
-          type: 'RECEIVED_GRAPH_DATA',
-          payload: response.data,
-          graphParams: params,
-        });
+
+        if (response.data && response.data.errors) {
+          // assume there is at least one error, but only show the first one
+          dispatch({ type: 'ERROR_GRAPH_DATA', payload: response.data.errors[0].message });
+        } else {
+          dispatch({
+            type: 'RECEIVED_GRAPH_DATA',
+            payload: response.data,
+            graphParams: params,
+          });
+        }
       })
-      .catch(err => {
+      .catch(err => { // not sure which of the below is still applicable after moving to graphql
         const errStr =
           err.response && err.response.data && err.response.data.error
             ? err.response.data.error
             : err.message;
-        dispatch({ type: 'RECEIVED_GRAPH_ERROR', payload: errStr });
+        dispatch({ type: 'ERROR_GRAPH_DATA', payload: errStr });
       });
   };
 }
@@ -117,6 +165,7 @@ export function resetGraphData() {
 export function fetchRoutes(params) {
   return function(dispatch) {
     const agencyId = params.agencyId;
+    dispatch({ type: 'REQUEST_ROUTES' });
     axios
       .get(generateRoutesURL(agencyId))
       .then(response => {
@@ -127,7 +176,7 @@ export function fetchRoutes(params) {
         dispatch({ type: 'RECEIVED_ROUTES', payload: routes });
       })
       .catch(err => {
-        dispatch({ type: 'RECEIVED_ROUTES_ERROR', payload: err });
+        dispatch({ type: 'ERROR_ROUTES', payload: err });
       });
   };
 }
@@ -153,6 +202,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
 
       const s3Url = generateTripTimesURL(agencyId, dateStr, statPath, timePath);
 
+      dispatch({ type: 'REQUEST_PRECOMPUTED_TRIP_TIMES' });
       axios
         .get(s3Url)
         .then(response => {
@@ -162,6 +212,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
           });
         })
         .catch(() => {
+          dispatch({ type: 'ERROR_PRECOMPUTED_TRIP_TIMES' });
           /* do something? */
         });
     }
@@ -178,6 +229,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
 
       const s3Url = generateWaitTimesURL(agencyId, dateStr, statPath, timePath);
 
+      dispatch({ type: 'REQUEST_PRECOMPUTED_WAIT_TIMES' });
       axios
         .get(s3Url)
         .then(response => {
@@ -187,6 +239,7 @@ export function fetchPrecomputedWaitAndTripData(params) {
           });
         })
         .catch(() => {
+          dispatch({ type: 'ERROR_PRECOMPUTED_WAIT_TIMES' });
           /* do something? */
         });
     }
@@ -206,6 +259,7 @@ export function fetchArrivals(params) {
 
     const s3Url = generateArrivalsURL(agencyId, dateStr, params.routeId);
 
+    dispatch({ type: 'REQUEST_ARRIVALS' });
     axios
       .get(s3Url)
       .then(response => {
@@ -215,8 +269,18 @@ export function fetchArrivals(params) {
         });
       })
       .catch(err => {
+        dispatch({ type: 'ERROR_ARRIVALS', payload: 'No data.' });
         console.error(err);
       });
+  };
+}
+
+/**
+ * Action creator that clears arrival history.
+ */
+export function resetArrivals() {
+  return function(dispatch) {
+    dispatch({ type: 'ERROR_ARRIVALS', payload: null });
   };
 }
 
