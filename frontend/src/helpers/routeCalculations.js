@@ -186,7 +186,6 @@ export function getEndToEndTripTime(
   }
 
   // if there is no trip time to the last stop, then use the highest trip time actually observed
-  // (generally this shouldn't happen)
 
   if (!tripTime) {
     const obj = getTripTimeStat(tripTimesForFirstStop, statIndex);
