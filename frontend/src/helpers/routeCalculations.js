@@ -188,14 +188,14 @@ export function getEndToEndTripTime(
   // if there is no trip time to the last stop, then use the highest trip time actually observed
 
   if (!tripTime) {
-    const obj = getTripTimeStat(tripTimesForFirstStop, statIndex);
-    const keys = Object.keys(obj);
+    const tripTimes = getTripTimeStat(tripTimesForFirstStop, statIndex);
+    const stopIds = Object.keys(tripTimes);
     tripTime = 0;
 
-    for (let i = 0; i < keys.length; i++) {
-      if (obj[keys[i]] > tripTime) {
-        tripTime = obj[keys[i]];
-        tripDistance = directionInfo.stop_geometry[keys[i]].distance - firstStopDistance;
+    for (let i = 0; i < stopIds.length; i++) {
+      if (tripTimes[stopIds[i]] > tripTime) {
+        tripTime = tripTimes[stopIds[i]];
+        tripDistance = directionInfo.stop_geometry[stopIds[i]].distance - firstStopDistance;
       }
     }
 
