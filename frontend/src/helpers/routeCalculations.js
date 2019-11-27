@@ -77,7 +77,7 @@ function getTripTimesUsingHeuristics(
   if (!tripTimesForDir || !routes) {
     //console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
-    return { tripTimesForFirstStop: null, directionInfo: null, distanceAlongRoute: null };
+    return { tripTimesForFirstStop: null, directionInfo: null, firstStopDistance: null };
   }
 
   //console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
