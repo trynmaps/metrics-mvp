@@ -14,7 +14,15 @@ spec:
             image: gcr.io/poetic-genius-233804/metrics-flask:latest
             imagePullPolicy: Always
             command: ["python",  "compute_new.py"]
+            resources:
+              requests:
+                cpu: 0.03
             env:
+              - name: OPENTRANSIT_AGENCY_IDS
+                valueFrom:
+                  configMapKeyRef:
+                    name: opentransit
+                    key: opentransit_agency_ids
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
                   secretKeyRef:

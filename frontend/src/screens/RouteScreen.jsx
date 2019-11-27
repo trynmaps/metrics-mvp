@@ -1,6 +1,8 @@
 import React, { Fragment, useEffect } from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
+import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
@@ -14,11 +16,11 @@ import MapStops from '../components/MapStops';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
+import { getAgency } from '../config';
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 
 import { fetchRoutes } from '../actions';
-import { agencyTitle } from '../locationConstants';
 
 
 import Link from 'redux-first-router-link';
@@ -44,11 +46,15 @@ function RouteScreen(props) {
     myFetchRoutes,
   } = props;
 
+  const agencyId = graphParams ? graphParams.agencyId : null;
+
   useEffect(() => {
-    if (!routes) {
-      myFetchRoutes();
+    if (!routes && agencyId) {
+      myFetchRoutes({agencyId: agencyId});
     }
-  }, [routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
+  }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
+
+  const agency = getAgency(agencyId);
 
   const breadCrumbs = (paths, whiteLinks) => {
     let link = {
@@ -80,8 +86,9 @@ function RouteScreen(props) {
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
-      ? routes.find(route => route.id === graphParams.routeId)
+      ? routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId))
       : null;
+
   const direction =
     selectedRoute && graphParams.directionId
       ? selectedRoute.directions.find(
@@ -113,9 +120,20 @@ function RouteScreen(props) {
               endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null], whiteLinks)}
           </Breadcrumbs>
           </div>
-          <DateTimePanel />
+          <div style={{flexGrow: 1}}/>
+          <DateTimePanel dateRangeSupported={graphData || graphError}/>
         </Toolbar>
       </AppBar>
+      
+      <Paper>
+        <Box p={2} className="page-title">            
+          {selectedRoute ? ` ${selectedRoute.title}` : null}
+          {direction ? ` > ${direction.title}` : null}
+          &nbsp;
+          {startStopInfo ? `(from ${startStopInfo.title}` : null}
+          {endStopInfo ? ` to ${endStopInfo.title})` : null}
+        </Box>
+      </Paper>
 
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
@@ -136,7 +154,6 @@ function RouteScreen(props) {
             />
           ) : (
             /* if no graph data, show the info summary component */
-
             <RouteSummary />
           )}
         </Grid>
@@ -155,7 +172,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: () => dispatch(fetchRoutes()),
+  myFetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
 export default connect(

@@ -1,0 +1,8 @@
+id: marin
+gtfs_url: http://marintransit.org/data/google_transit.zip
+timezone_id: America/Los_Angeles
+route_id_gtfs_field: route_short_name
+js_properties:
+  title: Marin Transit
+  initialMapCenter: { lat: 37.949, lng: -122.548 }
+  initialMapZoom: 12

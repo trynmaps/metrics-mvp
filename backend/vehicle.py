@@ -2,12 +2,13 @@ import argparse
 import json
 import sys
 from datetime import datetime, timedelta
-from models import nextbus, arrival_history, util, metrics
+from models import config, arrival_history, util
 import pytz
 import numpy
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Show stop history for a particular vehicle')
+    parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument('--route', required=True, help='Route id')
 
     parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
@@ -24,18 +25,18 @@ if __name__ == '__main__':
     if version is None:
         version = arrival_history.DefaultVersion
 
+    agency = config.get_agency(args.agency)
+
     route_id = args.route
     date_str = args.date
     vid = args.vid
 
-    agency = 'sf-muni'
-
     start_time_str = args.start_time
     end_time_str = args.end_time
 
-    route_config = nextbus.get_route_config('sf-muni', route_id)
+    route_config = agency.get_route_config(route_id)
 
-    tz = pytz.timezone('US/Pacific')
+    tz = agency.tz
 
     dates = util.get_dates_in_range(args.date, args.date)
 
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     num_stops = 0
 
     for d in dates:
-        history = arrival_history.get_by_date(agency, route_id, d, version)
+        history = arrival_history.get_by_date(agency.id, route_id, d, version)
 
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)

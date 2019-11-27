@@ -1,16 +1,9 @@
 import os
-from flask import Flask, send_from_directory, jsonify, request, Response
+from flask import Flask, send_from_directory, request, Response
 from flask_cors import CORS
 import json
-import numpy as np
-import pandas as pd
-import pytz
-from datetime import datetime, timedelta
-import time
-import requests
-import math
 import sys
-from models import metrics, util, arrival_history, wait_times, trip_times, nextbus, constants, errors, schema
+from models import schema, config, wait_times, trip_times, routeconfig, arrival_history
 from flask_graphql import GraphQLView
 
 """
@@ -29,7 +22,7 @@ CORS(app)
 def ping():
     return "pong"
 
-app.add_url_rule('/api/graphql', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = False))
+app.add_url_rule('/api/graphql', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = True))
 
 def make_error_response(params, error, status):
     data = {
@@ -38,9 +31,28 @@ def make_error_response(params, error, status):
     }
     return Response(json.dumps(data, indent=2), status=status, mimetype='application/json')
 
-@app.route('/api/config', methods=['GET'])
-def config():
-    res = Response(json.dumps({"mapbox_access_token": os.environ.get('MAPBOX_ACCESS_TOKEN')}), mimetype='application/json')
+@app.route('/api/js_config', methods=['GET'])
+def js_config():
+
+    if DEBUG:
+        config.load_agencies() # agency config may have changed on disk
+
+    data = {
+        'S3Bucket': config.s3_bucket,
+        'ArrivalsVersion': arrival_history.DefaultVersion,
+        'WaitTimesVersion': wait_times.DefaultVersion,
+        'TripTimesVersion': trip_times.DefaultVersion,
+        'RoutesVersion': routeconfig.DefaultVersion,
+        'Agencies': [
+            {
+                'id': agency.id,
+                'timezoneId': agency.timezone_id,
+                **agency.js_properties,
+            } for agency in config.agencies
+        ]
+    }
+
+    res = Response(f'var OpentransitConfig = {json.dumps(data)};', mimetype='text/javascript')
     if not DEBUG:
         res.headers['Cache-Control'] = 'max-age=3600'
     return res
@@ -57,7 +69,7 @@ if os.environ.get('METRICS_ALL_IN_ONE') == '1':
 else:
     @app.route('/')
     def root():
-        return """<h2>Hello!</h2><p>This is the API server Go to port 3000 to see the real app.</p>"""
+        return """<h2>Hello!</h2><p>This is the API server.<br /><br />Go to port 3000 to see the real app.</p>"""
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.

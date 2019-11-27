@@ -25,6 +25,7 @@ export const CHART_COLORS = [Colors.GRAY, Colors.PURPLE];
 // long the trip will "usually" take.  So for 90th percentile
 // this would be the historic performance 9 times out of 10.
 export const PLANNING_PERCENTILE = 90;
+export const TENTH_PERCENTILE = 10;
 
 // a commonly used style option for react-vis
 // Crosshairs (hovers) where we don't want a crosshair line
@@ -58,11 +59,29 @@ export const TIME_RANGES = [
   },
 ];
 
-// Name of the time zone that the transit agency operates in.
-//
-// Time zone names can be found at:
-// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-export const TIME_ZONE_NAME = 'America/Los_Angeles';
+export const MAX_DATE_RANGE = 90; // largest date range allowed, in days (30 might be more performant)
+
+// RadioGroup expects values to be strings, not numbers.
+export const DATE_RANGES = [
+  { value: '1', label: 'Yesterday' },
+  { value: '7', label: 'Last week' },
+  { value: '30', label: 'Last 30 days' },
+  { value: '90', label: 'Last 90 days' },
+];
+
+// Values are Moment days of the week (0-6)
+export const WEEKDAYS = [
+  { value: '1', label: 'Monday' },
+  { value: '2', label: 'Tuesday' },
+  { value: '3', label: 'Wednesday' },
+  { value: '4', label: 'Thursday' },
+  { value: '5', label: 'Friday' },
+];
+
+export const WEEKENDS = [
+  { value: '6', label: 'Saturday' },
+  { value: '0', label: 'Sunday' },
+];
 
 // Marey chart:  how long of a dwell at a stop results in a second data point for exit.
 export const DWELL_THRESHOLD_SECS = 120;
