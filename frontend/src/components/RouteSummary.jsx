@@ -3,8 +3,9 @@ import React, { Fragment, useEffect } from 'react';
 import { connect } from 'react-redux';
 
 import Grid from '@material-ui/core/Grid';
-import { Table, TableBody, TableCell, TableRow } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
+
+import { AppBar, Box, Tab, Tabs, Table, TableBody, TableCell, TableRow } from '@material-ui/core';
+
 import InfoScoreCard from './InfoScoreCard';
 import InfoScoreLegend from './InfoScoreLegend';
 import TravelTimeChart from './TravelTimeChart';
@@ -18,7 +19,6 @@ import {
   computeGrades,
   metersToMiles,
 } from '../helpers/routeCalculations';
-import { PLANNING_PERCENTILE } from '../UIConstants';
 
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.
@@ -27,6 +27,7 @@ import { PLANNING_PERCENTILE } from '../UIConstants';
  */
 function RouteSummary(props) {
   const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
+  const [tabValue, setTabValue] = React.useState(0);
 
   useEffect(() => {
     myFetchPrecomputedWaitAndTripData(graphParams);
@@ -89,25 +90,25 @@ function RouteSummary(props) {
 
   const popoverContentTotalScore = grades ? (
     <Fragment>
-      Trip score of {grades.totalScore} is the average of the following
+      Route score of {grades.totalScore} is the average of the following
       subscores:
       <Box pt={2}>
         <Table>
           <TableBody>
             <TableRow>
-              <TableCell>Median Wait</TableCell>
+              <TableCell>Median wait</TableCell>
               <TableCell align="right">{grades.medianWaitScore}</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell>20 min wait</TableCell>
+              <TableCell>Long wait probability</TableCell>
               <TableCell align="right">{grades.longWaitScore}</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell>Median speed</TableCell>
+              <TableCell>Average speed</TableCell>
               <TableCell align="right"> {grades.speedScore}</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell>Extra travel</TableCell>
+              <TableCell>Travel time variability</TableCell>
               <TableCell align="right"> {grades.travelVarianceScore}</TableCell>
             </TableRow>
           </TableBody>
@@ -136,7 +137,9 @@ function RouteSummary(props) {
 
   const popoverContentLongWait = grades ? (
     <Fragment>
-      20 min wait probability of{' '}
+      Long wait probability is the chance a rider has of a wait of twenty minutes or
+      longer after arriving randomly at a stop.
+      Probability of{' '}
       {(longWait * 100).toFixed(1) /* be more precise than card */}% gets a
       score of {grades.longWaitScore}.
       <Box pt={2}>
@@ -155,7 +158,8 @@ function RouteSummary(props) {
 
   const popoverContentSpeed = grades ? (
     <Fragment>
-      Median speed of{' '}
+      This is the average of the speeds for median end to end trips, in all directions.
+      Average speed of{' '}
       {speed === null || Number.isNaN(speed) ? '--' : speed.toFixed(1)} mph gets
       a score of {grades.speedScore}.
       <Box pt={2}>
@@ -172,10 +176,12 @@ function RouteSummary(props) {
     </Fragment>
   ) : null;
 
-  const popoverContentTravelVariance = grades ? (
+  const popoverContentTravelVariability = grades ? (
     <Fragment>
-      Extra travel time of{' '}
-      {variability === null ? '--' : variability.toFixed(1)} min gets a score of{' '}
+      Travel time variability is the 90th percentile end to end travel time minus the 10th percentile
+      travel time.  This measures how much extra travel time is needed for some trips.
+      Variability of{' '}
+      {variability === null ? '--' : '\u00b1' + variability.toFixed(1)} min gets a score of{' '}
       {grades.travelVarianceScore}.
       <Box pt={2}>
         <InfoScoreLegend
@@ -191,9 +197,54 @@ function RouteSummary(props) {
     </Fragment>
   ) : null;
 
+  function handleTabChange(event, newValue) {
+    setTabValue(newValue);
+  }
+
+  function a11yProps(index) {
+    return {
+      id: `simple-tab-${index}`,
+      'aria-controls': `simple-tabpanel-${index}`,
+    };
+  }
+
+  const SUMMARY = 0;
+  const TRAVEL_TIME = 1;
+  const MAREY_CHART = 2;
+
   return (
     <Fragment>
-      <div style={{ padding: 24 }}>
+    
+      <br />
+      <AppBar position="static" color="default">
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          aria-label="tab bar"
+          variant="scrollable"
+          scrollButtons="on"
+        >
+          <Tab
+            style={{ minWidth: 72 }}
+            label="Summary"
+            {...a11yProps(SUMMARY)}
+          />
+          <Tab
+            style={{ minWidth: 72 }}
+            label="Travel Time"
+            {...a11yProps(TRAVEL_TIME)}
+          />
+          <Tab
+            style={{ minWidth: 72 }}
+            label="Marey Chart"
+            {...a11yProps(MAREY_CHART)}
+          />
+        </Tabs>
+      </AppBar>    
+    
+    
+      <Box p={2} hidden={tabValue !== SUMMARY}>
+        <div style={{ padding: 8 }}>
         <Grid container spacing={4}>
           <InfoScoreCard
             grades={wait && speed && grades ? grades : null}
@@ -229,7 +280,7 @@ function RouteSummary(props) {
           <InfoScoreCard
             grades={wait && grades ? grades : null}
             gradeName="longWaitScore"
-            title="20 Min Wait"
+            title="Long Wait %"
             largeValue={(longWait * 100).toFixed(0)}
             smallValue="%"
             bottomContent={
@@ -245,7 +296,7 @@ function RouteSummary(props) {
           <InfoScoreCard
             grades={speed && grades ? grades : null}
             gradeName="speedScore"
-            title="Median Speed"
+            title="Average Speed"
             largeValue={
               speed === null || Number.isNaN(speed) ? '--' : speed.toFixed(0)
             }
@@ -256,7 +307,7 @@ function RouteSummary(props) {
                   ? `#${speedRanking} of ${allSpeeds.length} for fastest`
                   : null}
                 <br />
-                Length: {metersToMiles(dist).toFixed(1)} miles
+                {metersToMiles(dist).toFixed(1)} miles
               </Fragment>
             }
             popoverContent={popoverContentSpeed}
@@ -265,17 +316,22 @@ function RouteSummary(props) {
           <InfoScoreCard
             grades={speed && grades ? grades : null}
             gradeName="travelVarianceScore"
-            title="Extra Travel"
-            largeValue={variability === null ? '--' : variability.toFixed(0)}
+            title="Travel Time Variability"
+            largeValue={variability === null ? '--' : '\u00b1' + variability.toFixed(0)}
             smallValue="&nbsp;min"
-            bottomContent={`In ${PLANNING_PERCENTILE}% of trips`}
-            popoverContent={popoverContentTravelVariance}
+            bottomContent="&nbsp;"
+            popoverContent={popoverContentTravelVariability}
           />
 
-          <TravelTimeChart />
-          <MareyChart />
         </Grid>
-      </div>
+        </div>
+        </Box>
+      <Box p={2} hidden={tabValue !== TRAVEL_TIME} style={{overflowX: 'auto'}}>
+        <TravelTimeChart />
+      </Box>
+      <Box p={2} hidden={tabValue !== MAREY_CHART} style={{overflowX: 'auto'}}>
+        <MareyChart hidden={tabValue !== MAREY_CHART}/>
+      </Box>
     </Fragment>
   );
 }

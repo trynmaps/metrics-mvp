@@ -13,6 +13,7 @@ backend/data/arrivals_*
 backend/data/state_*
 backend/data/wait-times_*
 backend/data/trip-times_*
+backend/data/gtfs-*
 
 docker-compose.override.yml
 

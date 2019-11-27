@@ -2,7 +2,7 @@
 
 /* Note: Importing MomentTZ adds new methods to Moment.  MomentTZ is not meant to be used directly. */
 
-import React, { useState, useEffect } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 
 import {
   XYPlot,
@@ -19,11 +19,8 @@ import '../../node_modules/react-vis/dist/style.css';
 
 import { connect } from 'react-redux';
 
-import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import {
-  Card,
-  CardContent,
   Radio,
   FormControl,
   FormControlLabel,
@@ -33,8 +30,9 @@ import Moment from 'moment';
 import MomentTZ from 'moment-timezone/builds/moment-timezone-with-data-10-year-range'; // this augments Moment
 
 import * as d3 from 'd3';
-import { fetchArrivals } from '../actions';
-import { TIME_ZONE_NAME, DWELL_THRESHOLD_SECS } from '../UIConstants';
+import { fetchArrivals, resetArrivals } from '../actions';
+import { getAgency } from '../config';
+import { DWELL_THRESHOLD_SECS } from '../UIConstants';
 
 import { metersToMiles } from '../helpers/routeCalculations';
 
@@ -65,22 +63,41 @@ import { metersToMiles } from '../helpers/routeCalculations';
  */
 function MareyChart(props) {
   const INBOUND_AND_OUTBOUND = 'Inbound_and_outbound';
-  const INBOUND = 'Inbound'; // same as directionInfo name
-  const OUTBOUND = 'Outbound'; // same as directionInfo name
+  const INBOUND = '1'; // same as directionInfo id
+  const OUTBOUND = '0'; // same as directionInfo id
 
-  const { graphParams, myFetchArrivals, arrivals, routes } = props;
+  const { graphParams, myFetchArrivals, myResetArrivals, arrivals, arrivalsErr, routes, hidden } = props;
 
   const [hintValue, setHintValue] = useState();
   const [tripHighlight, setTripHighlight] = useState();
   const [processedArrivals, setProcessedArrivals] = useState(); // where the tripData gets stored
   const [selectedOption, setSelectedOption] = useState(INBOUND_AND_OUTBOUND);
 
-  // On first load, get the raw arrival history corresponding to graphParams.
+  const agency = getAgency(graphParams.agencyId);
+  const timezoneId = agency ? agency.timezoneId : 'UTC';
+
+  // Clear out stale data.  We have arrivals for a different route or
+  // different day versus what is currently selected.
+
   useEffect(() => {
-    if (graphParams.routeId) {
+     
+    if (arrivals && (arrivals.date !== graphParams.date || arrivals.route_id !== graphParams.routeId)) {
+      
+      //console.log('resetting arrivals because: ' + arrivals.date + ' vs ' + graphParams.date + ' ' + arrivals.route_id + ' vs ' + graphParams.routeId);
+      myResetArrivals(null);
+    }
+  }, [graphParams, myResetArrivals, arrivals]);
+      
+  // Request missing arrival data lazily, only when this chart is tabbed into view.
+  // This makes the app more responsive to route and date changes if we are hidden.
+
+  useEffect(() => {
+      
+    if (!arrivals && graphParams.routeId && !hidden) {
       myFetchArrivals(graphParams);
     }
-  }, [graphParams, myFetchArrivals]);
+
+  }, [graphParams, myFetchArrivals, arrivals, hidden]);
 
   // When both the raw arrival history and route configs have loaded, first
   // rebucket the data by trip ID.  Then create react-vis Series objects for
@@ -130,12 +147,12 @@ function MareyChart(props) {
         // the length of the outbound direction.  This does not line up exactly with the
         // inbound direction length.
 
-        if (directionInfo.name === 'Outbound') {
+        if (directionInfo.id === '0') {
           distance = directionInfo.distance - distance;
         }
         distance = metersToMiles(distance);
 
-        const arrivalMoment = Moment.unix(arrival.t).tz(TIME_ZONE_NAME);
+        const arrivalMoment = Moment.unix(arrival.t).tz(timezoneId);
         const yValue = (arrival.t - startTime) / 60 / 60 + startHourOfDay; // time of arrival in fractional hours
 
         myTripData.byTripId[tripId].series.push({
@@ -165,7 +182,7 @@ function MareyChart(props) {
         // so we can see the vehicle's exit in the data series.
 
         if (arrival.e - arrival.t > DWELL_THRESHOLD_SECS) {
-          const exitMoment = Moment.unix(arrival.e).tz(TIME_ZONE_NAME);
+          const exitMoment = Moment.unix(arrival.e).tz(timezoneId);
           const exitYValue = (arrival.e - startTime) / 60 / 60 + startHourOfDay; // time of arrival in fractional hours
 
           myTripData.byTripId[tripId].series.push({
@@ -199,7 +216,7 @@ function MareyChart(props) {
       const stops = myArrivals.stops;
       const startTime = myArrivals.start_time;
       const startHourOfDay = Moment.unix(startTime)
-        .tz(TIME_ZONE_NAME)
+        .tz(timezoneId)
         .hour();
 
       const routeId = myArrivals.route_id;
@@ -235,8 +252,10 @@ function MareyChart(props) {
       // console.log("Processing arrival data.");
       const tripData = processArrivals(arrivals, routes);
       setProcessedArrivals(tripData);
+    } else {
+      setProcessedArrivals(null);
     }
-  }, [arrivals, routes]);
+  }, [arrivals, routes, timezoneId]);
 
   /**
    * This is a render-time helper function.
@@ -259,7 +278,7 @@ function MareyChart(props) {
 
       if (
         selectedOption === INBOUND_AND_OUTBOUND ||
-        (trip.directionInfo && trip.directionInfo.name === selectedOption)
+        (trip.directionInfo && trip.directionInfo.id === selectedOption)
       ) {
         const dataSeries = trip.series.sort((a, b) => {
           const deltaY = b.y - a.y;
@@ -347,9 +366,7 @@ function MareyChart(props) {
   };
 
   return processedArrivals ? (
-    <Grid item xs={12}>
-      <Card>
-        <CardContent>
+    <Fragment>
           <Typography variant="h5">Marey chart</Typography>
           Vehicle runs: {series.length} <br />
           <FormControl>
@@ -458,21 +475,21 @@ function MareyChart(props) {
               />
             ) : null}
           </XYPlot>
-        </CardContent>
-      </Card>
-    </Grid>
-  ) : null;
+    </Fragment>
+  ) : <Fragment>{ arrivalsErr ? arrivalsErr : 'Loading...'}</Fragment>;
 }
 
 const mapStateToProps = state => ({
   routes: state.routes.routes,
   graphParams: state.routes.graphParams,
   arrivals: state.routes.arrivals,
+  arrivalsErr: state.routes.arrivalsErr,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
     myFetchArrivals: params => dispatch(fetchArrivals(params)),
+    myResetArrivals: params => dispatch(resetArrivals(params)),
   };
 };
 

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableRow } from '@material-ui/core';
 
 import {
   quartileBackgroundColor,
-  quartileForegroundColor,
+  quartileContrastColor,
 } from '../helpers/routeCalculations';
 
 export default function InfoScoreLegend(props) {
@@ -24,7 +24,7 @@ export default function InfoScoreLegend(props) {
               <TableCell
                 align="right"
                 style={{
-                  color: quartileForegroundColor(row.value / 100),
+                  color: quartileContrastColor(row.value / 100),
                   backgroundColor: quartileBackgroundColor(row.value / 100),
                 }}
               >

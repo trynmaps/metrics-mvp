@@ -1,0 +1,28 @@
+# Add 'frontend' to any changes within 'frontend'
+"Frontend": ./frontend/**/*
+
+# Similar for others
+"Backend": ./backend/*  
+"Data Science": ./backend/models/**/*
+
+
+### EXAMPLES
+# # Add 'label1' to any changes within 'example' folder or any subfolders
+# label1:
+#   - example/**/*
+# 
+# # Add 'label2' to any file changes within 'example2' folder
+# label2: example2/*
+# 
+# # Add 'repo' label to any root file changes
+# repo:
+#   - ./*
+# 
+# # Add '@domain/core' label to any change within the 'core' package
+# @domain/core:
+#   - package/core/*
+#   - package/core/**/*
+# 
+# # Add 'test' label to any change to *.spec.js files within the source dir
+# test:
+#   - src/**/*.spec.js

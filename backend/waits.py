@@ -7,10 +7,11 @@ import pytz
 import numpy as np
 import pandas as pd
 
-from models import nextbus, arrival_history, util, metrics, wait_times
+from models import config, arrival_history, util, metrics, wait_times
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Compute wait times (in minutes) at a given stop in a given direction on a route, for one or more dates, optionally at particular times of day')
+    parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument('--route', required = True, help = 'Route id')
     parser.add_argument('--stop', required = True, help = 'Stop id')
 
@@ -23,15 +24,16 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    agency = config.get_agency(args.agency)
+
     route_id = args.route
     date_str = args.date
     stop = args.stop
-    agency = 'sf-muni'
 
     start_time_str = args.start_time
     end_time_str = args.end_time
 
-    route_config = nextbus.get_route_config(agency, route_id)
+    route_config = agency.get_route_config(route_id)
 
     stop_info = route_config.get_stop_info(stop)
     stop_dirs = route_config.get_directions_for_stop(stop)
@@ -39,7 +41,7 @@ if __name__ == '__main__':
         raise Exception(f"invalid stop id {stop}")
 
     date_strs = []
-    tz = pytz.timezone('US/Pacific')
+    tz = agency.tz
 
     if args.date:
         dates = util.get_dates_in_range(args.date, args.date)
@@ -65,7 +67,7 @@ if __name__ == '__main__':
         last_bus_date_times = []
 
         for d in dates:
-            hist = arrival_history.get_by_date(agency, route_id, d)
+            hist = arrival_history.get_by_date(agency.id, route_id, d)
             arrivals = hist.get_data_frame(stop_id = stop, direction_id = stop_dir)
 
             start_time = util.get_timestamp_or_none(d, start_time_str, tz)
