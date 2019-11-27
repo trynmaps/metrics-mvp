@@ -66,7 +66,7 @@ function TravelTimeChart(props) {
         props.routes,
         routeId,
         directionId,
-      );
+      ).tripTime;
 
       /* this is the end-to-end speed in the selected direction, not currently used
     if (dist <= 0 || Number.isNaN(tripTime)) { speed = "?"; } // something wrong with the data here

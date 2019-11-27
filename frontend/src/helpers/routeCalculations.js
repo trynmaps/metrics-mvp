@@ -77,7 +77,7 @@ function getTripTimesUsingHeuristics(
   if (!tripTimesForDir || !routes) {
     //console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
-    return { tripTimesForFirstStop: null, directionInfo: null };
+    return { tripTimesForFirstStop: null, directionInfo: null, distanceAlongRoute: null };
   }
 
   //console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
@@ -118,11 +118,15 @@ function getTripTimesUsingHeuristics(
     );
   }
 
-  return { tripTimesForFirstStop, directionInfo };
+  return {
+    tripTimesForFirstStop,
+    directionInfo,
+    firstStopDistance: directionInfo.stop_geometry[firstStop].distance
+  };
 }
 
 /**
- * Returns trip time across the full route, applying heuristic rules to ignore
+ * Returns trip time and distance across the full route, applying heuristic rules to ignore
  * the last stop or stops as needed.
  */
 export function getEndToEndTripTime(
@@ -133,7 +137,7 @@ export function getEndToEndTripTime(
   directionId,
   stat = 'median',
 ) {
-  const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
+  const { tripTimesForFirstStop, directionInfo, firstStopDistance } = getTripTimesUsingHeuristics(
     tripTimesCache,
     graphParams,
     routes,
@@ -154,10 +158,7 @@ export function getEndToEndTripTime(
   let lastStop = null;
 
   /*
-   * For determining end to end trip time, but doesn't currently affect computation of route length,
-   * which is based on best guess as to the right GTFS shape. And the shape is not linked to the stops,
-   * it's just coordinates and distance along route, so more logic would be needed to "trim" the shape
-   * if stops are ignored.
+   * For determining end to end trip time, taking into account ignored stops.
    */
   if (ignoreLast !== true && ignoreLast !== false) {
     lastStop = ignoreLast; // ignore stops after index specified by ignoreLast
@@ -177,21 +178,34 @@ export function getEndToEndTripTime(
   }
 
   let tripTime = null;
+  let tripDistance = null;
+
   if (tripTimesForFirstStop[lastStop]) {
     tripTime = tripTimesForFirstStop[lastStop][statIndex];
+    tripDistance = directionInfo.stop_geometry[lastStop].distance - firstStopDistance;
   }
 
   // if there is no trip time to the last stop, then use the highest trip time actually observed
+  // (generally this shouldn't happen)
 
   if (!tripTime) {
-    tripTime = Math.max(
-      ...Object.values(getTripTimeStat(tripTimesForFirstStop, statIndex)),
-    );
-    // console.log("No trip time found for " + routeId + " " + directionId + " to stop " + lastStop + '. max observed: ' + tripTime);
+    const obj = getTripTimeStat(tripTimesForFirstStop, statIndex);
+    const keys = Object.keys(obj);
+    tripTime = 0;
+
+    for (let i = 0; i < keys.length; i++) {
+      if (obj[keys[i]] > tripTime) {
+        tripTime = obj[keys[i]];
+        tripDistance = directionInfo.stop_geometry[keys[i]].distance - firstStopDistance;
+      }
+    }
+
+    //console.log("No trip time found for " + routeId + " " + directionId + " to stop " + lastStop + '. max observed: ' + tripTime);
   }
 
   // console.log('trip time in minutes is ' + tripTime);
-  return tripTime;
+
+  return { tripTime, tripDistance };
 }
 
 /**
@@ -299,8 +313,8 @@ function getSpeedAndVariabilityForRoute(
   const route = routes.find(thisRoute => thisRoute.id === routeId);
 
   let speeds = route.directions.map(direction => {
-    const dist = direction.distance;
-    const tripTime = getEndToEndTripTime(
+
+    const { tripTime, tripDistance } = getEndToEndTripTime(
       tripTimesCache,
       graphParams,
       routes,
@@ -315,7 +329,7 @@ function getSpeedAndVariabilityForRoute(
       route.id,
       direction.id,
       'p90',
-    );
+    ).tripTime;
 
     const p10tripTime = getEndToEndTripTime(
         tripTimesCache,
@@ -324,15 +338,18 @@ function getSpeedAndVariabilityForRoute(
         route.id,
         direction.id,
         'p10',
-      );
+      ).tripTime;
 
-    if (dist <= 0 || Number.isNaN(tripTime)) {
+    if (tripDistance <= 0 || Number.isNaN(tripTime)) {
       // something wrong with the data here
       // console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + routeId + ' ' + direction.id);
       return -1;
     }
 
-    const speed = (metersToMiles(Number.parseFloat(dist)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
+    // sanity check for stop to stop distance vs full route distance.
+    // console.log(route.id + ': tripDistance ' + tripDistance + ' vs ' + direction.distance );
+
+    const speed = (metersToMiles(Number.parseFloat(tripDistance)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
 
     return {
       speed,

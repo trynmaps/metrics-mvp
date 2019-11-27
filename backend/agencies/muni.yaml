@@ -248,6 +248,22 @@ js_properties:
   #   - The 9 has multiple terminals so use the last common stop.
   #   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
   routeHeuristics: {
+      E: {
+        '0': {
+          ignoreFirstStop: '13095', # use Beach and Stockton as outbound start terminal until ~Oct 2020.
+        },
+        '1': {
+          ignoreLastStop: '14530', # use Embarcadero and Stockton as inbound end terminal until ~Oct 2020.
+        }
+      },
+      F: {
+        '0': {
+          ignoreFirstStop: '13095', # use Beach and Stockton as outbound start terminal until ~Oct 2020.
+        },
+        '1': {
+          ignoreLastStop: '14530', # use Embarcadero and Stockton as inbound end terminal until ~Oct 2020.
+        }
+      },
       N: {
         '0': {
           ignoreFirstStop: true, # 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
@@ -256,18 +272,18 @@ js_properties:
       S: {
         ignoreRoute: true,
       },
-      '5': {
-        '1': {
-          ignoreFirstStop: '4218', # no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
-        },
-      },
       '9': {
         '1': {
-          ignoreFirstStop: '7297', # use Bayshore as actual first stop (daytime)
+          ignoreFirstStop: '17227', # use Bayshore and Visitacion as actual first stop (daytime)
         },
         '0': {
-          ignoreLastStop: '7297', # use Bayshore as actual terminal (daytime)
+          ignoreLastStop: '13783', # use Bayshore and Leland as actual terminal (daytime)
         },
+      },
+      '29': {
+        '1': {
+          ignoreFirstStop: '14783', # use Gilman and 3rd St as first inbound stop, almost doubling back
+        }
       },
       '90': {
         ignoreRoute: true,
