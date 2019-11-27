@@ -246,7 +246,6 @@ js_properties:
   #     should be used instead for end-to-end calculations.  Cable car lines are like this.
   # - Possibly special handling for routes with back end issues (currently 5, 9, 9R) as a temporary workaround.
   #   - The 9 has multiple terminals so use the last common stop.
-  #   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
   routeHeuristics: {
       E: {
         '0': {
