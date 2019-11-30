@@ -294,62 +294,76 @@ export default function InfoTripSummary(props) {
             <Grid container spacing={4}>
               {/* spacing doesn't work exactly right here, just pads the Papers */}
               <Grid item xs component={Paper} className={classes.infoScoreCard}>
-                <Typography variant="overline">Typical journey</Typography>
-                <br />
-
-                <Typography variant="h3" display="inline">
-                  {typicalWait + typicalTravel}
-                </Typography>
-                <Typography variant="h5" display="inline">
-                  &nbsp;min
-                </Typography>
-
                 <Box
                   display="flex"
-                  justifyContent="space-between"
-                  alignItems="flex-end"
-                  pt={2}
+                  flexDirection="column"
+                  justifyContent="flex-start"
+                  height="100%"
                 >
-                  <Typography variant="body1">
-                    <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
-                    {typicalWait} min
-                    <br/>
-                    <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
-                    {typicalTravel} min
+                  <Typography variant="overline">Typical journey</Typography>
+                  <br />
+
+                  <Typography variant="h3" display="inline">
+                    {typicalWait + typicalTravel}
                   </Typography>
-                  <IconButton size="small" onClick={handleTypicalClick}>
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
+                  <Typography variant="h5" display="inline">
+                    &nbsp;min
+                  </Typography>
+
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="flex-end"
+                    pt={2}
+                  >
+                    <Typography variant="body1">
+                      <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+                      {typicalWait} min
+                      <br/>
+                      <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+                      {typicalTravel} min
+                    </Typography>
+                    <IconButton size="small" onClick={handleTypicalClick}>
+                      <InfoIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                  </Box>
               </Grid>
               
               <Grid item xs component={Paper} className={classes.infoScoreCard}>
-                <Typography variant="overline">Journey planning</Typography>
-                <br />
-
-                <Typography variant="h3" display="inline">
-                  {planningWait + planningTravel}
-                </Typography>
-                <Typography variant="h5" display="inline">
-                  &nbsp;min
-                </Typography>
-
                 <Box
                   display="flex"
-                  justifyContent="space-between"
-                  alignItems="flex-end"
-                  pt={2}
+                  flexDirection="column"
+                  justifyContent="flex-start"
+                  height="100%"
                 >
-                  <Typography variant="body1">
-                    <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
-                    {planningWait} min
-                    <br/> 
-                    <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
-                    {planningTravel} min
+                  <Typography variant="overline">Journey planning</Typography>
+                  <br />
+
+                  <Typography variant="h3" display="inline">
+                    {planningWait + planningTravel}
                   </Typography>
-                  <IconButton size="small" onClick={handlePlanningClick}>
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
+                  <Typography variant="h5" display="inline">
+                    &nbsp;min
+                  </Typography>
+
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="flex-end"
+                    pt={2}
+                  >
+                    <Typography variant="body1">
+                      <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+                      {planningWait} min
+                      <br/> 
+                      <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+                      {planningTravel} min
+                    </Typography>
+                    <IconButton size="small" onClick={handlePlanningClick}>
+                      <InfoIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </Box>
               </Grid>
               <InfoScoreCard
