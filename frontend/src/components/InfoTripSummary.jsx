@@ -147,12 +147,20 @@ export default function InfoTripSummary(props) {
   }
 
   const useStyles = makeStyles(theme => ({
-    uncolored: {
-      margin: theme.spacing(1),
-    },
     popover: {
       padding: theme.spacing(2),
       maxWidth: 500,
+    },
+    lineHeightOverride: {
+      '& .MuiTypography-overline': {
+        'line-height': 1,
+      }
+    },
+    padding: {
+      padding: '8px',
+    },
+    infoScoreCard: {
+      margin: '4px',
     },
   }));
 
@@ -280,12 +288,12 @@ export default function InfoTripSummary(props) {
 
   return (
     <Fragment>
-      <div style={{ padding: 8 }}>
+      <div className={`${classes.lineHeightOverride} ${classes.padding}`}>
         {grades ? (
           <Fragment>
             <Grid container spacing={4}>
               {/* spacing doesn't work exactly right here, just pads the Papers */}
-              <Grid item xs component={Paper} className={classes.uncolored}>
+              <Grid item xs component={Paper} className={classes.infoScoreCard}>
                 <Typography variant="overline">Typical journey</Typography>
                 <br />
 
@@ -315,7 +323,7 @@ export default function InfoTripSummary(props) {
                  </Box>
               </Grid>
               
-              <Grid item xs component={Paper} className={classes.uncolored}>
+              <Grid item xs component={Paper} className={classes.infoScoreCard}>
                 <Typography variant="overline">Journey planning</Typography>
                 <br />
 
@@ -353,6 +361,7 @@ export default function InfoTripSummary(props) {
                 smallValue={`/${grades ? grades.highestPossibleScore : '--'}`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTotalScore}
+                className={classes.infoScoreCard}
               />
               <InfoScoreCard
                 grades={grades}
@@ -362,6 +371,7 @@ export default function InfoTripSummary(props) {
                 smallValue="&nbsp;min"
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentWait}
+                className={classes.infoScoreCard}
               />
               <InfoScoreCard
                 grades={grades}
@@ -375,6 +385,7 @@ export default function InfoTripSummary(props) {
                     : ''
                 }
                 popoverContent={popoverContentLongWait}
+                className={classes.infoScoreCard}
               />
               <InfoScoreCard
                 grades={grades}
@@ -384,6 +395,7 @@ export default function InfoTripSummary(props) {
                 smallValue="&nbsp;mph"
                 bottomContent={`${distance.toFixed(1)} miles`}
                 popoverContent={popoverContentSpeed}
+                className={classes.infoScoreCard}
               />
               <InfoScoreCard
                 grades={grades}
@@ -393,6 +405,7 @@ export default function InfoTripSummary(props) {
                 smallValue="&nbsp;min"
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTravelVariability}
+                className={classes.infoScoreCard}
               />
             </Grid>
 

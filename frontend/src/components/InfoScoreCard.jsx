@@ -33,6 +33,7 @@ export default function InfoScoreCard(props) {
     smallValue,
     bottomContent,
     popoverContent,
+    className,
   } = props;
 
   const useStyles = makeStyles(theme => ({
@@ -62,7 +63,6 @@ export default function InfoScoreCard(props) {
       color: myGrades
         ? quartileContrastColor(myGrades[myGradeName] / 100.0)
         : 'black',
-      margin: 4,
     };
   };
 
@@ -72,7 +72,13 @@ export default function InfoScoreCard(props) {
 
   return (
     <Fragment>
-      <Grid item xs component={Paper} style={cardStyle(grades, gradeName)}>
+      <Grid
+        item
+        xs
+        component={Paper}
+        style={cardStyle(grades, gradeName)}
+        className={className}
+      >
         <Box
           display="flex"
           flexDirection="column"
