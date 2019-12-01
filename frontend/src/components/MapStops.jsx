@@ -4,15 +4,17 @@ import { Map, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet';
 import * as d3 from 'd3';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
+import Button from '@material-ui/core/Button';
+import StartStopIcon from '@material-ui/icons/DirectionsTransit';
+import EndStopIcon from '@material-ui/icons/Flag';
+import ReactDOMServer from 'react-dom/server';
+import { NavLink } from 'redux-first-router-link';
 import { DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { Colors } from '../UIConstants';
 import { Agencies } from '../config';
-import StartStopIcon from '@material-ui/icons/DirectionsTransit';
-import EndStopIcon from '@material-ui/icons/Flag';
-import ReactDOMServer from 'react-dom/server';
 
 class MapStops extends Component {
   constructor(props) {
@@ -518,6 +520,13 @@ class MapStops extends Component {
           {!graphParams.startStopId || !graphParams.endStopId ? (
             <div className="map-instructions">{mapInstruction}</div>
           ) : null}
+        </Control>
+        <Control position="bottomleft">
+          <NavLink to={{ type: 'DASHBOARD' }} exact strict>
+            <Button variant="contained" color="secondary">
+              Return to dashboard
+            </Button>
+          </NavLink>
         </Control>
       </Map>
     );
