@@ -14,6 +14,7 @@ import DateTimePanel from '../components/DateTimePanel';
 import { getAgency } from '../config';
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
+import { EmojiForRouteType } from '../components/Emoji';
 
 import { fetchRoutes } from '../actions';
 
@@ -73,7 +74,7 @@ function RouteScreen(props) {
       
       <Paper>
         <Box p={2} className="page-title">            
-          {selectedRoute ? ` ${selectedRoute.title}` : null}
+          {selectedRoute ? <Fragment>{EmojiForRouteType(selectedRoute.type)} {selectedRoute.title}</Fragment> : null}
           {direction ? ` > ${direction.title}` : null}
           &nbsp;
           {startStopInfo ? `(from ${startStopInfo.title}` : null}

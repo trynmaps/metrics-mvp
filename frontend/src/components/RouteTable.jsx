@@ -362,6 +362,7 @@ function RouteTable(props) {
                       id={labelId}
                       scope="row"
                       padding="none"
+                      style={{border:'none', paddingTop:6, paddingBottom:6}}                      
                     >
                       <Navlink
                         style={{color: theme.palette.primary.dark, textDecoration: 'none'}}
