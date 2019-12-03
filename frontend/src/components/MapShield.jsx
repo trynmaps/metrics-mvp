@@ -29,8 +29,10 @@ export default function MapShield(props) {
       'border-style:solid; border-color:'}${color}; ` +
     `border-width: ${waitScaled / 1.5 + 1.0}px;` +
     `background-color:white;` +
-    `text-align:center; font-size:${75 + waitScaled * 15}%; font-weight: ${400 +
-      waitScaled * 75}"><span style="vertical-align: -15%">${routeText}</span></div>`;
+    `font-size:${75 + waitScaled * 15}%; font-weight: ${400 +
+     waitScaled * 75};
+     display:flex; align-items: center;
+     justify-content: center;">${routeText}</div>`;
 
   return html;
 }

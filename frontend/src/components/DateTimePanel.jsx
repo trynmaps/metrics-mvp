@@ -50,8 +50,9 @@ const useStyles = makeStyles(theme => ({
   column: {
     flexGrow: '1',
   },
-  nowrap: {
+  dateTime: {
     whiteSpace: 'nowrap',
+    display: 'flex',
   },
   root: {
     display: 'flex',
@@ -332,14 +333,17 @@ function DateTimePanel(props) {
         className={classes.button}
         onClick={handleClick}
       >
-        <div className={classes.nowrap}>
-          <Typography className={classes.heading} display="inline">
-            {dateLabel}&nbsp;
-          </Typography>
-          <Typography className={classes.secondaryHeading} display="inline">
-            {timeLabel}
-            <ExpandMoreIcon style={{verticalAlign: '-20%'}} />
-          </Typography>
+        <div className={classes.dateTime}>
+          <span>
+            <Typography className={classes.heading} display="inline">
+              {dateLabel}&nbsp;
+            </Typography>
+            <Typography className={classes.secondaryHeading} display="inline">
+              {timeLabel}
+            </Typography>
+          </span>
+          <ExpandMoreIcon/>
+          
         </div>
       </Button>
 
