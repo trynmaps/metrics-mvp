@@ -85,3 +85,26 @@ export const WEEKENDS = [
 
 // Marey chart:  how long of a dwell at a stop results in a second data point for exit.
 export const DWELL_THRESHOLD_SECS = 120;
+
+/*
+ * Route type emojis.
+ *
+ * 0 - Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.
+ * 1 - Subway, Metro. Any underground rail system within a metropolitan area.
+ * 2 - Rail. Used for intercity or long-distance travel.
+ * 3 - Bus. Used for short- and long-distance bus routes.
+ * 4 - Ferry. Used for short- and long-distance boat service.
+ * 5 - Cable car. Used for street-level cable cars where the cable runs beneath the car.
+ * 6 - Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable.
+ * 7 - Funicular. Any rail system designed for steep inclines.
+ */
+export const ROUTE_TYPE_EMOJIS = {
+  '0': { symbol: '🚈', label: 'Light Rail'}, /* light rail, or railway car: 🚃, or tram: 🚊, tram car: 🚋  */
+  '1': { symbol: '🚇', label: 'Subway'}, /* metro */
+  '2': { symbol: '🚆', label: 'Rail'}, /* train, or bullet train: 🚅, high-speed train: 🚄, locomotive: 🚂 */
+  '3': { symbol: '🚌', label: 'Bus'}, /* bus, or oncoming bus: 🚍, trolley bus: 🚎 */
+  '4': { symbol: '⛴', label: 'Ferry'}, /* ferry, or ship: ️🚢 */
+  '5': { symbol: '🚋', label: 'Cable Car'}, /* tram car (nothing better available) */
+  '6': { symbol: '🚠', label: 'Gondola'}, /* mountain cableway, or aerial tramway: 🚡 */
+  '7': { symbol: '🚞', label: 'Funicular'}, /* mountain railway */
+}
