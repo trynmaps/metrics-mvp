@@ -11,13 +11,16 @@ export default (state = initialState, action) => {
       const tripMetrics = routeMetrics ? routeMetrics.trip : null;
       const intervalMetrics = tripMetrics ? tripMetrics.interval : null;
       const timeRangeMetrics = tripMetrics ? tripMetrics.timeRanges : null;
+      const intervalMetrics2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2 : null;
+      const timeRangeMetrics2 = tripMetrics && tripMetrics.timeRanges2 ? tripMetrics.timeRanges2 : null;
 
       return {
         ...state,
         err: null,
         graphData: intervalMetrics,
+        graphData2: intervalMetrics2,
         intervalData: timeRangeMetrics,
-        graphParams: action.graphParams,
+        intervalData2: timeRangeMetrics2,
       };
     case 'RESET_GRAPH_DATA':
       return { ...state, err: null, graphData: null };

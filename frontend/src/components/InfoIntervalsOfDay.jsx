@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import { FormControl, FormControlLabel, Radio } from '@material-ui/core';
 import {
   XYPlot,
@@ -100,7 +100,7 @@ class InfoIntervalsOfDay extends Component {
   }
 
   render() {
-    const { intervalData, intervalError } = this.props;
+    const { intervalData, intervalData2, intervalError } = this.props;
 
     const intervals = intervalData;
     this.waitData = intervals
@@ -108,6 +108,12 @@ class InfoIntervalsOfDay extends Component {
       : null;
     this.tripData = intervals
       ? intervals.map(this.mapInterval('tripTimes'))
+      : null;
+    this.waitData2 = intervalData2
+      ? intervalData2.map(this.mapInterval('waitTimes'))
+      : null;
+    this.tripData2 = intervalData2
+      ? intervalData2.map(this.mapInterval('tripTimes'))
       : null;
 
     const legendItems = [
@@ -167,11 +173,31 @@ class InfoIntervalsOfDay extends Component {
               <YAxis hideLine />
 
               <VerticalBarSeries
+                cluster="first"
                 data={this.waitData}
                 color={CHART_COLORS[0]}
                 onNearestX={this.onNearestX}
               />
-              <VerticalBarSeries data={this.tripData} color={CHART_COLORS[1]} />
+              <VerticalBarSeries
+                cluster="first"
+                data={this.tripData}
+                color={CHART_COLORS[1]}
+              />
+              { this.waitData2 ? 
+              <VerticalBarSeries
+                cluster="second"
+                data={this.waitData2}
+                color={CHART_COLORS[2]}
+                onNearestX={this.onNearestX}
+              /> : null }
+              { this.waitData2 ? 
+              <VerticalBarSeries
+                cluster="second"
+                data={this.tripData2}
+                color={CHART_COLORS[3]}
+              />
+               : null
+              }
 
               <ChartLabel
                 text="minutes"
@@ -185,7 +211,7 @@ class InfoIntervalsOfDay extends Component {
                 }}
               />
 
-              {this.state.crosshairValues.length > 0 && (
+              {this.state.crosshairValues.length > 0 && ( /* TODO: add second cluster values */
                 <Crosshair
                   values={this.state.crosshairValues}
                   style={REACT_VIS_CROSSHAIR_NO_LINE}

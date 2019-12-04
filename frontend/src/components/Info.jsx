@@ -4,6 +4,7 @@ import {
   HorizontalGridLines,
   XAxis,
   YAxis,
+  VerticalBarSeries,
   VerticalRectSeries,
   ChartLabel,
   Crosshair,
@@ -19,16 +20,22 @@ function Info(props) {
 
   const {
     graphData,
+    graphData2,
     graphError,
     graphParams,
     intervalData,
+    intervalData2,
     intervalError,
     routes,
   } = props;
 
-  const headways = graphData ? graphData.headways : null;
-  const waitTimes = graphData ? graphData.waitTimes : null;
-  const tripTimes = graphData ? graphData.tripTimes : null;
+  const headways = graphData && graphData.headways;
+  const waitTimes = graphData && graphData.waitTimes;
+  const tripTimes = graphData && graphData.tripTimes;
+  const headways2 = graphData2 && graphData2.headways;
+  const waitTimes2 = graphData2 && graphData2.waitTimes;
+  const tripTimes2 = graphData2 && graphData2.tripTimes;
+
 
   const headwayData =
     headways && headways.histogram
@@ -51,6 +58,33 @@ function Info(props) {
   const tripData =
     tripTimes && tripTimes.histogram
       ? tripTimes.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const headwayData2 =
+    headways2 && headways2.histogram
+      ? headways2.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const waitData2 =
+    waitTimes2 && waitTimes2.histogram
+      ? waitTimes2.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const tripData2 =
+    tripTimes2 && tripTimes2.histogram
+      ? tripTimes2.histogram.map(bin => ({
           x0: bin.binStart,
           x: bin.binEnd,
           y: bin.count,
@@ -144,6 +178,7 @@ function Info(props) {
           <Box p={2} hidden={tabValue !== SUMMARY}>
             <InfoTripSummary
               graphData={graphData}
+              graphData2={graphData2}
               graphParams={graphParams}
               routes={routes}
             />
@@ -156,6 +191,7 @@ function Info(props) {
 
             <InfoIntervalsOfDay
               intervalData={intervalData}
+              intervalData2={intervalData2}
               intervalError={intervalError}
             />
           </Box>
@@ -179,13 +215,25 @@ function Info(props) {
               <XAxis />
               <YAxis hideLine />
 
-              <VerticalRectSeries
+              <VerticalBarSeries
+                cluster="first"
                 data={headwayData}
                 onNearestX={onNearestXHeadway}
                 stroke="white"
                 fill={CHART_COLORS[0]}
                 style={{ strokeWidth: 2 }}
               />
+              { headwayData2 ? 
+              <VerticalBarSeries
+                cluster="second"
+                data={headwayData2}
+                onNearestX={onNearestXHeadway}
+                stroke="white"
+                fill={CHART_COLORS[2]}
+                style={{ strokeWidth: 2 }}
+              />
+              : null
+              }
 
               <ChartLabel
                 text="arrivals"
@@ -241,13 +289,26 @@ function Info(props) {
             <XAxis />
             <YAxis hideLine tickFormat={v => `${v}%`} />
 
-            <VerticalRectSeries
+            <VerticalBarSeries
+              cluster="first"
               data={waitData}
               onNearestX={onNearestXWaitTimes}
               stroke="white"
               fill={CHART_COLORS[0]}
               style={{ strokeWidth: 2 }}
             />
+            { waitData2 ? 
+              <VerticalBarSeries
+                cluster="second"
+                data={waitData2}
+                onNearestX={onNearestXHeadway}
+                stroke="white"
+                fill={CHART_COLORS[2]}
+                style={{ strokeWidth: 2 }}
+              />
+              : null
+            }
+
 
             <ChartLabel
               text="chance"
@@ -302,12 +363,25 @@ function Info(props) {
             <YAxis hideLine />
 
             <VerticalRectSeries
+              cluster="first"
               data={tripData}
               onNearestX={onNearestXTripTimes}
               stroke="white"
               fill={CHART_COLORS[1]}
               style={{ strokeWidth: 2 }}
             />
+            { tripData2 ? 
+              <VerticalBarSeries
+                cluster="second"
+                data={tripData2}
+                onNearestX={onNearestXHeadway}
+                stroke="white"
+                fill={CHART_COLORS[3]}
+                style={{ strokeWidth: 2 }}
+              />
+              : null
+            }
+            
 
             <ChartLabel
               text="trips"

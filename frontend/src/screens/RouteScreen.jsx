@@ -20,9 +20,11 @@ import { fetchRoutes } from '../actions';
 function RouteScreen(props) {
   const {
     graphData,
+    graphData2,
     graphError,
     graphParams,
     intervalData,
+    intervalData2,
     intervalError,
     routes,
     myFetchRoutes,
@@ -92,10 +94,12 @@ function RouteScreen(props) {
           graphError /* if we have graph data or an error, then show the info component */ ? (
             <Info
               graphData={graphData}
+              graphData2={graphData2}
               graphError={graphError}
               graphParams={graphParams}
               routes={routes}
               intervalData={intervalData}
+              intervalData2={intervalData2}
               intervalError={intervalError}
             />
           ) : (
@@ -110,9 +114,11 @@ function RouteScreen(props) {
 
 const mapStateToProps = state => ({
   graphData: state.fetchGraph.graphData,
+  graphData2: state.fetchGraph.graphData2,
   routes: state.routes.routes,
   graphError: state.fetchGraph.err,
   intervalData: state.fetchGraph.intervalData,
+  intervalData2: state.fetchGraph.intervalData2,
   intervalError: state.fetchGraph.intervalErr,
   graphParams: state.routes.graphParams,
 });

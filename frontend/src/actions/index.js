@@ -90,15 +90,11 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
 
 export function fetchGraphData(params) {
 
-  const dates = computeDates(params.firstDateRange); // to do:  request second date range also
-
-  return function(dispatch) {
-
-    var query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
-    $directionId:String, $date:[String!], $startTime:String, $endTime:String) {
+  const singleDateRangeQuery = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
+    $directionId:String, $dates:[String!], $startTime:String, $endTime:String) {
   routeMetrics(agencyId:$agencyId, routeId:$routeId) {
     trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
-      interval(dates:$date, startTime:$startTime, endTime:$endTime) {
+      interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
         headways {
           count median max
           percentiles(percentiles:[90]) { percentile value }
@@ -115,7 +111,7 @@ export function fetchGraphData(params) {
           histogram { binStart binEnd count }
         }
       }
-      timeRanges(dates:$date) {
+      timeRanges(dates:$dates) {
         startTime endTime
         waitTimes {
           percentiles(percentiles:[50,90]) { percentile value }
@@ -126,11 +122,90 @@ export function fetchGraphData(params) {
       }
     }
   }
-}`.replace(/\s+/g, ' ');
+}`;
+
+  const dualDateRangeQuery = `
+fragment intervalFields on IntervalMetrics {
+    headways {
+      count median max
+      percentiles(percentiles:[90]) { percentile value }
+      histogram { binStart binEnd count }
+    }
+    tripTimes {
+      count median avg max
+      percentiles(percentiles:[90]) { percentile value }
+      histogram { binStart binEnd count }
+    }
+    waitTimes {
+      median max
+      percentiles(percentiles:[90]) { percentile value }
+      histogram { binStart binEnd count }
+    }
+}
+
+fragment timeRangeFields on IntervalMetrics {
+    startTime endTime
+    waitTimes {
+      percentiles(percentiles:[50,90]) { percentile value }
+    }
+    tripTimes {
+      percentiles(percentiles:[50,90]) { percentile value }
+    }
+}
+
+query($agencyId:String!, $routeId:String!,
+  $startStopId:String!, $endStopId:String, $directionId:String,
+  $dates:[String!], $startTime:String, $endTime:String,
+  $dates2:[String!], $startTime2:String, $endTime2:String) {
+
+  routeMetrics(agencyId:$agencyId, routeId:$routeId) {
+    trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
+      interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
+          ...intervalFields
+      }
+      interval2: interval(dates:$dates2, startTime:$startTime2, endTime:$endTime2) {
+          ...intervalFields
+      }
+      timeRanges(dates:$dates) {
+          ...timeRangeFields
+      }
+      timeRanges2: timeRanges(dates:$dates2) {
+          ...timeRangeFields
+      }
+    }
+  }
+}
+
+  `;
+
+  return function(dispatch) {
+
+    const firstDays = computeDates(params.firstDateRange);
+    const secondDays = params.secondDateRange && computeDates(params.secondDateRange);
+
+    let query = secondDays ? dualDateRangeQuery : singleDateRangeQuery;
+
+    const queryParams = Object.assign({
+      dates: firstDays,
+      startTime: params.firstDateRange.startTime,
+      endTime: params.firstDateRange.endTime,
+    }, secondDays ? {
+      dates2: secondDays,
+      startTime2: params.secondDateRange.startTime,
+      endTime2: params.secondDateRange.endTime,
+    } : null,
+    params);
+
+    // remove unneeded object references in params
+
+    delete queryParams.firstDateRange;
+    delete queryParams.secondDateRange;
+
+    query = query.replace(/\s+/g, ' ');
 
     dispatch({ type: 'REQUEST_GRAPH_DATA' });
-    axios.get('/api/graphql', {
-        params: { query: query, variables: JSON.stringify({...params, date: dates}) }, // computed dates aren't in graphParams so add here
+    axios.get('/api/graphql', {  // computed dates aren't in graphParams so add here
+        params: { query: query, variables: JSON.stringify(queryParams), },
         baseURL: MetricsBaseURL,
       })
       .then(response => {
