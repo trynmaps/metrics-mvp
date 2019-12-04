@@ -215,7 +215,7 @@ function Info(props) {
               <XAxis />
               <YAxis hideLine />
 
-              <VerticalBarSeries
+              <VerticalRectSeries
                 cluster="first"
                 data={headwayData}
                 onNearestX={onNearestXHeadway}
@@ -289,7 +289,7 @@ function Info(props) {
             <XAxis />
             <YAxis hideLine tickFormat={v => `${v}%`} />
 
-            <VerticalBarSeries
+            <VerticalRectSeries
               cluster="first"
               data={waitData}
               onNearestX={onNearestXWaitTimes}

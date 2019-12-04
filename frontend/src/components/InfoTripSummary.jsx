@@ -128,6 +128,15 @@ export default function InfoTripSummary(props) {
     longWaitProbability2 = waitTimes2 && waitTimes2.histogram.reduce(reducer, 0) / 100;
   }
 
+  const travelVariability = Math.round(
+      (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -      
+       getPercentileValue(tripTimes, TENTH_PERCENTILE)) / 2.0,
+    );
+  const travelVariability2 = tripTimes2 && Math.round(
+      (getPercentileValue(tripTimes2, PLANNING_PERCENTILE) -      
+       getPercentileValue(tripTimes2, TENTH_PERCENTILE)) / 2.0,
+    );
+
   const grades =
     speed && waitTimes.median
       ? computeGrades(
@@ -178,15 +187,6 @@ export default function InfoTripSummary(props) {
   const planningTravel = Math.round(
     getPercentileValue(tripTimes, PLANNING_PERCENTILE),
   );
-  const travelVariability = Math.round(
-    (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -      
-     getPercentileValue(tripTimes, TENTH_PERCENTILE)) / 2.0,
-  );
-  const travelVariability2 = tripTimes2 && Math.round(
-      (getPercentileValue(tripTimes2, PLANNING_PERCENTILE) -      
-       getPercentileValue(tripTimes2, TENTH_PERCENTILE)) / 2.0,
-    );
-  
   const planningWait2 = waitTimes2 && Math.round(
       getPercentileValue(waitTimes2, PLANNING_PERCENTILE),
     );
