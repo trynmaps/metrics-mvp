@@ -521,11 +521,13 @@ class MapStops extends Component {
             <div className="map-instructions">{mapInstruction}</div>
           ) : null}
         </Control>
-        <Control position="bottomleft">
+        <Control position="bottomleft" style={{marginBottom: '30px' }}>
           <NavLink to={{ type: 'DASHBOARD' }} exact strict>
             <Button variant="contained" color="secondary">
               Return to dashboard
             </Button>
+            <br />
+            <br />
           </NavLink>
         </Control>
       </Map>
