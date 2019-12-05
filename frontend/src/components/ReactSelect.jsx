@@ -10,10 +10,19 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 
 const transitionDuration = 300;
 const eventHandlerDelay = 30;
-const theme = createMuiTheme();
+const theme = createMuiTheme({
+  palette: {
+    background: {
+      focus: 'rgba(0, 0, 0, 0.05)',
+    },
+  },
+});
 const useStyles = makeStyles({
   input: {
     display: 'flex',
+    '&:focus': {
+      backgroundColor: theme.palette.background.focus,
+    },
   },
   valueContainer: {
     display: 'flex',
@@ -61,6 +70,8 @@ function Control(props) {
       textFieldProps,
       isInitialMount,
       onInitialMount,
+      select,
+      setMenuIsOpen,
     },
   } = props;
 
@@ -81,6 +92,13 @@ function Control(props) {
           children,
           ...innerProps,
           className: classes.input,
+          tabIndex: 0,
+          onKeyDown: e => {
+            if (e.key === 'Enter' || e.key === 'ArrowDown') {
+              select.current.focus();
+              setMenuIsOpen(true);
+            }
+          },
         },
       }}
       {...textFieldProps}
@@ -97,6 +115,10 @@ function ValueContainer({ children, selectProps: { inputId, classes } }) {
       {[input, singleValue]}
     </div>
   );
+}
+
+function Input(props) {
+  return <components.Input {...props} tabIndex={-1} />;
 }
 
 function Placeholder({ children, selectProps: { classes } }) {
@@ -289,11 +311,13 @@ function Option(props) {
 export default function ReactSelect(selectProps) {
   const classes = useStyles();
   const focusedOption = useRef();
+  const select = useRef();
   const isInitialMount = useRef(true);
   // determines whether transitionDuration is used, otherwise 0. Set to false on resize
   const menuTransition = useRef(true);
   const menuPlacementTop = useRef(false);
   const [textFieldDOMRect, setTextFieldDOMRect] = useState({});
+  const [menuIsOpen, setMenuIsOpen] = useState(false);
 
   /**
    * updates textfield location on scroll/resize
@@ -312,6 +336,7 @@ export default function ReactSelect(selectProps) {
   const replacedComponents = {
     Control,
     ValueContainer,
+    Input,
     Placeholder,
     SingleValue,
     IndicatorSeparator: () => null,
@@ -323,11 +348,13 @@ export default function ReactSelect(selectProps) {
 
   function onMenuOpen() {
     menuTransition.current = true;
+    setMenuIsOpen(true);
   }
 
   function onMenuClose() {
     menuTransition.current = true;
     document.activeElement.blur();
+    setMenuIsOpen(false);
   }
 
   useEffect(() => {
@@ -341,6 +368,10 @@ export default function ReactSelect(selectProps) {
 
   return (
     <Select
+      ref={select}
+      select={select}
+      setMenuIsOpen={setMenuIsOpen}
+      menuIsOpen={menuIsOpen}
       classes={classes}
       components={replacedComponents}
       focusedOption={focusedOption}
