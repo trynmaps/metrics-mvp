@@ -8,8 +8,8 @@ import TextField from '@material-ui/core/TextField';
 import MenuItem from '@material-ui/core/MenuItem';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 
-const transitionDuration = 400;
-const eventHandlerDelay = 100;
+const transitionDuration = 300;
+const eventHandlerDelay = 30;
 const theme = createMuiTheme();
 const useStyles = makeStyles({
   input: {
@@ -130,7 +130,6 @@ function Menu(props) {
       menuIsOpen,
       menuPlacementTop,
       menuTransition,
-      scrollbarWidth,
       textFieldDOMRect,
     },
   } = props;
@@ -158,13 +157,10 @@ function Menu(props) {
       .previousSibling.clientHeight;
     const inputHeight = textFieldDOMRect.height + labelHeight;
     const rightWillSlice =
-      textFieldDOMRect.left + menu.clientWidth + scrollbarWidth.current >
-      window.innerWidth;
+      textFieldDOMRect.left + menu.clientWidth > window.innerWidth;
     const leftWillSlice = textFieldDOMRect.right - menu.clientWidth < 0;
     const idealRightPosition =
-      textFieldDOMRect.right -
-      document.documentElement.clientWidth +
-      scrollbarWidth.current;
+      textFieldDOMRect.right - document.documentElement.clientWidth;
 
     /**
      * check if the right side of the menu will be outside the view
@@ -203,7 +199,6 @@ function Menu(props) {
     menuPlacementTop,
     menuStyleBottom,
     menuStyleRight,
-    scrollbarWidth,
     textFieldDOMRect,
   ]);
 
@@ -233,6 +228,8 @@ function MenuList(props) {
     selectProps: { inputId, menuPlacementTop, textFieldDOMRect },
   } = props;
   let maxHeight;
+  const maxHeightLimit =
+    document.documentElement.clientHeight - theme.spacing(2);
 
   // calculates appropriate max height depending on top or bottom menu placement
   if (menuPlacementTop.current) {
@@ -247,6 +244,7 @@ function MenuList(props) {
       textFieldDOMRect.bottom -
       theme.spacing(2);
   }
+  if (maxHeight > maxHeightLimit) maxHeight = maxHeightLimit;
 
   return (
     <components.MenuList {...props} maxHeight={maxHeight}>
@@ -291,7 +289,6 @@ function Option(props) {
 export default function ReactSelect(selectProps) {
   const classes = useStyles();
   const focusedOption = useRef();
-  const scrollbarWidth = useRef(0);
   const isInitialMount = useRef(true);
   // determines whether transitionDuration is used, otherwise 0. Set to false on resize
   const menuTransition = useRef(true);
@@ -299,7 +296,7 @@ export default function ReactSelect(selectProps) {
   const [textFieldDOMRect, setTextFieldDOMRect] = useState({});
 
   /**
-   * updates textfield location on input focus or window resize
+   * updates textfield location on scroll/resize
    * re-renders menu if open which updates menu placement and max height
    */
   function handleReposition() {
@@ -325,21 +322,10 @@ export default function ReactSelect(selectProps) {
   };
 
   function onMenuOpen() {
-    const overflow = document.body.style.overflow;
-
-    if (overflow === 'visible' || !overflow) {
-      scrollbarWidth.current =
-        window.innerWidth - document.documentElement.clientWidth;
-    }
-
-    document.body.style.overflow = 'hidden';
-    document.body.style.paddingRight = `${scrollbarWidth.current}px`;
     menuTransition.current = true;
   }
 
   function onMenuClose() {
-    document.body.style.overflow = 'visible';
-    document.body.style.paddingRight = 0;
     menuTransition.current = true;
     document.activeElement.blur();
   }
@@ -366,7 +352,6 @@ export default function ReactSelect(selectProps) {
       onMenuClose={onMenuClose}
       placeholder="Type here to search..."
       styles={selectStyles}
-      scrollbarWidth={scrollbarWidth}
       textFieldDOMRect={textFieldDOMRect}
       value={selectProps.options.filter(
         option => option.value === selectProps.stopId,
