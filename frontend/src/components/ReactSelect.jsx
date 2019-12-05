@@ -257,6 +257,7 @@ function Option(props) {
   const {
     children,
     innerProps,
+    innerRef,
     isFocused,
     isSelected,
     selectProps: { focusedOption },
@@ -273,9 +274,8 @@ function Option(props) {
   return (
     <MenuItem
       ref={element => {
-        if (isSelected) {
-          focusedOption.current = element;
-        }
+        if (isSelected) focusedOption.current = element;
+        if (innerRef) innerRef(element);
       }}
       selected={isSelected}
       style={focused}
