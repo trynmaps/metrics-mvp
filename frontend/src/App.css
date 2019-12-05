@@ -55,11 +55,12 @@
 
 .grid-container {
   height: 100%;
+  overflow-y: hidden;
 }
 
 .grid-info-box
 {
-  height: 90%;
+  height: 100%;
   overflow-y: auto;
   padding-bottom: 50px;
 }

@@ -70,9 +70,9 @@ function RouteScreen(props) {
           <DateTimePanel dateRangeSupported={graphData || graphError}/>
         </Toolbar>
       </AppBar>
-      
+
       <Paper>
-        <Box p={2} className="page-title">            
+        <Box p={2} className="page-title">
           {selectedRoute ? ` ${selectedRoute.title}` : null}
           {direction ? ` > ${direction.title}` : null}
           &nbsp;
