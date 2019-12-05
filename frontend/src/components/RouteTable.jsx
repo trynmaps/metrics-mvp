@@ -25,6 +25,7 @@ import {
   getAllSpeeds,
   getAllScores,
   quartileBackgroundColor,
+  quartileContrastColor,
 } from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
@@ -386,6 +387,9 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
+                        color: quartileContrastColor(
+                          row.totalScore / 100,
+                        ),
                         backgroundColor: quartileBackgroundColor(
                           row.totalScore / 100,
                         ),
@@ -401,6 +405,9 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
+                        color: quartileContrastColor(
+                          row.medianWaitScore / 100
+                        ),
                         backgroundColor: quartileBackgroundColor(
                           row.medianWaitScore / 100
                         ),
@@ -417,6 +424,9 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
+                        color: quartileContrastColor(
+                          row.longWaitScore / 100,
+                        ),
                         backgroundColor: quartileBackgroundColor(
                           row.longWaitScore / 100,
                         ),
@@ -439,6 +449,9 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
+                        color: quartileContrastColor(
+                          row.speedScore / 100,
+                        ),
                         backgroundColor: quartileBackgroundColor(
                           row.speedScore / 100,
                         ),
@@ -455,6 +468,9 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
+                        color: quartileContrastColor(
+                          row.travelVarianceScore / 100,
+                        ),
                         backgroundColor: quartileBackgroundColor(
                           row.travelVarianceScore / 100,
                         ),

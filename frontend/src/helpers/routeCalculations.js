@@ -7,9 +7,9 @@
 
 import * as d3 from 'd3';
 import red from '@material-ui/core/colors/red';
-import amber from '@material-ui/core/colors/amber';
-import lime from '@material-ui/core/colors/lime';
 import green from '@material-ui/core/colors/green';
+import yellow from '@material-ui/core/colors/yellow';
+import lightGreen from '@material-ui/core/colors/lightGreen';
 import {
   getTripTimeStat,
   getTripTimesForDirection,
@@ -543,12 +543,12 @@ export function getAllScores(routes, waits, speeds) {
 export const quartileBackgroundColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
-  .range([red[50], amber[50], lime[100], green[100]]);
+  .range([red[300], yellow[300], lightGreen[700], green[900]]);
 
 export const quartileContrastColor = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
-  .range(['rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)']);
+  .range(['rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)', 'white', 'white']);
 
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon
