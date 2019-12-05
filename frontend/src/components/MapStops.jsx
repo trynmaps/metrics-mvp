@@ -431,7 +431,8 @@ class MapStops extends Component {
   computeHeight() {
     return (
       (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
-      64 /* blue app bar */
+      64 - /* blue app bar */
+      50 /* breadcrumb paper */
     );
   }
 
