@@ -59,7 +59,7 @@ function RouteScreen(props) {
       : null;
 
   return (
-    <Fragment>
+    <div className="flex-screen">
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
@@ -104,7 +104,7 @@ function RouteScreen(props) {
           )}
         </Grid>
       </Grid>
-    </Fragment>
+    </div>
   );
 }
 
