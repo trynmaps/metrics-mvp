@@ -66,7 +66,7 @@ function SidebarButton(props) {
               exact
               style={inactiveStyle}
               button
-              selected={currentPage==components.DASHBOARD}
+              selected={currentPage===components.DASHBOARD}
             >
               <ListItemIcon>
                 <MapRoundedIcon color="primary"/>
@@ -80,7 +80,7 @@ function SidebarButton(props) {
               exact
               style={inactiveStyle}
               button
-              selected={currentPage==components.ISOCHRONE}
+              selected={currentPage===components.ISOCHRONE}
             >
               <ListItemIcon>
                 <TimelineRoundedIcon color="primary"/>
@@ -94,7 +94,7 @@ function SidebarButton(props) {
               exact
               style={inactiveStyle}
               button
-              selected={currentPage==components.DATADIAGNOSTIC}
+              selected={currentPage===components.DATADIAGNOSTIC}
             >
               <ListItemIcon>
                 <CodeRoundedIcon color="primary"/>
