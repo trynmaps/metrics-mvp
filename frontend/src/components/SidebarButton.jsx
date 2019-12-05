@@ -1,5 +1,7 @@
 import React from 'react';
 import { NavLink } from 'redux-first-router-link';
+import { connect } from 'react-redux';
+import { components } from '../reducers/page.js';
 import Drawer from '@material-ui/core/Drawer';
 import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
@@ -14,7 +16,8 @@ import CodeRoundedIcon from '@material-ui/icons/CodeRounded';
 import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
 import Divider from '@material-ui/core/Divider';
 
-function SidebarButton() {
+function SidebarButton(props) {
+  const currentPage = props.currentPage;
   const [drawerOpen, setDrawer] = React.useState(false);
 
   function toggleDrawer() {
@@ -62,6 +65,8 @@ function SidebarButton() {
               activeStyle={activeStyle}
               exact
               style={inactiveStyle}
+              button
+              selected={currentPage==components.DASHBOARD}
             >
               <ListItemIcon>
                 <MapRoundedIcon color="primary"/>
@@ -74,6 +79,8 @@ function SidebarButton() {
               activeStyle={activeStyle}
               exact
               style={inactiveStyle}
+              button
+              selected={currentPage==components.ISOCHRONE}
             >
               <ListItemIcon>
                 <TimelineRoundedIcon color="primary"/>
@@ -86,6 +93,8 @@ function SidebarButton() {
               activeStyle={activeStyle}
               exact
               style={inactiveStyle}
+              button
+              selected={currentPage==components.DATADIAGNOSTIC}
             >
               <ListItemIcon>
                 <CodeRoundedIcon color="primary"/>
@@ -98,6 +107,7 @@ function SidebarButton() {
               href="https://sites.google.com/view/opentransit"
               target="_blank"
               onClick={toggleDrawer}
+              button
             >
               <ListItemIcon>
                 <InfoRoundedIcon color="primary"/>
@@ -111,4 +121,10 @@ function SidebarButton() {
   );
 }
 
-export default SidebarButton;
+const mapStateToProps = state => ({
+  currentPage: state.page,
+});
+
+export default connect(
+  mapStateToProps,
+)(SidebarButton);
