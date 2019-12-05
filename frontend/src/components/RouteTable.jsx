@@ -125,7 +125,6 @@ function EnhancedTableHead(props) {
             key={row.id}
             align={row.numeric ? 'right' : 'left'}
             padding={row.disablePadding ? 'none' : 'default'}
-            style={{ paddingRight: 12 }}
             sortDirection={orderBy === row.id ? order : false}
           >
             <TableSortLabel
