@@ -63,10 +63,21 @@ function ControlPanel(props) {
       mySelectedRoute,
       directionId,
     );
+    
+    const stopsList = secondStopInfo.stops;
     const secondStopListIndex = stopId
-      ? secondStopInfo.stops.indexOf(stopId)
+      ? stopsList.indexOf(stopId)
       : 0;
-    return secondStopInfo.stops.slice(secondStopListIndex + 1);
+    
+    // loop routes start and stop at same stop
+    const isLoopRoute = stopsList[0] === stopsList[stopsList.length - 1];
+    const oneWaySecondStopsList = stopsList.slice(secondStopListIndex + 1);
+
+    if (!isLoopRoute) {
+      return oneWaySecondStopsList;
+    }
+    // loop routes display all subsequent stops up to origin stop
+    return oneWaySecondStopsList.concat(stopsList.slice(1, secondStopListIndex));
   }
 
   function onSelectFirstStop(event) {
