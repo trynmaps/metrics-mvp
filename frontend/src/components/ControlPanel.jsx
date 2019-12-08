@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React from 'react';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
 // import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
@@ -32,6 +32,7 @@ const useStyles = makeStyles(theme => ({
 function ControlPanel(props) {
   const { routes, graphParams } = props;
   let secondStopList = [];
+  const [allowHover, setAllowHover] = useState(false);
 
   /**
    * Sets the direction
@@ -64,10 +65,21 @@ function ControlPanel(props) {
       mySelectedRoute,
       directionId,
     );
+    
+    const stopsList = secondStopInfo.stops;
     const secondStopListIndex = stopId
-      ? secondStopInfo.stops.indexOf(stopId)
+      ? stopsList.indexOf(stopId)
       : 0;
-    return secondStopInfo.stops.slice(secondStopListIndex + 1);
+    
+    // loop routes start and stop at same stop
+    const isLoopRoute = stopsList[0] === stopsList[stopsList.length - 1];
+    const oneWaySecondStopsList = stopsList.slice(secondStopListIndex + 1);
+
+    if (!isLoopRoute) {
+      return oneWaySecondStopsList;
+    }
+    // loop routes display all subsequent stops up to origin stop
+    return oneWaySecondStopsList.concat(stopsList.slice(1, secondStopListIndex));
   }
 
   function onSelectFirstStop(option) {
@@ -90,6 +102,7 @@ function ControlPanel(props) {
     }
 
     path.commitPath();
+
     props.onGraphParams({
       startStopId: stopId,
       endStopId: secondStopId,
@@ -120,7 +133,7 @@ function ControlPanel(props) {
       mySelectedRoute.directions.length > 0
         ? mySelectedRoute.directions[0].id
         : null;
-    // console.log('sRC: ' + selectedRoute + ' dirid: ' + directionId);
+
     const path = new Path();
     path
       .buildPath(ROUTE, routeId)
@@ -132,6 +145,29 @@ function ControlPanel(props) {
       startStopId: null,
       endStopId: null,
     });
+  }
+  /**
+   * Handle mouseover event on Select TO & From dropdown list item.
+   */
+  function handleItemMouseOver(node, title) {
+    if (node && allowHover) {
+      node.classList.add('on-hover');
+      node.style.setProperty('--stop-name', `"${title}"`);
+    }
+  }
+  /**
+   * Handle mouseout event on Select TO & From dropdown list item.
+   */
+  function handleItemMouseOut(node) {
+    node && node.classList.remove('on-hover');
+  }
+  /**
+   * Handle Select component close
+   */
+  function handleSelectClose() {
+    setAllowHover(false);
+    const nodeList = document.querySelectorAll('.on-hover');
+    nodeList.forEach(node => node.classList.remove('on-hover'));
   }
 
   let selectedDirection = null;
@@ -175,13 +211,13 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.directionId || 1}
+                value={graphParams.directionId || ""}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >
                 {(selectedRoute.directions || []).map(direction => (
                   <MenuItem key={direction.id} value={direction.id}>
-                    {direction.title}
+                      {direction.title}
                   </MenuItem>
                 ))}
               </Select>
@@ -206,15 +242,23 @@ function ControlPanel(props) {
                     }}
                     options={(selectedDirection.stops || []).map(
                       firstStopId => ({
-                        value: firstStopId,
+                        value: {
+                          stopId: firstStopId,
+                          icon: document.querySelector(`.id${firstStopId}`),
+                        },
                         label: (
                           selectedRoute.stops[firstStopId] || {
                             title: firstStopId,
                           }
                         ).title,
+                        icon: 
                       }),
                     )}
                     stopId={graphParams.startStopId}
+                    onOpen={() => setAllowHover(true)}
+                    onClose={handleSelectClose}
+                    handleItemMouseOver={handleItemMouseOver}
+                    handleItemMouseOut={handleItemMouseOut}
                   />
                 </FormControl>
               </Box>
@@ -234,7 +278,10 @@ function ControlPanel(props) {
                       },
                     }}
                     options={(secondStopList || []).map(secondStopId => ({
-                      value: secondStopId,
+                      value: {
+                        stopId: secondStopId,
+                        icon: document.querySelector(`.id${secondStopId}`),
+                      },
                       label: (
                         selectedRoute.stops[secondStopId] || {
                           title: secondStopId,
@@ -242,6 +289,10 @@ function ControlPanel(props) {
                       ).title,
                     }))}
                     stopId={graphParams.endStopId}
+                    onOpen={() => setAllowHover(true)}
+                    onClose={handleSelectClose}
+                    handleItemMouseOver={handleItemMouseOver}
+                    handleItemMouseOut={handleItemMouseOut}
                   />
                 </FormControl>
               </Box>

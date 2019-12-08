@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useState, Fragment } from 'react';
 import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
+import Checkbox from '@material-ui/core/Checkbox';
+import CircularProgress from '@material-ui/core/CircularProgress';      
+import Divider from '@material-ui/core/Divider';
+import Grid from '@material-ui/core/Grid';
 import Popover from '@material-ui/core/Popover';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
@@ -10,13 +15,22 @@ import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
+import FormGroup from '@material-ui/core/FormGroup';
 import Select from '@material-ui/core/Select';
 import { List, ListItem } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormLabel from '@material-ui/core/FormLabel';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
-import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
+import InfoIcon from '@material-ui/icons/InfoOutlined';
+
+import {
+  TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
+  MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
+} from '../UIConstants';
 import { initialState } from '../reducers/routesReducer';
+import { isLoadingRequest } from '../reducers/loadingReducer';
 import { handleGraphParams } from '../actions';
 
 const useStyles = makeStyles(theme => ({
@@ -36,15 +50,17 @@ const useStyles = makeStyles(theme => ({
   column: {
     flexGrow: '1',
   },
-  nowrap: {
+  dateTime: {
     whiteSpace: 'nowrap',
+    display: 'flex',
   },
   root: {
     display: 'flex',
     flexWrap: 'wrap',
   },
   formControl: {
-    margin: theme.spacing(1),
+    leftMargin: theme.spacing(1),
+    rightMargin: theme.spacing(1),
     minWidth: 240,
   },
   closeButton: {
@@ -53,6 +69,11 @@ const useStyles = makeStyles(theme => ({
     top: theme.spacing(1),
     color: theme.palette.grey[500],
   },
+  popover: {
+    padding: theme.spacing(2),
+    maxWidth: 400,
+  },
+  
 }));
 
 /**
@@ -66,11 +87,12 @@ const useStyles = makeStyles(theme => ({
  * @param {any} props
  */
 function DateTimePanel(props) {
-  const { graphParams } = props;
+  const { graphParams, dateRangeSupported } = props;
   const classes = useStyles();
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [infoAnchorEl, setInfoAnchorEl] = useState(null);
   const maxDate = Moment(Date.now()).format('YYYY-MM-DD');
-
+  
   function handleClick(event) {
     setAnchorEl(event.currentTarget);
   }
@@ -79,12 +101,23 @@ function DateTimePanel(props) {
     setAnchorEl(null);
   }
 
+  function handleInfoClick(event) {
+    setInfoAnchorEl(event.currentTarget);
+  }
+
+  function handleInfoClose() {
+    setInfoAnchorEl(null);
+  }
+
   function handleReset() {
     const initialParams = initialState.graphParams;
     props.handleGraphParams({
       date: initialParams.date,
       startTime: initialParams.startTime,
       endTime: initialParams.endTime,
+      daysBack: initialParams.daysBack,
+      startDate: initialParams.date,
+      daysOfTheWeek: initialParams.daysOfTheWeek,
     });
     handleClose(); // this forces the native date picker to reset, otherwise it doesn't stay in sync
   }
@@ -107,7 +140,48 @@ function DateTimePanel(props) {
       : TIME_RANGE_ALL_DAY;
 
   // these are the read-only representations of the date and time range
-  const dateLabel = convertDate(graphParams.date);
+  let dateLabel = convertDate(graphParams.date);
+  let rangeInfo = null;
+  
+  //
+  // If a date range is set, either update the date label to the full
+  // range if we support it, or else show an info icon that explains
+  // that we are only showing one day's data.
+  //
+  
+  if (graphParams.startDate !== graphParams.date) {
+    if (dateRangeSupported) {
+
+      dateLabel = convertDate(graphParams.startDate) + ' - ' + dateLabel;
+
+    } else {
+      
+      rangeInfo =
+        <Fragment>
+          <IconButton size="small" color="inherit" onClick={handleInfoClick}>
+            <InfoIcon fontSize="small" />
+          </IconButton>
+          <Popover
+            open={Boolean(infoAnchorEl)}
+            anchorEl={infoAnchorEl}
+            onClose={handleInfoClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'center',
+            }}
+          >
+            <div className={classes.popover}>Date ranges are implemented for
+            Dashboard statistics when a route, direction, and stops are selected.
+            Currently showing data for one day.</div>
+          </Popover>          
+        </Fragment>
+    }
+  }
+
   const timeLabel = TIME_RANGES.find(range => range.value === timeRange)
     .shortLabel;
 
@@ -130,18 +204,108 @@ function DateTimePanel(props) {
   };
 
   /**
-   * Handler that updates the date string in the state.
+   * Handler that updates the (end) date string in the state.
+   * Also keeps startDate no later than date.
    *
    * @param {any} myDate
    */
   const setDate = myDate => {
+    const newDate = myDate.target.value;
+    if (!newDate) {
+      // ignore empty date and leave at current value
+    } else {
+      const newMoment = Moment(newDate);
+      const startMoment = Moment(graphParams.startDate);
+      
+      const payload = {
+        date: newDate
+      };      
+      
+      if (newMoment.isBefore(graphParams.startDate)) {
+        payload.startDate = newDate; 
+      } else if (newMoment.diff(startMoment, 'days') > MAX_DATE_RANGE) {
+        payload.startDate = newMoment.subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD');
+      }
+      props.handleGraphParams(payload);
+    }
+  };
+
+  /**
+   * Handler that updates the start date string in the state.
+   *
+   * @param {any} myDate
+   */
+  const setStartDate = myDate => {
     if (!myDate.target.value) {
       // ignore empty date and leave at current value
     } else {
       props.handleGraphParams({
-        date: myDate.target.value,
+        startDate: myDate.target.value,
       });
     }
+  };
+
+  const setDateRange = daysBack => {
+    const initialParams = initialState.graphParams;
+    const date = initialParams.date;
+    const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
+    
+    props.handleGraphParams({
+      date: date,
+      startDate: startMoment.format('YYYY-MM-DD'),
+    });
+
+    // The GraphQL api takes a list of dates, which are generated just before
+    // calling the API.
+  };
+
+  const handleDayChange = event => {
+    const day = event.target.value;
+    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
+    newDaysOfTheWeek[day] = event.target.checked;
+    props.handleGraphParams({
+      daysOfTheWeek: newDaysOfTheWeek,
+    });
+  };
+
+  /**
+   * Bulk toggle.
+   */
+  const toggleDays = event => {
+    const what = event.target.value === 'weekdays' ? WEEKDAYS : WEEKENDS;
+
+    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
+
+    // If all false -> set all to true; some false/true -> set all true; all true -> set all false;
+    // That is, if all true, set to all false, otherwise set to all true.
+
+    const newValue = !allTrue(newDaysOfTheWeek, what);
+
+    for (let i = 0; i < what.length; i++) {
+      newDaysOfTheWeek[what[i].value] = newValue;
+    }
+
+    props.handleGraphParams({
+      daysOfTheWeek: newDaysOfTheWeek,
+    });
+  }
+
+  const allFalse = (dictionary, array) => {
+    for (let i = 0; i < array.length; i++) {
+      if (dictionary[array[i].value]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const allTrue = (dictionary, array) => {
+    for (let i = 0; i < array.length; i++) {
+      if (!dictionary[array[i].value]) {
+        return false;
+      }
+    }
+    return true;
   };
 
   const open = Boolean(anchorEl);
@@ -149,26 +313,40 @@ function DateTimePanel(props) {
 
   return (
     <div className={classes.root}>
+    
+      { props.isLoading
+        ?
+          <Box p={1}>
+            <CircularProgress
+              variant='indeterminate'
+              disableShrink
+              style={{color: 'white'}}
+              size={24}
+            />
+          </Box>
+        : null
+      }      
+
+      { rangeInfo }
       <Button
         variant="contained"
         className={classes.button}
         onClick={handleClick}
       >
-        <div className={classes.column}>
-          <Typography className={classes.secondaryHeading}>
-            Date-Time Range&nbsp;
-          </Typography>
-        </div>
-        <div className={classes.nowrap}>
-          <Typography className={classes.heading} display="inline">
-            {dateLabel}&nbsp;
-          </Typography>
-          <Typography className={classes.secondaryHeading} display="inline">
-            {timeLabel}
-            <ExpandMoreIcon />
-          </Typography>
+        <div className={classes.dateTime}>
+          <span>
+            <Typography className={classes.heading} display="inline">
+              {dateLabel}&nbsp;
+            </Typography>
+            <Typography className={classes.secondaryHeading} display="inline">
+              {timeLabel}
+            </Typography>
+          </span>
+          <ExpandMoreIcon/>
+          
         </div>
       </Button>
+
       <Popover
         id={id}
         open={open}
@@ -191,17 +369,40 @@ function DateTimePanel(props) {
         >
           <CloseIcon />
         </IconButton>
-        <br />
-        <List style={{ color: 'black' }}>
+
+        <List style={{ color: 'black', marginTop: 32 }}>
+        
+            <ListItem>
+              <FormControl className={classes.formControl}>
+                <TextField
+                  id="startDate"
+                  label="Start Date"
+                  type="date"
+                  value={graphParams.startDate}
+                  InputProps={{
+                    inputProps: {
+                      max: graphParams.date,
+                      min: Moment(graphParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
+                    },
+                  }}
+                  className={classes.textField}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  onChange={setStartDate}
+                />
+              </FormControl>
+            </ListItem>
+        
           <ListItem>
             <FormControl className={classes.formControl}>
               <TextField
                 id="date"
-                label="Date"
+                label="End Date"
                 type="date"
-                defaultValue={graphParams.date}
+                value={graphParams.date}
                 InputProps={{
-                  inputProps:{
+                  inputProps: {
                     max: maxDate,
                   },
                 }}
@@ -212,6 +413,78 @@ function DateTimePanel(props) {
                 onChange={setDate}
               />
             </FormControl>
+          </ListItem>
+
+          <ListItem>
+            <Grid container style={{maxWidth:250}}>
+                {DATE_RANGES.map(range => (
+                  
+                  <Grid item xs={6} key = {range.value}>
+                  <Button
+                    key={range.value}
+                    onClick={ () => { setDateRange(range.value) } }
+                  >
+                  {range.label}
+                  </Button>
+                  </Grid>
+
+                ))}
+            </Grid>
+          </ListItem>
+
+
+          <ListItem>
+            <FormControl component="fieldset" className={classes.formControl}>
+              <FormLabel component="legend" className={classes.secondaryHeading}>Days of the Week</FormLabel>
+
+              <Grid container>
+                <Grid item>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={<Checkbox value="weekdays"
+                        checked={!allFalse(graphParams.daysOfTheWeek, WEEKDAYS)}
+                        indeterminate={!allFalse(graphParams.daysOfTheWeek, WEEKDAYS) &&
+                          !allTrue(graphParams.daysOfTheWeek, WEEKDAYS)}
+                        onChange={toggleDays} />}
+                      label="Weekdays"
+                    />
+
+                    <Divider variant="middle" style={{ marginLeft: 0 } /* divider with a right margin */}/>
+
+                    {WEEKDAYS.map(day =>
+                      <FormControlLabel
+                        control={<Checkbox checked={graphParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
+                        key={day.value}
+                        label={day.label}
+                      />)}
+                  </FormGroup>
+                </Grid>
+                <Grid item>
+                  <FormGroup>
+
+                    <FormControlLabel
+                      control={<Checkbox value="weekends"
+                        checked={!allFalse(graphParams.daysOfTheWeek, WEEKENDS)}
+                        indeterminate={!allFalse(graphParams.daysOfTheWeek, WEEKENDS) &&
+                          !allTrue(graphParams.daysOfTheWeek, WEEKENDS)}
+                        onChange={toggleDays} />}
+                      label="Weekends"
+                    />
+
+                    <Divider variant="middle" style={{ marginLeft: 0 } /* divider with a right margin */}/>
+
+                    {WEEKENDS.map(day =>
+                      <FormControlLabel
+                        control={<Checkbox checked={graphParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
+                        key={day.value}
+                        label={day.label}
+                      />)}
+                  </FormGroup>
+
+                </Grid>
+              </Grid>
+            </FormControl>
+
           </ListItem>
 
           <ListItem>
@@ -242,6 +515,7 @@ function DateTimePanel(props) {
 
 const mapStateToProps = state => ({
   graphParams: state.routes.graphParams,
+  isLoading: isLoadingRequest(state), 
 });
 
 const mapDispatchToProps = dispatch => {

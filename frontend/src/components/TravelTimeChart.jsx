@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 
 import {
   XYPlot,
@@ -15,9 +15,7 @@ import '../../node_modules/react-vis/dist/style.css';
 
 import { connect } from 'react-redux';
 
-import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import { Card, CardContent } from '@material-ui/core';
 import {
   getEndToEndTripTime,
   getTripDataSeries,
@@ -61,14 +59,14 @@ function TravelTimeChart(props) {
     const routeId = props.routeId || graphParams.routeId;
     directionId = props.directionId || graphParams.directionId; // also take direction_id from props if given
 
-    if (directionId) {
+    if (directionId != null) {
       tripTimeForDirection = getEndToEndTripTime(
-        props.tripCacheTimes,
+        props.tripTimesCache,
         graphParams,
         props.routes,
         routeId,
         directionId,
-      );
+      ).tripTime;
 
       /* this is the end-to-end speed in the selected direction, not currently used
     if (dist <= 0 || Number.isNaN(tripTime)) { speed = "?"; } // something wrong with the data here
@@ -87,9 +85,7 @@ function TravelTimeChart(props) {
   ];
 
   return directionId ? (
-    <Grid item xs={12}>
-      <Card>
-        <CardContent>
+    <Fragment>
           <Typography variant="h5">Travel time along route</Typography>
           Full travel time: {tripTimeForDirection} minutes &nbsp;&nbsp; Stops:{' '}
           {tripData[tripData.length - 1]
@@ -137,7 +133,7 @@ function TravelTimeChart(props) {
               strokeWidth="4"
               style={{
                 strokeDasharray: '2 2'
-              }}             
+              }}
             /> */}
 
             <ChartLabel
@@ -182,10 +178,8 @@ function TravelTimeChart(props) {
             width={300}
             items={legendItems}
           />
-        </CardContent>
-      </Card>
-    </Grid>
-  ) : null;
+    </Fragment>
+  ) : <Fragment>Select a direction to see the travel time chart.</Fragment>;
 }
 
 const mapStateToProps = state => ({

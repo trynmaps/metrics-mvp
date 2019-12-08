@@ -4,14 +4,23 @@ import { connect } from 'react-redux';
 import { Map, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
+import Grid from '@material-ui/core/Grid';
+import Typography from '@material-ui/core/Typography';
+import FormGroup from '@material-ui/core/FormGroup';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Checkbox from '@material-ui/core/Checkbox';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import Button from '@material-ui/core/Button';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { fetchRoutes } from '../actions';
-import { DefaultDisabledRoutes, routesUrl } from '../locationConstants';
-import { metricsBaseURL } from '../config';
+import { S3Bucket, MetricsBaseURL, Agencies, WaitTimesVersion, TripTimesVersion, RoutesVersion } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 
 import './Isochrone.css';
@@ -57,6 +66,15 @@ class Isochrone extends React.Component {
   constructor(props) {
     super(props);
 
+    // for now, only supports 1 agency at a time.
+    // todo: support multiple agencies on one map
+    const agency = Agencies[0];
+    this.agencyId = agency.id;
+
+    this.initialZoom = agency.initialMapZoom;
+    this.initialCenter = agency.initialMapCenter;
+    const defaultDisabledRoutes = agency.defaultDisabledRoutes || [];
+
     this.state = {
       stat: 'median',
       maxTripMin: 90,
@@ -73,11 +91,15 @@ class Isochrone extends React.Component {
     let workerUrl = `${
       process.env.PUBLIC_URL
     }/isochrone-worker.js?v=${Math.random()}`;
-    if (metricsBaseURL) {
-      workerUrl += `&base=${encodeURIComponent(metricsBaseURL)}`;
+    if (MetricsBaseURL) {
+      workerUrl += `&base=${encodeURIComponent(MetricsBaseURL)}`;
     }
 
-    workerUrl += `&routes_url=${encodeURIComponent(routesUrl)}`;
+    workerUrl += `&s3_bucket=${encodeURIComponent(S3Bucket)}`;
+    workerUrl += `&agency_id=${encodeURIComponent(this.agencyId)}`;
+    workerUrl += `&routes_version=${encodeURIComponent(RoutesVersion)}`;
+    workerUrl += `&wait_times_version=${encodeURIComponent(WaitTimesVersion)}`;
+    workerUrl += `&trip_times_version=${encodeURIComponent(TripTimesVersion)}`;
 
     const isochroneWorker = new Worker(workerUrl);
 
@@ -88,7 +110,7 @@ class Isochrone extends React.Component {
     this.tripLayers = [];
     this.mapRef = React.createRef();
 
-    DefaultDisabledRoutes.forEach(routeId => {
+    defaultDisabledRoutes.forEach(routeId => {
       this.state.enabledRoutes[routeId] = false;
     });
 
@@ -108,7 +130,7 @@ class Isochrone extends React.Component {
 
   componentDidMount() {
     if (!this.props.routes) {
-      this.props.fetchRoutes();
+      this.props.fetchRoutes({agencyId: this.agencyId});
     }
   }
 
@@ -338,7 +360,7 @@ class Isochrone extends React.Component {
   }
 
   computeIsochrones(latLng, endLatLng) {
-    if (!isInServiceArea(latLng)) {
+    if (!isInServiceArea(this.agencyId, latLng)) {
       return;
     }
 
@@ -553,17 +575,19 @@ class Isochrone extends React.Component {
     }
 
     return (
-      <div key={route.id}>
-        <label>
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={this.handleToggleRoute}
-            value={route.id}
-          />{' '}
-          {route.id}
-        </label>
-      </div>
+      <ListItem key={route.id}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={enabled}
+              onChange={this.handleToggleRoute}
+              value={route.id}
+              color="primary"
+            />
+          }
+          label={route.id}
+        />
+      </ListItem>
     );
   }
 
@@ -600,8 +624,6 @@ class Isochrone extends React.Component {
     }
     tripMins.push(90);
 
-    const center = { lat: 37.772, lng: -122.442 };
-
     return (
       <div className="flex-screen">
         <AppBar position="relative">
@@ -612,10 +634,10 @@ class Isochrone extends React.Component {
           </Toolbar>
         </AppBar>
         <Map
-          center={center}
-          zoom={13}
+          center={this.initialCenter}
+          zoom={this.initialZoom}
           className="isochrone-map"
-          minZoom={11}
+          minZoom={5}
           maxZoom={18}
           onClick={this.handleMapClick}
           ref={this.mapRef}
@@ -625,49 +647,63 @@ class Isochrone extends React.Component {
             url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
           />
           {/* see http://maps.stamen.com for details */}
-          <Control position="topleft">
-            <div className="isochrone-controls">
-              <div>
-                stat:
-                <select
+          <Control position="topleft" className="">
+            <Grid container
+              className="isochrone-controls"
+              direction="column">
+              <Grid item>
+                <Typography variant="subtitle1">Statistic</Typography>
+              </Grid>
+              <Grid item>
+                <Select
                   value={this.state.stat}
                   onChange={this.handleStatChange}
-                  className="isochrone-control-select"
                 >
-                  <option value="p10">10th percentile</option>
-                  <option value="median">median</option>
-                  <option value="p90">90th percentile</option>
-                </select>
-              </div>
-              <div>
-                max trip time:
-                <select
+                  <MenuItem value="p10">10th percentile</MenuItem>
+                  <MenuItem value="median">median</MenuItem>
+                  <MenuItem value="p90">90th percentile</MenuItem>
+                </Select>
+              </Grid>
+            </Grid>
+            <Grid container
+              className="isochrone-controls"
+              direction="column">
+              <Grid item>
+                <Typography variant="subtitle1">Max Trip Time</Typography>
+              </Grid>
+              <Grid item>
+                <Select
                   value={this.state.maxTripMin}
                   onChange={this.handleMaxTripMinChange}
-                  className="isochrone-control-select"
                 >
                   {tripMins.map(tripMin => (
-                    <option key={tripMin} value={tripMin}>
+                    <MenuItem key={tripMin} value={tripMin}>
                       {tripMin} minutes
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </div>
-              <div>
-                routes:
-                <div className="isochrone-select-all">
-                  <span onClick={this.selectAllRoutesClicked}>all</span>
-                  {' / '}
-                  <span onClick={this.selectNoRoutesClicked}>none</span>
-                </div>
-                <div className="isochrone-routes">
+                </Select>
+              </Grid>
+            </Grid>
+            <Grid container
+              className="isochrone-controls"
+              direction="column">
+              <Grid item>
+                <Typography variant="subtitle1">Routes</Typography>
+              </Grid>
+              <Grid container item
+                direction="row"
+                alignItems="flex-start">
+                <Grid item>
+                  <Button onClick={this.selectAllRoutesClicked}>all</Button>
+                  <Button onClick={this.selectNoRoutesClicked}>none</Button>
+                </Grid>
+              </Grid>
+              <Grid item>
+                <List className="isochrone-routes">
                   {(routes || []).map(route => this.makeRouteToggle(route))}
-                </div>
-              </div>
-              <button type="button" onClick={this.resetMapClicked}>
-                Clear
-              </button>
-            </div>
+                </List>
+              </Grid>
+            </Grid>
           </Control>
           <Control position="topright">
             {this.state.tripInfo ? (
@@ -692,6 +728,17 @@ class Isochrone extends React.Component {
               <div className="isochrone-legend-times">{times}</div>
             </div>
           </Control>
+          <Control position="bottomleft">
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={this.resetMapClicked}
+              >
+                Clear map
+              </Button>
+            <br />
+            <br />
+          </Control>
         </Map>
       </div>
     );
@@ -706,7 +753,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: () => dispatch(fetchRoutes()),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
 export default connect(

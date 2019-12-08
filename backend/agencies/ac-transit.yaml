@@ -1,0 +1,7 @@
+id: ac-transit
+gtfs_url: https://api.actransit.org/transit/gtfs/download?token=2512B81107A09D2DC44895CDDC650D47
+timezone_id: America/Los_Angeles
+js_properties:
+  title: AC Transit
+  initialMapCenter: { lat: 37.75, lng: -122.22 }
+  initialMapZoom: 11

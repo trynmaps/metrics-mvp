@@ -1,4 +1,4 @@
-from models import metrics, nextbus, util, arrival_history, wait_times, constants
+from models import metrics, util, arrival_history, wait_times, constants, config
 import json
 import argparse
 from pathlib import Path
@@ -79,9 +79,11 @@ def add_median_wait_time_stats_for_direction(
 
         dir_wait_time_stats["median"] = median
 
-def compute_wait_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids=None):
+def compute_wait_times(d: date, agency: config.Agency, routes, save_to_s3=True, stat_ids=None):
     if stat_ids is None:
         stat_ids = stat_groups.keys()
+
+    tz = agency.tz
 
     print(d)
     all_wait_time_stats = {}
@@ -107,10 +109,10 @@ def compute_wait_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
         route_id = route.id
 
         print(route_id)
-        route_config = nextbus.get_route_config(agency_id, route_id)
+        route_config = agency.get_route_config(route_id)
 
         try:
-            history = arrival_history.get_by_date(agency_id, route_id, d)
+            history = arrival_history.get_by_date(agency.id, route_id, d)
         except FileNotFoundError as ex:
             print(ex)
             continue
@@ -121,6 +123,8 @@ def compute_wait_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
 
         df = history.get_data_frame()
         df = df.sort_values('TIME', axis=0)
+        sid_values = df['SID'].values
+        did_values = df['DID'].values
 
         for dir_info in route_config.get_direction_infos():
 
@@ -131,10 +135,9 @@ def compute_wait_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
                     all_wait_time_stats[interval_index][stat_id][route_id][dir_id] = {}
 
             stop_ids = dir_info.get_stop_ids()
-            sid_values = df['SID'].values
 
             for i, stop_id in enumerate(stop_ids):
-                stop_df = df[sid_values == stop_id]
+                stop_df = df[(sid_values == stop_id) & (did_values == dir_id)]
 
                 all_time_values = stop_df['TIME'].values
 
@@ -170,7 +173,7 @@ def compute_wait_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
                 'routes': all_wait_time_stats[interval_index][stat_id]
             }, separators=(',', ':'))
 
-            cache_path = wait_times.get_cache_path(agency_id, d, stat_id, start_time_str, end_time_str)
+            cache_path = wait_times.get_cache_path(agency.id, d, stat_id, start_time_str, end_time_str)
 
             cache_dir = Path(cache_path).parent
             if not cache_dir.exists():
@@ -182,8 +185,8 @@ def compute_wait_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
 
             if save_to_s3:
                 s3 = boto3.resource('s3')
-                s3_path = wait_times.get_s3_path(agency_id, d, stat_id, start_time_str, end_time_str)
-                s3_bucket = wait_times.get_s3_bucket()
+                s3_path = wait_times.get_s3_path(agency.id, d, stat_id, start_time_str, end_time_str)
+                s3_bucket = config.s3_bucket
                 print(f'saving to s3://{s3_bucket}/{s3_path}')
                 object = s3.Object(s3_bucket, s3_path)
                 object.put(
@@ -197,6 +200,7 @@ def compute_wait_times(d: date, tz, agency_id, routes, save_to_s3=True, stat_ids
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache wait times')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
+    parser.add_argument('--agency', required=False, help='Agency ID')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
@@ -205,11 +209,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    agency_id = 'sf-muni'
-
-    tz = pytz.timezone('US/Pacific')
-
-    routes = nextbus.get_route_list(agency_id)
+    agencies = [config.get_agency(args.agency)] if args.agency is not None else config.agencies
 
     if args.date:
         dates = util.get_dates_in_range(args.date, args.date)
@@ -220,5 +220,7 @@ if __name__ == '__main__':
 
     stat_ids = args.stat
 
-    for d in dates:
-        compute_wait_times(d, tz, agency_id, routes, save_to_s3=args.s3, stat_ids=stat_ids)
+    for agency in agencies:
+        routes = agency.get_route_list()
+        for d in dates:
+            compute_wait_times(d, agency, routes, save_to_s3=args.s3, stat_ids=stat_ids)

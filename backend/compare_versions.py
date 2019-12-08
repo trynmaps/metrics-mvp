@@ -2,14 +2,15 @@ import argparse
 import json
 import sys
 from datetime import datetime, timedelta
-from models import nextbus, arrival_history, util, metrics
+from models import arrival_history, util, metrics, config
 import pytz
 import pandas as pd
 import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compare two versions of arrival history')
-    parser.add_argument('--route', nargs='*', help='Route id(s)')
+    parser.add_argument('--agency', required=True, help='Agency ID')
+    parser.add_argument('--route', nargs='*', help='Route ID(s)')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--stop', help='Stop ID')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
@@ -27,11 +28,12 @@ if __name__ == '__main__':
 
     stop_id = args.stop
 
-    agency = 'sf-muni'
+    agency_id = args.agency
+    agency = config.get_agency(agency_id)
 
     route_ids = args.route
     if route_ids is None:
-        route_ids = [route.id for route in nextbus.get_route_list(agency)]
+        route_ids = [route.id for route in agency.get_route_list()]
 
     date_str = args.date
 
@@ -53,7 +55,7 @@ if __name__ == '__main__':
 
     route_configs = {}
     for route_id in route_ids:
-        route_configs[route_id] = nextbus.get_route_config(agency, route_id)
+        route_configs[route_id] = agency.get_route_config(route_id)
 
     if stop_id:
         stop_info = route_configs[route_id].get_stop_info(stop_id) if route_id else None
@@ -61,8 +63,8 @@ if __name__ == '__main__':
 
     for d in dates:
         for route_id in route_ids:
-            base_history = arrival_history.get_by_date(agency, route_id, d, base_version)
-            other_history = arrival_history.get_by_date(agency, route_id, d, other_version)
+            base_history = arrival_history.get_by_date(agency_id, route_id, d, base_version)
+            other_history = arrival_history.get_by_date(agency_id, route_id, d, other_version)
 
             base_df = base_history.get_data_frame(stop_id=stop_id).sort_values('TIME', axis=0)
             other_df = base_history.get_data_frame(stop_id=stop_id).sort_values('TIME', axis=0)

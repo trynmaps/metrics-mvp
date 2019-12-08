@@ -8,17 +8,18 @@ import { DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
-import { STARTING_COORDINATES } from '../locationConstants';
 import { Colors } from '../UIConstants';
+import { Agencies } from '../config';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import ReactDOMServer from 'react-dom/server';
 
-const ZOOM = 13;
-
 class MapStops extends Component {
   constructor(props) {
     super(props);
+
+    this.agency = Agencies[0];
+
     this.state = {
       height: this.computeHeight(),
     };
@@ -32,15 +33,15 @@ class MapStops extends Component {
   componentWillUnmount() {
     window.removeEventListener('resize', this.updateDimensions.bind(this));
   }
-  
+
   /**
    * Helper method that draws one stop with svg graphics and/or Material UI icons.
-   * 
+   *
    * @param {Object} stop The stop info object for this stop.
    * @param {Object} currentPosition Coordinates for this stop.
    * @param {Number} rotation Number of degrees to rotate to point in the direction of travel.
    * @param {Function} onClickHandler Method for handling mouse clicks.
-   * @param {Object} tooltip The react-leaflet Tooltip for this stop. 
+   * @param {Object} tooltip The react-leaflet Tooltip for this stop.
    * @returns {Object} The react-leaflet Marker.
    */
   populateStop = (stop, IconType, currentPosition, rotation, onClickHandler, tooltip) => {
@@ -48,63 +49,63 @@ class MapStops extends Component {
     let icon = null;
 
     if (IconType) {
-      
-      // Given an IconType indicates start or end stop.  This is a white circle with a black icon, 
+
+      // Given an IconType indicates start or end stop.  This is a white circle with a black icon,
       // followed by the title of the stop.
-      
+
       icon = L.divIcon({
         className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
         iconSize: [240, 24],
         iconAnchor: [12, 12], // centers icon over position, with text to the right
         html:
-          
+
           `<svg width="24" height="24" viewBox="-10 -10 10 10">` +
-          
+
           // this is a larger white circle
-          
+
           `<circle cx="-5" cy="-5" r="4.5" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
-          
+
           // this is the passed in icon, which we ask React to render as html (becomes an svg object)
-          
+
           `</svg><div style="position:relative; top: -26px; left:2px">` +
           ReactDOMServer.renderToString(<IconType style={{color:Colors.INDIGO}} fontSize={'small'}/>) +
          `</div>` +
-         
+
          // this is the stop title with a text shadow to outline it in white
-         
+
          `<div style="position:relative; top:-50px; left:25px; font-weight:bold; color:` + Colors.INDIGO + `; ` +
          `text-shadow: -1px 1px 0 #fff,` +
          `1px 1px 0 #fff,` +
          `1px -1px 0 #fff,` +
          `-1px -1px 0 #fff;">${stop.title}</div>`,
       });
-      
+
     } else {
-      
+
       // If not given an IconType, this is just a regular stop.  This is a white circle with an
       // svg "v" shape rotated by the given rotation value.
 
       icon = L.divIcon({
-        className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
+        className: `id${stop.sid}`, // this is needed to turn off the default icon styling (blank square)
         iconSize: [20, 20],
         iconAnchor: [10, 10], // centers icon over position, with text to the right
         html:
           `<svg viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
-          
+
           // First we draw a white circle
-          
+
           `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
-          
+
           // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
-          
+
           `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${
             Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
           `</g>` +
-          `</svg>`, 
+          `</svg>`,
       });
 
     }
-    
+
     return (
       <Marker
         key={ stop.sid + '-marker' }
@@ -116,20 +117,20 @@ class MapStops extends Component {
   };
 
   /**
-   * Computes angle in degrees from one point towards another 
+   * Computes angle in degrees from one point towards another
    * @param {Object} fromPoint latLng of starting point
    * @param {Object} toPoint latLng of ending point
    * @returns {Number} The angle in degrees (where 0 is east, 90 is south)
    */
   angleFromTo = (fromPoint, toPoint) => {
     const delta_x = toPoint.lon - fromPoint.lon;
-    // Note that y is reversed due to latitude's postive direction being reverse of screen y  
+    // Note that y is reversed due to latitude's postive direction being reverse of screen y
     const delta_y = fromPoint.lat - toPoint.lat;
     const rotation = Math.round(Math.atan2(delta_y, delta_x) * 180/Math.PI);
     return rotation;
   }
-  
- 
+
+
   /**
    * Draws all the stops in a given direction.
    * @param {Array} routeStops Collection of route stops grouped by direction id
@@ -149,13 +150,13 @@ class MapStops extends Component {
         const currentPosition = [stop.lat, stop.lon];
         const isStart = stop.sid === this.props.graphParams.startStopId;
         const isEnd = stop.sid === this.props.graphParams.endStopId;
-        
-        const onClickHandler = () => this.handleStopSelect(stop, directionId); 
+
+        const onClickHandler = () => this.handleStopSelect(stop, directionId);
         const tooltip = <Tooltip>
           {stop.title}
           <br />
           {direction.title}
-        </Tooltip>; 
+        </Tooltip>;
 
         let IconType = null;
         if (isStart) {
@@ -163,7 +164,7 @@ class MapStops extends Component {
         } else if (isEnd) {
           IconType = EndStopIcon;
         }
-        
+
         // The direction of travel for a stop is from the GTFS shape point just before
         // this stop (represented by after_index) to the next shape point. Edge cases
         // at the beginning and end of a route seem to work out (probably because of
@@ -176,14 +177,14 @@ class MapStops extends Component {
           const nextPoint = direction.coords[stopGeometry.after_index+1];
           rotation = this.angleFromTo(previousPoint, nextPoint);
         }
-      
+
         const icon = this.populateStop(stop, IconType, currentPosition, rotation, onClickHandler, tooltip);
         return icon;
       });
     }
     return route;
-  }; 
-  
+  };
+
   // plot speed along a route
 
   populateSpeed = (routeInfo, direction, routeStops, directionId) => {
@@ -192,7 +193,7 @@ class MapStops extends Component {
 
     let seenStart = false;
     let seenEnd = false;
-    
+
     for (let i = 0; i < downstreamStops.length - 1; i++) {
       const speed = this.getSpeed(
         routeInfo,
@@ -206,20 +207,20 @@ class MapStops extends Component {
         seenStart = true;
       }
       if (downstreamStops[i].sid === this.props.graphParams.endStopId) {
-        seenEnd = true; 
+        seenEnd = true;
       }
-      
+
       let color = 'white';
       let weight = 12;
-      
+
       // If this is the start stop or a subsequent stop before the end stop,
       // use a different color to highlight the selected range of stops.
-      
+
       if (this.props.graphParams.endStopId && seenStart && !seenEnd) {
         color = Colors.INDIGO;
         weight = 14;
       }
-      
+
       // draw a wide polyline as a background for the speed polyline
 
       polylines.push(
@@ -236,7 +237,7 @@ class MapStops extends Component {
           weight={weight}
         ></Polyline>,
       );
-      
+
       // then the speed polyline on top of the white polyline
 
       polylines.push(
@@ -430,7 +431,8 @@ class MapStops extends Component {
   computeHeight() {
     return (
       (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
-      64 /* blue app bar */
+      64 - /* blue app bar */
+      50 /* breadcrumb paper */
     );
   }
 
@@ -474,9 +476,9 @@ class MapStops extends Component {
               selectedRoute,
               direction.id,
             );
-            
+
             // add white lines and speed color lines
-            
+
             populatedRoutes.push(
               this.populateStops(
                 routeStops,
@@ -484,9 +486,9 @@ class MapStops extends Component {
                 direction,
               ),
             );
-            
+
             // draw stop markers on top of lines for all directions
-            
+
             populatedRoutes.unshift(
               this.populateSpeed(selectedRoute, direction, routeStops, direction.id),
             )
@@ -495,17 +497,15 @@ class MapStops extends Component {
       }
     }
 
-    let mapInstruction = '';
-    if (!graphParams.endStopId) mapInstruction = 'Click a destination stop.';
-    else if (!graphParams.startStopId) mapInstruction = 'Click an origin stop.';
-    else if (!graphParams.directionId)
-      mapInstruction = 'Select a direction to see stops in that direction.';
+    let mapInstruction =(!graphParams.directionId) ? 'Select a direction to see stops in that direction.'
+        : (!graphParams.startStopId) ? 'Click an origin stop.'
+        : (!graphParams.endStopId) ? 'Click a destination stop.' : '';
 
     return (
       <Map
-        center={position || STARTING_COORDINATES}
+        center={position || this.agency.initialMapCenter}
         bounds={routeStops ? routeStops[selectedRoute.directions[0].id] : null}
-        zoom={zoom || ZOOM}
+        zoom={zoom || this.agency.initialMapZoom}
         style={mapClass}
       >
         <TileLayer

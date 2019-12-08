@@ -6,10 +6,11 @@ import pandas as pd
 import numpy as np
 import partridge as ptg
 
-from models import metrics, timetable, arrival_history, nextbus, util, constants, errors
+from models import metrics, timetable, arrival_history, util, constants, errors
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Get the timetable for stops on a given route")
+    parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument("--route", required = True, help = "Route id")
     parser.add_argument("--stops", required = True, help = "Comma-separated list of stops on the route (ex '3413,4416'")
     parser.add_argument("--date", required = True, help = "Date - YYYY-MM-DD")
@@ -24,8 +25,11 @@ if __name__ == "__main__":
     stops = [stop for stop in args.stops.split(",") if len(stop) > 0]
     d = date.fromisoformat(args.date)
     comparison = args.comparison
+
+    agency = config.get_agency(args.agency)
+
     ver = "v1"
-    
+
     try:
         thresholds = [int(x) for x in args.thresholds.split(',') if len(x) > 0]
 
@@ -35,13 +39,13 @@ if __name__ == "__main__":
         print("Invalid thresholds, using the default of 5/10 minutes.")
         thresholds = [5, 10]
 
-    agency = "sf-muni"
-    
+    agency_id = agency.id
+
     start_time = datetime.now()
     print(f"Start: {start_time}")
 
-    tt = timetable.get_timetable_from_csv(agency, route, d, ver)
-    rc = nextbus.get_route_config(agency, route)
+    tt = timetable.get_timetable_from_csv(agency_id, route, d, ver)
+    rc = agency.get_route_config(route)
 
     for stop in stops:
         # get direction
@@ -51,9 +55,9 @@ if __name__ == "__main__":
         else:
             for direction in nextbus_dir:
                 tt.pretty_print(stop, direction)
-                
+
                 if comparison:
-                    route_metrics = metrics.RouteMetrics(agency, route)
+                    route_metrics = metrics.RouteMetrics(agency_id, route)
                     df = route_metrics.get_comparison_to_timetable(d, stop, direction)
 
                     if len(df) > 0:
@@ -67,13 +71,13 @@ if __name__ == "__main__":
                             "closest_arrival_delta": "Delta (Closest Arrival)",
                             "closest_arrival_headway": "Closest Arrival Headway"
                         }, axis = "columns")
-                    
+
                         times_df = df[["Scheduled Arrival", "Closest Arrival", "Delta (Closest Arrival)", "Next Arrival", "Delta (Next Arrival)"]].copy(deep = True)
-                        times_df[["Scheduled Arrival", "Closest Arrival", "Next Arrival"]] = times_df[["Scheduled Arrival", "Closest Arrival", "Next Arrival"]].applymap(lambda x: datetime.fromtimestamp(x, constants.PACIFIC_TIMEZONE).time() if not pd.isna(x) else np.nan)
+                        times_df[["Scheduled Arrival", "Closest Arrival", "Next Arrival"]] = times_df[["Scheduled Arrival", "Closest Arrival", "Next Arrival"]].applymap(lambda x: datetime.fromtimestamp(x, agency.tz).time() if not pd.isna(x) else np.nan)
                         times_df[["Delta (Closest Arrival)", "Delta (Next Arrival)"]] = times_df[["Delta (Closest Arrival)", "Delta (Next Arrival)"]].applymap(lambda x: f"{round(x/60, 2)} min")
 
                         headways_df = df[["Scheduled Arrival", "Scheduled Headway", "Closest Arrival Headway", "Next Arrival Headway"]].copy(deep = True)
-                        headways_df["Scheduled Arrival"] = headways_df["Scheduled Arrival"].apply(lambda x: datetime.fromtimestamp(x, constants.PACIFIC_TIMEZONE).time() if not pd.isna(x) else np.nan)
+                        headways_df["Scheduled Arrival"] = headways_df["Scheduled Arrival"].apply(lambda x: datetime.fromtimestamp(x, agency.tz).time() if not pd.isna(x) else np.nan)
                         headways_df[["Scheduled Headway", "Closest Arrival Headway", "Next Arrival Headway"]] = headways_df[["Scheduled Headway", "Closest Arrival Headway", "Next Arrival Headway"]].applymap(lambda x: f"{round(x, 2) if not pd.isna(x) else np.nan} min")
 
                         with pd.option_context("display.max_rows", None, "display.max_columns", None, 'display.expand_frame_repr', False):
