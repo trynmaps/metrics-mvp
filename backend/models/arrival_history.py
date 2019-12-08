@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import time
 import re
 import os
 import json
@@ -170,9 +171,12 @@ def get_by_date(agency_id: str, route_id: str, d: date, version = DefaultVersion
     cache_path = get_cache_path(agency_id, route_id, d, version)
 
     try:
-        with open(cache_path, "r") as f:
-            text = f.read()
-            return ArrivalHistory.from_data(json.loads(text))
+        mtime = os.stat(cache_path).st_mtime
+        now = time.time()
+        if now - mtime < 86400:
+            with open(cache_path, "r") as f:
+                text = f.read()
+                return ArrivalHistory.from_data(json.loads(text))
     except FileNotFoundError as err:
         pass
 

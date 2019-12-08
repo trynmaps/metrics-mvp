@@ -111,7 +111,9 @@ if __name__ == '__main__':
                 dest_arrival_time = row.dest_arrival_time
                 dest_arrival_time_str = datetime.fromtimestamp(dest_arrival_time, tz).time() if dest_arrival_time is not None and not np.isnan(dest_arrival_time) else None
 
-                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID}  #{row.TRIP}   trip_minutes:{round(row.trip_min, 1)}")
+                trip_str = f'#{row.TRIP}'.rjust(5)
+
+                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID}  {trip_str}   {round(row.trip_min, 1)} min trip")
 
             completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 

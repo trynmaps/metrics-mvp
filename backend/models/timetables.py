@@ -86,7 +86,43 @@ def get_by_date(agency_id: str, route_id: str, d: date, version = DefaultVersion
         date_start_time = date_start_time
     )
 
-def match_arrivals(scheduled_arrivals, arrivals, early_sec=60, late_sec=300) -> pd.DataFrame:
+def match_arrivals_to_schedule(arrivals, scheduled_arrivals) -> pd.DataFrame:
+
+    scheduled_headways = np.r_[np.nan, metrics.compute_headway_minutes(scheduled_arrivals)]
+
+    next_scheduled_arrival_indices = np.searchsorted(scheduled_arrivals, arrivals)
+    scheduled_arrivals_padded = np.r_[scheduled_arrivals, np.nan]
+    scheduled_headways_padded = np.r_[scheduled_headways, np.nan]
+
+    next_scheduled_arrivals = scheduled_arrivals_padded[next_scheduled_arrival_indices]
+    next_scheduled_headways = scheduled_headways_padded[next_scheduled_arrival_indices]
+
+    prev_scheduled_arrivals = np.r_[np.nan, scheduled_arrivals][next_scheduled_arrival_indices]
+    prev_scheduled_headways = np.r_[np.nan, scheduled_headways][next_scheduled_arrival_indices]
+
+    if len(arrivals):
+        next_scheduled_arrival_deltas = arrivals - next_scheduled_arrivals
+        prev_scheduled_arrival_deltas = arrivals - prev_scheduled_arrivals
+
+        np.place(prev_scheduled_arrival_deltas, np.isnan(prev_scheduled_arrival_deltas), np.inf)
+        np.place(next_scheduled_arrival_deltas, np.isnan(next_scheduled_arrival_deltas), -np.inf)
+
+        is_next_closer = (prev_scheduled_arrival_deltas >= -next_scheduled_arrival_deltas)
+    else:
+        is_next_closer = False
+
+    closest_scheduled_arrivals = np.where(is_next_closer, next_scheduled_arrivals, prev_scheduled_arrivals)
+    closest_scheduled_headways = np.where(is_next_closer, next_scheduled_headways, prev_scheduled_headways)
+
+    return pd.DataFrame({
+        'next_scheduled_arrival': next_scheduled_arrivals,
+        'prev_scheduled_arrival': prev_scheduled_arrivals,
+        'closest_scheduled_arrival': closest_scheduled_arrivals,
+        'closest_scheduled_delta': arrivals - closest_scheduled_arrivals,
+        'closest_scheduled_headway': closest_scheduled_headways,
+    })
+
+def match_schedule_to_arrivals(scheduled_arrivals, arrivals, early_sec=60, late_sec=300) -> pd.DataFrame:
     # For each scheduled arrival time in the first array, finds the previous, next, and closest actual
     # arrival time from the second array.
     #
@@ -160,22 +196,23 @@ def match_arrivals(scheduled_arrivals, arrivals, early_sec=60, late_sec=300) -> 
     # to handle this case, determine if the previous or next actual arrival time didn't match the previous or next scheduled arrival time.
     # if this is the case, use this time to replace np.nan in matching_arrivals.
 
-    prev_matching_arrivals = np.r_[np.nan, matching_arrivals[:-1]]
-    next_matching_arrivals = np.r_[matching_arrivals[1:], np.nan]
+    if len(scheduled_arrivals):
+        prev_matching_arrivals = np.r_[np.nan, matching_arrivals[:-1]]
+        next_matching_arrivals = np.r_[matching_arrivals[1:], np.nan]
 
-    prev_is_unmatched = no_match & np.greater(prev_arrivals, prev_matching_arrivals, where=(np.isfinite(prev_arrivals) & np.isfinite(prev_matching_arrivals)))
-    next_is_unmatched = no_match & ~prev_is_unmatched & np.less(next_arrivals, next_matching_arrivals, where=(np.isfinite(next_arrivals) & np.isfinite(next_matching_arrivals)))
+        prev_is_unmatched = no_match & np.greater(prev_arrivals, prev_matching_arrivals, where=(np.isfinite(prev_arrivals) & np.isfinite(prev_matching_arrivals)))
+        next_is_unmatched = no_match & ~prev_is_unmatched & np.less(next_arrivals, next_matching_arrivals, where=(np.isfinite(next_arrivals) & np.isfinite(next_matching_arrivals)))
 
-    matching_arrivals = np.where(prev_is_unmatched, prev_arrivals, matching_arrivals)
-    matching_arrival_headways = np.where(prev_is_unmatched, prev_arrival_headways, matching_arrival_headways)
-    matching_arrival_deltas = np.where(prev_is_unmatched, prev_arrival_deltas, matching_arrival_deltas)
+        matching_arrivals = np.where(prev_is_unmatched, prev_arrivals, matching_arrivals)
+        matching_arrival_headways = np.where(prev_is_unmatched, prev_arrival_headways, matching_arrival_headways)
+        matching_arrival_deltas = np.where(prev_is_unmatched, prev_arrival_deltas, matching_arrival_deltas)
 
-    matching_arrivals = np.where(next_is_unmatched, next_arrivals, matching_arrivals)
-    matching_arrival_headways = np.where(next_is_unmatched, next_arrival_headways, matching_arrival_headways)
-    matching_arrival_deltas = np.where(next_is_unmatched, next_arrival_deltas, matching_arrival_deltas)
+        matching_arrivals = np.where(next_is_unmatched, next_arrivals, matching_arrivals)
+        matching_arrival_headways = np.where(next_is_unmatched, next_arrival_headways, matching_arrival_headways)
+        matching_arrival_deltas = np.where(next_is_unmatched, next_arrival_deltas, matching_arrival_deltas)
 
-    is_match = is_match | prev_is_unmatched | next_is_unmatched
-    no_match = ~is_match
+        is_match = is_match | prev_is_unmatched | next_is_unmatched
+        no_match = ~is_match
 
     early = is_match & (matching_arrival_deltas < -early_sec)
     late = is_match & (matching_arrival_deltas > late_sec)
@@ -195,8 +232,8 @@ def match_arrivals(scheduled_arrivals, arrivals, early_sec=60, late_sec=300) -> 
         'closest_arrival_headway': closest_arrival_headways,
 
         'matching_arrival': matching_arrivals,
-        'matching_arrival_headway': matching_arrival_headways,
         'matching_arrival_delta': matching_arrival_deltas,
+        'matching_arrival_headway': matching_arrival_headways,
 
         'on_time': on_time,
         'late': late,

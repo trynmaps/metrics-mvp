@@ -1,6 +1,8 @@
 import math
 import pytz
 import sys
+import time
+from datetime import date
 from . import wait_times, util, arrival_history, trip_times, errors, constants, timetables
 
 import pandas as pd
@@ -44,8 +46,8 @@ class RouteMetrics:
 
         return history
 
-    def get_data_frame(self, d, direction_id=None, stop_id=None):
-        key = f'{str(d)}_{stop_id}_{direction_id}'
+    def get_history_data_frame(self, d, direction_id=None, stop_id=None):
+        key = f'history_{str(d)}_{stop_id}_{direction_id}'
 
         if key in self.data_frames:
             return self.data_frames[key]
@@ -67,7 +69,7 @@ class RouteMetrics:
     def get_timetable_data_frame(self, d, direction_id=None, stop_id=None):
         timetable = self.get_timetable(d)
 
-        timetable_key = f'{str(d)}_{stop_id}_{direction_id}_timetable'
+        timetable_key = f'timetable_{str(d)}_{stop_id}_{direction_id}'
 
         if timetable_key not in self.data_frames:
             self.data_frames[timetable_key] = timetable.get_data_frame(stop_id=stop_id, direction_id=direction_id)
@@ -75,13 +77,19 @@ class RouteMetrics:
         return self.data_frames[timetable_key]
 
     def get_wait_time_stats(self, direction_id, stop_id, rng: Range):
+        return self._get_wait_time_stats(direction_id, stop_id, rng, self.get_history_data_frame)
+
+    def get_scheduled_wait_time_stats(self, direction_id, stop_id, rng: Range):
+        return self._get_wait_time_stats(direction_id, stop_id, rng, self.get_timetable_data_frame)
+
+    def _get_wait_time_stats(self, direction_id, stop_id, rng: Range, get_data_frame):
         wait_stats_arr = []
 
         for d in rng.dates:
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
 
-            df = self.get_data_frame(d, stop_id=stop_id, direction_id=direction_id)
+            df = get_data_frame(d, stop_id=stop_id, direction_id=direction_id)
 
             departure_time_values = np.sort(df['DEPARTURE_TIME'].values)
 
@@ -91,65 +99,51 @@ class RouteMetrics:
 
         return wait_stats_arr
 
-    def get_scheduled_arrivals(self, direction_id, stop_id, rng: Range):
+    def get_arrivals(self, direction_id, stop_id, rng: Range):
+        return self._get_arrivals(direction_id, stop_id, rng, self.get_history_data_frame)
 
+    def get_scheduled_arrivals(self, direction_id, stop_id, rng: Range):
+        return self._get_arrivals(direction_id, stop_id, rng, self.get_timetable_data_frame)
+
+    def _get_arrivals(self, direction_id, stop_id, rng: Range, get_data_frame):
         count = 0
 
         for d in rng.dates:
-
-            timetable_df = self.get_timetable_data_frame(d, direction_id=direction_id, stop_id=stop_id)
+            df = get_data_frame(d, direction_id=direction_id, stop_id=stop_id)
 
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
 
             if start_time is not None:
-                timetable_df = timetable_df[timetable_df['TIME'] >= start_time]
+                df = df[df['TIME'] >= start_time]
 
             if end_time is not None:
-                timetable_df = timetable_df[timetable_df['TIME'] < end_time]
+                df = df[df['TIME'] < end_time]
 
-            count += len(timetable_df)
+            count += len(df)
 
         return count
 
-    def get_scheduled_headways(self, direction_id, stop_id, rng: Range):
-
-        scheduled_headways_arr = []
-
-        for d in rng.dates:
-
-            timetable_df = self.get_timetable_data_frame(d, direction_id=direction_id, stop_id=stop_id)
-
-            timetable_df['scheduled_headway'] = np.r_[np.nan, compute_headway_minutes(timetable_df['TIME'].values)]
-
-            start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
-            end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
-
-            if start_time is not None:
-                timetable_df = timetable_df[timetable_df['TIME'] >= start_time]
-
-            if end_time is not None:
-                timetable_df = timetable_df[timetable_df['TIME'] < end_time]
-
-            scheduled_headways_arr.append(timetable_df['scheduled_headway'].dropna().values)
-
-        return np.concatenate(scheduled_headways_arr)
-
-    def match_arrivals_to_timetable(self, direction_id, stop_id, early_sec, late_sec, rng: Range):
+    def get_schedule_adherence(self, direction_id, stop_id, early_sec, late_sec, rng: Range):
 
         compared_timetable_arr = []
 
+        now = time.time()
+
         for d in rng.dates:
             stop_timetable = self.get_timetable_data_frame(d, direction_id=direction_id, stop_id=stop_id)
-            stop_arrivals = self.get_data_frame(d, direction_id=direction_id, stop_id=stop_id)
+            stop_arrivals = self.get_history_data_frame(d, direction_id=direction_id, stop_id=stop_id)
 
-            comparison_df = timetables.match_arrivals(
+            comparison_df = timetables.match_schedule_to_arrivals(
                 stop_timetable['TIME'].values,
                 stop_arrivals['TIME'].values,
                 early_sec = early_sec,
                 late_sec = late_sec,
             )
             comparison_df['TIME'] = stop_timetable['TIME']
+
+            if len(comparison_df) and comparison_df['TIME'].iloc[-1] >= now:
+                comparison_df = comparison_df[comparison_df['TIME'] < now]
 
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
@@ -164,17 +158,61 @@ class RouteMetrics:
 
         return pd.concat(compared_timetable_arr)
 
-    def get_trip_times(self, direction_id, start_stop_id, end_stop_id, rng: Range):
+    def get_headway_schedule_deltas(self, direction_id, stop_id, rng: Range):
 
+        headway_delta_arr = []
+
+        now = time.time()
+
+        for d in rng.dates:
+            timetable_df = self.get_timetable_data_frame(d, direction_id=direction_id, stop_id=stop_id)
+            history_df = self.get_history_data_frame(d, direction_id=direction_id, stop_id=stop_id)
+
+            arrival_time_values = history_df['TIME'].values
+
+            comparison_df = timetables.match_arrivals_to_schedule(
+                arrival_time_values,
+                timetable_df['TIME'].values,
+            )
+            comparison_df['TIME'] = arrival_time_values
+
+            comparison_df['headway'] = np.r_[np.nan, compute_headway_minutes(arrival_time_values)]
+
+            comparison_df = comparison_df[np.isfinite(comparison_df['headway'].values) & np.isfinite(comparison_df['closest_scheduled_headway'].values)]
+
+            if len(comparison_df) and comparison_df['TIME'].iloc[-1] >= now:
+                comparison_df = comparison_df[comparison_df['TIME'] < now]
+
+            start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
+            end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
+
+            if start_time is not None:
+                comparison_df = comparison_df[comparison_df['TIME'] >= start_time]
+
+            if end_time is not None:
+                comparison_df = comparison_df[comparison_df['TIME'] < end_time]
+
+            headway_delta = comparison_df['headway'].values - comparison_df['closest_scheduled_headway'].values
+
+            headway_delta_arr.append(headway_delta)
+
+        return np.concatenate(headway_delta_arr)
+
+    def get_scheduled_trip_times(self, direction_id, start_stop_id, end_stop_id, rng: Range):
+        return self._get_trip_times(direction_id, start_stop_id, end_stop_id, rng, self.get_timetable_data_frame)
+
+    def get_trip_times(self, direction_id, start_stop_id, end_stop_id, rng: Range):
+        return self._get_trip_times(direction_id, start_stop_id, end_stop_id, rng, self.get_history_data_frame)
+
+    def _get_trip_times(self, direction_id, start_stop_id, end_stop_id, rng: Range, get_data_frame):
         completed_trips_arr = []
 
         if end_stop_id is None:
             return None
 
         for d in rng.dates:
-            history = self.get_arrival_history(d)
-            s1_df = self.get_data_frame(d, stop_id=start_stop_id, direction_id=direction_id)
-            s2_df = self.get_data_frame(d, stop_id=end_stop_id, direction_id=direction_id)
+            s1_df = get_data_frame(d, stop_id=start_stop_id, direction_id=direction_id)
+            s2_df = get_data_frame(d, stop_id=end_stop_id, direction_id=direction_id)
 
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
@@ -191,17 +229,21 @@ class RouteMetrics:
                 s2_df['TRIP'].values,
                 s2_df['TIME'].values
             )
-
             completed_trips_arr.append(completed_trip_times)
 
         return np.concatenate(completed_trips_arr)
 
     def get_headways(self, direction_id, stop_id, rng: Range):
+        return self._get_headways(direction_id, stop_id, rng, self.get_history_data_frame)
+
+    def get_scheduled_headways(self, direction_id, stop_id, rng: Range):
+        return self._get_headways(direction_id, stop_id, rng, self.get_timetable_data_frame)
+
+    def _get_headways(self, direction_id, stop_id, rng: Range, get_data_frame):
         headway_min_arr = []
 
         for d in rng.dates:
-            history = self.get_arrival_history(d)
-            df = self.get_data_frame(d, stop_id=stop_id, direction_id=direction_id)
+            df = get_data_frame(d, direction_id=direction_id, stop_id=stop_id)
 
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)

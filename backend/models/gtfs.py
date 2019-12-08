@@ -36,7 +36,6 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
 
         shape_index += 1
 
-
     shape_point = shapely.geometry.Point(shape_lines_xy[best_index].coords[0])
     distance_after_shape_point = stop_xy.distance(shape_point)
     distance_to_shape_point = shape_cumulative_dist[best_index]
@@ -89,6 +88,26 @@ def is_subsequence(smaller, bigger):
 
     return smaller == bigger[start_pos:end_pos]
 
+def contains_included_stops(shape_stop_ids, included_stop_ids):
+    min_index = 0
+    for stop_id in included_stop_ids:
+        try:
+            index = shape_stop_ids.index(stop_id, min_index)
+        except ValueError:
+            return False
+        min_index = index + 1 # stops must appear in same order as in included_stop_ids
+    return True
+
+def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
+    for stop_id in excluded_stop_ids:
+        try:
+            index = shape_stop_ids.index(stop_id)
+            return True
+        except ValueError:
+            pass
+    return False
+
+
 class GtfsScraper:
     def __init__(self, agency: config.Agency):
         self.agency = agency
@@ -97,38 +116,72 @@ class GtfsScraper:
 
         download_gtfs_data(agency, gtfs_cache_dir)
 
-        self.feed = feed = ptg.load_geo_feed(gtfs_cache_dir, {})
-
-        print(f"Loading {agency_id} routes...")
-        routes_df = feed.routes
-        if agency.gtfs_agency_id is not None:
-            routes_df = routes_df[routes_df.agency_id == agency.gtfs_agency_id]
-        self.gtfs_routes = routes_df
-
-        print(f"Loading {agency_id} trips...")
-        trips_df = feed.trips
-        trips_df['direction_id'] = trips_df['direction_id'].astype(str)
-
-        #print(f"Loading {agency_id} stop times...")
-        #stop_times_df = feed.stop_times
-
-        print(f"Loading {agency_id} stops...")
-        stops_df = feed.stops
-
-        #print(f"Loading {agency_id} shapes...")
-        #shapes_df = self.feed.shapes
-
-        # gtfs_stop_ids_map allows looking up row from stops.txt via GTFS stop_id
-        self.gtfs_stop_ids_map = {stop.stop_id: stop for stop in stops_df.itertuples()}
-
-        # stops_map allows looking up row from stops.txt via OpenTransit stop ID
-        stop_id_gtfs_field = agency.stop_id_gtfs_field
-        if stop_id_gtfs_field != 'stop_id':
-            self.stops_map = {getattr(stop, stop_id_gtfs_field): stop for stop in stops_df.itertuples()}
-        else:
-            self.stops_map = self.gtfs_stop_ids_map
+        self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
 
         self.stop_times_by_trip = None
+        self.stops_df = None
+        self.trips_df = None
+        self.routes_df = None
+        self.stop_times_df = None
+        self.shapes_df = None
+        self.gtfs_stop_ids_map = None
+        self.stops_map = None
+
+    def get_stop_row(self, stop_id):
+        # allows looking up row from stops.txt via OpenTransit stop ID
+        if self.stops_map is None:
+            stop_id_gtfs_field = self.agency.stop_id_gtfs_field
+            self.stops_map = {getattr(stop, stop_id_gtfs_field): stop for stop in self.get_gtfs_stops().itertuples()}
+
+        return self.stops_map[stop_id]
+
+    def get_stop_row_by_gtfs_stop_id(self, gtfs_stop_id):
+        # allows looking up row from stops.txt via GTFS stop_id
+        if self.gtfs_stop_ids_map is None:
+            self.gtfs_stop_ids_map = {stop.stop_id: stop for stop in self.get_gtfs_stops().itertuples()}
+
+        return self.gtfs_stop_ids_map[gtfs_stop_id]
+
+    def get_gtfs_stops(self):
+        if self.stops_df is None:
+            print(f"Loading {self.agency_id} stops...")
+            self.stops_df = self.feed.stops
+
+        return self.stops_df
+
+    def get_gtfs_trips(self):
+        if self.trips_df is None:
+            print(f"Loading {self.agency_id} trips...")
+            trips_df = self.feed.trips
+            trips_df['direction_id'] = trips_df['direction_id'].astype(str)
+            self.trips_df = trips_df
+
+        return self.trips_df
+
+    def get_gtfs_routes(self):
+        if self.routes_df is None:
+            print(f"Loading {self.agency_id} routes...")
+            routes_df = self.feed.routes
+            agency = self.agency
+            if agency.gtfs_agency_id is not None:
+                routes_df = routes_df[routes_df.agency_id == agency.gtfs_agency_id]
+            self.routes_df = routes_df
+
+        return self.routes_df
+
+    def get_gtfs_shapes(self):
+        if self.shapes_df is None:
+            print(f"Loading {self.agency_id} shapes...")
+            self.shapes_df = self.feed.shapes
+
+        return self.shapes_df
+
+    def get_gtfs_stop_times(self):
+        if self.stop_times_df is None:
+            print(f"Loading {self.agency_id} stop times...")
+            self.stop_times_df = self.feed.stop_times
+
+        return self.stop_times_df
 
     def get_services_by_date(self):
         calendar_df = self.feed.calendar
@@ -183,7 +236,7 @@ class GtfsScraper:
 
         return dates_map
 
-    def save_timetables(self, save_to_s3=False):
+    def save_timetables(self, save_to_s3=False, skip_existing=False):
         agency_id = self.agency_id
 
         dates_map = self.get_services_by_date()
@@ -201,9 +254,11 @@ class GtfsScraper:
         first_date_for_service_ids_map = {}
 
         try:
-            date_keys = timetables.get_date_keys(agency_id)
+            old_date_keys = timetables.get_date_keys(agency_id)
         except FileNotFoundError as err:
-            date_keys = {}
+            old_date_keys = {}
+
+        date_keys = old_date_keys
 
         for d, service_ids in dates_map.items():
             service_ids = sorted(service_ids)
@@ -212,6 +267,10 @@ class GtfsScraper:
                 first_date_for_service_ids_map[service_ids_key] = d
 
             date_keys[d] = str(first_date_for_service_ids_map[service_ids_key])
+
+        if skip_existing and date_keys == old_date_keys:
+            print("No new dates in GTFS feed, skipping")
+            return
 
         date_keys_cache_path = timetables.get_date_keys_cache_path(agency_id)
 
@@ -239,11 +298,11 @@ class GtfsScraper:
                 ACL='public-read'
             )
 
-        trips_df = self.feed.trips
+        trips_df = self.get_gtfs_trips()
 
         gtfs_route_id_map = {}
 
-        route_configs = routeconfig.get_route_list(self.agency_id) # todo use route config from parsing this GTFS file (will eventually be needed to process old GTFS feeds)
+        route_configs = routeconfig.get_route_list(self.agency_id) # todo: use route config from parsing this GTFS file (will eventually be needed to process old GTFS feeds)
         for route_config in route_configs:
             gtfs_route_id_map[route_config.gtfs_route_id] = route_config
 
@@ -313,6 +372,24 @@ class GtfsScraper:
                         ACL='public-read'
                     )
 
+    def get_custom_direction_id(self, custom_directions_arr, gtfs_direction_id, stop_ids):
+
+        possible_id = None
+
+        for custom_direction in custom_directions_arr:
+
+            if custom_direction['gtfs_direction_id'] == gtfs_direction_id:
+                included_stop_ids = custom_direction.get('included_stop_ids', [])
+                excluded_stop_ids = custom_direction.get('excluded_stop_ids', [])
+
+                if not contains_excluded_stop(stop_ids, excluded_stop_ids):
+                    if contains_included_stops(stop_ids, included_stop_ids):
+                        return custom_direction['id']
+                    elif possible_id is None:
+                        possible_id = custom_direction['id']
+
+        return possible_id
+
     def get_scheduled_arrivals_by_service_id(self, service_id, route_config, service_route_trips, trip_ids_map):
 
         # returns dict { direction_id => { stop_id => { 't': arrival_time, 'i': trip_int, 'e': departure_time } } }
@@ -322,11 +399,13 @@ class GtfsScraper:
         agency = self.agency
         agency_id = agency.id
 
+        route_id = route_config.id
+
         next_trip_int = 1
         if len(trip_ids_map) > 0:
             next_trip_int = max(trip_ids_map.values()) + 1
 
-        print(f'service={service_id} route={route_config.id} #trips={len(service_route_trips)}')
+        print(f'service={service_id} route={route_id} #trips={len(service_route_trips)}')
 
         arrivals_by_direction = {}
 
@@ -345,8 +424,20 @@ class GtfsScraper:
 
             trip_int = trip_ids_map[trip_id]
 
-            # todo handle custom directions
-            dir_info = gtfs_direction_id_map[route_trip.direction_id]
+            gtfs_direction_id = route_trip.direction_id
+
+            if route_id in agency.custom_directions:
+                custom_directions_arr = agency.custom_directions[route_id]
+                stop_ids = [self.normalize_gtfs_stop_id(gtfs_stop_id) for gtfs_stop_id in trip_stop_times['stop_id'].values]
+                custom_direction_id = self.get_custom_direction_id(custom_directions_arr, gtfs_direction_id, stop_ids)
+                if custom_direction_id is None:
+                    print(f"Unknown custom direction ID for trip {trip_id} ({gtfs_direction_id}, {stop_ids})")
+                    continue
+
+                print(f"Custom direction for route {route_id} trip {trip_id} = {custom_direction_id}")
+                dir_info = route_config.get_direction_info(custom_direction_id)
+            else:
+                dir_info = gtfs_direction_id_map[gtfs_direction_id]
 
             direction_arrivals = arrivals_by_direction[dir_info.id]
 
@@ -355,7 +446,7 @@ class GtfsScraper:
                 arrival_time = int(stop_time.arrival_time)
                 departure_time = int(stop_time.departure_time)
 
-                arrival_data = {'t': arrival_time, 'i':trip_int}
+                arrival_data = {'t': arrival_time, 'i': trip_int}
                 if departure_time != arrival_time:
                     arrival_data['e'] = departure_time
 
@@ -368,7 +459,7 @@ class GtfsScraper:
 
     def get_stop_times_for_trip(self, trip_id):
         if self.stop_times_by_trip is None:
-            all_stop_times = self.feed.stop_times
+            all_stop_times = self.get_gtfs_stop_times()
             self.stop_times_by_trip = {trip_id: stop_times for trip_id, stop_times in all_stop_times.groupby('trip_id')}
         return self.stop_times_by_trip[trip_id]
 
@@ -376,7 +467,7 @@ class GtfsScraper:
     def normalize_gtfs_stop_id(self, gtfs_stop_id):
         stop_id_gtfs_field = self.agency.stop_id_gtfs_field
         if stop_id_gtfs_field != 'stop_id':
-            return getattr(self.gtfs_stop_ids_map[gtfs_stop_id], stop_id_gtfs_field)
+            return getattr(self.get_stop_row_by_gtfs_stop_id(gtfs_stop_id), stop_id_gtfs_field)
         else:
             return gtfs_stop_id
 
@@ -385,7 +476,7 @@ class GtfsScraper:
         # These unique shapes may represent multiple branches of a route.
         # Returns a list of dicts with properties 'shape_id', 'count', and 'stop_ids', sorted by count in descending order.
 
-        stop_times_df = self.feed.stop_times
+        stop_times_df = self.get_gtfs_stop_times()
 
         stop_times_trip_id_values = stop_times_df['trip_id'].values
 
@@ -413,16 +504,20 @@ class GtfsScraper:
 
             #print(f'  shape {shape_id} ({shape_id_count})')
 
+            matching_shape_ids = [shape_id]
+
             if unique_shape_key not in unique_shapes_map:
                 for other_shape_key, other_shape_info in unique_shapes_map.items():
                     #print(f"   checking match with {shape_id} and {other_shape_info['shape_id']}")
                     if is_subsequence(shape_trip_stop_ids, other_shape_info['stop_ids']):
                         print(f"    shape {shape_id} is subsequence of shape {other_shape_info['shape_id']}")
                         unique_shape_key = other_shape_key
+                        other_shape_info['shape_ids'].append(shape_id)
                         break
                     elif is_subsequence(other_shape_info['stop_ids'], shape_trip_stop_ids):
                         print(f"    shape {other_shape_info['shape_id']} is subsequence of shape {shape_id}")
                         shape_id_count += other_shape_info['count']
+                        matching_shape_ids.extend(other_shape_info['shape_ids'])
                         del unique_shapes_map[other_shape_key]
                         break
 
@@ -430,7 +525,8 @@ class GtfsScraper:
                 unique_shapes_map[unique_shape_key] = {
                     'count': 0,
                     'shape_id': shape_id,
-                    'stop_ids': shape_trip_stop_ids
+                    'stop_ids': shape_trip_stop_ids,
+                    'shape_ids': matching_shape_ids,
                 }
 
             unique_shapes_map[unique_shape_key]['count'] += shape_id_count
@@ -444,8 +540,8 @@ class GtfsScraper:
 
             first_stop_id = stop_ids[0]
             last_stop_id = stop_ids[-1]
-            first_stop = self.stops_map[first_stop_id]
-            last_stop = self.stops_map[last_stop_id]
+            first_stop = self.get_stop_row(first_stop_id)
+            last_stop = self.get_stop_row(last_stop_id)
 
             print(f'  shape_id: {shape_id} ({count}x) stops:{len(stop_ids)} from {first_stop_id} {first_stop.stop_name} to {last_stop_id} {last_stop.stop_name} {",".join(stop_ids)}')
 
@@ -466,29 +562,10 @@ class GtfsScraper:
 
         shapes = self.get_unique_shapes(direction_trips_df)
 
-        def contains_included_stops(shape_stop_ids):
-            min_index = 0
-            for stop_id in included_stop_ids:
-                try:
-                    index = shape_stop_ids.index(stop_id, min_index)
-                except ValueError:
-                    return False
-                min_index = index + 1 # stops must appear in same order as in included_stop_ids
-            return True
-
-        def contains_excluded_stop(shape_stop_ids):
-            for stop_id in excluded_stop_ids:
-                try:
-                    index = shape_stop_ids.index(stop_id)
-                    return True
-                except ValueError:
-                    pass
-            return False
-
         matching_shapes = []
         for shape in shapes:
             shape_stop_ids = shape['stop_ids']
-            if contains_included_stops(shape_stop_ids) and not contains_excluded_stop(shape_stop_ids):
+            if contains_included_stops(shape_stop_ids, included_stop_ids) and not contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
                 matching_shapes.append(shape)
 
         if len(matching_shapes) != 1:
@@ -548,7 +625,7 @@ class GtfsScraper:
             title_prefix = default_direction_info.get('title_prefix', None)
 
             last_stop_id = stop_ids[-1]
-            last_stop = self.stops_map[last_stop_id]
+            last_stop = self.get_stop_row(last_stop_id)
 
             if title_prefix is not None:
                 title = f"{title_prefix} to {last_stop.stop_name}"
@@ -566,7 +643,7 @@ class GtfsScraper:
             'stop_geometry': {},
         }
 
-        shapes_df = self.feed.shapes
+        shapes_df = self.get_gtfs_shapes()
 
         geometry = shapes_df[shapes_df['shape_id'] == gtfs_shape_id]['geometry'].values[0]
 
@@ -618,7 +695,7 @@ class GtfsScraper:
         start_index = 0
 
         for stop_id in stop_ids:
-            stop = self.stops_map[stop_id]
+            stop = self.get_stop_row(stop_id)
 
             # Need to project lon/lat coords to x/y in order for shapely to determine the distance between
             # a point and a line (shapely doesn't support distance for lon/lat coords)
@@ -640,9 +717,9 @@ class GtfsScraper:
         agency = self.agency
         agency_id = agency.id
 
-        trips_df = self.feed.trips
-        stops_df = self.feed.stops
-        stop_times = self.feed.stop_times
+        trips_df = self.get_gtfs_trips()
+        stops_df = self.get_gtfs_stops()
+        stop_times = self.get_gtfs_stop_times()
 
         gtfs_route_id = route.route_id
 
@@ -699,7 +776,7 @@ class GtfsScraper:
 
         for dir_data in route_data['directions']:
             for stop_id in dir_data['stops']:
-                stop = self.stops_map[stop_id]
+                stop = self.get_stop_row(stop_id)
                 stop_data = {
                     'id': stop_id,
                     'lat': round(stop.geometry.y, 5), # stop_lat in gtfs
@@ -717,7 +794,7 @@ class GtfsScraper:
 
         routes_data = []
 
-        routes_df = self.gtfs_routes
+        routes_df = self.get_gtfs_routes()
 
         if agency.provider == 'nextbus':
             nextbus_route_order = [route.id for route in nextbus.get_route_list(agency.nextbus_id)]

@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     direction_id = args.dir
 
-    timetable_df = timetable.get_data_frame(stop_id=stop_id, direction_id=direction_id)
+    timetable_df = timetable.get_data_frame(stop_id=stop_id, direction_id=direction_id).sort_values('TIME')
 
     early_sec = early_min * 60
     late_sec = late_min * 60
@@ -57,14 +57,11 @@ if __name__ == "__main__":
         history = arrival_history.get_by_date(agency_id, route_id, d)
         arrivals_df = history.get_data_frame(stop_id=stop_id, direction_id=direction_id)
 
-        comparison_df = timetables.match_arrivals(timetable_df['TIME'].values, arrivals_df['TIME'].values, early_sec=early_sec, late_sec=late_sec)
+        comparison_df = timetables.match_schedule_to_arrivals(timetable_df['TIME'].values, arrivals_df['TIME'].values, early_sec=early_sec, late_sec=late_sec)
 
         timetable_df = pd.concat([timetable_df, comparison_df], axis=1)
 
     timetable_df['DATE_TIME'] = timetable_df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
-
-    gap_threshold = 1.5
-    bunch_threshold = 0.5
 
     for row in timetable_df.itertuples():
         did = row.DID
@@ -95,22 +92,14 @@ if __name__ == "__main__":
                     status_text = 'early'
 
                 matching_arrival_headway = f'{round(row.matching_arrival_headway,1)}'.rjust(5)
-                matching_delta_min = f'{"+" if row.matching_arrival_delta > 0 else ""}{round(row.matching_arrival_delta/60,1)}'.rjust(5)
 
-                headway_ratio = row.matching_arrival_headway/row.scheduled_headway if row.scheduled_headway > 0 else None
-                headway_ratio_str = f"({round(headway_ratio, 1)}x)" if row.scheduled_headway > 0 else ""
+                headway_delta = row.matching_arrival_headway - row.scheduled_headway if row.scheduled_headway > 0 else None
 
-                if headway_ratio is not None:
-                    if headway_ratio > gap_threshold:
-                        headway_ratio_str += " - gap"
-                    if headway_ratio < bunch_threshold:
-                        headway_ratio_str += " - bunch"
-
-                arrival_info += f'  {status_text.ljust(5)} {matching_delta_min} min   {matching_arrival_headway} min headway {headway_ratio_str}'
+                arrival_info += f'  {status_text.ljust(5)} {util.render_delta(row.matching_arrival_delta/60)} min   {matching_arrival_headway} min headway ({util.render_delta(headway_delta)} min)'
         else:
             arrival_info = ''
 
-        print(f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time}   {scheduled_headway} min headway   {arrival_info}")
+        print(f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time}  dir:{did}  {scheduled_headway} min headway   {arrival_info}")
 
     num_scheduled = len(timetable_df)
     print('-----')
