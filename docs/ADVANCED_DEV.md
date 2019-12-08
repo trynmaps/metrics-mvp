@@ -147,12 +147,12 @@ python waits.py --date=2019-11-19 --agency=muni --route=12 --stop=13476
 
 Show scheduled timetable for a particular stop:
 ```
-python timetables.py --agency=muni --route=12 --dir=1 --stop=13476 --date=2019-11-19
+python timetable.py --agency=muni --route=12 --dir=1 --stop=13476 --date=2019-11-19
 ```
 
 Compare scheduled timetable to actual arrival data, and show schedule adherence:
 ```
-python timetables.py --agency=muni --route=12 --dir=1 --stop=13476 --date=2019-11-19 --comparison
+python timetable.py --agency=muni --route=12 --dir=1 --stop=13476 --date=2019-11-19 --comparison
 ```
 
 Compute wait time statistics for all stops on a particular day:

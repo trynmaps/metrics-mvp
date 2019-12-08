@@ -307,6 +307,9 @@ class GtfsScraper:
             gtfs_route_id_map[route_config.gtfs_route_id] = route_config
 
         for gtfs_route_id, route_trips in trips_df.groupby('route_id'):
+            if gtfs_route_id not in gtfs_route_id_map:
+                continue
+
             route_config = gtfs_route_id_map[gtfs_route_id]
 
             arrivals_by_service_id = {}
