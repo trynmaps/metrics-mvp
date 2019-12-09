@@ -282,7 +282,11 @@ function Option(props) {
     innerRef,
     isFocused,
     isSelected,
-    selectProps: { focusedOption },
+    data: {
+      label,
+      value: { icon },
+    },
+    selectProps: { focusedOption, handleItemMouseOver, handleItemMouseOut },
   } = props;
   const focused = (function() {
     if (isFocused && !isSelected) {
@@ -292,6 +296,12 @@ function Option(props) {
     }
     return {};
   })();
+
+  if (isFocused) {
+    handleItemMouseOver(icon, label);
+  } else {
+    handleItemMouseOut(icon);
+  }
 
   return (
     <MenuItem
@@ -346,15 +356,17 @@ export default function ReactSelect(selectProps) {
     Option,
   };
 
-  function onMenuOpen() {
+  function handleMenuOpen() {
     menuTransition.current = true;
     setMenuIsOpen(true);
+    selectProps.onOpen();
   }
 
-  function onMenuClose() {
+  function handleMenuClose() {
     menuTransition.current = true;
     document.activeElement.blur();
     setMenuIsOpen(false);
+    selectProps.onClose();
   }
 
   useEffect(() => {
@@ -379,13 +391,13 @@ export default function ReactSelect(selectProps) {
       menuPlacementTop={menuPlacementTop}
       menuTransition={menuTransition}
       onInitialMount={setTextFieldDOMRect}
-      onMenuOpen={onMenuOpen}
-      onMenuClose={onMenuClose}
+      onMenuOpen={handleMenuOpen}
+      onMenuClose={handleMenuClose}
       placeholder="Type here to search..."
       styles={selectStyles}
       textFieldDOMRect={textFieldDOMRect}
       value={selectProps.options.filter(
-        option => option.value === selectProps.stopId,
+        option => option.value.stopId === selectProps.stopId,
       )}
       {...selectProps}
     />

@@ -83,7 +83,7 @@ function ControlPanel(props) {
   }
 
   function onSelectFirstStop(option) {
-    const stopId = option.value;
+    const stopId = option.value.stopId;
 
     const directionId = props.graphParams.directionId;
     const secondStopId = props.graphParams.endStopId;
@@ -110,7 +110,7 @@ function ControlPanel(props) {
   }
 
   function onSelectSecondStop(option) {
-    const endStopId = option.value;
+    const endStopId = option.value.stopId;
 
     const path = new Path();
     path.buildPath(TO_STOP, endStopId).commitPath();
@@ -251,7 +251,6 @@ function ControlPanel(props) {
                             title: firstStopId,
                           }
                         ).title,
-                        icon: 
                       }),
                     )}
                     stopId={graphParams.startStopId}
