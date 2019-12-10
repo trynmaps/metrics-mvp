@@ -24,6 +24,7 @@ function RouteScreen(props) {
     graphParams,
     intervalData,
     intervalError,
+    byDayData,
     routes,
     myFetchRoutes,
   } = props;
@@ -97,6 +98,7 @@ function RouteScreen(props) {
               routes={routes}
               intervalData={intervalData}
               intervalError={intervalError}
+              byDayData={byDayData}
             />
           ) : (
             /* if no graph data, show the info summary component */
@@ -114,6 +116,7 @@ const mapStateToProps = state => ({
   graphError: state.fetchGraph.err,
   intervalData: state.fetchGraph.intervalData,
   intervalError: state.fetchGraph.intervalErr,
+  byDayData: state.fetchGraph.byDayData,
   graphParams: state.routes.graphParams,
 });
 

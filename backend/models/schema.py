@@ -459,8 +459,8 @@ class TripMetrics(ObjectType):
 
     byDay = List(BasicIntervalMetrics,
         date_strs = List(String, name='dates'),
-        start_time = String(),
-        end_time = String(),
+        start_time = String(required = False),
+        end_time = String(required = False),
     )
 
     # parent is a dict with "route_metrics","start_stop_id","end_stop_id","direction_id" keys
@@ -499,7 +499,7 @@ class TripMetrics(ObjectType):
             for start_time,end_time in constants.DEFAULT_TIME_STR_INTERVALS
         ]
 
-    def resolve_byDay(parent, info, date_strs, start_time, end_time):
+    def resolve_byDay(parent, info, date_strs, start_time = None, end_time = None):
         return [{**parent, 
                 "start_time": start_time, 
                 "end_time": end_time, 
