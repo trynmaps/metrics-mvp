@@ -2,7 +2,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Map, TileLayer } from 'react-leaflet';
-import L from 'leaflet';
+import L, { DomEvent } from 'leaflet';
 import Control from 'react-leaflet-control';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
@@ -126,6 +126,19 @@ class Isochrone extends React.Component {
     this.maxTripMinChanged = this.maxTripMinChanged.bind(this);
 
     isochroneWorker.onmessage = this.onWorkerMessage;
+
+    // For resolve the scrolling problem
+    // https://github.com/trynmaps/metrics-mvp/issues/448
+    this.container = null;
+  }
+
+  refContainer = element => {
+    this.container = element;
+    if (element) {
+      DomEvent
+        .disableClickPropagation(this.container)
+        .disableScrollPropagation(this.container)
+    }
   }
 
   componentDidMount() {
@@ -648,6 +661,7 @@ class Isochrone extends React.Component {
           />
           {/* see http://maps.stamen.com for details */}
           <Control position="topleft" className="">
+            <div ref={this.refContainer}>
             <Grid container
               className="isochrone-controls"
               direction="column">
@@ -704,6 +718,7 @@ class Isochrone extends React.Component {
                 </List>
               </Grid>
             </Grid>
+            </div>
           </Control>
           <Control position="topright">
             {this.state.tripInfo ? (
