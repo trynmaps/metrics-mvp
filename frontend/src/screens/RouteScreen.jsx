@@ -15,6 +15,7 @@ import { getAgency } from '../config';
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 import { EmojiForRouteType } from '../components/Emoji';
+import { RouteIcon } from '../UIConstants';
 
 import { fetchRoutes } from '../actions';
 
@@ -74,7 +75,11 @@ function RouteScreen(props) {
       
       <Paper>
         <Box p={2} className="page-title">            
-          {selectedRoute ? <Fragment>{EmojiForRouteType(selectedRoute.type)} {selectedRoute.title}</Fragment> : null}
+          {selectedRoute ? <Fragment>
+            {/*EmojiForRouteType(selectedRoute.type)*/}
+            {RouteIcon({routeType: selectedRoute.type, style:{verticalAlign:'sub'}})}
+            {selectedRoute.title}
+          </Fragment> : null}
           {direction ? ` > ${direction.title}` : null}
           &nbsp;
           {startStopInfo ? `(from ${startStopInfo.title}` : null}

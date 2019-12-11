@@ -2,7 +2,16 @@
  * Constants for the UI that allow for reconfiguration.
  */
 
+import React from 'react';
 import indigo from '@material-ui/core/colors/indigo';
+import DirectionsBusIcon from '@material-ui/icons/DirectionsBusOutlined';
+import DirectionsBoatIcon from '@material-ui/icons/DirectionsBoat';
+import DirectionsTransitIcon from '@material-ui/icons/DirectionsTransit';
+import SubwayIcon from '@material-ui/icons/Subway';
+import TrainIcon from '@material-ui/icons/Train';
+import TramIcon from '@material-ui/icons/TramOutlined';
+
+
 
 // Colors definition:
 // This section its should be use to declare an object color
@@ -99,12 +108,24 @@ export const DWELL_THRESHOLD_SECS = 120;
  * 7 - Funicular. Any rail system designed for steep inclines.
  */
 export const ROUTE_TYPE_EMOJIS = {
-  '0': { symbol: '🚈', label: 'Light Rail'}, /* light rail, or railway car: 🚃, or tram: 🚊, tram car: 🚋  */
-  '1': { symbol: '🚇', label: 'Subway'}, /* metro */
-  '2': { symbol: '🚆', label: 'Rail'}, /* train, or bullet train: 🚅, high-speed train: 🚄, locomotive: 🚂 */
-  '3': { symbol: '🚌', label: 'Bus'}, /* bus, or oncoming bus: 🚍, trolley bus: 🚎 */
-  '4': { symbol: '⛴', label: 'Ferry'}, /* ferry, or ship: ️🚢 */
-  '5': { symbol: '🚋', label: 'Cable Car'}, /* tram car (nothing better available) */
-  '6': { symbol: '🚠', label: 'Gondola'}, /* mountain cableway, or aerial tramway: 🚡 */
-  '7': { symbol: '🚞', label: 'Funicular'}, /* mountain railway */
+  '0': { symbol: '🚈', label: 'Light Rail', muiIcon: TramIcon }, /* light rail, or railway car: 🚃, or tram: 🚊, tram car: 🚋  */
+  '1': { symbol: '🚇', label: 'Subway', muiIcon: SubwayIcon }, /* metro */
+  '2': { symbol: '🚆', label: 'Rail', muiIcon: TrainIcon }, /* train, or bullet train: 🚅, high-speed train: 🚄, locomotive: 🚂 */
+  '3': { symbol: '🚌', label: 'Bus', muiIcon: DirectionsBusIcon}, /* bus, or oncoming bus: 🚍, trolley bus: 🚎 */
+  '4': { symbol: '⛴', label: 'Ferry', muiIcon: DirectionsBoatIcon}, /* ferry, or ship: ️🚢 */
+  '5': { symbol: '🚋', label: 'Cable Car', muiIcon: TramIcon}, /* tram car (nothing better available) */
+  '6': { symbol: '🚠', label: 'Gondola', muiIcon: DirectionsTransitIcon}, /* mountain cableway, or aerial tramway: 🚡 */
+  '7': { symbol: '🚞', label: 'Funicular', muiIcon: TramIcon}, /* mountain railway */
+}
+
+export function RouteIcon(props) {
+  const emojiProps = ROUTE_TYPE_EMOJIS[props.routeType];
+
+  // JSX type can be a capitalized variable.
+  if (emojiProps) {
+    const IconType = emojiProps.muiIcon;
+    return <IconType {...props} />;
+  } else {
+    return null;
+  }
 }

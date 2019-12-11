@@ -30,6 +30,7 @@ import {
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
 import { EmojiForRouteType } from './Emoji';
+import { RouteIcon } from '../UIConstants';
 
 function desc(a, b, orderBy) {
   // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
@@ -377,7 +378,9 @@ function RouteTable(props) {
                           },
                         }}
                       >
-                        {EmojiForRouteType(row.type)} {row.title}
+                        {/*EmojiForRouteType(row.type)*/}
+                        {RouteIcon({routeType: row.type, style:{verticalAlign:'sub'}})}
+                        {row.title}
                       </Navlink>
                     </TableCell>
                     <TableCell
