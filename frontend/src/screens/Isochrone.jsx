@@ -127,11 +127,12 @@ class Isochrone extends React.Component {
 
     isochroneWorker.onmessage = this.onWorkerMessage;
 
-    // For resolve the scrolling problem
-    // https://github.com/trynmaps/metrics-mvp/issues/448
     this.container = null;
   }
 
+  // For resolve the scrolling problem
+  // https://github.com/trynmaps/metrics-mvp/issues/448
+  // Prevent click and scroll from propagation
   refContainer = element => {
     this.container = element;
     if (element) {
