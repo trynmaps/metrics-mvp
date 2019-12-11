@@ -18,9 +18,8 @@ import Popover from '@material-ui/core/Popover';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import {
-  milesBetween,
   computeGrades,
-  metersToMiles,
+  computeDistance,
 } from '../helpers/routeCalculations';
 import { PLANNING_PERCENTILE, TENTH_PERCENTILE } from '../UIConstants';
 import { getPercentileValue } from '../helpers/graphData';
@@ -60,45 +59,6 @@ export default function InfoTripSummary(props) {
   const { graphData, graphParams, routes } = props;
   const waitTimes = graphData ? graphData.waitTimes : null;
   const tripTimes = graphData ? graphData.tripTimes : null;
-
-  const computeDistance = (myGraphParams, myRoutes) => {
-    let miles = 0;
-
-    if (myGraphParams && myGraphParams.endStopId) {
-      const directionId = myGraphParams.directionId;
-      const routeId = myGraphParams.routeId;
-
-      const route = myRoutes.find(thisRoute => thisRoute.id === routeId);
-      const directionInfo = route.directions.find(
-        dir => dir.id === directionId,
-      );
-
-      // if precomputed stop distance is available, use it
-
-      if (
-        directionInfo.stop_geometry[myGraphParams.startStopId] &&
-        directionInfo.stop_geometry[myGraphParams.endStopId]
-      ) {
-        const distance =
-          directionInfo.stop_geometry[myGraphParams.endStopId].distance -
-          directionInfo.stop_geometry[myGraphParams.startStopId].distance;
-        return metersToMiles(distance);
-      }
-
-      const startIndex = directionInfo.stops.indexOf(myGraphParams.startStopId);
-      const endIndex = directionInfo.stops.indexOf(myGraphParams.endStopId);
-
-      if (startIndex !== -1 && endIndex !== -1) {
-        for (let i = startIndex; i < endIndex; i++) {
-          const fromStopInfo = route.stops[directionInfo.stops[i]];
-          const toStopInfo = route.stops[directionInfo.stops[i + 1]];
-          miles += milesBetween(fromStopInfo, toStopInfo);
-        }
-      }
-    }
-
-    return miles;
-  };
 
   const distance = routes ? computeDistance(graphParams, routes) : null;
   const speed =

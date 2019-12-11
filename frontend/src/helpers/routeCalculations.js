@@ -603,3 +603,48 @@ export function milesBetween(p1, p2) {
   const meters = haverDistance(p1.lat, p1.lon, p2.lat, p2.lon);
   return metersToMiles(meters);
 }
+
+/**
+ * Returns stop to stop distance based on graph params.
+ *
+ * @param {Object} myGraphParams from Redux state
+ * @param {Object} myRoutes from Redux state
+ */
+export function computeDistance(myGraphParams, myRoutes) {
+  let miles = 0;
+
+  if (myGraphParams && myGraphParams.endStopId) {
+    const directionId = myGraphParams.directionId;
+    const routeId = myGraphParams.routeId;
+
+    const route = myRoutes.find(thisRoute => thisRoute.id === routeId);
+    const directionInfo = route.directions.find(
+      dir => dir.id === directionId,
+    );
+
+    // if precomputed stop distance is available, use it
+
+    if (
+      directionInfo.stop_geometry[myGraphParams.startStopId] &&
+      directionInfo.stop_geometry[myGraphParams.endStopId]
+    ) {
+      const distance =
+        directionInfo.stop_geometry[myGraphParams.endStopId].distance -
+        directionInfo.stop_geometry[myGraphParams.startStopId].distance;
+      return metersToMiles(distance);
+    }
+
+    const startIndex = directionInfo.stops.indexOf(myGraphParams.startStopId);
+    const endIndex = directionInfo.stops.indexOf(myGraphParams.endStopId);
+
+    if (startIndex !== -1 && endIndex !== -1) {
+      for (let i = startIndex; i < endIndex; i++) {
+        const fromStopInfo = route.stops[directionInfo.stops[i]];
+        const toStopInfo = route.stops[directionInfo.stops[i + 1]];
+        miles += milesBetween(fromStopInfo, toStopInfo);
+      }
+    }
+  }
+
+  return miles;
+}

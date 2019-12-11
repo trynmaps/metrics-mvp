@@ -1,6 +1,6 @@
 import { handleGraphParams } from './actions';
 import { Agencies } from './config';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP } from './routeUtil';
+import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, DATE, START_DATE, START_TIME, END_TIME, DAYS_OF_THE_WEEK } from './routeUtil';
 
 export default {
   ABOUT: '/about',
@@ -16,20 +16,40 @@ export default {
     the ? after the : means an optional paramter variable
     ()* shows am optional parameter label
     */
-    path: `/${ROUTE}/:routeId/(${DIRECTION})*/:directionId?/(${FROM_STOP})*/:startStopId?/(${TO_STOP})*/:endStopId?`,
+    path: `/${ROUTE}/:routeId/(${DIRECTION})*/:directionId?/(${FROM_STOP})*/:startStopId?/(${TO_STOP})*/:endStopId?`
+      + `/(${DATE})*/:date?/(${START_DATE})*/:startDate?`
+      + `/(${START_TIME})*/:startTime?/(${END_TIME})*/:endTime?`
+      + `/(${DAYS_OF_THE_WEEK})*/:daysOfTheWeek?`
+      ,
     thunk: async (dispatch, getState) => {
       const { location } = getState();
-      const { routeId, directionId, startStopId, endStopId } = location.payload;
+      const { routeId, directionId, startStopId, endStopId,
+        date, startDate, startTime, endTime /*, daysOfTheWeek*/} = location.payload;
 
+      const newParams = {
+        agencyId: Agencies[0].id,
+        routeId,
+        directionId,
+        startStopId,
+        endStopId
+      };
+      // these are "optional" in urls -- if null (absent) or "null" (serialized to url with no value), do not override existing state
+      if (date && date !== 'null') {
+        newParams['date'] = date;
+      }
+      if (startDate && startDate !== 'null') {
+        newParams['startDate'] = startDate;
+      }
+      if (startTime && startTime !== 'null') {
+        newParams['startTime'] = startTime;
+      }
+      if (endTime && endTime !== 'null') {
+        newParams['endTime'] = endTime;
+      }
+      // daysOfTheWeek TODO: serialize and deserialize days of the week into dictionary  */
       // todo: add agency to path to support multiple agencies
       dispatch(
-        handleGraphParams({
-          agencyId: Agencies[0].id,
-          routeId,
-          directionId,
-          startStopId,
-          endStopId,
-        }),
+        handleGraphParams(newParams)
       );
     },
   },

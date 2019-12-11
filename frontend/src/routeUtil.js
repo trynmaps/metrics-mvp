@@ -5,6 +5,11 @@ export const ROUTE = 'route';
 export const DIRECTION = 'direction';
 export const FROM_STOP = 'fromStop';
 export const TO_STOP = 'toStop';
+export const DATE = 'date';
+export const START_DATE = 'startDate';
+export const START_TIME = 'startTime';
+export const END_TIME = 'endTime';
+export const DAYS_OF_THE_WEEK = 'daysOfTheWeek';
 
 export class Path {
   constructor() {

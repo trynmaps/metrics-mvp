@@ -164,6 +164,8 @@ function Info(props) {
 
             <InfoByDay
               byDayData={byDayData}
+              graphParams={graphParams}
+              routes={routes}
             />
           </Box>
           

@@ -5,7 +5,8 @@ import {
   HorizontalGridLines,
   XAxis,
   YAxis,
-  VerticalBarSeries,
+  LineSeries,
+  LineMarkSeries,
   ChartLabel,
   Crosshair,
 } from 'react-vis';
@@ -15,6 +16,11 @@ import {
   PLANNING_PERCENTILE,
   REACT_VIS_CROSSHAIR_NO_LINE,
 } from '../UIConstants';
+import {
+  computeGrades,
+  computeDistance,
+} from '../helpers/routeCalculations';
+import Moment from 'moment';
 import '../../node_modules/react-vis/dist/style.css';
 
 /**
@@ -22,8 +28,10 @@ import '../../node_modules/react-vis/dist/style.css';
  */
 function InfoByDay(props) {
   const AVERAGE_TIME = 'average_time';
-
   const PLANNING_TIME = 'planning_time';
+  const LONG_WAIT = 'long_wait';
+  const SPEED = 'speed';
+  const TRAVEL_VARIABILITY = 'travel_variability';
 
 
   const [selectedOption, setSelectedOption] = useState(AVERAGE_TIME); // radio button starts on average time
@@ -53,7 +61,12 @@ function InfoByDay(props) {
    * @private
    */
   const onNearestX = (_value, { index }) => {
-    //setCrosshairValues([waitData[index], tripData[index]]); TODO
+    setCrosshairValues([waitData[index], tripData[index]]);
+  };
+
+  const onNearestXGeneric = (_value, { index }) => {
+    // TODO: need to make only one chart's crosshair visible at a time,
+    // this currently makes it appear on all charts: setCrosshairValues([_value]);
   };
 
   /**
@@ -66,16 +79,30 @@ function InfoByDay(props) {
    *
    * @param {intervalField} One of wait_times or travel_times.
    */
-  const mapDays = intervalField => {
+  const mapDays = (field, attribute) => {
+
+    let distance;    
+    if (attribute === SPEED) {
+       distance = routes ? computeDistance(graphParams, routes) : null;
+    }
+    
     return day => {
       let y = 0;
 
-      if (day[intervalField] != null) {
-        if (selectedOption === AVERAGE_TIME) {
-          y = day[intervalField].median;
-        } else {
-          y = day[intervalField].p90;
+      if (day[field] != null) {
+        if (attribute === AVERAGE_TIME) {
+          y = day[field].median;
+        } else if (attribute === PLANNING_TIME) {
+          y = day[field].p90;
+        } else if (attribute === LONG_WAIT) {
+          y = Math.round((1 - day[field].probabilityLessThan) * 100); // the p less than is 20 min
+        } else if (attribute === SPEED) {
+          y = distance ? distance / (day[field].median / 60.0)
+            : 0; // convert avg trip time to hours for mph
+        } else if (attribute === TRAVEL_VARIABILITY) {
+          y = (day[field].p90 - day[field].p10)/2;          
         }
+        
       }
 
       if (y === undefined) {
@@ -83,21 +110,58 @@ function InfoByDay(props) {
       }
 
       return {
-        x: day.dates[0], // TODO: format date using Moment
+        x: Moment(day.dates[0]).format('dd MM/DD'),
         y,
       };
     };
   }
 
-    const { byDayData } = props;
+    const { byDayData, routes, graphParams } = props;
 
-    const waitData = byDayData && byDayData.map(mapDays('waitTimes'));//.reverse()); // XXX
-    const tripData = byDayData && byDayData.map(mapDays('tripTimes'));//.reverse());
+    const waitData = byDayData && byDayData.map(mapDays('waitTimes', selectedOption));
+    const tripData = byDayData && byDayData.map(mapDays('tripTimes', selectedOption));
+    const meanWait = waitData && waitData.length > 0 && waitData.reduce((accum, value) => accum + value.y, 0) / waitData.length;
+    const meanTrip = tripData && tripData.length > 0 && tripData.reduce((accum, value) => accum + value.y, 0) / tripData.length;
+    const meanWaitData = [{ x: waitData[0].x, y: meanWait}, { x: waitData[waitData.length-1].x, y: meanWait}];
+    const meanTripData = [{ x: tripData[0].x, y: meanWait + meanTrip}, { x: tripData[tripData.length-1].x, y: meanWait + meanTrip}];
+
+    const maxWait = waitData && waitData.length > 0 && waitData.reduce((max, value) => max > value.y ? max : value.y, 0);
+    const maxTrip = tripData && tripData.length > 0 && tripData.reduce((max, value) => max > value.y ? max : value.y, 0);
 
     const legendItems = [
       { title: 'Travel time', color: CHART_COLORS[1], strokeWidth: 10 },
       { title: 'Wait time', color: CHART_COLORS[0], strokeWidth: 10 },
     ];
+
+    // 2nd chart: long wait %
+    
+    const longWaitData = byDayData && byDayData.map(mapDays('waitTimes', LONG_WAIT));
+    const maxLongWait = longWaitData && longWaitData.length > 0 && longWaitData.reduce((max, value) => max > value.y ? max : value.y, 0);
+    
+    // 3rd chart: speed
+    
+    const speedData = byDayData && byDayData.map(mapDays('tripTimes', SPEED));
+    const maxSpeed = speedData && speedData.length > 0 && speedData.reduce((max, value) => max > value.y ? max : value.y, 0);
+    
+    // 4th chart: travel variability
+    
+    const travelVariabilityData = byDayData && byDayData.map(mapDays('tripTimes', TRAVEL_VARIABILITY));
+    const maxTravelVariability = travelVariabilityData && travelVariabilityData.length > 0 && travelVariabilityData.reduce((max, value) => max > value.y ? max : value.y, 0);
+    
+    // 5th chart: score
+
+    const scoreData = byDayData.map((day, index) => {
+      const grades = computeGrades(
+        waitData[index].y,
+        longWaitData[index].y,
+        speedData[index].y,
+        travelVariabilityData[index].y);
+      return {
+        x: Moment(day.dates[0]).format('dd MM/DD'),
+        y: grades.totalScore,
+      }
+    });
+    const maxScore = scoreData && scoreData.length > 0 && scoreData.reduce((max, value) => max > value.y ? max : value.y, 0);
 
     return (
       <div>
@@ -144,18 +208,22 @@ function InfoByDay(props) {
               height={300}
               width={400}
               stackBy="y"
+              yDomain={[ 0, maxWait + maxTrip ]}              
               onMouseLeave={onMouseLeave}
             >
               <HorizontalGridLines />
               <XAxis />
               <YAxis hideLine />
 
-              <VerticalBarSeries
+              <LineMarkSeries
                 data={waitData}
                 color={CHART_COLORS[0]}
                 onNearestX={onNearestX}
+                stack={true}
               />
-              <VerticalBarSeries data={tripData} color={CHART_COLORS[1]} />
+              <LineMarkSeries data={tripData} color={CHART_COLORS[1]} stack={true}/>
+              <LineSeries data={meanWaitData} color={CHART_COLORS[0]} strokeDasharray={'7, 3'}/>
+              <LineSeries data={meanTripData} color={CHART_COLORS[1]} strokeDasharray={'7, 3'}/>
 
               <ChartLabel
                 text="minutes"
@@ -177,7 +245,7 @@ function InfoByDay(props) {
                   <div className="rv-crosshair__inner__content">
                     <p>
                       Onboard time:{' '}
-                      {Math.round(crosshairValues[1].y)}
+                      {crosshairValues[1] ? Math.round(crosshairValues[1].y) : ''}
                     </p>
                     <p>
                       Wait time: {Math.round(crosshairValues[0].y)}
@@ -191,9 +259,174 @@ function InfoByDay(props) {
               width={300}
               items={legendItems}
             />
+            
+           Long Wait %
+            
+            <XYPlot
+              xType="ordinal"
+              height={300}
+              width={400}
+              yDomain={[ 0, maxLongWait ]}              
+              onMouseLeave={onMouseLeave}
+            >
+              <HorizontalGridLines />
+              <XAxis />
+              <YAxis hideLine />
+
+              <LineMarkSeries
+                data={longWaitData}
+                color={CHART_COLORS[0]}
+                onNearestX={onNearestXGeneric}
+                stack={true}
+              />
+
+              <ChartLabel
+                text="Long Wait %"
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end',
+                }}
+              />
+
+              {crosshairValues.length > 0 && false && ( /* need separate state for each crosshair */
+                <Crosshair
+                  values={crosshairValues}
+                  style={REACT_VIS_CROSSHAIR_NO_LINE}
+                >
+                </Crosshair>
+              )}
+            </XYPlot>
+
+            Median Speed
+            
+            <XYPlot
+              xType="ordinal"
+              height={300}
+              width={400}
+              yDomain={[ 0, maxSpeed ]}              
+              onMouseLeave={onMouseLeave}
+            >
+              <HorizontalGridLines />
+              <XAxis />
+              <YAxis hideLine />
+
+              <LineMarkSeries
+                data={speedData}
+                color={CHART_COLORS[1]}
+                onNearestX={onNearestXGeneric}
+                stack={true}
+              />
+
+              <ChartLabel
+                text="Median Speed (mph)"
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end',
+                }}
+              />
+
+              {crosshairValues.length > 0 && false && ( /* need separate state for each crosshair */
+                <Crosshair
+                  values={crosshairValues}
+                  style={REACT_VIS_CROSSHAIR_NO_LINE}
+                >
+                </Crosshair>
+              )}
+            </XYPlot>
+
+            Travel Variability
+
+            <XYPlot
+              xType="ordinal"
+              height={300}
+              width={400}
+              yDomain={[ 0, maxTravelVariability ]}              
+              onMouseLeave={onMouseLeave}
+            >
+              <HorizontalGridLines />
+              <XAxis />
+              <YAxis hideLine />
+
+              <LineMarkSeries
+                data={travelVariabilityData}
+                color={CHART_COLORS[1]}
+                onNearestX={onNearestXGeneric}
+                stack={true}
+              />
+
+              <ChartLabel
+                text={'Variability (\u00b1 min)'}
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end',
+                }}
+              />
+
+              {crosshairValues.length > 0 && false && ( /* need separate state for each crosshair */
+                <Crosshair
+                  values={crosshairValues}
+                  style={REACT_VIS_CROSSHAIR_NO_LINE}
+                >
+                </Crosshair>
+              )}
+            </XYPlot>
+
+
+            Score
+
+            <XYPlot
+              xType="ordinal"
+              height={300}
+              width={400}
+              yDomain={[ 0, maxScore ]}              
+              onMouseLeave={onMouseLeave}
+            >
+              <HorizontalGridLines />
+              <XAxis />
+              <YAxis hideLine />
+
+              <LineMarkSeries
+                data={scoreData}
+                color={CHART_COLORS[2]}
+                onNearestX={onNearestXGeneric}
+                stack={true}
+              />
+
+              <ChartLabel
+                text={'Score'}
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end',
+                }}
+              />
+
+              {crosshairValues.length > 0 && false && ( /* need separate state for each crosshair */
+                <Crosshair
+                  values={crosshairValues}
+                  style={REACT_VIS_CROSSHAIR_NO_LINE}
+                >
+                </Crosshair>
+              )}
+            </XYPlot>
           </div>
         ) : <code>{'No data.'}</code>}
-        
+
       </div>
     );
 }

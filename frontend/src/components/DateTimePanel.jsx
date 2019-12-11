@@ -29,6 +29,7 @@ import {
   TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
   MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
 } from '../UIConstants';
+import { DATE, START_DATE, START_TIME, END_TIME, Path } from '../routeUtil';
 import { initialState } from '../reducers/routesReducer';
 import { isLoadingRequest } from '../reducers/loadingReducer';
 import { handleGraphParams } from '../actions';
@@ -109,9 +110,21 @@ function DateTimePanel(props) {
     setInfoAnchorEl(null);
   }
 
+  function applyGraphParams(payload) {
+    
+    const newState = Object.assign(graphParams, payload);
+    const path = new Path();
+    // rebuild path using new future state -- temporary code
+    path.buildPath(DATE, newState.date);
+    path.buildPath(START_DATE, newState.startDate);
+    path.buildPath(START_TIME, newState.startTime);
+    path.buildPath(END_TIME, newState.endTime);
+    path.commitPath(); // this will trigger handleGraphParams
+  }
+  
   function handleReset() {
     const initialParams = initialState.graphParams;
-    props.handleGraphParams({
+    applyGraphParams({
       date: initialParams.date,
       startTime: initialParams.startTime,
       endTime: initialParams.endTime,
@@ -193,10 +206,10 @@ function DateTimePanel(props) {
    */
   const setTimeRange = myTimeRange => {
     if (myTimeRange.target.value === TIME_RANGE_ALL_DAY) {
-      props.handleGraphParams({ startTime: null, endTime: null });
+      applyGraphParams({ startTime: null, endTime: null });
     } else {
       const timeRangeParts = myTimeRange.target.value.split('-');
-      props.handleGraphParams({
+      applyGraphParams({
         startTime: timeRangeParts[0],
         endTime: timeRangeParts[1],
       });
@@ -226,7 +239,7 @@ function DateTimePanel(props) {
       } else if (newMoment.diff(startMoment, 'days') > MAX_DATE_RANGE) {
         payload.startDate = newMoment.subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD');
       }
-      props.handleGraphParams(payload);
+      applyGraphParams(payload);
     }
   };
 
@@ -239,7 +252,7 @@ function DateTimePanel(props) {
     if (!myDate.target.value) {
       // ignore empty date and leave at current value
     } else {
-      props.handleGraphParams({
+      applyGraphParams({
         startDate: myDate.target.value,
       });
     }
@@ -250,7 +263,7 @@ function DateTimePanel(props) {
     const date = initialParams.date;
     const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
     
-    props.handleGraphParams({
+    applyGraphParams({
       date: date,
       startDate: startMoment.format('YYYY-MM-DD'),
     });
@@ -263,7 +276,7 @@ function DateTimePanel(props) {
     const day = event.target.value;
     const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
     newDaysOfTheWeek[day] = event.target.checked;
-    props.handleGraphParams({
+    applyGraphParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
   };
@@ -285,7 +298,7 @@ function DateTimePanel(props) {
       newDaysOfTheWeek[what[i].value] = newValue;
     }
 
-    props.handleGraphParams({
+    applyGraphParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
   }
