@@ -15,7 +15,6 @@ import EndStopIcon from '@material-ui/icons/Flag';
 import { handleGraphParams } from '../actions';
 import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeConstants';
 import { commitPath } from '../routeUtil';
-import Path from '../actionToPath';
 import { Colors } from '../UIConstants';
 
 const useStyles = makeStyles(theme => ({
