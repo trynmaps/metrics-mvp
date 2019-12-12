@@ -8,7 +8,6 @@ export function commitPath(params, routePage = ROUTESCREEN) {
   payload[START_STOP_ID] = payload[START_STOP_ID] ? payload[START_STOP_ID] : null;
   payload[END_STOP_ID] = payload[END_STOP_ID] ? payload[END_STOP_ID] : null;
   const action = {type: routePage, payload};
-  debugger;
   const path = actionToPath(action, routesMap, null);
   push(path);
 }

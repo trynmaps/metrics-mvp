@@ -24,7 +24,7 @@ import { fetchRoutes } from '../actions';
 
 
 import Link from 'redux-first-router-link';
-import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeUtil';
+import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeConstants';
 
 const useStyles = makeStyles(theme => ({
   whiteLinks: {
@@ -106,12 +106,14 @@ function RouteScreen(props) {
 
   const classes = useStyles();
   const { whiteLinks } = classes;
+  const agencyTitle = agency ? agency.title : null;
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
           <div className="page-title">
+
           <Breadcrumbs separator={ <NavigateNextIcon fontSize="medium"  className={whiteLinks}/> }>
             <Link to="/" className={whiteLinks} > <Typography variant="subtitle1" className={whiteLinks} >{agencyTitle} </Typography> </Link>
 
