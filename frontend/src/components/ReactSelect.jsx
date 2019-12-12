@@ -24,6 +24,9 @@ const useStyles = makeStyles({
       backgroundColor: theme.palette.background.focus,
     },
   },
+  selectInput: {
+    minWidth: '100%',
+  },
   valueContainer: {
     display: 'flex',
     flex: 1,
@@ -51,12 +54,13 @@ const selectStyles = {
     paddingLeft: 0,
     paddingRight: 0,
   }),
-  input: provided => ({
+  input: (provided, state) => ({
     ...provided,
     marginLeft: 0,
     marginRight: 0,
     maxWidth: '100%',
     overflow: 'hidden',
+    minWidth: state.minWidth,
   }),
 };
 
@@ -69,7 +73,7 @@ function Control(props) {
       classes,
       textFieldProps,
       isInitialMount,
-      onInitialMount,
+      setTextFieldDOMRect,
       select,
       setMenuIsOpen,
     },
@@ -78,7 +82,9 @@ function Control(props) {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
-      onInitialMount(document.getElementById(inputId).getBoundingClientRect());
+      setTextFieldDOMRect(
+        document.getElementById(inputId).getBoundingClientRect(),
+      );
     }
   });
 
@@ -117,8 +123,49 @@ function ValueContainer({ children, selectProps: { inputId, classes } }) {
   );
 }
 
+function handleInputKeyUp(inputProps) {
+  return () => inputProps.selectProps.setTextFieldDOMRect(
+    document.getElementById(inputProps.selectProps.inputId).getBoundingClientRect()
+  );
+}
+
+function handleInputChange(inputProps) {
+  const {
+    onChange,
+    selectProps: { setInputMinWidth },
+  } = inputProps;
+
+  return e => {
+    onChange(e);
+    if (e.target.value) {
+      setInputMinWidth('100%');
+      e.target.style.minWidth = '100%';
+    } else {
+      setInputMinWidth(0);
+    }
+  };
+}
+
+function handleInputBlur(inputProps) {
+  return e => {
+    inputProps.onBlur(e);
+    inputProps.selectProps.setInputMinWidth(0);
+  };
+}
+
 function Input(props) {
-  return <components.Input {...props} tabIndex={-1} />;
+  return (
+    <components.Input
+      {...props}
+      tabIndex={-1}
+      // min-width used by input wrapper (selectStyles object)
+      minWidth={props.selectProps.inputMinWidth}
+      className={props.selectProps.classes.selectInput}
+      onKeyUp={handleInputKeyUp(props)}
+      onChange={handleInputChange(props)}
+      onBlur={handleInputBlur(props)}
+    />
+  );
 }
 
 function Placeholder({ children, selectProps: { classes } }) {
@@ -328,6 +375,7 @@ export default function ReactSelect(selectProps) {
   const menuPlacementTop = useRef(false);
   const [textFieldDOMRect, setTextFieldDOMRect] = useState({});
   const [menuIsOpen, setMenuIsOpen] = useState(false);
+  const [inputMinWidth, setInputMinWidth] = useState(0);
 
   /**
    * updates textfield location on scroll/resize
@@ -338,7 +386,7 @@ export default function ReactSelect(selectProps) {
     window[`${selectProps.inputId}Timeout`] = setTimeout(() => {
       menuTransition.current = false;
       setTextFieldDOMRect(
-        document.getElementById(selectProps.inputId).getBoundingClientRect(),
+        document.getElementById(selectProps.inputId).getBoundingClientRect()
       );
     }, eventHandlerDelay);
   }
@@ -387,10 +435,12 @@ export default function ReactSelect(selectProps) {
       classes={classes}
       components={replacedComponents}
       focusedOption={focusedOption}
+      inputMinWidth={inputMinWidth}
+      setInputMinWidth={setInputMinWidth}
       isInitialMount={isInitialMount}
       menuPlacementTop={menuPlacementTop}
       menuTransition={menuTransition}
-      onInitialMount={setTextFieldDOMRect}
+      setTextFieldDOMRect={setTextFieldDOMRect}
       onMenuOpen={handleMenuOpen}
       onMenuClose={handleMenuClose}
       placeholder="Type here to search..."
