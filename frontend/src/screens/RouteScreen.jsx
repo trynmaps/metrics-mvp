@@ -9,6 +9,7 @@ import AppBar from '@material-ui/core/AppBar';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Typography from '@material-ui/core/Typography';
+import { createMuiTheme } from '@material-ui/core/styles';
 
 import { connect } from 'react-redux';
 import Info from '../components/Info';
@@ -26,12 +27,23 @@ import { fetchRoutes } from '../actions';
 import Link from 'redux-first-router-link';
 import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeConstants';
 
+const theme = createMuiTheme();
+
 const useStyles = makeStyles(theme => ({
-  whiteLinks: {
-    color: '#DCDCDC',
+  links: {
     fontWeight: 'bold',
     textTransform : 'initial',
     display : 'inline',
+    },
+    whiteLinks : {
+      color: 'white'
+    },
+    darkLinks : {
+      color: theme.palette.primary.dark
+    },
+    breadCrumbsWrapper : {
+      padding: '1%',
+      paddingRight: '0'
     }
 }));
 
@@ -56,7 +68,9 @@ function RouteScreen(props) {
 
   const agency = getAgency(agencyId);
 
-  const breadCrumbs = (paths, whiteLinks) => {
+  const breadCrumbs = (paths) => {
+    const { links, darkLinks } = classes;
+
     let link = {
       type:'ROUTESCREEN'
     }
@@ -79,8 +93,8 @@ function RouteScreen(props) {
         link = Object.assign({...link}, {payload:updatedPayload});
         const {label, specialLabel}  = labels(param, path.title);
         return hasNextValue
-        ? ( <Typography variant="subtitle1" className={whiteLinks}> {specialLabel}  <Link to={link} className={whiteLinks}>  {label}  </Link> </Typography> )
-        : ( <Typography variant="subtitle1" className={whiteLinks}> {specialLabel} {label} </Typography> )
+        ? ( <Typography variant="subtitle1" className={`${links} ${darkLinks}`}> {specialLabel}  <Link to={link} className={`${links} ${darkLinks}`}>  {label}  </Link> </Typography> )
+        : ( <Typography variant="subtitle1" className={links}> {specialLabel} {label} </Typography> )
     });
   }
 
@@ -105,36 +119,28 @@ function RouteScreen(props) {
       : null;
 
   const classes = useStyles();
-  const { whiteLinks } = classes;
+  const { links, whiteLinks, breadCrumbsWrapper } = classes;
   const agencyTitle = agency ? agency.title : null;
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className="page-title">
-
-          <Breadcrumbs separator={ <NavigateNextIcon fontSize="medium"  className={whiteLinks}/> }>
-            <Link to="/" className={whiteLinks} > <Typography variant="subtitle1" className={whiteLinks} >{agencyTitle} </Typography> </Link>
-
-            {breadCrumbs([selectedRoute,direction,
-              startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
-              endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null], whiteLinks)}
-          </Breadcrumbs>
-          </div>
+           <div className="page-title">
+            <Link to="/" className={whiteLinks} > <Typography variant="subtitle1" className={links} >{agencyTitle} </Typography> </Link>
+           </div>
           <div style={{flexGrow: 1}}/>
           <DateTimePanel dateRangeSupported={graphData || graphError}/>
         </Toolbar>
       </AppBar>
       
-      <Paper>
-        <Box p={2} className="page-title">            
-          {selectedRoute ? ` ${selectedRoute.title}` : null}
-          {direction ? ` > ${direction.title}` : null}
-          &nbsp;
-          {startStopInfo ? `(from ${startStopInfo.title}` : null}
-          {endStopInfo ? ` to ${endStopInfo.title})` : null}
-        </Box>
+      <Paper className={breadCrumbsWrapper}>
+         <Breadcrumbs separator={ <NavigateNextIcon fontSize="medium"  className={links}/> }>
+
+            {breadCrumbs([selectedRoute,direction,
+              startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
+              endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null])}
+          </Breadcrumbs>
       </Paper>
 
       <Grid container spacing={0}>

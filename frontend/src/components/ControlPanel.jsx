@@ -42,12 +42,6 @@ function ControlPanel(props) {
             [ROUTE_ID]: selectedRoute.id,
             [DIRECTION_ID]: directionId
             });
-
-    return props.onGraphParams({
-      directionId,
-      startStopId: null,
-      endStopId: null,
-    });
   }
 
   function getSelectedRouteInfo() {
@@ -102,12 +96,6 @@ function ControlPanel(props) {
       [START_STOP_ID]: stopId,
       [END_STOP_ID]: secondStopId
       });
-
-
-    props.onGraphParams({
-      startStopId: stopId,
-      endStopId: secondStopId,
-    });
   }
 
   function onSelectSecondStop(event) {
@@ -121,7 +109,7 @@ function ControlPanel(props) {
       [START_STOP_ID]: stopId,
       [END_STOP_ID]: endStopId});
 
-    props.onGraphParams({ endStopId });
+    
   }
 
   function setRouteId(event) {
@@ -144,13 +132,6 @@ function ControlPanel(props) {
       [ROUTE_ID]:routeId,
       [DIRECTION_ID]: directionId
       });
-
-    props.onGraphParams({
-      routeId,
-      directionId,
-      startStopId: null,
-      endStopId: null,
-    });
   }
   /**
    * Handle mouseover event on Select TO & From dropdown list item.
