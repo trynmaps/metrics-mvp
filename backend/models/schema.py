@@ -19,7 +19,10 @@ class BasicWaitTimeStats(ObjectType):
         wait_time_median = wait_times.get_cached_wait_times(parent['route_metrics'].agency_id, first_date, "median", parent["start_time"], parent["end_time"])
         if wait_time_median is None:
             raise Exception(f"There is no cached median for start_stop_id {parent['start_stop_id']} at times {parent['start_time'], parent['end_time']}.")
-        return wait_time_median.get_value(parent["route_metrics"].route_id, parent["direction_id"], parent["start_stop_id"])
+        wait_time_median_value = wait_time_median.get_value(parent["route_metrics"].route_id, parent["direction_id"], parent["start_stop_id"])
+        if wait_time_median_value is None:
+            raise Exception(f"There is no cached median value returned for start_stop_id {parent['start_stop_id']} at times {parent['start_time'], parent['end_time']}.")
+        return wait_time_median_value
 
     def resolve_percentile(parent, info, percentile):
         first_date = util.parse_date(parent["date_str"])
