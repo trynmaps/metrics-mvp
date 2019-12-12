@@ -13,7 +13,9 @@ import Grid from '@material-ui/core/Grid';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { handleGraphParams } from '../actions';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
+import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeConstants';
+import { commitPath } from '../routeUtil';
+import Path from '../actionToPath';
 import { Colors } from '../UIConstants';
 
 const useStyles = makeStyles(theme => ({
@@ -37,9 +39,11 @@ function ControlPanel(props) {
    */
   function setDirectionId(event) {
     const directionId = event.target.value;
+    commitPath({
+            [ROUTE_ID]: selectedRoute.id,
+            [DIRECTION_ID]: directionId
+            });
 
-    const path = new Path();
-    path.buildPath(DIRECTION, directionId).commitPath();
     return props.onGraphParams({
       directionId,
       startStopId: null,
@@ -92,14 +96,14 @@ function ControlPanel(props) {
       directionId,
       stopId,
     );
-    const path = new Path();
-    path.buildPath(FROM_STOP, stopId);
 
-    if (secondStopId) {
-      path.buildPath(TO_STOP, secondStopId);
-    }
+    commitPath({
+      [ROUTE_ID]:selectedRoute.id,
+      [DIRECTION_ID]: directionId,
+      [START_STOP_ID]: stopId,
+      [END_STOP_ID]: secondStopId
+      });
 
-    path.commitPath();
 
     props.onGraphParams({
       startStopId: stopId,
@@ -108,10 +112,15 @@ function ControlPanel(props) {
   }
 
   function onSelectSecondStop(event) {
+    const directionId = props.graphParams.directionId;
+    const stopId = props.graphParams.startStopId;
     const endStopId = event.target.value;
-
-    const path = new Path();
-    path.buildPath(TO_STOP, endStopId).commitPath();
+    
+    commitPath({
+      [ROUTE_ID]:selectedRoute.id,
+      [DIRECTION_ID]: directionId,
+      [START_STOP_ID]: stopId,
+      [END_STOP_ID]: endStopId});
 
     props.onGraphParams({ endStopId });
   }
@@ -131,12 +140,12 @@ function ControlPanel(props) {
       mySelectedRoute.directions.length > 0
         ? mySelectedRoute.directions[0].id
         : null;
+        
+     commitPath({
+      [ROUTE_ID]:routeId,
+      [DIRECTION_ID]: directionId
+      });
 
-    const path = new Path();
-    path
-      .buildPath(ROUTE, routeId)
-      .buildPath(DIRECTION, directionId)
-      .commitPath();
     props.onGraphParams({
       routeId,
       directionId,

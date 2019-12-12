@@ -1,44 +1,14 @@
-import { push } from 'redux-first-router';
+import { push, actionToPath } from 'redux-first-router';
+import { ROUTESCREEN, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from './routeConstants';
+import routesMap from './routesMap';
 
-// path constants
-export const ROUTE = 'route';
-export const DIRECTION = 'direction';
-export const FROM_STOP = 'fromStop';
-export const TO_STOP = 'toStop';
-
-//path param Id constants
-export const ROUTE_ID = 'routeId';
-export const DIRECTION_ID = 'directionId';
-export const START_STOP_ID = 'startStopId';
-export const END_STOP_ID = 'endStopId';
-
-export class Path {
-  constructor() {
-    this.path = document.location.pathname;
-  }
-
-  buildPath = (pathParam, id) => {
-    let { path } = this;
-    // account for trailing / if there is one
-    if (path.lastIndexOf('/') === path.length - 1) {
-      path = path.substring(0, path.length - 1);
-    }
-
-    const pathArray = path.split('/');
-    const endingPathIndex = pathArray.indexOf(pathParam);
-    // if we don't have the value of the last param yet in the URL, then just append it
-    if (endingPathIndex === -1) {
-      this.path = `${path}/${pathParam}/${id}`;
-      return this;
-    }
-    // otherwise, we need to cut off the URL and add latest parameter
-    pathArray[endingPathIndex + 1] = id;
-    this.path = pathArray.slice(0, endingPathIndex + 2).join('/');
-    return this;
-  };
-
-  commitPath = () => {
-    const { path } = this;
-    push(path);
-  };
+export function commitPath(params, routePage = ROUTESCREEN) {
+  let payload = {...params};
+  payload[DIRECTION_ID] = payload[DIRECTION_ID] ? payload[DIRECTION_ID] : null;
+  payload[START_STOP_ID] = payload[START_STOP_ID] ? payload[START_STOP_ID] : null;
+  payload[END_STOP_ID] = payload[END_STOP_ID] ? payload[END_STOP_ID] : null;
+  const action = {type: routePage, payload};
+  debugger;
+  const path = actionToPath(action, routesMap, null);
+  push(path);
 }

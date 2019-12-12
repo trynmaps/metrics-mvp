@@ -1,6 +1,6 @@
 import { handleGraphParams } from './actions';
 import { Agencies } from './config';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP } from './routeUtil';
+import { ROUTE, DIRECTION, FROM_STOP, TO_STOP } from './routeConstants';
 
 export default {
   ABOUT: '/about',
