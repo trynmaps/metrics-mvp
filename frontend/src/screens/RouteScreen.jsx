@@ -1,7 +1,6 @@
 import React, { Fragment, useEffect } from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
-import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -9,7 +8,6 @@ import AppBar from '@material-ui/core/AppBar';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Typography from '@material-ui/core/Typography';
-import { createMuiTheme } from '@material-ui/core/styles';
 
 import { connect } from 'react-redux';
 import Info from '../components/Info';
@@ -27,10 +25,8 @@ import { fetchRoutes } from '../actions';
 import Link from 'redux-first-router-link';
 import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeConstants';
 
-const theme = createMuiTheme();
-
 const useStyles = makeStyles(theme => ({
-  links: {
+  breadCrumbStyling: {
     fontWeight: 'bold',
     textTransform : 'initial',
     display : 'inline',
@@ -68,8 +64,8 @@ function RouteScreen(props) {
 
   const agency = getAgency(agencyId);
 
-  const breadCrumbs = (paths) => {
-    const { links, darkLinks } = classes;
+  const breadCrumbs = (paths, classes) => {
+    const { breadCrumbStyling, darkLinks } = classes;
 
     let link = {
       type:'ROUTESCREEN'
@@ -93,8 +89,8 @@ function RouteScreen(props) {
         link = Object.assign({...link}, {payload:updatedPayload});
         const {label, specialLabel}  = labels(param, path.title);
         return hasNextValue
-        ? ( <Typography variant="subtitle1" className={`${links} ${darkLinks}`}> {specialLabel}  <Link to={link} className={`${links} ${darkLinks}`}>  {label}  </Link> </Typography> )
-        : ( <Typography variant="subtitle1" className={links}> {specialLabel} {label} </Typography> )
+        ? ( <Typography variant="subtitle1" className={`${breadCrumbStyling} ${darkLinks}`}> {specialLabel}  <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>  {label}  </Link> </Typography> )
+        : ( <Typography variant="subtitle1" className={breadCrumbStyling}> {specialLabel} {label} </Typography> )
     });
   }
 
@@ -119,7 +115,7 @@ function RouteScreen(props) {
       : null;
 
   const classes = useStyles();
-  const { links, whiteLinks, breadCrumbsWrapper } = classes;
+  const { breadCrumbStyling, whiteLinks, breadCrumbsWrapper } = classes;
   const agencyTitle = agency ? agency.title : null;
   return (
     <Fragment>
@@ -127,7 +123,7 @@ function RouteScreen(props) {
         <Toolbar>
           <SidebarButton />
            <div className="page-title">
-            <Link to="/" className={whiteLinks} > <Typography variant="subtitle1" className={links} >{agencyTitle} </Typography> </Link>
+            <Link to="/" className={whiteLinks} > <Typography variant="subtitle1" className={breadCrumbStyling} >{agencyTitle} </Typography> </Link>
            </div>
           <div style={{flexGrow: 1}}/>
           <DateTimePanel dateRangeSupported={graphData || graphError}/>
@@ -135,11 +131,11 @@ function RouteScreen(props) {
       </AppBar>
       
       <Paper className={breadCrumbsWrapper}>
-         <Breadcrumbs separator={ <NavigateNextIcon fontSize="medium"  className={links}/> }>
+         <Breadcrumbs separator={ <NavigateNextIcon fontSize="medium"  className={breadCrumbStyling}/> }>
 
             {breadCrumbs([selectedRoute,direction,
               startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
-              endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null])}
+              endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null],classes)}
           </Breadcrumbs>
       </Paper>
 

@@ -14,7 +14,12 @@ import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as d3 from 'd3';
 import { Snackbar } from '@material-ui/core';
-import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeConstants';
+import {
+  ROUTE_ID,
+  DIRECTION_ID,
+  START_STOP_ID,
+  END_STOP_ID,
+} from '../routeConstants';
 import { commitPath } from '../routeUtil';
 import {
   getAllWaits,
@@ -129,8 +134,8 @@ class MapSpider extends Component {
             [ROUTE_ID]: startMarker.routeId,
             [DIRECTION_ID]: startMarker.direction.id,
             [START_STOP_ID]: startMarker.stopId,
-            [END_STOP_ID]: lastStop.stopId
-            });
+            [END_STOP_ID]: lastStop.stopId,
+          });
         }}
       ></Marker>
     );
@@ -293,8 +298,8 @@ class MapSpider extends Component {
             [ROUTE_ID]: startMarker.routeId,
             [DIRECTION_ID]: startMarker.direction.id,
             [START_STOP_ID]: startMarker.stopId,
-            [END_STOP_ID]: downstreamStops[i + 1].stopId
-            });
+            [END_STOP_ID]: downstreamStops[i + 1].stopId,
+          });
         }}
       >
         <Tooltip>

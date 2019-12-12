@@ -4,7 +4,12 @@ import { Map, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet';
 import * as d3 from 'd3';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
-import { ROUTE_ID, DIRECTION_ID, START_STOP_ID, END_STOP_ID } from '../routeConstants';
+import {
+  ROUTE_ID,
+  DIRECTION_ID,
+  START_STOP_ID,
+  END_STOP_ID,
+} from '../routeConstants';
 import { commitPath } from '../routeUtil';
 import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
@@ -45,12 +50,17 @@ class MapStops extends Component {
    * @param {Object} tooltip The react-leaflet Tooltip for this stop.
    * @returns {Object} The react-leaflet Marker.
    */
-  populateStop = (stop, IconType, currentPosition, rotation, onClickHandler, tooltip) => {
-
+  populateStop = (
+    stop,
+    IconType,
+    currentPosition,
+    rotation,
+    onClickHandler,
+    tooltip,
+  ) => {
     let icon = null;
 
     if (IconType) {
-
       // Given an IconType indicates start or end stop.  This is a white circle with a black icon,
       // followed by the title of the stop.
 
@@ -59,30 +69,28 @@ class MapStops extends Component {
         iconSize: [240, 24],
         iconAnchor: [12, 12], // centers icon over position, with text to the right
         html:
-
           `<svg width="24" height="24" viewBox="-10 -10 10 10">` +
-
           // this is a larger white circle
 
           `<circle cx="-5" cy="-5" r="4.5" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
-
           // this is the passed in icon, which we ask React to render as html (becomes an svg object)
 
           `</svg><div style="position:relative; top: -26px; left:2px">` +
-          ReactDOMServer.renderToString(<IconType style={{color:Colors.INDIGO}} fontSize={'small'}/>) +
-         `</div>` +
+          ReactDOMServer.renderToString(
+            <IconType style={{ color: Colors.INDIGO }} fontSize={'small'} />,
+          ) +
+          `</div>` +
+          // this is the stop title with a text shadow to outline it in white
 
-         // this is the stop title with a text shadow to outline it in white
-
-         `<div style="position:relative; top:-50px; left:25px; font-weight:bold; color:` + Colors.INDIGO + `; ` +
-         `text-shadow: -1px 1px 0 #fff,` +
-         `1px 1px 0 #fff,` +
-         `1px -1px 0 #fff,` +
-         `-1px -1px 0 #fff;">${stop.title}</div>`,
+          `<div style="position:relative; top:-50px; left:25px; font-weight:bold; color:` +
+          Colors.INDIGO +
+          `; ` +
+          `text-shadow: -1px 1px 0 #fff,` +
+          `1px 1px 0 #fff,` +
+          `1px -1px 0 #fff,` +
+          `-1px -1px 0 #fff;">${stop.title}</div>`,
       });
-
     } else {
-
       // If not given an IconType, this is just a regular stop.  This is a white circle with an
       // svg "v" shape rotated by the given rotation value.
 
@@ -92,29 +100,30 @@ class MapStops extends Component {
         iconAnchor: [10, 10], // centers icon over position, with text to the right
         html:
           `<svg viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
-
           // First we draw a white circle
 
           `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
-
           // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
 
-          `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${
-            Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
+          `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
           `</g>` +
           `</svg>`,
       });
-
     }
 
     return (
       <Marker
-        key={ stop.sid + '-marker' }
+        key={stop.sid + '-marker'}
         position={currentPosition}
         icon={icon}
-        onClick={ (e) => { e.sourceTarget.closeTooltip(); onClickHandler() } }
-      >{tooltip}</Marker>
-    )
+        onClick={e => {
+          e.sourceTarget.closeTooltip();
+          onClickHandler();
+        }}
+      >
+        {tooltip}
+      </Marker>
+    );
   };
 
   /**
@@ -127,10 +136,9 @@ class MapStops extends Component {
     const delta_x = toPoint.lon - fromPoint.lon;
     // Note that y is reversed due to latitude's postive direction being reverse of screen y
     const delta_y = fromPoint.lat - toPoint.lat;
-    const rotation = Math.round(Math.atan2(delta_y, delta_x) * 180/Math.PI);
+    const rotation = Math.round((Math.atan2(delta_y, delta_x) * 180) / Math.PI);
     return rotation;
-  }
-
+  };
 
   /**
    * Draws all the stops in a given direction.
@@ -139,11 +147,7 @@ class MapStops extends Component {
    * @param {Object} direction The direction info for the given direction
    * @returns {Array} Array of Leaflet Marker objects
    */
-  populateStops = (
-    routeStops,
-    directionId,
-    direction,
-  ) => {
+  populateStops = (routeStops, directionId, direction) => {
     let route = [];
 
     if (routeStops && routeStops[directionId]) {
@@ -153,11 +157,13 @@ class MapStops extends Component {
         const isEnd = stop.sid === this.props.graphParams.endStopId;
 
         const onClickHandler = () => this.handleStopSelect(stop, directionId);
-        const tooltip = <Tooltip>
-          {stop.title}
-          <br />
-          {direction.title}
-        </Tooltip>;
+        const tooltip = (
+          <Tooltip>
+            {stop.title}
+            <br />
+            {direction.title}
+          </Tooltip>
+        );
 
         let IconType = null;
         if (isStart) {
@@ -171,15 +177,22 @@ class MapStops extends Component {
         // at the beginning and end of a route seem to work out (probably because of
         // extra coords points representing the terminals).
 
-        let rotation=0;
+        let rotation = 0;
         const stopGeometry = direction.stop_geometry[stop.sid];
         if (stopGeometry) {
           const previousPoint = direction.coords[stopGeometry.after_index];
-          const nextPoint = direction.coords[stopGeometry.after_index+1];
+          const nextPoint = direction.coords[stopGeometry.after_index + 1];
           rotation = this.angleFromTo(previousPoint, nextPoint);
         }
 
-        const icon = this.populateStop(stop, IconType, currentPosition, rotation, onClickHandler, tooltip);
+        const icon = this.populateStop(
+          stop,
+          IconType,
+          currentPosition,
+          rotation,
+          onClickHandler,
+          tooltip,
+        );
         return icon;
       });
     }
@@ -392,13 +405,13 @@ class MapStops extends Component {
       endStopId = null;
       directionId = newDirectionId;
     }
-   
+
     commitPath({
-            [ROUTE_ID]: routeId,
-            [DIRECTION_ID]: directionId,
-            [START_STOP_ID]: startStopId,
-            [END_STOP_ID]: endStopId
-            });
+      [ROUTE_ID]: routeId,
+      [DIRECTION_ID]: directionId,
+      [START_STOP_ID]: startStopId,
+      [END_STOP_ID]: endStopId,
+    });
     const { onGraphParams } = this.props;
     // for debugging
     // console.log("end state is: start: " + startStopId + " end: " + endStopId + " dir: " + directionId);
@@ -433,7 +446,7 @@ class MapStops extends Component {
   computeHeight() {
     return (
       (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
-      64 - /* blue app bar */
+      64 /* blue app bar */ -
       50 /* breadcrumb paper */
     );
   }
@@ -482,26 +495,31 @@ class MapStops extends Component {
             // add white lines and speed color lines
 
             populatedRoutes.push(
-              this.populateStops(
-                routeStops,
-                direction.id,
-                direction,
-              ),
+              this.populateStops(routeStops, direction.id, direction),
             );
 
             // draw stop markers on top of lines for all directions
 
             populatedRoutes.unshift(
-              this.populateSpeed(selectedRoute, direction, routeStops, direction.id),
-            )
+              this.populateSpeed(
+                selectedRoute,
+                direction,
+                routeStops,
+                direction.id,
+              ),
+            );
           }
         });
       }
     }
 
-    let mapInstruction =(!graphParams.directionId) ? 'Select a direction to see stops in that direction.'
-        : (!graphParams.startStopId) ? 'Click an origin stop.'
-        : (!graphParams.endStopId) ? 'Click a destination stop.' : '';
+    let mapInstruction = !graphParams.directionId
+      ? 'Select a direction to see stops in that direction.'
+      : !graphParams.startStopId
+      ? 'Click an origin stop.'
+      : !graphParams.endStopId
+      ? 'Click a destination stop.'
+      : '';
 
     return (
       <Map
