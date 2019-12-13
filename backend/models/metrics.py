@@ -40,8 +40,8 @@ class RouteMetrics:
         try:
             self.arrival_histories[d] = history = arrival_history.get_by_date(self.agency_id, self.route_id, d)
         except FileNotFoundError as ex:
-            raise errors.ArrivalHistoryNotFoundError(f"Arrival history not found for route {self.route_id} on {d}")
-
+            print(f'Arrival history not found for route {self.route_id} on {d}', file=sys.stderr)
+            history = arrival_history.ArrivalHistory(self.agency_id, self.route_id, {});
         return history
 
     def get_data_frame(self, d, stop_id=None, direction_id=None):
