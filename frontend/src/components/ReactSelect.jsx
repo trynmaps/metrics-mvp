@@ -8,7 +8,7 @@ import TextField from '@material-ui/core/TextField';
 import MenuItem from '@material-ui/core/MenuItem';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 
-const transitionDuration = 300;
+const transitionDuration = 350;
 const scrollHandlerDelay = 30;
 const theme = createMuiTheme({
   palette: {
@@ -205,7 +205,7 @@ function Menu(props) {
       focusedOptionRef,
       labelRef,
       menuRef,
-      menuIsOpen,
+      menuIsOpenTransition,
       menuPlacementTop,
       menuTransition,
       textFieldDOMRect,
@@ -279,11 +279,11 @@ function Menu(props) {
 
   return (
     <Grow
-      in={menuIsOpen}
+      in={menuIsOpenTransition}
       timeout={timeout}
       style={{ transformOrigin: '0 0 0' }}
     >
-      <Fade in={menuIsOpen} timeout={timeout}>
+      <Fade in={menuIsOpenTransition} timeout={timeout}>
         <Paper
           ref={menuRef}
           style={menuStyle}
@@ -371,23 +371,35 @@ function Option(props) {
   );
 }
 
-function handleMenuOpen(menuTransition, setMenuIsOpen, onOpen) {
+function handleMenuOpen(
+  menuTransition,
+  setMenuIsOpenTransition,
+  setMenuIsOpen,
+  onOpen
+) {
   const allowTransition = menuTransition;
 
   return () => {
     allowTransition.current = true;
+    setMenuIsOpenTransition(true);
     setMenuIsOpen(true);
     onOpen();
   };
 }
 
-function handleMenuClose(menuTransition, setMenuIsOpen, onClose) {
+function handleMenuClose(
+  menuTransition,
+  setMenuIsOpenTransition,
+  setMenuIsOpen,
+  onClose
+) {
   const allowTransition = menuTransition;
 
   return () => {
     allowTransition.current = true;
     document.activeElement.blur();
-    setMenuIsOpen(false);
+    setMenuIsOpenTransition(false);
+    setTimeout(() => setMenuIsOpen(false), transitionDuration);
     onClose();
   };
 }
@@ -431,6 +443,8 @@ export default function ReactSelect(props) {
   const textRef = useRef();
   const focusedOptionRef = useRef();
   const [menuIsOpen, setMenuIsOpen] = useState(false);
+  // similar to menuIsOpen, but triggers transition immediately while actual menu close is on timeout
+  const [menuIsOpenTransition, setMenuIsOpenTransition] = useState(false);
   const menuPlacementTop = useRef(false);
   // determines whether transitionDuration is used. Set to false on resize/scroll
   const menuTransition = useRef(true);
@@ -495,9 +509,15 @@ export default function ReactSelect(props) {
       // react-select/react props
       components={replacedComponents}
       menuIsOpen={menuIsOpen}
-      onMenuOpen={handleMenuOpen(menuTransition, setMenuIsOpen, props.onOpen)}
+      onMenuOpen={handleMenuOpen(
+        menuTransition,
+        setMenuIsOpenTransition,
+        setMenuIsOpen,
+        props.onOpen
+      )}
       onMenuClose={handleMenuClose(
         menuTransition,
+        setMenuIsOpenTransition,
         setMenuIsOpen,
         props.onClose,
       )}
@@ -514,6 +534,7 @@ export default function ReactSelect(props) {
       textRef={textRef}
       classes={classes}
       inputMinWidth={inputMinWidth}
+      menuIsOpenTransition={menuIsOpenTransition}
       menuPlacementTop={menuPlacementTop}
       menuTransition={menuTransition}
       setInputMinWidth={setInputMinWidth}
