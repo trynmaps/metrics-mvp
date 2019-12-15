@@ -258,7 +258,7 @@ class GtfsScraper:
         except FileNotFoundError as err:
             old_date_keys = {}
 
-        date_keys = old_date_keys
+        date_keys = old_date_keys.copy()
 
         for d, service_ids in dates_map.items():
             service_ids = sorted(service_ids)
@@ -266,37 +266,11 @@ class GtfsScraper:
             if service_ids_key not in first_date_for_service_ids_map:
                 first_date_for_service_ids_map[service_ids_key] = d
 
-            date_keys[d] = str(first_date_for_service_ids_map[service_ids_key])
+            date_keys[str(d)] = str(first_date_for_service_ids_map[service_ids_key])
 
         if skip_existing and date_keys == old_date_keys:
             print("No new dates in GTFS feed, skipping")
             return
-
-        date_keys_cache_path = timetables.get_date_keys_cache_path(agency_id)
-
-        Path(date_keys_cache_path).parent.mkdir(parents = True, exist_ok = True)
-
-        data_str = json.dumps({
-            'version': timetables.DefaultVersion,
-            'date_keys': {str(d): date_key for d, date_key in date_keys.items()},
-        }, separators=(',', ':'))
-
-        with open(date_keys_cache_path, "w") as f:
-            f.write(data_str)
-
-        if save_to_s3:
-            s3 = boto3.resource('s3')
-            s3_path = timetables.get_date_keys_s3_path(agency_id)
-            s3_bucket = config.s3_bucket
-            print(f'saving to s3://{s3_bucket}/{s3_path}')
-            object = s3.Object(s3_bucket, s3_path)
-            object.put(
-                Body=gzip.compress(bytes(data_str, 'utf-8')),
-                CacheControl='max-age=86400',
-                ContentType='application/json',
-                ContentEncoding='gzip',
-                ACL='public-read'
-            )
 
         trips_df = self.get_gtfs_trips()
 
@@ -374,6 +348,35 @@ class GtfsScraper:
                         ContentEncoding='gzip',
                         ACL='public-read'
                     )
+
+        # save date keys last, so that if an error occurs while saving timetables,
+        # the timetables will be saved again even with skip_existing=True
+
+        date_keys_cache_path = timetables.get_date_keys_cache_path(agency_id)
+
+        Path(date_keys_cache_path).parent.mkdir(parents = True, exist_ok = True)
+
+        data_str = json.dumps({
+            'version': timetables.DefaultVersion,
+            'date_keys': {date_str: date_key for date_str, date_key in date_keys.items()},
+        }, separators=(',', ':'))
+
+        with open(date_keys_cache_path, "w") as f:
+            f.write(data_str)
+
+        if save_to_s3:
+            s3 = boto3.resource('s3')
+            s3_path = timetables.get_date_keys_s3_path(agency_id)
+            s3_bucket = config.s3_bucket
+            print(f'saving to s3://{s3_bucket}/{s3_path}')
+            object = s3.Object(s3_bucket, s3_path)
+            object.put(
+                Body=gzip.compress(bytes(data_str, 'utf-8')),
+                CacheControl='max-age=86400',
+                ContentType='application/json',
+                ContentEncoding='gzip',
+                ACL='public-read'
+            )
 
     def get_custom_direction_id(self, custom_directions_arr, gtfs_direction_id, stop_ids):
 

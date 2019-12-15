@@ -38,7 +38,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Save route configuration from GTFS and possibly Nextbus API')
     parser.add_argument('--agency', required=False, help='Agency ID')
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
+    parser.add_argument('--timetables', dest='timetables', action='store_true', help='also save timetables')
     parser.set_defaults(s3=False)
+    parser.set_defaults(timetables=False)
 
     args = parser.parse_args()
 
@@ -49,3 +51,6 @@ if __name__ == '__main__':
     for agency in agencies:
         scraper = gtfs.GtfsScraper(agency)
         scraper.save_routes(save_to_s3)
+
+        if args.timetables:
+            scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)

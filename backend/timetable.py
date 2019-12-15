@@ -57,7 +57,7 @@ if __name__ == "__main__":
         history = arrival_history.get_by_date(agency_id, route_id, d)
         arrivals_df = history.get_data_frame(stop_id=stop_id, direction_id=direction_id)
 
-        comparison_df = timetables.match_schedule_to_arrivals(timetable_df['TIME'].values, arrivals_df['TIME'].values, early_sec=early_sec, late_sec=late_sec)
+        comparison_df = timetables.match_schedule_to_actual_times(timetable_df['TIME'].values, arrivals_df['TIME'].values, early_sec=early_sec, late_sec=late_sec)
 
         timetable_df = pd.concat([timetable_df, comparison_df], axis=1)
 
@@ -70,18 +70,18 @@ if __name__ == "__main__":
         scheduled_headway = f'{round(row.scheduled_headway, 1)}'.rjust(4)
 
         if args.comparison:
-            matching_arrival_time = datetime.fromtimestamp(row.matching_arrival, tz).time() if not np.isnan(row.matching_arrival) else None
+            matching_actual_time = datetime.fromtimestamp(row.matching_actual_time, tz).time() if not np.isnan(row.matching_actual_time) else None
 
             status_text = ''
 
             if args.verbose:
-                prev_arrival_time = datetime.fromtimestamp(row.prev_arrival, tz).time() if not np.isnan(row.prev_arrival) else None
-                next_arrival_time = datetime.fromtimestamp(row.next_arrival, tz).time() if not np.isnan(row.next_arrival) else None
-                closest_arrival_time = datetime.fromtimestamp(row.closest_arrival, tz).time() if not np.isnan(row.closest_arrival) else None
+                prev_actual_time = datetime.fromtimestamp(row.prev_actual_time, tz).time() if not np.isnan(row.prev_actual_time) else None
+                next_actual_time = datetime.fromtimestamp(row.next_actual_time, tz).time() if not np.isnan(row.next_actual_time) else None
+                closest_actual_time = datetime.fromtimestamp(row.closest_actual_time, tz).time() if not np.isnan(row.closest_actual_time) else None
 
-                arrival_info = f'p:{prev_arrival_time} n:{next_arrival_time} c:{closest_arrival_time} m:{matching_arrival_time}'
+                arrival_info = f'p:{prev_actual_time} n:{next_actual_time} c:{closest_actual_time} m:{matching_actual_time}'
             else:
-                arrival_info = f'actual: {matching_arrival_time}'
+                arrival_info = f'actual: {matching_actual_time}'
 
             if not row.no_match:
                 if row.on_time:
@@ -91,11 +91,11 @@ if __name__ == "__main__":
                 elif row.early:
                     status_text = 'early'
 
-                matching_arrival_headway = f'{round(row.matching_arrival_headway,1)}'.rjust(5)
+                matching_actual_headway = f'{round(row.matching_actual_headway,1)}'.rjust(5)
 
-                headway_delta = row.matching_arrival_headway - row.scheduled_headway if row.scheduled_headway > 0 else None
+                headway_delta = row.matching_actual_headway - row.scheduled_headway if row.scheduled_headway > 0 else None
 
-                arrival_info += f'  {status_text.ljust(5)} {util.render_delta(row.matching_arrival_delta/60)} min   {matching_arrival_headway} min headway ({util.render_delta(headway_delta)} min)'
+                arrival_info += f'  {status_text.ljust(5)} {util.render_delta(row.matching_actual_delta/60)} min   {matching_actual_headway} min headway ({util.render_delta(headway_delta)} min)'
         else:
             arrival_info = ''
 
@@ -115,20 +115,3 @@ if __name__ == "__main__":
         print(f"Late     : {round(late_rate * 100, 1)}% ({np.sum(timetable_df['late'])}/{num_scheduled}) more than {late_min} min late")
         print(f"Early    : {round(early_rate * 100, 1)}% ({np.sum(timetable_df['early'])}/{num_scheduled}) more than {early_min} min early")
         print(f"Missing  : {round(missing_rate * 100, 1)}% ({np.sum(timetable_df['no_match'])}/{num_scheduled})")
-
-
-    '''
-    scheduled_headways = timetable_df['scheduled_headway']
-    matching_arrival_headways = timetable_df['matching_arrival_headway']
-    valid_headway_indexes = (scheduled_headways > 0) & np.isfinite(matching_arrival_headways)
-
-    headway_ratio = matching_arrival_headways[valid_headway_indexes] / scheduled_headways[valid_headway_indexes]
-
-    num_valid_headways = len(headway_ratio)
-
-    gaps = headway_ratio > gap_threshold
-    bunches = headway_ratio < bunch_threshold
-
-    gap_rate = np.average(gaps)
-    bunch_rate = np.average(bunches)
-    '''

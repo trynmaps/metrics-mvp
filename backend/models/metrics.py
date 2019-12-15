@@ -100,12 +100,21 @@ class RouteMetrics:
         return wait_stats_arr
 
     def get_arrivals(self, direction_id, stop_id, rng: Range):
-        return self._get_arrivals(direction_id, stop_id, rng, self.get_history_data_frame)
+        return self._get_count(direction_id, stop_id, rng, self.get_history_data_frame, 'TIME')
+
+    def get_departures(self, direction_id, stop_id, rng: Range):
+        return self._get_count(direction_id, stop_id, rng, self.get_history_data_frame, 'DEPARTURE_TIME')
 
     def get_scheduled_arrivals(self, direction_id, stop_id, rng: Range):
-        return self._get_arrivals(direction_id, stop_id, rng, self.get_timetable_data_frame)
+        return self._get_count(direction_id, stop_id, rng, self.get_timetable_data_frame, 'TIME')
 
-    def _get_arrivals(self, direction_id, stop_id, rng: Range, get_data_frame):
+    def get_scheduled_departures(self, direction_id, stop_id, rng: Range):
+        return self._get_count(direction_id, stop_id, rng, self.get_timetable_data_frame, 'DEPARTURE_TIME')
+
+    def _get_count(self, direction_id, stop_id, rng: Range, get_data_frame, time_field):
+        if stop_id is None:
+            return None
+
         count = 0
 
         for d in rng.dates:
@@ -115,16 +124,24 @@ class RouteMetrics:
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
 
             if start_time is not None:
-                df = df[df['TIME'] >= start_time]
+                df = df[df[time_field] >= start_time]
 
             if end_time is not None:
-                df = df[df['TIME'] < end_time]
+                df = df[df[time_field] < end_time]
 
             count += len(df)
 
         return count
 
-    def get_schedule_adherence(self, direction_id, stop_id, early_sec, late_sec, rng: Range):
+    def get_departure_schedule_adherence(self, direction_id, stop_id, early_sec, late_sec, rng: Range):
+        return self._get_schedule_adherence(direction_id, stop_id, early_sec, late_sec, rng, 'DEPARTURE_TIME')
+
+    def get_arrival_schedule_adherence(self, direction_id, stop_id, early_sec, late_sec, rng: Range):
+        return self._get_schedule_adherence(direction_id, stop_id, early_sec, late_sec, rng, 'TIME')
+
+    def _get_schedule_adherence(self, direction_id, stop_id, early_sec, late_sec, rng: Range, time_field):
+        if stop_id is None:
+            return None
 
         compared_timetable_arr = []
 
@@ -134,25 +151,28 @@ class RouteMetrics:
             stop_timetable = self.get_timetable_data_frame(d, direction_id=direction_id, stop_id=stop_id)
             stop_arrivals = self.get_history_data_frame(d, direction_id=direction_id, stop_id=stop_id)
 
-            comparison_df = timetables.match_schedule_to_arrivals(
-                stop_timetable['TIME'].values,
-                stop_arrivals['TIME'].values,
+            scheduled_time_values = np.sort(stop_timetable[time_field].values)
+            actual_time_values = np.sort(stop_arrivals[time_field].values)
+
+            comparison_df = timetables.match_schedule_to_actual_times(
+                scheduled_time_values,
+                actual_time_values,
                 early_sec = early_sec,
                 late_sec = late_sec,
             )
-            comparison_df['TIME'] = stop_timetable['TIME']
+            comparison_df[time_field] = scheduled_time_values
 
-            if len(comparison_df) and comparison_df['TIME'].iloc[-1] >= now:
-                comparison_df = comparison_df[comparison_df['TIME'] < now]
+            if len(comparison_df) and comparison_df[time_field].iloc[-1] >= now:
+                comparison_df = comparison_df[comparison_df[time_field] < now]
 
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
 
             if start_time is not None:
-                comparison_df = comparison_df[comparison_df['TIME'] >= start_time]
+                comparison_df = comparison_df[comparison_df[time_field] >= start_time]
 
             if end_time is not None:
-                comparison_df = comparison_df[comparison_df['TIME'] < end_time]
+                comparison_df = comparison_df[comparison_df[time_field] < end_time]
 
             compared_timetable_arr.append(comparison_df)
 
@@ -168,29 +188,31 @@ class RouteMetrics:
             timetable_df = self.get_timetable_data_frame(d, direction_id=direction_id, stop_id=stop_id)
             history_df = self.get_history_data_frame(d, direction_id=direction_id, stop_id=stop_id)
 
-            arrival_time_values = history_df['TIME'].values
+            departure_time_values = np.sort(history_df['DEPARTURE_TIME'].values)
 
-            comparison_df = timetables.match_arrivals_to_schedule(
-                arrival_time_values,
-                timetable_df['TIME'].values,
+            scheduled_departure_time_values = np.sort(timetable_df['DEPARTURE_TIME'].values)
+
+            comparison_df = timetables.match_actual_times_to_schedule(
+                departure_time_values,
+                scheduled_departure_time_values
             )
-            comparison_df['TIME'] = arrival_time_values
+            comparison_df['DEPARTURE_TIME'] = departure_time_values
 
-            comparison_df['headway'] = np.r_[np.nan, compute_headway_minutes(arrival_time_values)]
+            comparison_df['headway'] = np.r_[np.nan, compute_headway_minutes(departure_time_values)]
 
             comparison_df = comparison_df[np.isfinite(comparison_df['headway'].values) & np.isfinite(comparison_df['closest_scheduled_headway'].values)]
 
-            if len(comparison_df) and comparison_df['TIME'].iloc[-1] >= now:
-                comparison_df = comparison_df[comparison_df['TIME'] < now]
+            if len(comparison_df) and comparison_df['DEPARTURE_TIME'].iloc[-1] >= now:
+                comparison_df = comparison_df[comparison_df['DEPARTURE_TIME'] < now]
 
             start_time = util.get_timestamp_or_none(d, rng.start_time_str, rng.tz)
             end_time = util.get_timestamp_or_none(d, rng.end_time_str, rng.tz)
 
             if start_time is not None:
-                comparison_df = comparison_df[comparison_df['TIME'] >= start_time]
+                comparison_df = comparison_df[comparison_df['DEPARTURE_TIME'] >= start_time]
 
             if end_time is not None:
-                comparison_df = comparison_df[comparison_df['TIME'] < end_time]
+                comparison_df = comparison_df[comparison_df['DEPARTURE_TIME'] < end_time]
 
             headway_delta = comparison_df['headway'].values - comparison_df['closest_scheduled_headway'].values
 

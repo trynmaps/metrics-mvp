@@ -386,7 +386,7 @@ class ScheduleAdherence(ObjectType):
     missingCount = Int()
     scheduledCount = Int()
 
-    arrivalScheduleDeltas = Field(BasicStats)
+    closestDeltas = Field(BasicStats)
 
     # parent is a pd.DataFrame as returned by timetables.match_schedule_to_arrivals
 
@@ -405,8 +405,8 @@ class ScheduleAdherence(ObjectType):
     def resolve_scheduledCount(adherence_df, info):
         return len(adherence_df)
 
-    def resolve_arrivalScheduleDeltas(adherence_df, info):
-        return adherence_df['closest_arrival_delta'].values / 60
+    def resolve_closestDeltas(adherence_df, info):
+        return adherence_df['closest_actual_delta'].values / 60
 
 class IntervalMetrics(ObjectType):
     startTime = String()
@@ -421,10 +421,18 @@ class IntervalMetrics(ObjectType):
     tripTimes = Field(BasicStats)
     scheduledTripTimes = Field(BasicStats)
 
+    departures = Int()
+    scheduledDepartures = Int()
+
     arrivals = Int()
     scheduledArrivals = Int()
 
-    scheduleAdherence = Field(ScheduleAdherence,
+    departureScheduleAdherence = Field(ScheduleAdherence,
+        early_sec = Int(required=False, default_value=60),
+        late_sec = Int(required=False, default_value=300),
+    )
+
+    arrivalScheduleAdherence = Field(ScheduleAdherence,
         early_sec = Int(required=False, default_value=60),
         late_sec = Int(required=False, default_value=300),
     )
@@ -477,24 +485,47 @@ class IntervalMetrics(ObjectType):
             rng = parent["range"]
         )
 
+    def resolve_departures(parent, info):
+        return parent["route_metrics"].get_departures(
+            direction_id = parent["direction_id"],
+            stop_id = parent["start_stop_id"],
+            rng = parent["range"]
+        )
+
+    def resolve_scheduledDepartures(parent, info):
+        return parent["route_metrics"].get_scheduled_departures(
+            direction_id = parent["direction_id"],
+            stop_id = parent["start_stop_id"],
+            rng = parent["range"]
+        )
+
     def resolve_arrivals(parent, info):
         return parent["route_metrics"].get_arrivals(
             direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
+            stop_id = parent["end_stop_id"],
             rng = parent["range"]
         )
 
     def resolve_scheduledArrivals(parent, info):
         return parent["route_metrics"].get_scheduled_arrivals(
             direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
+            stop_id = parent["end_stop_id"],
             rng = parent["range"]
         )
 
-    def resolve_scheduleAdherence(parent, info, early_sec, late_sec):
-        return parent["route_metrics"].get_schedule_adherence(
+    def resolve_departureScheduleAdherence(parent, info, early_sec, late_sec):
+        return parent["route_metrics"].get_departure_schedule_adherence(
             direction_id = parent["direction_id"],
             stop_id = parent["start_stop_id"],
+            early_sec = early_sec,
+            late_sec = late_sec,
+            rng = parent["range"]
+        )
+
+    def resolve_arrivalScheduleAdherence(parent, info, early_sec, late_sec):
+        return parent["route_metrics"].get_arrival_schedule_adherence(
+            direction_id = parent["direction_id"],
+            stop_id = parent["end_stop_id"],
             early_sec = early_sec,
             late_sec = late_sec,
             rng = parent["range"]

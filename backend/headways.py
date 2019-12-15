@@ -108,7 +108,7 @@ if __name__ == '__main__':
             timetable = timetables.get_by_date(agency_id, route_id, d)
             timetable_df = timetable.get_data_frame(stop_id=stop_id, direction_id=direction_id)
 
-            comparison_df = timetables.match_arrivals_to_schedule(df['TIME'].values, timetable_df['TIME'].values)
+            comparison_df = timetables.match_actual_times_to_schedule(df['TIME'].values, timetable_df['TIME'].values)
 
             df = pd.concat([df, comparison_df], axis=1)
 
@@ -136,13 +136,11 @@ if __name__ == '__main__':
             headway_str = f'{round(row.headway_min, 1)}'.rjust(4)
 
             if args.comparison:
-                #next_scheduled_arrival = datetime.fromtimestamp(row.next_scheduled_arrival, tz).time() if not np.isnan(row.next_scheduled_arrival) else None
-                #prev_scheduled_arrival = datetime.fromtimestamp(row.prev_scheduled_arrival, tz).time() if not np.isnan(row.prev_scheduled_arrival) else None
-                closest_scheduled_arrival = datetime.fromtimestamp(row.closest_scheduled_arrival, tz).time() if not np.isnan(row.closest_scheduled_arrival) else None
+                closest_scheduled_time = datetime.fromtimestamp(row.closest_scheduled_time, tz).time() if not np.isnan(row.closest_scheduled_time) else None
 
                 headway_diff = row.headway_min - row.closest_scheduled_headway if not np.isnan(row.closest_scheduled_headway) else None
 
-                comparison_info = f'scheduled: {closest_scheduled_arrival} ({util.render_delta(row.closest_scheduled_delta/60)} min) @ {round(row.closest_scheduled_headway, 1)} min headway ({util.render_delta(headway_diff).rjust(5)} min)'
+                comparison_info = f'scheduled: {closest_scheduled_time} ({util.render_delta(row.closest_scheduled_delta/60)} min) @ {round(row.closest_scheduled_headway, 1)} min headway ({util.render_delta(headway_diff).rjust(5)} min)'
             else:
                 comparison_info = ''
 
