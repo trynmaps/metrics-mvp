@@ -11,6 +11,7 @@ import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { Colors } from '../UIConstants';
 import { Agencies } from '../config';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
+import Button from '@material-ui/core/Button';
 import EndStopIcon from '@material-ui/icons/Flag';
 import ReactDOMServer from 'react-dom/server';
 
@@ -519,6 +520,18 @@ class MapStops extends Component {
           {!graphParams.startStopId || !graphParams.endStopId ? (
             <div className="map-instructions">{mapInstruction}</div>
           ) : null}
+        </Control>
+        <Control position="bottomleft">
+          <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => this.props.onGraphParams({
+                startStopId: null,
+                endStopId: null
+              })}
+            >
+              Clear Stops
+            </Button>
         </Control>
       </Map>
     );
