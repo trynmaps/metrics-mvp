@@ -18,6 +18,7 @@
  *
  */
 export default (state = {}, action) => {
+
   const { type } = action;
   const matches = /(REQUEST|RECEIVED|ERROR)_(.*)/.exec(type);
 
@@ -47,7 +48,6 @@ export default (state = {}, action) => {
 export function isLoadingRequest(state) {
   const isLoading = Object.keys(state.loading).reduce(
     (accumulator, currentValue) => accumulator || state.loading[currentValue],
-    false,
-  );
+    false);
   return isLoading;
 }
