@@ -75,7 +75,7 @@ if __name__ == '__main__':
             dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
             dist_str = f'{row.DIST}'.rjust(3)
 
-            print(f"t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  #{row.TRIP} {dist_str}m stop:{stop_id} {row.DID}[{stop_index}] {stop_info.title if stop_info else '?'} dir:{dir_info.title if dir_info else '?'}")
+            print(f"t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  #{row.TRIP} {dist_str}m  dir:{row.DID} stop:{stop_id} [{stop_index}] {stop_info.title if stop_info else '?'}")
 
             num_stops += 1
 
