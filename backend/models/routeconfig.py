@@ -34,6 +34,9 @@ class RouteConfig:
         self.sort_order = data['sort_order']
         self.gtfs_route_id = data['gtfs_route_id']
 
+        self.dir_infos = {}
+        self.stop_infos = {}
+
     def get_direction_ids(self):
         return [direction['id'] for direction in self.data['directions']]
 
@@ -51,17 +54,29 @@ class RouteConfig:
         return [StopInfo(self, stop) for stop in self.data['stops'].values()]
 
     def get_stop_info(self, stop_id):
+        if stop_id in self.stop_infos:
+            return self.stop_infos[stop_id]
+
         if stop_id in self.data['stops']:
-            return StopInfo(self, self.data['stops'][stop_id])
+            stop_info = StopInfo(self, self.data['stops'][stop_id])
+            self.stop_infos[stop_id] = stop_info
+            return stop_info
+
         return None
 
     def get_direction_infos(self):
         return [DirectionInfo(direction) for direction in self.data['directions']]
 
     def get_direction_info(self, direction_id):
+        if direction_id in self.dir_infos:
+            return self.dir_infos[direction_id]
+
         for direction in self.data['directions']:
             if direction['id'] == direction_id:
-                return DirectionInfo(direction)
+                dir_info = DirectionInfo(direction)
+                self.dir_infos[direction_id] = dir_info
+                return dir_info
+
         return None
 
     def get_directions_for_stop(self, stop_id):

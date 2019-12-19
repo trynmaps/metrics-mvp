@@ -11,7 +11,7 @@ from pathlib import Path
 import gzip
 import numpy as np
 
-DefaultVersion = 'v4b'
+DefaultVersion = 'v4c'
 
 class ArrivalHistory:
     def __init__(self, agency_id: str, route_id, stops_data, start_time = None, end_time = None, version = DefaultVersion):
