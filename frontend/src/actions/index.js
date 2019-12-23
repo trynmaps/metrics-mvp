@@ -85,7 +85,7 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
   return `https://${S3Bucket}.s3.amazonaws.com/arrivals/${ArrivalsVersion}/${agencyId}/${dateStr.replace(
     /-/g,
     '/',
-  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?l`;
+  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?r`;
 }
 
 export function fetchGraphData(params) {

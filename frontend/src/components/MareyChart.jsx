@@ -80,19 +80,19 @@ function MareyChart(props) {
   // different day versus what is currently selected.
 
   useEffect(() => {
-     
+
     if (arrivals && (arrivals.date !== graphParams.date || arrivals.route_id !== graphParams.routeId)) {
-      
+
       //console.log('resetting arrivals because: ' + arrivals.date + ' vs ' + graphParams.date + ' ' + arrivals.route_id + ' vs ' + graphParams.routeId);
       myResetArrivals(null);
     }
   }, [graphParams, myResetArrivals, arrivals]);
-      
+
   // Request missing arrival data lazily, only when this chart is tabbed into view.
   // This makes the app more responsive to route and date changes if we are hidden.
 
   useEffect(() => {
-      
+
     if (!arrivals && graphParams.routeId && !hidden) {
       myFetchArrivals(graphParams);
     }
@@ -222,27 +222,36 @@ function MareyChart(props) {
       const routeId = myArrivals.route_id;
       const route = myRoutes.find(myRoute => myRoute.id === routeId);
 
+      const allArrivals = [];
+
       Object.keys(stops).forEach(stopId => {
-        // console.log("Starting " + stopId);
         const stopsByDirection = stops[stopId].arrivals;
         Object.keys(stopsByDirection).forEach(directionId => {
-          const directionInfo = route.directions.find(
-            direction => direction.id === directionId,
-          );
-
-          const dataArray = stopsByDirection[directionId];
-          dataArray.forEach(arrival => {
-            addArrival(
-              tripData,
-              arrival,
-              stopId,
-              route,
-              directionInfo,
-              startTime,
-              startHourOfDay,
-            );
+          stopsByDirection[directionId].forEach(arrival => {
+            allArrivals.push({stopId: stopId, directionId: directionId, ...arrival});
           });
         });
+      });
+
+      allArrivals.sort((a, b) => {
+        return a.t - b.t;
+      });
+
+      const directionInfos = {};
+      const directionInfo = route.directions.forEach(direction => {
+        directionInfos[direction.id] = direction;
+      });
+
+      allArrivals.forEach(arrival => {
+        addArrival(
+          tripData,
+          arrival,
+          arrival.stopId,
+          route,
+          directionInfos[arrival.directionId],
+          startTime,
+          startHourOfDay,
+        );
       });
 
       return tripData;
@@ -280,10 +289,7 @@ function MareyChart(props) {
         selectedOption === INBOUND_AND_OUTBOUND ||
         (trip.directionInfo && trip.directionInfo.id === selectedOption)
       ) {
-        const dataSeries = trip.series.sort((a, b) => {
-          const deltaY = b.y - a.y;
-          return deltaY !== 0 ? deltaY : b.x - a.x;
-        });
+        const dataSeries = trip.series;
 
         tripSeriesArray.push(
           <LineMarkSeries
