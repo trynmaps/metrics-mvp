@@ -238,7 +238,7 @@ function MareyChart(props) {
       });
 
       const directionInfos = {};
-      const directionInfo = route.directions.forEach(direction => {
+      route.directions.forEach(direction => {
         directionInfos[direction.id] = direction;
       });
 

@@ -61,7 +61,7 @@ if __name__ == '__main__':
             print(f"no arrival times found for vehicle {vid} on {date_str}")
             continue
 
-        df = df.sort_values('TIME', axis=0)
+        df = df.sort_values(['TIME','TRIP'], axis=0)
         df['DATE_TIME'] = df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
 
         for row in df.itertuples():

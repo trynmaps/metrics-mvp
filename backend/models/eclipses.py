@@ -431,11 +431,11 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
         #print(f"vehicle_id = {vehicle_id}, direction_id = {direction_id}, obs_group = {obs_group}")
 
-        debug = False #vehicle_id == '8507' and direction_id == '1' and obs_group == 1
+        debug = False #vehicle_id == 'S022' and direction_id == '0' and obs_group == 1
 
         dir_info = route_config.get_direction_info(direction_id)
 
-        dir_arrivals = filter_duplicate_times(dir_arrivals)
+        #dir_arrivals = filter_duplicate_times(dir_arrivals)
 
         dir_arrivals, start_trip = get_arrivals_with_ascending_stop_index(dir_arrivals, dir_info, start_trip, debug=debug)
         dir_arrivals = add_missing_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, bus, route_config)
@@ -463,7 +463,7 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
     return arrivals.sort_values('TIME')
 
 def filter_duplicate_times(dir_arrivals):
-    # If there are two consecutive arrivals for the same vehicle at the same stop,
+    # If there are two concurrent arrivals for the same vehicle at different stops,
     # remove whichever arrival has the larger distance.
 
     time_values = dir_arrivals['TIME'].values
@@ -512,17 +512,20 @@ class StopSequence:
 
     def __init__(self):
         self.last_stop_index = None
+        self.last_arrival_time = None
         self.stop_indexes = []
         self.row_indexes = []
 
-    def append(self, row_index, stop_index):
+    def append(self, row_index, stop_index, arrival_time):
         self.last_stop_index = stop_index
+        self.last_arrival_time = arrival_time
         self.stop_indexes.append(stop_index)
         self.row_indexes.append(row_index)
 
     def copy(self):
         other = StopSequence()
         other.last_stop_index = self.last_stop_index
+        other.last_arrival_time = self.last_arrival_time
         other.stop_indexes = self.stop_indexes.copy()
         other.row_indexes = self.row_indexes.copy()
         return other
@@ -530,11 +533,12 @@ class StopSequence:
 def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info: routeconfig.DirectionInfo, start_trip: int, debug=False) -> pd.DataFrame:
     stop_index_values = dir_arrivals['STOP_INDEX'].values
 
-    dist_values = dir_arrivals['DIST'].values
-
     num_arrivals = len(stop_index_values)
     if num_arrivals < 2:
-        return make_arrivals_frame([])
+        return make_arrivals_frame([]), start_trip
+
+    arrival_time_values = dir_arrivals['TIME'].values
+    dist_values = dir_arrivals['DIST'].values
 
     if debug:
         #dir_arrivals = dir_arrivals.copy()
@@ -569,6 +573,12 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
 
     row_index = 0
 
+    dir_stop_ids = dir_info.get_stop_ids()
+
+    is_loop = dir_info.is_loop()
+
+    terminal_stop_index = len(dir_stop_ids) - 1
+
     def finish_group():
         nonlocal row_index, next_trip
         #print_sequences()
@@ -585,31 +595,42 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
 
         if longest_sequence is not None:
 
-            trip_len = len(longest_sequence.row_indexes)
+            is_finished_loop = (is_loop and longest_sequence.last_stop_index == terminal_stop_index)
+
+            if is_finished_loop:
+                trip_row_indexes = longest_sequence.row_indexes[:-1]
+            else:
+                trip_row_indexes = longest_sequence.row_indexes
+
+            trip_len = len(trip_row_indexes)
 
             if debug:
-                print(f'trip {next_trip}:')
+                print(f'trip {next_trip}{" (finished loop)" if is_finished_loop else ""}:')
                 print(f'{longest_sequence.stop_indexes}')
                 print(f'{longest_sequence.row_indexes}')
                 print('---')
 
-            all_row_indexes.extend(longest_sequence.row_indexes)
+            all_row_indexes.extend(trip_row_indexes)
 
             for i in range(trip_len):
                 trip_ids.append(next_trip)
 
-            next_trip += 1
+            if not is_finished_loop:
+                next_trip += 1
 
             reset_possible_sequences()
 
             row_index = longest_sequence.row_indexes[-1]
 
-    terminal_stop_index = len(dir_info.get_stop_ids()) - 1
+            if is_finished_loop and row_index > 0 and stop_index_values[row_index - 1] == 0:
+                print("adding 0 index for new trip")
+                possible_sequences[0].append(row_index - 1, 0, arrival_time_values[row_index - 1])
 
     num_non_ascending_stop_indexes = 0
 
     while row_index < num_arrivals:
         stop_index = stop_index_values[row_index]
+        arrival_time = arrival_time_values[row_index]
 
         if debug:
             print(f'row_index = {row_index} stop_index = {stop_index}')
@@ -624,29 +645,38 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
             if last_stop_index is None:
                 has_ascending_stop_index = True
                 if stop_index == 0:
-                    sequence.append(row_index, stop_index)
+                    sequence.append(row_index, stop_index, arrival_time)
                 else:
                     alt_sequence = sequence.copy()
                     new_sequences[next_sequence_key] = alt_sequence
                     next_sequence_key += 1
-                    sequence.append(row_index, stop_index)
+                    sequence.append(row_index, stop_index, arrival_time)
             else:
                 index_diff = stop_index - last_stop_index
-                if index_diff == 1:
+                arrival_time_diff = arrival_time - sequence.last_arrival_time
+
+                if arrival_time_diff <= 0:
+                    # arrival times within in a trip must be strictly ascending,
+                    # otherwise wouldn't be possible to ensure correct sort order
+                    # when displaying arrivals for a vehicle in order
+                    #print(f'arrival_time_diff = {arrival_time_diff}, dir[{stop_index}]={dir_stop_ids[stop_index]}, dir[{last_stop_index}]={dir_stop_ids[last_stop_index]}')
+                    pass
+                elif index_diff == 1:
                     has_ascending_stop_index = True
-                    sequence.append(row_index, stop_index)
+                    sequence.append(row_index, stop_index, arrival_time)
                 elif index_diff > 1:
                     has_ascending_stop_index = True
                     alt_sequence = sequence.copy()
                     new_sequences[next_sequence_key] = alt_sequence
                     next_sequence_key += 1
-                    sequence.append(row_index, stop_index)
+                    sequence.append(row_index, stop_index, arrival_time)
                 elif index_diff == 0:
                     # If there are two consecutive arrivals for the same vehicle at the same stop,
                     # use the arrival with the smaller distance.
                     last_row_index = sequence.row_indexes[-1]
                     if dist_values[row_index] < dist_values[last_row_index]:
                         sequence.row_indexes[-1] = row_index
+                        sequence.last_arrival_time = arrival_time
                         if debug:
                             print(f"stop_index = {stop_index} dist[{row_index}] = {dist_values[row_index]}")
 

@@ -54,30 +54,28 @@ function ControlPanel(props) {
 
   const selectedRoute = getSelectedRouteInfo();
 
-  function getStopsInfoInGivenDirection(mySelectedRoute, directionId) {
+  function getDirectionInfo(mySelectedRoute, directionId) {
     return mySelectedRoute.directions.find(dir => dir.id === directionId);
   }
 
   function generateSecondStopList(mySelectedRoute, directionId, stopId) {
-    const secondStopInfo = getStopsInfoInGivenDirection(
+    const secondDirInfo = getDirectionInfo(
       mySelectedRoute,
       directionId,
     );
-    
-    const stopsList = secondStopInfo.stops;
+
+    const stopsList = secondDirInfo.stops;
     const secondStopListIndex = stopId
       ? stopsList.indexOf(stopId)
       : 0;
-    
-    // loop routes start and stop at same stop
-    const isLoopRoute = stopsList[0] === stopsList[stopsList.length - 1];
-    const oneWaySecondStopsList = stopsList.slice(secondStopListIndex + 1);
+
+    const isLoopRoute = secondDirInfo.loop;
 
     if (!isLoopRoute) {
-      return oneWaySecondStopsList;
+      return stopsList.slice(secondStopListIndex + 1);
     }
     // loop routes display all subsequent stops up to origin stop
-    return oneWaySecondStopsList.concat(stopsList.slice(1, secondStopListIndex));
+    return stopsList.slice(secondStopListIndex + 1, stopsList.length - 1).concat(stopsList.slice(0, secondStopListIndex));
   }
 
   function onSelectFirstStop(event) {
@@ -185,6 +183,12 @@ function ControlPanel(props) {
 
   const classes = useStyles();
 
+  const directionStops = selectedDirection ? selectedDirection.stops : [];
+
+  const visibleStops = selectedDirection && selectedDirection.loop
+    ? directionStops.slice(0, directionStops.length - 1)
+    : directionStops;
+
   return (
     <div className="ControlPanel">
       <Grid container>
@@ -236,7 +240,7 @@ function ControlPanel(props) {
                     onOpen={() => setAllowHover(true)}
                     onClose={handleSelectClose}
                   >
-                    {(selectedDirection.stops || []).map(firstStopId => {
+                    {visibleStops.map(firstStopId => {
                       const icon = document.querySelector(`.id${firstStopId}`);
                       const title = (
                         selectedRoute.stops[firstStopId] || {

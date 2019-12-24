@@ -133,7 +133,13 @@ class GtfsScraper:
             stop_id_gtfs_field = self.agency.stop_id_gtfs_field
             self.stops_map = {getattr(stop, stop_id_gtfs_field): stop for stop in self.get_gtfs_stops().itertuples()}
 
-        return self.stops_map[stop_id]
+        stop_row = self.stops_map.get(stop_id, None)
+
+        if stop_row is None:
+            stop_id, trip_occurrence = stop_id.split("-")
+            return self.stops_map[stop_id]
+        else:
+            return stop_row
 
     def get_stop_row_by_gtfs_stop_id(self, gtfs_stop_id):
         # allows looking up row from stops.txt via GTFS stop_id
@@ -286,6 +292,9 @@ class GtfsScraper:
 
             route_config = gtfs_route_id_map[gtfs_route_id]
 
+            if route_config.id != '36':
+                continue
+
             arrivals_by_service_id = {}
             trip_ids_map = {}
 
@@ -432,9 +441,10 @@ class GtfsScraper:
 
             gtfs_direction_id = route_trip.direction_id
 
+            stop_ids = self.normalize_gtfs_stop_ids(trip_stop_times['stop_id'].values)
+
             if route_id in agency.custom_directions:
                 custom_directions_arr = agency.custom_directions[route_id]
-                stop_ids = [self.normalize_gtfs_stop_id(gtfs_stop_id) for gtfs_stop_id in trip_stop_times['stop_id'].values]
                 custom_direction_id = self.get_custom_direction_id(custom_directions_arr, gtfs_direction_id, stop_ids)
                 if custom_direction_id is None:
                     print(f"Unknown custom direction ID for trip {trip_id} ({gtfs_direction_id}, {stop_ids})")
@@ -447,10 +457,14 @@ class GtfsScraper:
 
             direction_arrivals = arrivals_by_direction[dir_info.id]
 
-            for stop_time in trip_stop_times.itertuples():
-                stop_id = self.normalize_gtfs_stop_id(stop_time.stop_id)
-                arrival_time = int(stop_time.arrival_time)
-                departure_time = int(stop_time.departure_time)
+            arrival_time_values = trip_stop_times['arrival_time'].values
+            departure_time_values = trip_stop_times['departure_time'].values
+
+            for i in range(len(trip_stop_times)):
+                stop_id = stop_ids[i]
+
+                arrival_time = int(arrival_time_values[i])
+                departure_time = int(departure_time_values[i])
 
                 arrival_data = {'t': arrival_time, 'i': trip_int}
                 if departure_time != arrival_time:
@@ -470,12 +484,30 @@ class GtfsScraper:
         return self.stop_times_by_trip[trip_id]
 
     # get OpenTransit stop ID for GTFS stop_id (may be the same)
-    def normalize_gtfs_stop_id(self, gtfs_stop_id):
+    def normalize_gtfs_stop_id(self, gtfs_stop_id, trip_occurrence=1):
         stop_id_gtfs_field = self.agency.stop_id_gtfs_field
         if stop_id_gtfs_field != 'stop_id':
-            return getattr(self.get_stop_row_by_gtfs_stop_id(gtfs_stop_id), stop_id_gtfs_field)
+            base_stop_id = getattr(self.get_stop_row_by_gtfs_stop_id(gtfs_stop_id), stop_id_gtfs_field)
         else:
-            return gtfs_stop_id
+            base_stop_id = gtfs_stop_id
+
+        if trip_occurrence > 1:
+            return f'{base_stop_id}-{trip_occurrence}'
+        else:
+            return base_stop_id
+
+    def normalize_gtfs_stop_ids(self, gtfs_stop_ids):
+        trip_occurrences_map = {}
+        stop_ids = []
+
+        last_index = len(gtfs_stop_ids) - 1
+
+        for i, gtfs_stop_id in enumerate(gtfs_stop_ids):
+            trip_occurrence = trip_occurrences_map.get(gtfs_stop_id, 0) + 1
+            stop_ids.append(self.normalize_gtfs_stop_id(gtfs_stop_id, trip_occurrence))
+            trip_occurrences_map[gtfs_stop_id] = trip_occurrence
+
+        return stop_ids
 
     def get_unique_shapes(self, direction_trips_df):
         # Finds the unique shapes associated with a GTFS route/direction, merging shapes that contain common subsequences of stops.
@@ -501,10 +533,7 @@ class GtfsScraper:
             shape_trip_id = shape_trip.trip_id
             shape_trip_stop_times = stop_times_df[stop_times_trip_id_values == shape_trip_id].sort_values('stop_sequence')
 
-            shape_trip_stop_ids = [
-                self.normalize_gtfs_stop_id(gtfs_stop_id)
-                for gtfs_stop_id in shape_trip_stop_times['stop_id'].values
-            ]
+            shape_trip_stop_ids = self.normalize_gtfs_stop_ids(shape_trip_stop_times['stop_id'].values)
 
             unique_shape_key = hashlib.sha256(json.dumps(shape_trip_stop_ids).encode('utf-8')).hexdigest()[0:12]
 
@@ -646,6 +675,7 @@ class GtfsScraper:
             'gtfs_shape_id': gtfs_shape_id,
             'gtfs_direction_id': gtfs_direction_id,
             'stops': stop_ids,
+            'loop': stop_ids[0] + '-2' == stop_ids[-1],
             'stop_geometry': {},
         }
 

@@ -146,7 +146,10 @@ class MapStops extends Component {
     let route = [];
 
     if (routeStops && routeStops[directionId]) {
-      route = routeStops[directionId].map(stop => {
+      const allStops = routeStops[directionId];
+      const displayedStops = direction.loop ? allStops.slice(0, allStops.length - 1) : allStops;
+
+      route = displayedStops.map(stop => {
         const currentPosition = [stop.lat, stop.lon];
         const isStart = stop.sid === this.props.graphParams.startStopId;
         const isEnd = stop.sid === this.props.graphParams.endStopId;
@@ -281,8 +284,16 @@ class MapStops extends Component {
 
     const firstStop = downstreamStops[index];
     const firstStopId = firstStop.sid;
+
     const nextStop = downstreamStops[index + 1];
+
     const nextStopId = nextStop.sid;
+
+    const nextStopForTripTime = direction.loop && (index + 1 === downstreamStops.length - 1)
+        ? downstreamStops[0]
+        : nextStop;
+
+    const nextStopIdForTripTime = nextStopForTripTime.sid;
 
     const tripTimesFromStop = getTripTimesFromStop(
       this.props.tripTimesCache,
@@ -293,8 +304,8 @@ class MapStops extends Component {
     );
 
     let time = null;
-    if (tripTimesFromStop && tripTimesFromStop[nextStopId]) {
-      time = tripTimesFromStop[nextStopId];
+    if (tripTimesFromStop && tripTimesFromStop[nextStopIdForTripTime]) {
+      time = tripTimesFromStop[nextStopIdForTripTime];
     } else {
       return -1; // speed not available;
     }
@@ -373,11 +384,13 @@ class MapStops extends Component {
         const selectedRoute = this.props.routes.find(
           route => route.id === routeId,
         );
-        const stopSids = selectedRoute.directions.find(
+        const dirInfo = selectedRoute.directions.find(
           dir => dir.id === directionId,
-        ).stops;
+        );
 
-        if (stopSids.indexOf(stop.sid) < stopSids.indexOf(startStopId)) {
+        const stopSids = dirInfo.stops;
+
+        if (!dirInfo.loop && stopSids.indexOf(stop.sid) < stopSids.indexOf(startStopId)) {
           endStopId = startStopId;
           startStopId = stop.sid;
         } else {

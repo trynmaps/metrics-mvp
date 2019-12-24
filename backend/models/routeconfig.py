@@ -1,7 +1,7 @@
 import re, os, time, requests, json
 from . import util, config
 
-DefaultVersion = 'v3'
+DefaultVersion = 'v3a'
 
 class StopInfo:
     def __init__(self, route, data):
@@ -19,6 +19,9 @@ class DirectionInfo:
         self.data = data
         self.gtfs_direction_id = data['gtfs_direction_id']
         self.gtfs_shape_id = data['gtfs_shape_id']
+
+    def is_loop(self):
+        return self.data.get('loop', False)
 
     def get_stop_ids(self):
         return self.data['stops']

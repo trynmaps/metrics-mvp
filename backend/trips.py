@@ -61,11 +61,14 @@ if __name__ == '__main__':
 
     dir_info = route_config.get_direction_info(common_dirs[0])
 
-    for s in dir_info.get_stop_ids():
-        if s == s1:
-            break
-        if s == s2:
-            raise Exception(f"stop {s1} comes after stop {s2} in the {dir_info.name} direction")
+    is_loop = dir_info.is_loop()
+
+    if not is_loop:
+        for s in dir_info.get_stop_ids():
+            if s == s1:
+                break
+            if s == s2:
+                raise Exception(f"stop {s1} comes after stop {s2} in the {dir_info.name} direction")
 
     date_strs = []
     tz = agency.tz
@@ -100,9 +103,10 @@ if __name__ == '__main__':
             s1_df['DEPARTURE_TIME'].values,
             s2_df['TRIP'].values,
             s2_df['TIME'].values,
+            is_loop
         )
 
-        s1_df['DATE_TIME'] = s1_df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
+        s1_df['DATE_TIME'] = s1_df['DEPARTURE_TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
 
         if s1_df.empty:
             print(f"no arrival times found for stop {s1} on {d}")
@@ -113,7 +117,7 @@ if __name__ == '__main__':
 
                 trip_str = f'#{row.TRIP}'.rjust(5)
 
-                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID}  {trip_str}   {round(row.trip_min, 1)} min trip")
+                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.DEPARTURE_TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID}  {trip_str}   {round(row.trip_min, 1)} min trip")
 
             completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 
