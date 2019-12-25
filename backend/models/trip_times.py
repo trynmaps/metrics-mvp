@@ -20,16 +20,17 @@ def get_completed_trip_times(
     #
     # The s1 arrays and s2 arrays may have different lengths.
     #
-    # The trip times are not necessarily parallel to s1 or s2 arrays.
+    # The returned trip times are not necessarily parallel to s1 or s2 arrays.
     #
     # If assume_sorted is true, the s1 and s2 arrays should already be sorted by trip ID (if is_loop is false)
     # or by departure / arrival time (if is_loop is true).
 
-    # if s1_trip_values and s2_trip_values are empty, this throws a ValueError
     if (len(s1_trip_values) == 0) or (len(s2_trip_values) == 0):
         return []
 
     if is_loop:
+        # If s1 and s2 are the same stop, this will compute the time to complete 1 full loop
+
         if not assume_sorted:
             s1_departure_time_values, s1_trip_values = sort_parallel(s1_departure_time_values, s1_trip_values)
             s2_arrival_time_values, s2_trip_values = sort_parallel(s2_arrival_time_values, s2_trip_values)
@@ -51,6 +52,11 @@ def find_indexes_of_next_arrival_times(
     sorted_s1_trip_values, sorted_s1_departure_time_values,
     sorted_s2_trip_values, sorted_s2_arrival_time_values
 ):
+    # Given two pairs of parallel arrays for each stop with trip IDs and departure/arrival times,
+    # already sorted by departure/arrival time, returns parallel lists of indexes into these pairs of arrays:
+    # each pair of indexes corresponds to a departure time (from the first stop)
+    # and the *next* arrival time (at the second stop) after that departure time.
+
     s1_len = len(sorted_s1_trip_values)
     s2_len = len(sorted_s2_trip_values)
 

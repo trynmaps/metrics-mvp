@@ -480,6 +480,16 @@ class GtfsScraper:
         return arrivals_by_direction
 
     def clean_loop_schedule(self, dir_info, direction_arrivals):
+        # For loop routes, the GTFS feed contains separate stop times for the end of one loop
+        # and the beginning of the next loop. These stop times may be the same, or may be
+        # slightly different if the vehicle waits a few minutes before beginning the next loop.
+        #
+        # Since the "end-of-loop" stop is not actually saved in our route configuration,
+        # this function associates the end-of-loop times with the first stop. If there is an arrival time
+        # at the first stop that is within a few minutes of the arrival time at the end-of-loop
+        # stop, it is assumed to be the same 'trip' and will be updated to use the arrival time
+        # of the end-of-loop stop.
+
         stop_ids = dir_info.get_stop_ids()
         first_stop_id = stop_ids[0]
         last_stop_id = stop_ids[0] + "-2"
@@ -539,13 +549,18 @@ class GtfsScraper:
         if len(unmatched_last_stop_arrivals) > 0:
             direction_arrivals[first_stop_id].extend(unmatched_last_stop_arrivals)
 
+        # find the first integer trip ID associated with each continuous loop
         orig_trip_ints = {}
         for trip_int, prev_trip_int in prev_trip_ints.items():
             orig_trip_int = orig_trip_ints.get(prev_trip_int, prev_trip_int)
             orig_trip_ints[trip_int] = orig_trip_int
 
+        # don't actually store schedule for "-2" stop which is not in route config
         del direction_arrivals[last_stop_id]
 
+        # update arrivals so that all arrivals that are probably the same "trip"
+        # have the same integer trip id, so that it is possible to compute
+        # trip times across the beginning/end point of the loop
         for stop_id, stop_arrivals in direction_arrivals.items():
             for stop_arrival in stop_arrivals:
                 orig_trip_int = orig_trip_ints.get(stop_arrival['i'], None)
@@ -558,8 +573,8 @@ class GtfsScraper:
             self.stop_times_by_trip = {trip_id: stop_times for trip_id, stop_times in all_stop_times.groupby('trip_id')}
         return self.stop_times_by_trip[trip_id]
 
-    # get OpenTransit stop ID for GTFS stop_id (may be the same)
     def normalize_gtfs_stop_id(self, gtfs_stop_id, trip_occurrence=1):
+        # get OpenTransit stop ID for GTFS stop_id (may be the same)
         stop_id_gtfs_field = self.agency.stop_id_gtfs_field
         if stop_id_gtfs_field != 'stop_id':
             base_stop_id = getattr(self.get_stop_row_by_gtfs_stop_id(gtfs_stop_id), stop_id_gtfs_field)
@@ -572,6 +587,22 @@ class GtfsScraper:
             return base_stop_id
 
     def normalize_gtfs_stop_ids(self, gtfs_stop_ids):
+        # Returns a list of OpenTransit stop IDs given a list of GTFS stop IDs in one trip.
+        #
+        # The frontend assumes that each stop ID only appears once per direction.
+        # However, some GTFS routes contain the same stop ID multiple times in one trip.
+        #
+        # This can occur if the route contains a figure-eight like SF Muni's 36-Teresita,
+        # or if it is a loop like Portland Streetcar's A and B Loop.
+        #
+        # If the same GTFS stop ID appears multiple times in one trip, append
+        # "-2" (or "-3" etc) to the stop ID so that we can uniquely identify where each stop ID
+        # occurs in the trip.
+        #
+        # For loop routes, the ending "-2" stop will not actually be saved in the route config,
+        # however "-2" stops will appear in the route config for figure-eight routes.
+        #
+
         trip_occurrences_map = {}
         stop_ids = []
 

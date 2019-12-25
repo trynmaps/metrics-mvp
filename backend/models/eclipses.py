@@ -461,6 +461,10 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
     return arrivals.sort_values('TIME')
 
 class StopSequence:
+    # helper used by get_arrivals_with_ascending_stop_index,
+    # representing a possible subset of the rows in the dir_arrivals data frame
+    # associated with one "trip".
+
     def __init__(self):
         self.last_stop_index = None
         self.last_arrival_time = None
@@ -481,7 +485,45 @@ class StopSequence:
         other.row_indexes = self.row_indexes.copy()
         return other
 
-def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info: routeconfig.DirectionInfo, start_trip: int, debug=False) -> pd.DataFrame:
+def get_arrivals_with_ascending_stop_index(
+    dir_arrivals: pd.DataFrame,
+    dir_info: routeconfig.DirectionInfo,
+    start_trip: int,
+    debug=False
+) -> pd.DataFrame:
+    # Given a data frame containing all "possible" arrivals
+    # for one vehicle in one direction (sorted by arrival time),
+    # returns a subset of rows in that data frame,
+    # where arrivals are grouped into trips with a unique trip ID,
+    # and each trip contains arrivals where the stop_index is ascending over time.
+    #
+    # The 'TRIP' column in the returned data frame is set to the unique trip ID, starting
+    # at `start_trip`.
+    #
+    # For routes with 2 directions, the given data frame of possible arrivals contains
+    # arrivals for stops in both directions. However, the stop_index values will typically be decreasing
+    # over time for stops that are not in the direction that the vehicle is actually traveling.
+    #
+    # For twisty routes where a single direction doubles back on itself (or nearly so), such as
+    # SF Muni's 39-Coit, 36-Teresita, 30-Stockton, 9-San Bruno, etc., it is possible that there may
+    # be out-of-order stop indexes in the "possible" arrivals, e.g. 1,2,6,3,7,4,5,6,3,4,7,8,9.
+    # In this case the "best" trip has the stop indexes 1,2,3,4,5,6,7,8,9. However, if the algorithm
+    # only used the first ascending index it found, it would only find 1,2,6,7,8,9 and miss indexes 3,4,5.
+    #
+    # In order to handle these cases, the algorithm keeps track of multiple possible sequences
+    # as it loops through the possible arrivals. To avoid needing to keep track of a large number of
+    # possible sequences, it drops possible sequences if they are strictly worse than another possible sequence.
+    # A sequence is worse than another sequence, for example,
+    # if it is shorter than another sequence and ends in the same stop_index;
+    # or if it is the same size as another sequence but ends in a larger stop_index.
+    #
+    # When all possible sequences end in a terminal, or if the algorithm processes several rows
+    # without being able to extend any of the possible sequences with an ascending stop index,
+    # it assumes that the trip has ended and chooses the longest possible sequence as the "best".
+    #
+    # After it finds the end of a trip, it resets the possible sequences and continues processing
+    # possible arrivals where the previous sequence ended.
+
     stop_index_values = dir_arrivals['STOP_INDEX'].values
 
     num_arrivals = len(stop_index_values)
@@ -519,22 +561,17 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
         print('-')
 
     all_row_indexes = []
-
     trip_ids = []
 
     row_index = 0
 
     dir_stop_ids = dir_info.get_stop_ids()
-
     is_loop = dir_info.is_loop()
-
     num_stops = len(dir_stop_ids)
+    terminal_stop_index = num_stops if is_loop else (num_stops - 1) # never reaches terminal_stop_index for loop routes
 
-    terminal_stop_index = num_stops if is_loop else num_stops - 1
-
-    def finish_group():
+    def finish_trip():
         nonlocal row_index, next_trip
-        #print_sequences()
 
         longest_sequence = None
         for sequence in possible_sequences.values():
@@ -543,6 +580,8 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
                     longest_sequence = sequence
             else:
                 len_diff = len(sequence.row_indexes) - len(longest_sequence.row_indexes)
+
+                # if multiple possible sequences have the same number of stops, choose the one that finishes first
                 if len_diff > 0 or (len_diff == 0 and sequence.row_indexes[-1] < longest_sequence.row_indexes[-1]):
                     longest_sequence = sequence
 
@@ -553,7 +592,7 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
             trip_len = len(trip_row_indexes)
 
             if debug:
-                print(f'trip {next_trip}{" (finished loop)" if is_finished_loop else ""}:')
+                print(f'trip {next_trip}:')
                 print(f'{longest_sequence.stop_indexes}')
                 print(f'{longest_sequence.row_indexes}')
                 print('---')
@@ -567,6 +606,9 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
 
             reset_possible_sequences()
 
+            # loop may have continued a few rows past the end of the longest sequence.
+            # in this case we back up the loop so it doesn't skip any rows
+            # (row_index will be incremented once after this)
             row_index = longest_sequence.row_indexes[-1]
 
     num_non_ascending_stop_indexes = 0
@@ -590,6 +632,8 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
                 if stop_index == 0 or is_loop:
                     sequence.append(row_index, stop_index, arrival_time)
                 else:
+                    # if the first stop_index is not zero, leave an empty possible sequence
+                    # which can still accept smaller stop indexes.
                     alt_sequence = sequence.copy()
                     new_sequences[next_sequence_key] = alt_sequence
                     next_sequence_key += 1
@@ -599,19 +643,23 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
                 arrival_time_diff = arrival_time - sequence.last_arrival_time
 
                 if is_loop and index_diff < 0:
-                    # continue appending to same trip after completing a loop
+                    # make sure that index_diff is non-negative for loops so that
+                    # we continue appending to the same trip after completing a loop
                     index_diff = (index_diff + num_stops) % num_stops
 
                 if arrival_time_diff <= 0:
                     # arrival times within in a trip must be strictly ascending,
-                    # otherwise wouldn't be possible to ensure correct sort order
+                    # otherwise it wouldn't be possible to ensure the correct sort order
                     # when displaying arrivals for a vehicle in order
-                    #print(f'arrival_time_diff = {arrival_time_diff}, dir[{stop_index}]={dir_stop_ids[stop_index]}, dir[{last_stop_index}]={dir_stop_ids[last_stop_index]}')
                     pass
                 elif index_diff == 1:
+                    # if stops appear in sequential order, just append to this sequence
+                    # without creating any more possibilities.
                     has_ascending_stop_index = True
                     sequence.append(row_index, stop_index, arrival_time)
                 elif index_diff > 1:
+                    # if this arrival skipped one or more stops, create possibilities that
+                    # contain or don't contain this arrival
                     has_ascending_stop_index = True
                     alt_sequence = sequence.copy()
                     new_sequences[next_sequence_key] = alt_sequence
@@ -630,8 +678,11 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
         if not has_ascending_stop_index:
             num_non_ascending_stop_indexes += 1
 
-            if num_non_ascending_stop_indexes > 3:
-                finish_group()
+            # as a heuristic that seems to work in practice without making things too slow,
+            # finish the current trip if 4 rows are processed without being able to extend any possible sequences.
+            # (SF Muni's 39-Coit sometimes has 3 rows with non-ascending stop indexes before another ascending stop index.)
+            if num_non_ascending_stop_indexes >= 4:
+                finish_trip()
                 num_non_ascending_stop_indexes = 0
         else:
             num_non_ascending_stop_indexes = 0
@@ -639,6 +690,8 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
             possible_sequences.update(new_sequences)
 
             if len(possible_sequences) > 1:
+                # If there are multiple possible sequences, remove sequences that appear to be worse than
+                # other sequences in order to avoid creating a large number of possible sequences
 
                 terminal_sequence_keys = []
 
@@ -648,9 +701,40 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
                     if sequence_len > longest_sequence_len:
                         longest_sequence_len = sequence_len
 
+                # Construct a dict of sequence length => key in the `possible_sequences` dict
+                # for the sequence of that length (or longer) with the smallest last_stop_index value.
+                # These are the keys of the sequences we want to keep.
+                #
+                # Suppose the possible arrivals have the stop indexes [1,3,5] and the
+                # possible sequences are:
+                #
+                # 0: [1, 3, 5]
+                # 2: [1, 5]
+                # 3: [5]
+                # 4: [1, 3]
+                # 5: [1]
+                # 6: []
+                #
+                # There is only one sequence of length 3 or more, with key 0.
+                # There are two sequences of length 2 or more, with keys 0, 2, and 4 (key 4 has the smallest last stop index).
+                # There are two sequences of length 1 or more, with keys 0, 2, 3, and 5 (key 5 has the smallest last stop index).
+                # There is one sequence of length 0, with key 6.
+                #
+                # smallest_last_index_keys_by_length should end up like this:
+                # {0: 6, 1: 5, 2: 4, 3: 0}
+                #
+                # This indicates that we can remove the sequences 2 and 3 (which are not in the values)
+                # since the sequences [5] and [1,5] are guaranteed to be worse than the sequence [1,3,5].
+                #
+                # The sequence [1,3] is kept because we might see 4,5 in the future.
+                # The sequence [1] is kept because we might see 2,3,4,5 in the future.
+                # The sequence [] is kept because we might see 0,1,2,3,4,5 in the future.
+
                 smallest_last_index_keys_by_length = {}
 
-                min_sequence_len = longest_sequence_len - 3
+                # as a heuristic to avoid losing long but incomplete sequences (e.g. missing stop index 0),
+                # avoid creating new sequences that are much shorter than the best sequence
+                min_sequence_len = max(0, longest_sequence_len - 3)
 
                 for sequence_key, sequence in possible_sequences.items():
                     sequence_len = len(sequence.row_indexes)
@@ -677,26 +761,34 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
 
                 unneded_sequence_keys = set(possible_sequences.keys()) - set(smallest_last_index_keys_by_length.values())
 
+                if debug:
+                    print(smallest_last_index_keys_by_length)
+
+                # if a possible sequence ends in a terminal, keep it as a possibility even if
+                # there is another sequence of the same length that ends before the terminal. this is needed to
+                # avoid losing the terminal sequence if we only see the second-to-last stop *after* seeing the terminal
+                # (which happens sometimes with with the 39-Coit at Coit Tower)
                 if len(terminal_sequence_keys) > 0:
                     unneded_sequence_keys = unneded_sequence_keys - set(terminal_sequence_keys)
 
                 for sequence_key in unneded_sequence_keys:
                     del possible_sequences[sequence_key]
 
+            # if all possible sequences end in a terminal, choose the best one as the actual trip
             all_terminals = True
             for sequence in possible_sequences.values():
                 if sequence.last_stop_index is None or sequence.last_stop_index < terminal_stop_index:
                     all_terminals = False
                     break
             if all_terminals:
-                finish_group()
+                finish_trip()
 
         if debug:
             print_sequences()
 
         row_index += 1
 
-    finish_group()
+    finish_trip()
 
     ascending_dir_arrivals = dir_arrivals.iloc[all_row_indexes].copy()
 

@@ -100,9 +100,11 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
             arrival_time_values = stop_df['TIME'].values
 
             if is_loop:
+                # for loop routes, pre-sort arrays by departure/arrival times for better performance.
                 sorted_departure_time_values, sorted_departure_trip_values = trip_times.sort_parallel(departure_time_values, trip_values)
                 sorted_arrival_time_values, sorted_arrival_trip_values = trip_times.sort_parallel(arrival_time_values, trip_values)
             else:
+                # for non-loop routes, arrays are already sorted by trip ID.
                 sorted_departure_trip_values = trip_values
                 sorted_arrival_trip_values = trip_values
                 sorted_departure_time_values = departure_time_values
