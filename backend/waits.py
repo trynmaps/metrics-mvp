@@ -7,13 +7,14 @@ import pytz
 import numpy as np
 import pandas as pd
 
-from models import config, arrival_history, util, metrics, wait_times
+from models import config, arrival_history, util, metrics, wait_times, timetables
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Compute wait times (in minutes) at a given stop in a given direction on a route, for one or more dates, optionally at particular times of day')
     parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument('--route', required = True, help = 'Route id')
     parser.add_argument('--stop', required = True, help = 'Stop id')
+    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='show scheduled times')
 
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
@@ -25,6 +26,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     agency = config.get_agency(args.agency)
+
+    show_scheduled = args.scheduled
 
     route_id = args.route
     date_str = args.date
@@ -67,7 +70,11 @@ if __name__ == '__main__':
         last_bus_date_times = []
 
         for d in dates:
-            hist = arrival_history.get_by_date(agency.id, route_id, d)
+            if show_scheduled:
+                hist = timetables.get_by_date(agency.id, route_id, d)
+            else:
+                hist = arrival_history.get_by_date(agency.id, route_id, d)
+
             arrivals = hist.get_data_frame(stop_id = stop, direction_id = stop_dir)
 
             start_time = util.get_timestamp_or_none(d, start_time_str, tz)

@@ -435,8 +435,6 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
         dir_info = route_config.get_direction_info(direction_id)
 
-        #dir_arrivals = filter_duplicate_times(dir_arrivals)
-
         dir_arrivals, start_trip = get_arrivals_with_ascending_stop_index(dir_arrivals, dir_info, start_trip, debug=debug)
         dir_arrivals = add_missing_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, bus, route_config)
 
@@ -462,54 +460,7 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
     return arrivals.sort_values('TIME')
 
-def filter_duplicate_times(dir_arrivals):
-    # If there are two concurrent arrivals for the same vehicle at different stops,
-    # remove whichever arrival has the larger distance.
-
-    time_values = dir_arrivals['TIME'].values
-    if len(time_values) == 0:
-        return dir_arrivals
-
-    time_diff = np.diff(time_values, prepend=-999999)
-
-    prev_is_duplicate = time_diff == 0
-
-    if not np.any(prev_is_duplicate):
-        return dir_arrivals
-
-    dist_values = dir_arrivals['DIST'].values
-
-    worse_than_prev = np.diff(dist_values, prepend=-1) > 0
-    worse_than_next = np.logical_not(np.r_[worse_than_prev[1:], True])
-
-    next_is_duplicate = np.r_[prev_is_duplicate[1:], False]
-
-    # create a boolean array with the indexes of the arrivals to remove:
-    # where the previous arrival has the same arrival time and where this arrival has a larger distance than the previous one,
-    # or where the next arrival has the same arrival time and where this arrival has a larger distance than the next one
-
-    worse_duplicates = np.logical_or(
-        np.logical_and(
-            prev_is_duplicate,
-            worse_than_prev
-        ),
-        np.logical_and(
-            next_is_duplicate,
-            worse_than_next
-        )
-    )
-
-    #dir_arrivals['prev_duplicate_stop'] = prev_duplicate_stop
-    #dir_arrivals['worse_than_prev'] = worse_than_prev
-    #dir_arrivals['next_duplicate_stop'] = next_duplicate_stop
-    #dir_arrivals['worse_than_next'] = worse_than_next
-    #print(dir_arrivals[np.logical_or(prev_is_duplicate, next_is_duplicate)])
-    #print(dir_arrivals[worse_duplicates])
-
-    return dir_arrivals[np.logical_not(worse_duplicates)]
-
 class StopSequence:
-
     def __init__(self):
         self.last_stop_index = None
         self.last_arrival_time = None
@@ -577,7 +528,9 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
 
     is_loop = dir_info.is_loop()
 
-    terminal_stop_index = len(dir_stop_ids) - 1
+    num_stops = len(dir_stop_ids)
+
+    terminal_stop_index = num_stops if is_loop else num_stops - 1
 
     def finish_group():
         nonlocal row_index, next_trip
@@ -595,12 +548,7 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
 
         if longest_sequence is not None:
 
-            is_finished_loop = (is_loop and longest_sequence.last_stop_index == terminal_stop_index)
-
-            if is_finished_loop:
-                trip_row_indexes = longest_sequence.row_indexes[:-1]
-            else:
-                trip_row_indexes = longest_sequence.row_indexes
+            trip_row_indexes = longest_sequence.row_indexes
 
             trip_len = len(trip_row_indexes)
 
@@ -615,16 +563,11 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
             for i in range(trip_len):
                 trip_ids.append(next_trip)
 
-            if not is_finished_loop:
-                next_trip += 1
+            next_trip += 1
 
             reset_possible_sequences()
 
             row_index = longest_sequence.row_indexes[-1]
-
-            if is_finished_loop and row_index > 0 and stop_index_values[row_index - 1] == 0:
-                print("adding 0 index for new trip")
-                possible_sequences[0].append(row_index - 1, 0, arrival_time_values[row_index - 1])
 
     num_non_ascending_stop_indexes = 0
 
@@ -644,7 +587,7 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
 
             if last_stop_index is None:
                 has_ascending_stop_index = True
-                if stop_index == 0:
+                if stop_index == 0 or is_loop:
                     sequence.append(row_index, stop_index, arrival_time)
                 else:
                     alt_sequence = sequence.copy()
@@ -654,6 +597,10 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
             else:
                 index_diff = stop_index - last_stop_index
                 arrival_time_diff = arrival_time - sequence.last_arrival_time
+
+                if is_loop and index_diff < 0:
+                    # continue appending to same trip after completing a loop
+                    index_diff = (index_diff + num_stops) % num_stops
 
                 if arrival_time_diff <= 0:
                     # arrival times within in a trip must be strictly ascending,
@@ -684,7 +631,6 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
             num_non_ascending_stop_indexes += 1
 
             if num_non_ascending_stop_indexes > 3:
-                #print('too many non ascending stop indexes!')
                 finish_group()
                 num_non_ascending_stop_indexes = 0
         else:
@@ -743,7 +689,6 @@ def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame, dir_info:
                     all_terminals = False
                     break
             if all_terminals:
-                #print('all terminals!')
                 finish_group()
 
         if debug:

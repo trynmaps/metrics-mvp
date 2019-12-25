@@ -363,8 +363,15 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
                 desc:`wait for ${routeInfo.id}`
             };
 
-            for (let i = index + 1; i < direction.stops.length; i++)
+            const startIndex = direction.loop ? 0 : (index + 1);
+
+            for (let i = startIndex; i < direction.stops.length; i++)
             {
+                if (i == index) // no point in doing complete loops
+                {
+                    continue;
+                }
+
                 let nextStopId = direction.stops[i];
                 let nextStopInfo = routeInfo.stops[nextStopId];
 

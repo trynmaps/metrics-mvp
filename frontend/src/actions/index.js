@@ -42,7 +42,7 @@ function computeDates(graphParams) {
 
 // S3 URL to route configuration
 export function generateRoutesURL(agencyId) {
-  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?m`;
+  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?p`;
 }
 
 /**
@@ -57,7 +57,7 @@ export function generateTripTimesURL(agencyId, dateStr, statPath, timePath) {
   return `https://${S3Bucket}.s3.amazonaws.com/trip-times/${TripTimesVersion}/${agencyId}/${dateStr.replace(
     /-/g,
     '/',
-  )}/trip-times_${TripTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?n`;
+  )}/trip-times_${TripTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?o`;
 }
 
 /**

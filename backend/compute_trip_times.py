@@ -113,9 +113,9 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
             arrival_trip_values_by_stop[stop_id] = sorted_arrival_trip_values
             arrival_time_values_by_stop[stop_id] = sorted_arrival_time_values
 
-        j_end_index = num_stops - 1 if is_loop else num_stops
+        i_end_index = num_stops if is_loop else (num_stops - 1)
 
-        for i in range(0, num_stops-1):
+        for i in range(0, i_end_index):
 
             s1 = stop_ids[i]
 
@@ -138,7 +138,7 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
 
             j_start_index = 0 if is_loop else i + 1
 
-            for j in range(j_start_index, j_end_index):
+            for j in range(j_start_index, num_stops):
                 s2 = stop_ids[j]
 
                 for interval_index, _ in enumerate(timestamp_intervals):

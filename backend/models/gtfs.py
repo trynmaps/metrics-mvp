@@ -292,9 +292,6 @@ class GtfsScraper:
 
             route_config = gtfs_route_id_map[gtfs_route_id]
 
-            if route_config.id != '36':
-                continue
-
             arrivals_by_service_id = {}
             trip_ids_map = {}
 
@@ -475,7 +472,92 @@ class GtfsScraper:
 
                 direction_arrivals[stop_id].append(arrival_data)
 
+        for dir_info in route_config.get_direction_infos():
+            if dir_info.is_loop():
+                direction_arrivals = arrivals_by_direction[dir_info.id]
+                self.clean_loop_schedule(dir_info, direction_arrivals)
+
         return arrivals_by_direction
+
+    def clean_loop_schedule(self, dir_info, direction_arrivals):
+        stop_ids = dir_info.get_stop_ids()
+        first_stop_id = stop_ids[0]
+        last_stop_id = stop_ids[0] + "-2"
+
+        sort_key = lambda arr: arr['t']
+
+        first_stop_arrivals = sorted(direction_arrivals[first_stop_id], key=sort_key)
+        last_stop_arrivals = sorted(direction_arrivals[last_stop_id], key=sort_key)
+
+        prev_trip_ints = {}
+
+        # avoid creating duplicate arrivals at the first stop
+        # when the previous trip did not complete the entire loop.
+        non_duplicate_arrivals = []
+        prev_stop_arrival_time = None
+        for i, stop_arrival in enumerate(first_stop_arrivals):
+            stop_arrival_time = stop_arrival['t']
+            if stop_arrival_time != prev_stop_arrival_time:
+                non_duplicate_arrivals.append(stop_arrival)
+            else:
+                prev_trip_ints[stop_arrival['i']] = first_stop_arrivals[i-1]['i']
+
+            prev_stop_arrival_time = stop_arrival_time
+
+        first_stop_arrivals = direction_arrivals[first_stop_id] = non_duplicate_arrivals
+
+        first_stop_arrival_index = 0
+        num_first_stop_arrivals = len(first_stop_arrivals)
+
+        unmatched_last_stop_arrivals = []
+
+        for last_stop_arrival in last_stop_arrivals:
+            last_stop_arrival_time = last_stop_arrival['t']
+
+            is_matched = False
+
+            while first_stop_arrival_index < num_first_stop_arrivals:
+                first_stop_arrival = first_stop_arrivals[first_stop_arrival_index]
+                first_stop_arrival_time = first_stop_arrival['t']
+
+                first_stop_arrival_index += 1
+
+                if first_stop_arrival_time >= last_stop_arrival_time:
+                    # assume the next loop is a continuation of the same trip if the times are close
+                    if first_stop_arrival_time <= last_stop_arrival_time + 360:
+                        prev_trip_ints[first_stop_arrival['i']] = last_stop_arrival['i']
+                        is_matched = True
+                        if 'e' not in first_stop_arrival:
+                            first_stop_arrival['t'] = last_stop_arrival_time
+                            first_stop_arrival['e'] = first_stop_arrival_time
+
+                    break
+
+            if not is_matched:
+                unmatched_last_stop_arrivals.append(last_stop_arrival)
+
+        print(unmatched_last_stop_arrivals)
+
+        if len(unmatched_last_stop_arrivals) > 0:
+            print(first_stop_id)
+            print(len(direction_arrivals[first_stop_id]))
+            print(direction_arrivals[first_stop_id])
+            direction_arrivals[first_stop_id].extend(unmatched_last_stop_arrivals)
+            print(len(direction_arrivals[first_stop_id]))
+            print(direction_arrivals[first_stop_id])
+
+        orig_trip_ints = {}
+        for trip_int, prev_trip_int in prev_trip_ints.items():
+            orig_trip_int = orig_trip_ints.get(prev_trip_int, prev_trip_int)
+            orig_trip_ints[trip_int] = orig_trip_int
+
+        del direction_arrivals[last_stop_id]
+
+        for stop_id, stop_arrivals in direction_arrivals.items():
+            for stop_arrival in stop_arrivals:
+                orig_trip_int = orig_trip_ints.get(stop_arrival['i'], None)
+                if orig_trip_int is not None:
+                    stop_arrival['i'] = orig_trip_int
 
     def get_stop_times_for_trip(self, trip_id):
         if self.stop_times_by_trip is None:
@@ -500,9 +582,7 @@ class GtfsScraper:
         trip_occurrences_map = {}
         stop_ids = []
 
-        last_index = len(gtfs_stop_ids) - 1
-
-        for i, gtfs_stop_id in enumerate(gtfs_stop_ids):
+        for gtfs_stop_id in gtfs_stop_ids:
             trip_occurrence = trip_occurrences_map.get(gtfs_stop_id, 0) + 1
             stop_ids.append(self.normalize_gtfs_stop_id(gtfs_stop_id, trip_occurrence))
             trip_occurrences_map[gtfs_stop_id] = trip_occurrence
@@ -669,13 +749,18 @@ class GtfsScraper:
 
         print(f'  title = {title}')
 
+        is_loop = stop_ids[0] + '-2' == stop_ids[-1]
+        if is_loop:
+            # remove last stop id from the list to simplify handling of loop routes
+            stop_ids = stop_ids[:-1]
+
         dir_data = {
             'id': id,
             'title': title,
             'gtfs_shape_id': gtfs_shape_id,
             'gtfs_direction_id': gtfs_direction_id,
             'stops': stop_ids,
-            'loop': stop_ids[0] + '-2' == stop_ids[-1],
+            'loop': is_loop,
             'stop_geometry': {},
         }
 
@@ -810,17 +895,39 @@ class GtfsScraper:
                 for direction_id in np.unique(route_trips_df['direction_id'].values)
             ]
 
+        min_lat = None
+        min_lon = None
+        max_lat = None
+        max_lon = None
+
         for dir_data in route_data['directions']:
             for stop_id in dir_data['stops']:
                 stop = self.get_stop_row(stop_id)
+                stop_lat = round(stop.geometry.y, 5) # stop_lat in gtfs
+                stop_lon = round(stop.geometry.x, 5) # stop_lon in gtfs
+
+                if min_lat is None or min_lat > stop_lat:
+                    min_lat = stop_lat
+                if min_lon is None or min_lon > stop_lon:
+                    min_lon = stop_lon
+                if max_lat is None or max_lat < stop_lat:
+                    max_lat = stop_lat
+                if max_lon is None or max_lon < stop_lon:
+                    max_lon = stop_lon
+
                 stop_data = {
                     'id': stop_id,
-                    'lat': round(stop.geometry.y, 5), # stop_lat in gtfs
-                    'lon': round(stop.geometry.x, 5), # stop_lon in gtfs
+                    'lat': stop_lat,
+                    'lon': stop_lon,
                     'title': stop.stop_name,
                     'url': stop.stop_url if hasattr(stop, 'stop_url') and isinstance(stop.stop_url, str) else None,
                 }
                 route_data['stops'][stop_id] = stop_data
+
+        route_data['bounds'] = [
+            {'lat': min_lat, 'lon': min_lon},
+            {'lat': max_lat, 'lon': max_lon}
+        ]
 
         return route_data
 

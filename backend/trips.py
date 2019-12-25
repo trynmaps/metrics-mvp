@@ -2,7 +2,7 @@ import argparse
 import json
 import sys
 from datetime import datetime, timedelta
-from models import config, arrival_history, util, metrics, trip_times
+from models import config, arrival_history, util, metrics, trip_times, timetables
 import pytz
 import numpy as np
 import pandas as pd
@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('--route', required=True, help='Route id')
     parser.add_argument('--s1', required=True, help='Initial stop id')
     parser.add_argument('--s2', required=True, help='Destination stop id')
+    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='show scheduled times')
 
     parser.add_argument('--version')
 
@@ -25,9 +26,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    show_scheduled = args.scheduled
+
     version = args.version
     if version is None:
-        version = arrival_history.DefaultVersion
+        version = timetables.DefaultVersion if show_scheduled else arrival_history.DefaultVersion
 
     route_id = args.route
     date_str = args.date
@@ -51,9 +54,6 @@ if __name__ == '__main__':
     if len(s1_dirs) == 0 or s2_info is None:
         raise Exception(f"invalid stop id {s2}")
 
-    if s1 == s2:
-        raise Exception(f"stop {s1} and {s2} are the same")
-
     common_dirs = [dir for dir in s1_dirs if dir in s2_dirs]
 
     if len(common_dirs) == 0:
@@ -64,6 +64,9 @@ if __name__ == '__main__':
     is_loop = dir_info.is_loop()
 
     if not is_loop:
+        if s1 == s2:
+            raise Exception(f"stop {s1} and {s2} are the same")
+
         for s in dir_info.get_stop_ids():
             if s == s1:
                 break
@@ -90,7 +93,10 @@ if __name__ == '__main__':
     completed_trips_arr = []
 
     for d in dates:
-        history = arrival_history.get_by_date(agency.id, route_id, d, version)
+        if show_scheduled:
+            history = timetables.get_by_date(agency.id, route_id, d, version)
+        else:
+            history = arrival_history.get_by_date(agency.id, route_id, d, version)
 
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)
@@ -117,7 +123,9 @@ if __name__ == '__main__':
 
                 trip_str = f'#{row.TRIP}'.rjust(5)
 
-                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.DEPARTURE_TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID}  {trip_str}   {round(row.trip_min, 1)} min trip")
+                vid_str = f'vid:{row.VID}' if not show_scheduled else ''
+
+                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.DEPARTURE_TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time})  {vid_str}  {trip_str}   {round(row.trip_min, 1)} min trip")
 
             completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 
