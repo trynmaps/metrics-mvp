@@ -374,9 +374,9 @@ class MapStops extends Component {
           dir => dir.id === directionId,
         );
 
-        const stopSids = dirInfo.stops;
+        const stopIds = dirInfo.stops;
 
-        if (!dirInfo.loop && stopSids.indexOf(stop.id) < stopSids.indexOf(startStopId)) {
+        if (!dirInfo.loop && stopIds.indexOf(stop.id) < stopIds.indexOf(startStopId)) {
           endStopId = startStopId;
           startStopId = stop.id;
         } else {

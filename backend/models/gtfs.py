@@ -536,15 +536,8 @@ class GtfsScraper:
             if not is_matched:
                 unmatched_last_stop_arrivals.append(last_stop_arrival)
 
-        print(unmatched_last_stop_arrivals)
-
         if len(unmatched_last_stop_arrivals) > 0:
-            print(first_stop_id)
-            print(len(direction_arrivals[first_stop_id]))
-            print(direction_arrivals[first_stop_id])
             direction_arrivals[first_stop_id].extend(unmatched_last_stop_arrivals)
-            print(len(direction_arrivals[first_stop_id]))
-            print(direction_arrivals[first_stop_id])
 
         orig_trip_ints = {}
         for trip_int, prev_trip_int in prev_trip_ints.items():
