@@ -109,6 +109,9 @@ class WaitTimeStats:
     def get_average(self):
         raise NotImplementedError
 
+    def get_sampled_waits(self, sample_sec=60):
+        raise NotImplementedError
+
     def get_quantiles(self, quantiles):
         cdf_points = self.get_cumulative_distribution()
         if cdf_points is None:
@@ -363,6 +366,15 @@ class MultiIntervalWaitTimeStats(WaitTimeStats):
         self.interval_stats_arr = interval_stats_arr
         self.cdf_points = None
 
+    def get_sampled_waits(self, sample_sec=60):
+        sampled_waits_arr = []
+        for interval_stats in self.interval_stats_arr:
+            sampled_waits = interval_stats.get_sampled_waits(sample_sec)
+            if sampled_waits is not None:
+                sampled_waits_arr.append(sampled_waits)
+
+        return np.concatenate(sampled_waits_arr)
+
     def get_average(self):
         # With each interval weighted equally, the average wait time for all intervals
         # is the average of the average wait times for each interval.
@@ -437,7 +449,7 @@ def evaluate_cdf(wait_time, cdf_domain, cdf_range):
         if extra_wait_time == 0:
             return prev_value
 
-        # linear interpolation to find value of CDF with wait time = bin_value
+        # linear interpolation to find value of CDF for wait time
         return prev_value + \
              extra_wait_time / \
             (cdf_domain[segment_end_index] - cdf_domain[segment_start_index]) * \
