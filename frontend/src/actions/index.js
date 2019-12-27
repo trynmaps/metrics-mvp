@@ -42,7 +42,7 @@ function computeDates(graphParams) {
 
 // S3 URL to route configuration
 export function generateRoutesURL(agencyId) {
-  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?p`;
+  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?q`;
 }
 
 /**
@@ -57,7 +57,7 @@ export function generateTripTimesURL(agencyId, dateStr, statPath, timePath) {
   return `https://${S3Bucket}.s3.amazonaws.com/trip-times/${TripTimesVersion}/${agencyId}/${dateStr.replace(
     /-/g,
     '/',
-  )}/trip-times_${TripTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?o`;
+  )}/trip-times_${TripTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?p`;
 }
 
 /**
@@ -85,7 +85,7 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
   return `https://${S3Bucket}.s3.amazonaws.com/arrivals/${ArrivalsVersion}/${agencyId}/${dateStr.replace(
     /-/g,
     '/',
-  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?u`;
+  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?ab`;
 }
 
 export function fetchGraphData(params) {

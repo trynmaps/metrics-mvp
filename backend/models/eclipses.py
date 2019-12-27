@@ -429,9 +429,10 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
         nonlocal start_trip
 
-        #print(f"vehicle_id = {vehicle_id}, direction_id = {direction_id}, obs_group = {obs_group}")
+        debug = False #vehicle_id == '8513' and direction_id == '1' # and obs_group == 1
 
-        debug = False #vehicle_id == 'S022' and direction_id == '0' and obs_group == 1
+        if debug:
+            print(f"vehicle_id = {vehicle_id}, direction_id = {direction_id}, obs_group = {obs_group}")
 
         dir_info = route_config.get_direction_info(direction_id)
 
@@ -467,20 +468,20 @@ class StopSequence:
 
     def __init__(self):
         self.last_stop_index = None
-        self.last_arrival_time = None
+        self.last_departure_time = None
         self.stop_indexes = []
         self.row_indexes = []
 
-    def append(self, row_index, stop_index, arrival_time):
+    def append(self, row_index, stop_index, departure_time):
         self.last_stop_index = stop_index
-        self.last_arrival_time = arrival_time
+        self.last_departure_time = departure_time
         self.stop_indexes.append(stop_index)
         self.row_indexes.append(row_index)
 
     def copy(self):
         other = StopSequence()
         other.last_stop_index = self.last_stop_index
-        other.last_arrival_time = self.last_arrival_time
+        other.last_departure_time = self.last_departure_time
         other.stop_indexes = self.stop_indexes.copy()
         other.row_indexes = self.row_indexes.copy()
         return other
@@ -531,6 +532,7 @@ def get_arrivals_with_ascending_stop_index(
         return make_arrivals_frame([]), start_trip
 
     arrival_time_values = dir_arrivals['TIME'].values
+    departure_time_values = dir_arrivals['DEPARTURE_TIME'].values
     dist_values = dir_arrivals['DIST'].values
 
     if debug:
@@ -570,13 +572,18 @@ def get_arrivals_with_ascending_stop_index(
     num_stops = len(dir_stop_ids)
     terminal_stop_index = num_stops if is_loop else (num_stops - 1) # never reaches terminal_stop_index for loop routes
 
+    min_trip_length = min(3, num_stops)
+    max_small_gap_index_diff = 5
+    max_large_gap_seconds = 300
+    num_non_ascending_stop_indexes = 0
+
     def finish_trip():
-        nonlocal row_index, next_trip
+        nonlocal row_index, next_trip, num_non_ascending_stop_indexes
 
         longest_sequence = None
         for sequence in possible_sequences.values():
             if longest_sequence is None:
-                if sequence.last_stop_index is not None:
+                if len(sequence.row_indexes) > 0:
                     longest_sequence = sequence
             else:
                 len_diff = len(sequence.row_indexes) - len(longest_sequence.row_indexes)
@@ -585,69 +592,71 @@ def get_arrivals_with_ascending_stop_index(
                 if len_diff > 0 or (len_diff == 0 and sequence.row_indexes[-1] < longest_sequence.row_indexes[-1]):
                     longest_sequence = sequence
 
+        num_non_ascending_stop_indexes = 0
+
         if longest_sequence is not None:
 
-            trip_row_indexes = longest_sequence.row_indexes
+            if len(longest_sequence.row_indexes) >= min_trip_length:
 
-            trip_len = len(trip_row_indexes)
+                trip_row_indexes = longest_sequence.row_indexes
 
-            if debug:
-                print(f'trip {next_trip}:')
-                print(f'{longest_sequence.stop_indexes}')
-                print(f'{longest_sequence.row_indexes}')
-                print('---')
+                trip_len = len(trip_row_indexes)
 
-            all_row_indexes.extend(trip_row_indexes)
+                if debug:
+                    print(f'trip {next_trip}:')
+                    print(f'{longest_sequence.stop_indexes}')
+                    print(f'{longest_sequence.row_indexes}')
+                    print('---')
 
-            for i in range(trip_len):
-                trip_ids.append(next_trip)
+                all_row_indexes.extend(trip_row_indexes)
 
-            next_trip += 1
+                for i in range(trip_len):
+                    trip_ids.append(next_trip)
 
-            reset_possible_sequences()
+                next_trip += 1
 
             # loop may have continued a few rows past the end of the longest sequence.
             # in this case we back up the loop so it doesn't skip any rows
             # (row_index will be incremented once after this)
             row_index = longest_sequence.row_indexes[-1]
 
-    num_non_ascending_stop_indexes = 0
+            reset_possible_sequences()
 
     while row_index < num_arrivals:
         stop_index = stop_index_values[row_index]
         arrival_time = arrival_time_values[row_index]
+        departure_time = departure_time_values[row_index]
 
         if debug:
             print(f'row_index = {row_index} stop_index = {stop_index}')
 
         new_sequences = {}
-
-        has_ascending_stop_index = False
+        updated_sequences = False
 
         for sequence_key, sequence in possible_sequences.items():
             last_stop_index = sequence.last_stop_index
 
             if last_stop_index is None:
-                has_ascending_stop_index = True
+                updated_sequences = True
                 if stop_index == 0 or is_loop:
-                    sequence.append(row_index, stop_index, arrival_time)
+                    sequence.append(row_index, stop_index, departure_time)
                 else:
                     # if the first stop_index is not zero, leave an empty possible sequence
                     # which can still accept smaller stop indexes.
                     alt_sequence = sequence.copy()
                     new_sequences[next_sequence_key] = alt_sequence
                     next_sequence_key += 1
-                    sequence.append(row_index, stop_index, arrival_time)
+                    sequence.append(row_index, stop_index, departure_time)
             else:
                 index_diff = stop_index - last_stop_index
-                arrival_time_diff = arrival_time - sequence.last_arrival_time
+                trip_time = arrival_time - sequence.last_departure_time
 
                 if is_loop and index_diff < 0:
                     # make sure that index_diff is non-negative for loops so that
                     # we continue appending to the same trip after completing a loop
                     index_diff = (index_diff + num_stops) % num_stops
 
-                if arrival_time_diff <= 0:
+                if trip_time <= 0:
                     # arrival times within in a trip must be strictly ascending,
                     # otherwise it wouldn't be possible to ensure the correct sort order
                     # when displaying arrivals for a vehicle in order
@@ -655,35 +664,38 @@ def get_arrivals_with_ascending_stop_index(
                 elif index_diff == 1:
                     # if stops appear in sequential order, just append to this sequence
                     # without creating any more possibilities.
-                    has_ascending_stop_index = True
-                    sequence.append(row_index, stop_index, arrival_time)
-                elif index_diff > 1:
+                    updated_sequences = True
+                    sequence.append(row_index, stop_index, departure_time)
+                elif index_diff > 1 and (index_diff <= max_small_gap_index_diff or trip_time < max_large_gap_seconds):
                     # if this arrival skipped one or more stops, create possibilities that
                     # contain or don't contain this arrival
-                    has_ascending_stop_index = True
+                    updated_sequences = True
                     alt_sequence = sequence.copy()
                     new_sequences[next_sequence_key] = alt_sequence
                     next_sequence_key += 1
-                    sequence.append(row_index, stop_index, arrival_time)
+                    sequence.append(row_index, stop_index, departure_time)
                 elif index_diff == 0:
                     # If there are two consecutive arrivals for the same vehicle at the same stop,
                     # use the arrival with the smaller distance.
                     last_row_index = sequence.row_indexes[-1]
                     if dist_values[row_index] < dist_values[last_row_index]:
                         sequence.row_indexes[-1] = row_index
-                        sequence.last_arrival_time = arrival_time
+                        sequence.last_departure_time = departure_time
+                        updated_sequences = True
                         if debug:
                             print(f"stop_index = {stop_index} dist[{row_index}] = {dist_values[row_index]}")
 
-        if not has_ascending_stop_index:
+        if not updated_sequences:
             num_non_ascending_stop_indexes += 1
+
+            if debug:
+                print(f'no updated sequences, num_non_ascending_stop_indexes = {num_non_ascending_stop_indexes}')
 
             # as a heuristic that seems to work in practice without making things too slow,
             # finish the current trip if 4 rows are processed without being able to extend any possible sequences.
             # (SF Muni's 39-Coit sometimes has 3 rows with non-ascending stop indexes before another ascending stop index.)
             if num_non_ascending_stop_indexes >= 4:
                 finish_trip()
-                num_non_ascending_stop_indexes = 0
         else:
             num_non_ascending_stop_indexes = 0
 
@@ -774,12 +786,13 @@ def get_arrivals_with_ascending_stop_index(
                 for sequence_key in unneded_sequence_keys:
                     del possible_sequences[sequence_key]
 
-            # if all possible sequences end in a terminal, choose the best one as the actual trip
             all_terminals = True
             for sequence in possible_sequences.values():
                 if sequence.last_stop_index is None or sequence.last_stop_index < terminal_stop_index:
                     all_terminals = False
                     break
+
+            # if all possible sequences end in a terminal, choose the best one as the actual trip.
             if all_terminals:
                 finish_trip()
 

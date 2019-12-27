@@ -25,6 +25,7 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
     shape_index = start_index
 
     while shape_index < num_shape_lines:
+
         shape_line_offset = shape_lines_xy[shape_index].distance(stop_xy)
 
         if shape_line_offset < best_offset:
@@ -826,7 +827,7 @@ class GtfsScraper:
         shape_prev_lat = np.r_[shape_lat[0], shape_lat[:-1]]
 
         # shape_cumulative_dist[i] is the cumulative distance in meters along the shape geometry from 0th to ith coordinate
-        shape_cumulative_dist = np.cumsum(util.haver_distance(shape_lon, shape_lat, shape_prev_lon, shape_prev_lat))
+        shape_cumulative_dist = np.cumsum(util.haver_distance(shape_lat, shape_lon, shape_prev_lat, shape_prev_lon))
 
         shape_lines_xy = [shapely.geometry.LineString(xy_geometry.coords[i:i+2]) for i in range(0, len(xy_geometry.coords) - 1)]
 
