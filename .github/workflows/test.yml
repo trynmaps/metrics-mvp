@@ -10,4 +10,4 @@ jobs:
     - name: Build Docker flask image
       run: docker build --target flask -t opentransit/flask:latest .
     - name: Run tests
-      run: docker run opentransit/flask:latest python -m unittest discover -s test
+      run: docker run opentransit/flask:latest python -m unittest discover -s tests
