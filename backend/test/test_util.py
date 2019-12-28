@@ -9,7 +9,7 @@ class UtilTest(unittest.TestCase):
     def test_quantile_sorted(self):
         arr = [1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,9.9,10.1]
 
-        self.assertEqual(util.quantile_sorted(arr, 1), 10.1)
+        self.assertEqual(util.quantile_sorted(arr, 1), 10.2)
         self.assertEqual(util.quantile_sorted(arr, 0), 1.1)
         self.assertEqual(util.quantile_sorted(arr, 0.5), 6.05)
         self.assertEqual(util.quantile_sorted(arr[:-1], 0.5), 5.5)
