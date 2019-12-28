@@ -11,7 +11,10 @@ class UtilTest(unittest.TestCase):
 
         self.assertEqual(util.quantile_sorted(arr, 1), 10.1)
         self.assertEqual(util.quantile_sorted(arr, 0), 1.1)
+
+        # interpolate quantile between two values
         self.assertEqual(util.quantile_sorted(arr, 0.5), 6.05)
+
         self.assertEqual(util.quantile_sorted(arr[:-1], 0.5), 5.5)
 
     def test_parse_date(self):
@@ -32,6 +35,8 @@ class UtilTest(unittest.TestCase):
                 datetime.date(2020,1,2)
             ]
         )
+
+        # test filtering by weekday
         self.assertEqual(
             util.get_dates_in_range('2019-12-29', '2020-01-08', weekdays=[0,1]),
             [
@@ -41,6 +46,8 @@ class UtilTest(unittest.TestCase):
                 datetime.date(2020,1,7)
             ]
         )
+
+        # parameters can be date objects
         self.assertEqual(
             util.get_dates_in_range(datetime.date(2019,12,29), datetime.date(2020,1,1)),
             [
@@ -59,10 +66,14 @@ class UtilTest(unittest.TestCase):
         lat2 = np.array([45.5169013,45.5212991])
         lon2 = np.array([-122.6720733,-122.6559808])
 
+        # if all parameters are arrays, result is array of distances computed element-wise
         self.assertEqual(
             np.round(util.haver_distance(lat1, lon1, lat2, lon2), 2).tolist(),
             [369.11, 1737.08]
         )
+
+        # if one pair of lat/lon parameters are arrays and the others are scalars,
+        # result is array of distances computed relative to the scalars
         self.assertEqual(
             np.round(util.haver_distance(lat1[0], lon1[0], lat2, lon2), 2).tolist(),
             [369.11, 976.78]
@@ -71,6 +82,8 @@ class UtilTest(unittest.TestCase):
             np.round(util.haver_distance(lat1, lon1, lat2[0], lon2[0]), 2).tolist(),
             [369.11, 962.37]
         )
+
+        # if all lat/lon parameters are scalars, result is a scalar
         self.assertEqual(
             np.round(util.haver_distance(lat1[0], lon1[0], lat2[0], lon2[0]), 2),
             369.11
