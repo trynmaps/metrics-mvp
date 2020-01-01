@@ -306,70 +306,41 @@ class WaitTimeStats(ObjectType):
         bin_size = Float(required=False, default_value=5)
     )
 
-    # parent is a list of WaitTimeStats objects (for each date)
+    # parent is a wait_times.WaitTimeStats object (either IntervalWaitTimeStats or MultiIntervalWaitTimeStats)
 
-    def resolve_avg(wait_stats_arr, info):
-        averages = []
-        for wait_stats in wait_stats_arr:
-            avg = wait_stats.get_average()
-            if avg is not None:
-                averages.append(avg)
+    def resolve_avg(wait_stats, info):
+        return round_or_none(wait_stats.get_average())
 
-        if len(averages) > 0:
-            return round(np.average(averages), ROUND_DIGITS)
-        else:
-            return None
+    def resolve_min(wait_stats, info):
+        return round_or_none(wait_stats.get_quantile(0))
 
-    def resolve_min(wait_stats_arr, info):
-        percentiles_data = WaitTimeStats.resolve_percentiles(wait_stats_arr, info, [0])
-        return percentiles_data[0]['value'] if percentiles_data is not None else None
+    def resolve_median(wait_stats, info):
+        return round_or_none(wait_stats.get_quantile(0.5))
 
-    def resolve_median(wait_stats_arr, info):
-        percentiles_data = WaitTimeStats.resolve_percentiles(wait_stats_arr, info, [50])
-        return percentiles_data[0]['value'] if percentiles_data is not None else None
+    def resolve_max(wait_stats, info):
+        return round_or_none(wait_stats.get_quantile(1))
 
-    def resolve_max(wait_stats_arr, info):
-        percentiles_data = WaitTimeStats.resolve_percentiles(wait_stats_arr, info, [100])
-        return percentiles_data[0]['value'] if percentiles_data is not None else None
-
-    def resolve_percentiles(wait_stats_arr, info, percentiles = None):
-        percentile_values_arr = []
-
+    def resolve_percentiles(wait_stats, info, percentiles = None):
         if percentiles is None:
             percentiles = range(0, 101, 5)
 
-        for wait_stats in wait_stats_arr:
-            percentile_values = wait_stats.get_percentiles(percentiles)
-            if percentile_values is not None:
-                percentile_values_arr.append(percentile_values)
-
-        if len(percentile_values_arr) > 0:
-            # todo: handle multiple days
-            percentile_values = percentile_values_arr[0]
-
+        percentile_values = wait_stats.get_percentiles(percentiles)
+        if percentile_values is not None:
             return get_percentiles_data(percentiles, percentile_values)
         else:
             return None
 
-    def resolve_histogram(wait_stats_arr, info, bin_size = 5, min = 0, max = 90):
-        histograms = []
-
+    def resolve_histogram(wait_stats, info, bin_size = 5, min = 0, max = 90):
         if bin_size < 0:
             bin_size = 5
 
         bins = np.arange(min, max + bin_size, bin_size)
 
-        for wait_stats in wait_stats_arr:
-            histogram = wait_stats.get_histogram(bins)
-            if histogram is not None:
-                histograms.append(histogram * 100) # convert to percentages
-
-        if len(histograms) > 0:
-            # todo: handle multiple days
-            histogram = histograms[0]
+        histogram = wait_stats.get_histogram(bins)
+        if histogram is not None:
+            histogram = histogram * 100 # convert to percentages
 
             nonzero_buckets = np.nonzero(histogram)[0]
-
             if len(nonzero_buckets) > 0:
                 histogram_end_index = nonzero_buckets[-1] + 1
             else:
@@ -648,5 +619,10 @@ class Query(ObjectType):
 
     def resolve_routeMetrics(parent, info, agency_id, route_id):
         return metrics.RouteMetrics(agency_id, route_id)
+
+def round_or_none(number, num_digits=ROUND_DIGITS):
+    if number is None:
+        return None
+    return round(number, num_digits)
 
 metrics_api = Schema(query = Query)

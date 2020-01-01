@@ -97,7 +97,10 @@ class RouteMetrics:
 
             wait_stats_arr.append(wait_stats)
 
-        return wait_stats_arr
+        if len(wait_stats_arr) == 1:
+            return wait_stats_arr[0]
+        else:
+            return wait_times.combine_stats(wait_stats_arr)
 
     def get_arrivals(self, direction_id, stop_id, rng: Range):
         return self._get_count(direction_id, stop_id, rng, self.get_history_data_frame, 'TIME')
