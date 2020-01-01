@@ -553,7 +553,7 @@ class GtfsScraper:
 
         return sorted_shapes
 
-    def get_custom_direction_data(self, custom_direction_info, route_trips_df):
+    def get_custom_direction_data(self, custom_direction_info, route_trips_df, route_id):
         direction_id = custom_direction_info['id']
         print(f' custom direction = {direction_id}')
 
@@ -771,7 +771,7 @@ class GtfsScraper:
 
         if route_id in agency.custom_directions:
             route_data['directions'] = [
-                self.get_custom_direction_data(custom_direction_info, route_trips_df)
+                self.get_custom_direction_data(custom_direction_info, route_trips_df, route_id)
                 for custom_direction_info in agency.custom_directions[route_id]
             ]
         else:
