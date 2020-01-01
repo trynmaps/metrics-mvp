@@ -724,6 +724,37 @@ Contains metrics data that shows how well the actual arrival or departure times 
 | `scheduledCount` | `Int` | The total number of scheduled arrival/departure times. This should be used as the denominator when computing the rate of on-time/late/early/missing arrivals. |
 | `closestDeltas` | [`BasicStats`](#basicstats) | Contains metrics for the difference between the closest actual time and the scheduled time (in minutes), for each scheduled time. Positive values indicate that the actual arrival or departure occurred after the scheduled time. (Each scheduled time is counted once, although the closest deltas for different scheduled times may correspond to the same actual arrival/departure time.) |
 
+### WaitTimeStats
+
+Contains statistics about wait times at a stop within one or more intervals.
+For each interval, these statistics are computed assuming that a rider has an equal probability of arriving at the stop any time in that interval,
+but not before the first departure of the day or after the last departure of the day.
+If statistics are computed over multiple intervals, each interval will be weighted equally (not weighted by the length of the interval).
+These statistics assume that the rider arrives at the stop at a "random" time without using schedules or predictions.
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `avg` | `Float` | The average wait time. |
+| `min` | `Float` | The minimum wait time (will be 0 if there are any arrivals in the interval). |
+| `median` | `Float` | The median wait time. |
+| `max` | `Float` | The maximum wait time. |
+| `percentiles` | [`[PercentileData]`](#percentiledata) | Data for percentile values of wait times. |
+| `histogram` | [`[HistogramBin]`](#histogrambin) | Data for rendering histograms on the frontend. |
+
+#### Parameters for `percentiles`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `percentiles` | `[Float]` | List of percentiles to return. |
+
+#### Parameters for `histogram`
+
+| Parameter Name | Type | Description |
+| --- | --- | --- |
+| `min` | `Float` | Start of first histogram bin. |
+| `max` | `Float` | End of last histogram bin. |
+| `binSize` | `Float` | Size of histogram bins. |
+
 ### BasicIntervalMetrics
 
 Contains metrics data at a particular pair of stops on a single route at a particular time range and list of dates.
