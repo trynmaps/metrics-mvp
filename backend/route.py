@@ -1,4 +1,4 @@
-from models import metrics, eclipses, config, util, arrival_history
+from models import metrics, eclipses, config, util, arrival_history, timetables
 import json
 import argparse
 from datetime import datetime, date
@@ -8,11 +8,12 @@ import numpy as np
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Show overall arrival history for a particular route')
+    parser = argparse.ArgumentParser(description='Show overview of configuration and arrival history or schedule for a particular route')
     parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument('--route', required=True, help='Route id')
     parser.add_argument('--dir', help='Direction id')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
+    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='show scheduled times')
 
     parser.add_argument('--version')
 
@@ -23,9 +24,11 @@ if __name__ == '__main__':
 
     agency = config.get_agency(args.agency)
 
+    show_scheduled = args.scheduled
+
     version = args.version
     if version is None:
-        version = arrival_history.DefaultVersion
+        version = timetables.DefaultVersion if show_scheduled else arrival_history.DefaultVersion
 
     route_id = args.route
     direction_id = args.dir
@@ -43,6 +46,9 @@ if __name__ == '__main__':
 
         print(f"Date: {', '.join([str(date) for date in dates])}")
         print(f"Time of Day: [{start_time_str}, {end_time_str})")
+
+        if show_scheduled:
+            print("(scheduled)")
     else:
         dates = None
 
@@ -53,14 +59,22 @@ if __name__ == '__main__':
     if route_config is None:
         raise Exception(f"Invalid route {route_id}")
 
-    df = pd.concat([
-        arrival_history.get_by_date(agency.id, route_id, d, version) \
-            .get_data_frame(
+    if dates is not None:
+        dfs = []
+        for d in dates:
+            if show_scheduled:
+                history = timetables.get_by_date(agency.id, route_id, d, version)
+            else:
+                history = arrival_history.get_by_date(agency.id, route_id, d, version)
+
+            dfs.append(history.get_data_frame(
                 start_time = util.get_timestamp_or_none(d, start_time_str, tz),
                 end_time = util.get_timestamp_or_none(d, end_time_str, tz)
-            )
-            for d in dates
-    ]) if dates is not None else None
+            ))
+
+        df = pd.concat(dfs)
+    else:
+        df = None
 
     print(f"Route: {route_id} ({route_config.title})")
 
@@ -76,7 +90,9 @@ if __name__ == '__main__':
 
         prev_stop_info = None
 
-        for dir_index, stop_id in enumerate(dir_info.get_stop_ids()):
+        stop_ids = dir_info.get_stop_ids()
+
+        for dir_index, stop_id in enumerate(stop_ids):
             stop_info = route_config.get_stop_info(stop_id)
 
             if prev_stop_info is not None:
@@ -90,12 +106,9 @@ if __name__ == '__main__':
                 stop_arrivals = df[(df['SID'] == stop_info.id) & (df['DID'] == dir_info.id)]
                 dwell_time = (stop_arrivals['DEPARTURE_TIME'] - stop_arrivals['TIME'])
 
-                if not stop_arrivals.empty:
-                    min_dist_quantiles = np.quantile(stop_arrivals['DIST'], [0,0.5,1])
-                    dwell_time_quantiles = np.quantile(dwell_time, [0,0.5,1])
-                else:
-                    min_dist_quantiles = []
-                    dwell_time_quantiles = []
+                dwell_time_quantiles = np.quantile(dwell_time, [0,0.5,1]) if not stop_arrivals.empty else []
+
+                min_dist_quantiles = np.quantile(stop_arrivals['DIST'], [0,0.5,1]) if not stop_arrivals.empty and not show_scheduled else []
 
                 num_arrivals = len(stop_arrivals['TIME'].values)
 
@@ -110,6 +123,13 @@ if __name__ == '__main__':
 
             stop_rows.append((route_id, dir_info.id, stop_id, dir_index, stop_info.lat, stop_info.lon, delta_dist, num_arrivals))
             prev_stop_info = stop_info
+
+        if dir_info.is_loop():
+            stop_info = route_config.get_stop_info(stop_ids[0])
+
+            delta_dist = util.haver_distance(stop_info.lat, stop_info.lon, prev_stop_info.lat, prev_stop_info.lon)
+
+            print(f'{stop_info.id} [0] \u0394 {render_distance(delta_dist)} - {stop_info.title} (loop)')
 
     stops = pd.DataFrame(stop_rows, columns=['ROUTE','DID','SID','DIR_INDEX','LAT','LON','DIST','NUM_ARRIVALS'])
 

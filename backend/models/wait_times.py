@@ -455,7 +455,7 @@ def evaluate_cdf(wait_time, cdf_domain, cdf_range):
             (cdf_domain[segment_end_index] - cdf_domain[segment_start_index]) * \
             (cdf_range[segment_end_index] - cdf_range[segment_start_index])
 
-DefaultVersion = 'v1b'
+DefaultVersion = 'v1c'
 
 class CachedWaitTimes:
     def __init__(self, wait_times_data):

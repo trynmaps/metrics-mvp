@@ -3,7 +3,7 @@ import pytz
 import sys
 import time
 from datetime import date
-from . import wait_times, util, arrival_history, trip_times, errors, constants, timetables
+from . import wait_times, util, arrival_history, trip_times, errors, constants, timetables, routeconfig
 
 import pandas as pd
 import numpy as np
@@ -235,6 +235,18 @@ class RouteMetrics:
         if end_stop_id is None:
             return None
 
+        is_loop = False
+        route_config = routeconfig.get_route_config(self.agency_id, self.route_id)
+        if route_config is not None:
+            if direction_id is not None:
+                dir_info = route_config.get_direction_info(direction_id)
+            else:
+                direction_ids = route_config.get_directions_for_stop(start_stop_id)
+                dir_info = route_config.get_direction_info(direction_ids[0]) if len(direction_ids) > 0 else None
+
+            if dir_info is not None:
+                is_loop = dir_info.is_loop()
+
         for d in rng.dates:
             s1_df = get_data_frame(d, stop_id=start_stop_id, direction_id=direction_id)
             s2_df = get_data_frame(d, stop_id=end_stop_id, direction_id=direction_id)
@@ -252,7 +264,8 @@ class RouteMetrics:
                 s1_df['TRIP'].values,
                 s1_df['DEPARTURE_TIME'].values,
                 s2_df['TRIP'].values,
-                s2_df['TIME'].values
+                s2_df['TIME'].values,
+                is_loop = is_loop
             )
             completed_trips_arr.append(completed_trip_times)
 
