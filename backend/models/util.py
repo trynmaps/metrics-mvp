@@ -51,7 +51,7 @@ def get_dates_in_range(start_date, end_date, weekdays=None, max_dates=1000):
             break
 
         if len(res) > max_dates:
-            raise Exception(f'too many dates between {start_date_str} and {end_date_str}')
+            raise Exception(f'too many dates between {start_date} and {end_date}')
 
     return res
 
