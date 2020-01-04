@@ -26,7 +26,7 @@ def get_completed_trip_times(
     # or by departure / arrival time (if is_loop is true).
 
     if (len(s1_trip_values) == 0) or (len(s2_trip_values) == 0):
-        return []
+        return np.array([])
 
     if is_loop:
         # If s1 and s2 are the same stop, this will compute the time to complete 1 full loop
