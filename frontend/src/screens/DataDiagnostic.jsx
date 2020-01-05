@@ -12,7 +12,7 @@ import QuadrantChart from '../components/QuadrantChart';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { fetchRoutes, fetchPrecomputedWaitAndTripData, handleGraphParams } from '../actions';
+import { fetchRoutes, fetchPrecomputedStats, handleGraphParams } from '../actions';
 
 const useStyles = makeStyles({
   title: {
@@ -29,7 +29,7 @@ function DataDiagnostic(props) {
     graphParams,
     routes,
     myFetchRoutes,
-    myFetchPrecomputedWaitAndTripData,
+    myFetchPrecomputedStats,
     myHandleGraphParams,
   } = props;
 
@@ -41,8 +41,8 @@ function DataDiagnostic(props) {
     if (!routes) {
       myFetchRoutes({agencyId: agency.id});
     }
-    myFetchPrecomputedWaitAndTripData(graphParams);
-  }, [routes, myFetchRoutes, myFetchPrecomputedWaitAndTripData, graphParams, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
+    myFetchPrecomputedStats(graphParams);
+  }, [routes, myFetchRoutes, myFetchPrecomputedStats, graphParams, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
 
   const classes = useStyles();
 
@@ -81,16 +81,13 @@ function DataDiagnostic(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
-  graphParams: state.routes.graphParams,
-  waitTimesCache: state.routes.waitTimesCache,
-  tripTimesCache: state.routes.tripTimesCache,
+  routes: state.routes.data,
+  graphParams: state.graphParams
 });
 
 const mapDispatchToProps = dispatch => ({
   myFetchRoutes: props => dispatch(fetchRoutes(props)),
-  myFetchPrecomputedWaitAndTripData: params =>
-    dispatch(fetchPrecomputedWaitAndTripData(params)),
+  myFetchPrecomputedStats: params => dispatch(fetchPrecomputedStats(params)),
   myHandleGraphParams: props => dispatch(handleGraphParams(props)),
 });
 

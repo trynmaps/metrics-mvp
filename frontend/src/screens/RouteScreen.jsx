@@ -19,22 +19,21 @@ import { fetchRoutes } from '../actions';
 
 function RouteScreen(props) {
   const {
-    graphData,
-    graphError,
+    tripMetrics,
+    tripMetricsLoading,
+    tripMetricsError,
     graphParams,
-    intervalData,
-    intervalError,
     routes,
-    myFetchRoutes,
+    fetchRoutes,
   } = props;
 
   const agencyId = graphParams ? graphParams.agencyId : null;
 
   useEffect(() => {
     if (!routes && agencyId) {
-      myFetchRoutes({agencyId: agencyId});
+      fetchRoutes({agencyId: agencyId});
     }
-  }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
+  }, [agencyId, routes, fetchRoutes]); // like componentDidMount, this runs only on first render
 
   const agency = getAgency(agencyId);
 
@@ -67,12 +66,12 @@ function RouteScreen(props) {
             {agency ? agency.title : null}
           </div>
           <div style={{flexGrow: 1}}/>
-          <DateTimePanel dateRangeSupported={graphData || graphError}/>
+          <DateTimePanel dateRangeSupported={tripMetrics || tripMetricsError || tripMetricsLoading}/>
         </Toolbar>
       </AppBar>
-      
+
       <Paper>
-        <Box p={2} className="page-title">            
+        <Box p={2} className="page-title">
           {selectedRoute ? ` ${selectedRoute.title}` : null}
           {direction ? ` > ${direction.title}` : null}
           &nbsp;
@@ -88,15 +87,13 @@ function RouteScreen(props) {
         <Grid item xs={12} sm={6}>
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
           <ControlPanel routes={routes} />
-          {graphData ||
-          graphError /* if we have graph data or an error, then show the info component */ ? (
+          {tripMetrics || tripMetricsError || tripMetricsLoading /* if we have trip metrics or an error, then show the info component */ ? (
             <Info
-              graphData={graphData}
-              graphError={graphError}
+              tripMetrics={tripMetrics}
+              tripMetricsError={tripMetricsError}
+              tripMetricsLoading={tripMetricsLoading}
               graphParams={graphParams}
               routes={routes}
-              intervalData={intervalData}
-              intervalError={intervalError}
             />
           ) : (
             /* if no graph data, show the info summary component */
@@ -109,16 +106,15 @@ function RouteScreen(props) {
 }
 
 const mapStateToProps = state => ({
-  graphData: state.fetchGraph.graphData,
-  routes: state.routes.routes,
-  graphError: state.fetchGraph.err,
-  intervalData: state.fetchGraph.intervalData,
-  intervalError: state.fetchGraph.intervalErr,
-  graphParams: state.routes.graphParams,
+  tripMetrics: state.tripMetrics.data,
+  tripMetricsError: state.tripMetrics.error,
+  tripMetricsLoading: state.loading.TRIP_METRICS,
+  routes: state.routes.data,
+  graphParams: state.graphParams,
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: params => dispatch(fetchRoutes(params)),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
 export default connect(

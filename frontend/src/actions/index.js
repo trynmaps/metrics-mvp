@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { MetricsBaseURL, S3Bucket, RoutesVersion, TripTimesVersion, WaitTimesVersion, ArrivalsVersion } from '../config';
-import { getTimePath } from '../helpers/precomputed';
 import Moment from 'moment';
 import { MAX_DATE_RANGE } from '../UIConstants';
+import { Agencies } from '../config';
 
 /**
  * Helper function to compute the list of days for the GraphQL query.
@@ -88,7 +88,7 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
   )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?ab`;
 }
 
-export function fetchGraphData(params) {
+export function fetchTripMetrics(params) {
 
   const dates = computeDates(params);
 
@@ -128,43 +128,47 @@ export function fetchGraphData(params) {
   }
 }`.replace(/\s+/g, ' ');
 
-    dispatch({ type: 'REQUEST_GRAPH_DATA' });
+    dispatch({ type: 'REQUEST_TRIP_METRICS' });
     axios.get('/api/graphql', {
         params: { query: query, variables: JSON.stringify({...params, date: dates}) }, // computed dates aren't in graphParams so add here
         baseURL: MetricsBaseURL,
       })
       .then(response => {
-
-        if (response.data && response.data.errors) {
+        const responseData = response.data;
+        if (responseData && responseData.errors) {
           // assume there is at least one error, but only show the first one
-          dispatch({ type: 'ERROR_GRAPH_DATA', payload: response.data.errors[0].message });
-        } else {
           dispatch({
-            type: 'RECEIVED_GRAPH_DATA',
-            payload: response.data,
-            graphParams: params,
+            type: 'ERROR_TRIP_METRICS',
+            payload: responseData.errors[0].message
+          });
+        } else {
+          const routeMetrics = responseData && responseData.data ? responseData.data.routeMetrics : null;
+          const tripMetrics = routeMetrics ? routeMetrics.trip : null;
+          dispatch({
+            type: 'RECEIVED_TRIP_METRICS',
+            payload: tripMetrics,
           });
         }
       })
-      .catch(err => { // not sure which of the below is still applicable after moving to graphql
+      .catch(err => {
         const errStr =
-          err.response && err.response.data && err.response.data.error
-            ? err.response.data.error
+          err.response && err.response.data && err.response.data.errors
+            ? err.response.data.errors[0].message
             : err.message;
-        dispatch({ type: 'ERROR_GRAPH_DATA', payload: errStr });
+        dispatch({ type: 'ERROR_TRIP_METRICS', payload: "Error: " + errStr });
       });
   };
 }
 
-export function resetGraphData() {
+export function resetTripMetrics() {
   return function(dispatch) {
-    dispatch({ type: 'RESET_GRAPH_DATA', payload: null });
+    dispatch({ type: 'RECEIVED_TRIP_METRICS', payload: null });
   };
 }
 
 export function fetchRoutes(params) {
   return function(dispatch) {
-    const agencyId = params.agencyId;
+    const agencyId = Agencies[0].id;
     dispatch({ type: 'REQUEST_ROUTES' });
     axios
       .get(generateRoutesURL(agencyId))
@@ -181,65 +185,75 @@ export function fetchRoutes(params) {
   };
 }
 
-export function fetchPrecomputedWaitAndTripData(params) {
+/**
+ * Maps time range to a file path (used by Redux action).
+ */
+
+function getTimePath(timeStr) {
+  return timeStr
+    ? `_${timeStr
+        .replace(/:/g, '')
+        .replace('-', '_')
+        .replace(/\+/g, '%2B')}`
+    : '';
+}
+
+export function fetchPrecomputedStats(params) {
   return function(dispatch, getState) {
     const timeStr = params.startTime
       ? `${params.startTime}-${params.endTime}`
       : '';
     const dateStr = params.date;
-    const agencyId = params.agencyId;
 
-    const tripStatGroup = 'p10-median-p90'; // blocked; // 'median'
-    const tripTimesCache = getState().routes.tripTimesCache;
+    const timePath = getTimePath(timeStr);
 
-    const tripTimesCacheKey = `${agencyId}-${dateStr + timeStr}-${tripStatGroup}`;
+    const agency = Agencies[0];
 
-    const tripTimes = tripTimesCache[tripTimesCacheKey];
-
-    if (!tripTimes) {
-      const timePath = getTimePath(timeStr);
-      const statPath = tripStatGroup;
-
-      const s3Url = generateTripTimesURL(agencyId, dateStr, statPath, timePath);
-
-      dispatch({ type: 'REQUEST_PRECOMPUTED_TRIP_TIMES' });
+    const agencyId = agency.id;
+    const waitTimesUrl = generateWaitTimesURL(agencyId, dateStr, 'median-p90-plt20m', timePath);
+    if (getState().precomputedStats.waitTimesUrl !== waitTimesUrl)
+    {
+      dispatch({
+        type: 'REQUEST_PRECOMPUTED_WAIT_TIMES',
+        payload: {agencyId: agencyId, url: waitTimesUrl}
+      });
       axios
-        .get(s3Url)
+        .get(waitTimesUrl)
         .then(response => {
           dispatch({
-            type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
-            payload: [response.data, tripTimesCacheKey],
+            type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
+            payload: {agencyId: agencyId, url: waitTimesUrl, data: response.data},
           });
         })
         .catch(() => {
-          dispatch({ type: 'ERROR_PRECOMPUTED_TRIP_TIMES' });
+          dispatch({
+            type: 'ERROR_PRECOMPUTED_WAIT_TIMES',
+            payload: {agencyId: agencyId, url: waitTimesUrl}
+          });
           /* do something? */
         });
     }
 
-    const waitStatGroup = 'median-p90-plt20m';
-    const waitTimesCacheKey = `${agencyId}-${dateStr + timeStr}-${waitStatGroup}`;
-
-    const waitTimesCache = getState().routes.waitTimesCache;
-    const waitTimes = waitTimesCache[waitTimesCacheKey];
-
-    if (!waitTimes) {
-      const timePath = getTimePath(timeStr);
-      const statPath = waitStatGroup; // for now, nothing clever about selecting smaller files here //getStatPath(statGroup);
-
-      const s3Url = generateWaitTimesURL(agencyId, dateStr, statPath, timePath);
-
-      dispatch({ type: 'REQUEST_PRECOMPUTED_WAIT_TIMES' });
+    const tripTimesUrl = generateTripTimesURL(agencyId, dateStr, 'p10-median-p90', timePath);
+    if (getState().precomputedStats.tripTimesUrl !== tripTimesUrl)
+    {
+      dispatch({
+        type: 'REQUEST_PRECOMPUTED_TRIP_TIMES',
+        payload: {agencyId: agencyId, url: tripTimesUrl}
+      });
       axios
-        .get(s3Url)
+        .get(tripTimesUrl)
         .then(response => {
           dispatch({
-            type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
-            payload: [response.data, waitTimesCacheKey],
+            type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
+            payload: {agencyId: agencyId, url: tripTimesUrl, data: response.data},
           });
         })
         .catch(() => {
-          dispatch({ type: 'ERROR_PRECOMPUTED_WAIT_TIMES' });
+          dispatch({
+            type: 'ERROR_PRECOMPUTED_TRIP_TIMES',
+            payload: {agencyId: agencyId, url: tripTimesUrl}
+          });
           /* do something? */
         });
     }
@@ -253,25 +267,27 @@ export function fetchPrecomputedWaitAndTripData(params) {
  * @param params graphParams object
  */
 export function fetchArrivals(params) {
-  return function(dispatch) {
+  return function(dispatch, getState) {
     const dateStr = params.date;
     const agencyId = params.agencyId;
 
     const s3Url = generateArrivalsURL(agencyId, dateStr, params.routeId);
 
-    dispatch({ type: 'REQUEST_ARRIVALS' });
-    axios
-      .get(s3Url)
-      .then(response => {
-        dispatch({
-          type: 'RECEIVED_ARRIVALS',
-          payload: [response.data, dateStr, params.routeId],
+    if (getState().arrivals.url !== s3Url) {
+      dispatch({ type: 'REQUEST_ARRIVALS' });
+      axios
+        .get(s3Url)
+        .then(response => {
+          dispatch({
+            type: 'RECEIVED_ARRIVALS',
+            payload: {data: response.data, url: s3Url},
+          });
+        })
+        .catch(err => {
+          dispatch({ type: 'ERROR_ARRIVALS', payload: 'No data.' });
+          console.error(err);
         });
-      })
-      .catch(err => {
-        dispatch({ type: 'ERROR_ARRIVALS', payload: 'No data.' });
-        console.error(err);
-      });
+    }
   };
 }
 
@@ -280,27 +296,34 @@ export function fetchArrivals(params) {
  */
 export function resetArrivals() {
   return function(dispatch) {
-    dispatch({ type: 'ERROR_ARRIVALS', payload: null });
+    dispatch({ type: 'RECEIVED_ARRIVALS', payload: {url: null, data: null} });
   };
 }
 
 export function handleSpiderMapClick(stops, latLng) {
   return function(dispatch) {
-    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: [stops, latLng] });
+    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: {stops, latLng} });
   };
 }
 
 export function handleGraphParams(params) {
   return function(dispatch, getState) {
+    const oldParams = getState().graphParams;
     dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
-    const graphParams = getState().routes.graphParams;
+    const graphParams = getState().graphParams;
+
+    if (oldParams.date !== graphParams.date
+      || oldParams.routeId !== graphParams.routeId
+      || oldParams.agencyId !== graphParams.agencyId) {
+      dispatch(resetArrivals());
+    }
 
     // for debugging: console.log('hGP: ' + graphParams.routeId + ' dirid: ' + graphParams.directionId + " start: " + graphParams.startStopId + " end: " + graphParams.endStopId);
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
 
-    if (graphParams.date && graphParams.agencyId) {
-      dispatch(fetchPrecomputedWaitAndTripData(graphParams));
+    if (graphParams.date) {
+      dispatch(fetchPrecomputedStats(graphParams));
     }
 
     if (
@@ -310,11 +333,11 @@ export function handleGraphParams(params) {
       graphParams.startStopId &&
       graphParams.endStopId
     ) {
-      dispatch(fetchGraphData(graphParams));
+      dispatch(fetchTripMetrics(graphParams));
     } else {
       // when we don't have all params, clear graph data
 
-      dispatch(resetGraphData());
+      dispatch(resetTripMetrics());
     }
   };
 }

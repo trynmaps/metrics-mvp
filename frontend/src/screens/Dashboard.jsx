@@ -13,19 +13,15 @@ import DateTimePanel from '../components/DateTimePanel';
 import { fetchRoutes, handleGraphParams } from '../actions';
 
 function Dashboard(props) {
-  const { routes, myFetchRoutes, myHandleGraphParams } = props;
+  const { routes, fetchRoutes } = props;
 
-  // for now, only supports 1 agency at a time.
-  // todo: support multiple agencies on one map
   const agency = Agencies[0];
 
   useEffect(() => {
-    myHandleGraphParams({agencyId: agency.id}); // temporary hack, probably should remove once frontend can show routes from multiple agencies at once
-
     if (!routes) {
-      myFetchRoutes({agencyId: agency.id});
+      fetchRoutes();
     }
-  }, [routes, myFetchRoutes, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
+  }, [routes, fetchRoutes]); // like componentDidMount, this runs only on first render
 
   return (
     <div className="flex-screen">
@@ -52,12 +48,12 @@ function Dashboard(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
+  routes: state.routes.data,
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: props => dispatch(fetchRoutes(props)),
-  myHandleGraphParams: props => dispatch(handleGraphParams(props)),
+  fetchRoutes: props => dispatch(fetchRoutes(props)),
+  handleGraphParams: props => dispatch(handleGraphParams(props)),
 });
 
 export default connect(

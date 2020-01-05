@@ -41,7 +41,7 @@ function ControlPanel(props) {
 
     const path = new Path();
     path.buildPath(DIRECTION, directionId).commitPath();
-    return props.onGraphParams({
+    return props.handleGraphParams({
       directionId,
       startStopId: null,
       endStopId: null,
@@ -55,16 +55,10 @@ function ControlPanel(props) {
 
   const selectedRoute = getSelectedRouteInfo();
 
-  function getDirectionInfo(mySelectedRoute, directionId) {
-    return mySelectedRoute.directions.find(dir => dir.id === directionId);
-  }
-
   function onSelectFirstStop(event) {
     const stopId = event.target.value;
 
-    const directionId = props.graphParams.directionId;
     const secondStopId = props.graphParams.endStopId;
-    const mySelectedRoute = { ...getSelectedRouteInfo() };
 
     const path = new Path();
     path.buildPath(FROM_STOP, stopId);
@@ -75,10 +69,7 @@ function ControlPanel(props) {
 
     path.commitPath();
 
-    props.onGraphParams({
-      startStopId: stopId,
-      endStopId: secondStopId,
-    });
+    // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
   }
 
   function onSelectSecondStop(event) {
@@ -87,7 +78,7 @@ function ControlPanel(props) {
     const path = new Path();
     path.buildPath(TO_STOP, endStopId).commitPath();
 
-    props.onGraphParams({ endStopId });
+    // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
   }
 
   function setRouteId(event) {
@@ -111,7 +102,7 @@ function ControlPanel(props) {
       .buildPath(ROUTE, routeId)
       .buildPath(DIRECTION, directionId)
       .commitPath();
-    props.onGraphParams({
+    props.handleGraphParams({
       routeId,
       directionId,
       startStopId: null,
@@ -281,12 +272,12 @@ function ControlPanel(props) {
 
 // for this entire component, now using graphParams values in Redux instead of local state.
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
+  graphParams: state.graphParams,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    onGraphParams: params => dispatch(handleGraphParams(params)),
+    handleGraphParams: params => dispatch(handleGraphParams(params)),
   };
 };
 

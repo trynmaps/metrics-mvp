@@ -57,9 +57,9 @@ export default function InfoTripSummary(props) {
     setPlanningAnchorEl(null);
   }
 
-  const { graphData, graphParams, routes } = props;
-  const waitTimes = graphData ? graphData.waitTimes : null;
-  const tripTimes = graphData ? graphData.tripTimes : null;
+  const { tripMetrics, graphParams, routes } = props;
+  const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
+  const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
 
   const computeDistance = (myGraphParams, myRoutes) => {
     if (myGraphParams && myGraphParams.endStopId) {

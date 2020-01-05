@@ -278,12 +278,10 @@ class MapStops extends Component {
   };
 
   getSpeed = (routeInfo, direction, firstStopId, nextStopId) => {
-    const graphParams = this.props.graphParams;
     const routeId = routeInfo.id;
 
     const tripTimesFromStop = getTripTimesFromStop(
-      this.props.tripTimesCache,
-      graphParams,
+      this.props.precomputedStats.tripTimes,
       routeId,
       direction.id,
       firstStopId,
@@ -396,10 +394,9 @@ class MapStops extends Component {
       path.buildPath(TO_STOP, endStopId);
     }
     path.commitPath();
-    const { onGraphParams } = this.props;
     // for debugging
     // console.log("end state is: start: " + startStopId + " end: " + endStopId + " dir: " + directionId);
-    onGraphParams({
+    this.props.handleGraphParams({
       startStopId,
       endStopId,
       directionId,
@@ -503,13 +500,13 @@ class MapStops extends Component {
 }
 
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
-  tripTimesCache: state.routes.tripTimesCache,
+  graphParams: state.graphParams,
+  precomputedStats: state.precomputedStats,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    onGraphParams: params => dispatch(handleGraphParams(params)),
+    handleGraphParams: params => dispatch(handleGraphParams(params)),
   };
 };
 

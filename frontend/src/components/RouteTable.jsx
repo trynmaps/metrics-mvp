@@ -28,7 +28,7 @@ import {
   quartileContrastColor,
 } from '../helpers/routeCalculations';
 
-import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
+import { handleGraphParams, fetchPrecomputedStats } from '../actions';
 
 function desc(a, b, orderBy) {
   // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
@@ -103,7 +103,7 @@ const headRows = [
     label: 'Long Wait %',
   },
   { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed' },
-  { 
+  {
     id: 'variability',
     numeric: true,
     disablePadding: true,
@@ -181,7 +181,7 @@ const useToolbarStyles = makeStyles(theme => ({
 const EnhancedTableToolbar = props => {
   const classes = useToolbarStyles();
   const { numSelected } = props;
-  
+
   const [anchorEl, setAnchorEl] = useState(null);
 
   function handleClick(event) {
@@ -190,7 +190,7 @@ const EnhancedTableToolbar = props => {
 
   function handleClose() {
     setAnchorEl(null);
-  }  
+  }
 
   return (
     <Toolbar
@@ -242,14 +242,14 @@ const EnhancedTableToolbar = props => {
           randomly at a stop while the route is running.
           <p/>
           <b>Long wait probability</b> is the chance a rider has of a wait of twenty minutes
-          or longer after arriving randomly at a stop. 
+          or longer after arriving randomly at a stop.
           <p/>
           <b>Average speed</b> is the speed of the 50th percentile (typical) end to end trip, averaged
           for all directions.
           <p/>
           <b>Travel time variability</b> is the 90th percentile end to end travel time minus the 10th percentile
           travel time.  This measures how much extra travel time is needed for some trips.
-          
+
         </div>
       </Popover>
 
@@ -278,13 +278,13 @@ function RouteTable(props) {
   const dense = true;
   const theme = createMuiTheme();
 
-  const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
+  const { graphParams, fetchPrecomputedStats, precomputedStats } = props;
 
   useEffect(() => {
-    if (graphParams.agencyId && graphParams.date) {
-      myFetchPrecomputedWaitAndTripData(graphParams);
+    if (graphParams.date) {
+      fetchPrecomputedStats(graphParams);
     }
-  }, [graphParams, myFetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
+  }, [graphParams, fetchPrecomputedStats]); // like componentDidMount, this runs only on first render
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -293,19 +293,18 @@ function RouteTable(props) {
   }
 
   let routes = props.routes ? filterRoutes(props.routes) : [];
-  const spiderSelection = props.spiderSelection;
+  const spiderStops = props.spiderSelection.stops;
 
   // filter the route list down to the spider routes if needed
 
-  if (spiderSelection && spiderSelection.length > 0) {
-    const spiderRouteIds = spiderSelection.map(spider => spider.routeId);
+  if (spiderStops && spiderStops.length > 0) {
+    const spiderRouteIds = spiderStops.map(spider => spider.routeId);
     routes = routes.filter(myRoute => spiderRouteIds.includes(myRoute.id));
   }
 
-  const allWaits = getAllWaits(props.waitTimesCache, props.graphParams, routes);
+  const allWaits = getAllWaits(precomputedStats.waitTimes, routes);
   const allSpeeds = getAllSpeeds(
-    props.tripTimesCache,
-    props.graphParams,
+    precomputedStats.tripTimes,
     routes,
   );
   const allScores = getAllScores(routes, allWaits, allSpeeds);
@@ -414,9 +413,10 @@ function RouteTable(props) {
                       }}
                       label=
                         {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0) + ' min'}
-                    />                    
+                    />
 
                     </TableCell>
+
                     <TableCell
                       align="right"
                       style={{border:'none'}}
@@ -438,10 +438,9 @@ function RouteTable(props) {
                             {(row.longWait * 100).toFixed(0)}{'%'}
                           </Fragment>
                       }
-
-                    />                    
-                    
+                    />
                     </TableCell>
+
                     <TableCell
                       align="right"
                       padding="none"
@@ -456,10 +455,10 @@ function RouteTable(props) {
                           row.speedScore / 100,
                         ),
                       }}
-                      label= 
+                      label=
                         {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0) + ' mph'}
 
-                    />                    
+                    />
                     </TableCell>
                     <TableCell
                       align="right"
@@ -475,7 +474,7 @@ function RouteTable(props) {
                           row.travelVarianceScore / 100,
                         ),
                       }}
-                      label= 
+                      label=
                         {Number.isNaN(row.variability)
                           ? '--'
                           : <Fragment>
@@ -483,8 +482,8 @@ function RouteTable(props) {
                             </Fragment>
                         }
 
-                    />                    
-                    
+                    />
+
                     </TableCell>
                   </TableRow>
                 );
@@ -497,16 +496,14 @@ function RouteTable(props) {
 }
 
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
-  spiderSelection: state.routes.spiderSelection,
-  waitTimesCache: state.routes.waitTimesCache,
-  tripTimesCache: state.routes.tripTimesCache,
+  graphParams: state.graphParams,
+  spiderSelection: state.spiderSelection,
+  precomputedStats: state.precomputedStats,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    myFetchPrecomputedWaitAndTripData: params =>
-      dispatch(fetchPrecomputedWaitAndTripData(params)),
+    fetchPrecomputedStats: params => dispatch(fetchPrecomputedStats(params)),
     handleGraphParams: params => dispatch(handleGraphParams(params)),
   };
 };
