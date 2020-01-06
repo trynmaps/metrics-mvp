@@ -343,12 +343,12 @@ function Info(props) {
 
       {tripMetricsError ? (
         <Box p={2}>
-          <code>{tripMetricsError}</code>
+          <code>Error: {tripMetricsError}</code>
         </Box>
       ) : null}
       {tripMetricsLoading ? (
         <Box p={2}>
-          <code>Loading...</code>
+          Loading...
         </Box>
       ) : null}
     </div>

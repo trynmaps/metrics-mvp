@@ -155,7 +155,7 @@ export function fetchTripMetrics(params) {
           err.response && err.response.data && err.response.data.errors
             ? err.response.data.errors[0].message
             : err.message;
-        dispatch({ type: 'ERROR_TRIP_METRICS', payload: "Error: " + errStr });
+        dispatch({ type: 'ERROR_TRIP_METRICS', payload: errStr });
       });
   };
 }
