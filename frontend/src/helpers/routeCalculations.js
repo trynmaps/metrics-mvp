@@ -164,8 +164,7 @@ export function getEndToEndTripTime(
     lastStop = ignoreLast; // ignore stops after index specified by ignoreLast
   } else {
     // is a boolean
-    lastStop =
-      directionInfo.stops[directionInfo.stops.length - (ignoreLast ? 2 : 1)];
+    lastStop = directionInfo.stops[directionInfo.stops.length - (ignoreLast ? 2 : 1)];
   }
 
   // console.log('found ' + Object.keys(tripTimesForFirstStop).length + ' keys' );
@@ -193,7 +192,7 @@ export function getEndToEndTripTime(
     tripTime = 0;
 
     for (let i = 0; i < stopIds.length; i++) {
-      if (tripTimes[stopIds[i]] > tripTime) {
+      if (tripTimes[stopIds[i]] > tripTime && directionInfo.stop_geometry[stopIds[i]]) {
         tripTime = tripTimes[stopIds[i]];
         tripDistance = directionInfo.stop_geometry[stopIds[i]].distance - firstStopDistance;
       }

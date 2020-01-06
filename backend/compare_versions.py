@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('--route', nargs='*', help='Route ID(s)')
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--stop', help='Stop ID')
+    parser.add_argument('--dir', help='Direction ID')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
     parser.add_argument('--diff-min', help='Print arrivals where difference is larger than this (minutes)', type=float, default=5)
@@ -27,6 +28,7 @@ if __name__ == '__main__':
     other_version = args.other_version
 
     stop_id = args.stop
+    direction_id = args.dir
 
     agency_id = args.agency
     agency = config.get_agency(agency_id)
@@ -50,12 +52,20 @@ if __name__ == '__main__':
     print(f"Route: {route_ids}")
 
     base_df_arr = []
+    other_df_arr = []
+
+    base_trips = 0
+    other_trips = 0
 
     max_difference = 900 # seconds
 
     route_configs = {}
     for route_id in route_ids:
         route_configs[route_id] = agency.get_route_config(route_id)
+
+    if direction_id:
+        dir_info = route_configs[route_id].get_direction_info(direction_id) if direction_id else None
+        print(f"Direction: {dir_info.title if dir_info else '?'} ({direction_id})")
 
     if stop_id:
         stop_info = route_configs[route_id].get_stop_info(stop_id) if route_id else None
@@ -66,8 +76,11 @@ if __name__ == '__main__':
             base_history = arrival_history.get_by_date(agency_id, route_id, d, base_version)
             other_history = arrival_history.get_by_date(agency_id, route_id, d, other_version)
 
-            base_df = base_history.get_data_frame(stop_id=stop_id).sort_values('TIME', axis=0)
-            other_df = base_history.get_data_frame(stop_id=stop_id).sort_values('TIME', axis=0)
+            base_df = base_history.get_data_frame(stop_id=stop_id, direction_id=direction_id).sort_values('TIME', axis=0)
+            other_df = other_history.get_data_frame(stop_id=stop_id, direction_id=direction_id).sort_values('TIME', axis=0)
+
+            base_trips += len(np.unique(base_df['TRIP']))
+            other_trips += len(np.unique(other_df['TRIP']))
 
             def find_other_arrival_time(row):
                 other_time = other_history.find_closest_arrival_time(row.SID, row.VID, row.TIME)
@@ -82,7 +95,11 @@ if __name__ == '__main__':
 
             base_df_arr.append(base_df)
 
+            other_df_arr.append(other_df)
+
     df = pd.concat(base_df_arr)
+
+    other_df = pd.concat(other_df_arr)
 
     df['DATE_TIME'] = df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
 
@@ -104,6 +121,10 @@ if __name__ == '__main__':
     match_percent = len(abs_time_diff_min) / total_stops * 100
 
     print(f'total stops in {base_version} = {total_stops}')
+    print(f'total stops in {other_version} = {len(other_df)}')
+
+    print(f'total trips in {base_version} = {base_trips}')
+    print(f'total trips in {other_version} = {other_trips}')
 
     for diff in [0.25, 0.5, 1, 2, 5, 10, 15]:
         close_matches = len(abs_time_diff_min[abs_time_diff_min < diff])

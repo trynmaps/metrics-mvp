@@ -13,6 +13,8 @@ import Grid from '@material-ui/core/Grid';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { handleGraphParams } from '../actions';
+import { getDownstreamStopIds } from '../helpers/mapGeometry';
+import { Colors } from '../UIConstants';
 import {
   ROUTE_ID,
   DIRECTION_ID,
@@ -20,7 +22,6 @@ import {
   END_STOP_ID,
 } from '../routeConstants';
 import { commitPath } from '../routeUtil';
-import { Colors } from '../UIConstants';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -43,9 +44,15 @@ function ControlPanel(props) {
    */
   function setDirectionId(event) {
     const directionId = event.target.value;
+
     commitPath({
       [ROUTE_ID]: selectedRoute.id,
       [DIRECTION_ID]: directionId,
+    });
+    return props.onGraphParams({
+      directionId,
+      startStopId: null,
+      endStopId: null,
     });
   }
 
@@ -56,30 +63,8 @@ function ControlPanel(props) {
 
   const selectedRoute = getSelectedRouteInfo();
 
-  function getStopsInfoInGivenDirection(mySelectedRoute, directionId) {
+  function getDirectionInfo(mySelectedRoute, directionId) {
     return mySelectedRoute.directions.find(dir => dir.id === directionId);
-  }
-
-  function generateSecondStopList(mySelectedRoute, directionId, stopId) {
-    const secondStopInfo = getStopsInfoInGivenDirection(
-      mySelectedRoute,
-      directionId,
-    );
-
-    const stopsList = secondStopInfo.stops;
-    const secondStopListIndex = stopId ? stopsList.indexOf(stopId) : 0;
-
-    // loop routes start and stop at same stop
-    const isLoopRoute = stopsList[0] === stopsList[stopsList.length - 1];
-    const oneWaySecondStopsList = stopsList.slice(secondStopListIndex + 1);
-
-    if (!isLoopRoute) {
-      return oneWaySecondStopsList;
-    }
-    // loop routes display all subsequent stops up to origin stop
-    return oneWaySecondStopsList.concat(
-      stopsList.slice(1, secondStopListIndex),
-    );
   }
 
   function onSelectFirstStop(event) {
@@ -89,23 +74,20 @@ function ControlPanel(props) {
     const secondStopId = props.graphParams.endStopId;
     const mySelectedRoute = { ...getSelectedRouteInfo() };
 
-    secondStopList = generateSecondStopList(
-      mySelectedRoute,
-      directionId,
-      stopId,
-    );
-
     commitPath({
       [ROUTE_ID]: selectedRoute.id,
       [DIRECTION_ID]: directionId,
       [START_STOP_ID]: stopId,
       [END_STOP_ID]: secondStopId,
     });
+
+    props.onGraphParams({
+      startStopId: stopId,
+      endStopId: secondStopId,
+    });
   }
 
   function onSelectSecondStop(event) {
-    const directionId = props.graphParams.directionId;
-    const stopId = props.graphParams.startStopId;
     const endStopId = event.target.value;
 
     commitPath({
@@ -114,6 +96,8 @@ function ControlPanel(props) {
       [START_STOP_ID]: stopId,
       [END_STOP_ID]: endStopId,
     });
+
+    props.onGraphParams({ endStopId });
   }
 
   function setRouteId(event) {
@@ -135,6 +119,13 @@ function ControlPanel(props) {
     commitPath({
       [ROUTE_ID]: routeId,
       [DIRECTION_ID]: directionId,
+    });
+    
+    props.onGraphParams({
+      routeId,
+      directionId,
+      startStopId: null,
+      endStopId: null,
     });
   }
   /**
@@ -169,14 +160,16 @@ function ControlPanel(props) {
   }
 
   if (selectedDirection) {
-    secondStopList = generateSecondStopList(
+    secondStopList = getDownstreamStopIds(
       selectedRoute,
-      graphParams.directionId,
+      selectedDirection,
       graphParams.startStopId,
     );
   }
 
   const classes = useStyles();
+
+  const directionStops = selectedDirection ? selectedDirection.stops : [];
 
   return (
     <div className="ControlPanel">
@@ -202,13 +195,13 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.directionId || ''}
+                value={graphParams.directionId || ""}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >
                 {(selectedRoute.directions || []).map(direction => (
                   <MenuItem key={direction.id} value={direction.id}>
-                    {direction.title}
+                      {direction.title}
                   </MenuItem>
                 ))}
               </Select>
@@ -229,7 +222,7 @@ function ControlPanel(props) {
                     onOpen={() => setAllowHover(true)}
                     onClose={handleSelectClose}
                   >
-                    {(selectedDirection.stops || []).map(firstStopId => {
+                    {directionStops.map(firstStopId => {
                       const icon = document.querySelector(`.id${firstStopId}`);
                       const title = (
                         selectedRoute.stops[firstStopId] || {
