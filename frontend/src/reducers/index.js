@@ -147,7 +147,7 @@ export function precomputedStats(state = initialPrecomputedStats, action) {
         tripTimesUrl: action.payload.url,
         tripTimes: action.payload.data,
       }
-    case 'REQUEST_PRECOMPUTEDTRIP_TIMES':
+    case 'REQUEST_PRECOMPUTED_TRIP_TIMES':
       return {
         ...state,
         tripTimesUrl: action.payload.url,
