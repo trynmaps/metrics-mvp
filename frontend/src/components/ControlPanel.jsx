@@ -88,8 +88,10 @@ function ControlPanel(props) {
   }
 
   function onSelectSecondStop(event) {
+    const directionId = props.graphParams.directionId;
+    const stopId = props.graphParams.startStopId;
     const endStopId = event.target.value;
-
+    
     commitPath({
       [ROUTE_ID]: selectedRoute.id,
       [DIRECTION_ID]: directionId,
@@ -120,7 +122,7 @@ function ControlPanel(props) {
       [ROUTE_ID]: routeId,
       [DIRECTION_ID]: directionId,
     });
-    
+
     props.onGraphParams({
       routeId,
       directionId,
