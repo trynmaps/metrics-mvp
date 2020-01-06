@@ -139,14 +139,14 @@ export function fetchTripMetrics(params) {
           // assume there is at least one error, but only show the first one
           dispatch({
             type: 'ERROR_TRIP_METRICS',
-            payload: responseData.errors[0].message
+            error: responseData.errors[0].message
           });
         } else {
           const routeMetrics = responseData && responseData.data ? responseData.data.routeMetrics : null;
           const tripMetrics = routeMetrics ? routeMetrics.trip : null;
           dispatch({
             type: 'RECEIVED_TRIP_METRICS',
-            payload: tripMetrics,
+            data: tripMetrics
           });
         }
       })
@@ -155,14 +155,14 @@ export function fetchTripMetrics(params) {
           err.response && err.response.data && err.response.data.errors
             ? err.response.data.errors[0].message
             : err.message;
-        dispatch({ type: 'ERROR_TRIP_METRICS', payload: errStr });
+        dispatch({ type: 'ERROR_TRIP_METRICS', error: errStr });
       });
   };
 }
 
 export function resetTripMetrics() {
   return function(dispatch) {
-    dispatch({ type: 'RECEIVED_TRIP_METRICS', payload: null });
+    dispatch({ type: 'RECEIVED_TRIP_METRICS', data: null });
   };
 }
 
@@ -177,10 +177,10 @@ export function fetchRoutes(params) {
         routes.forEach(route => {
           route.agencyId = agencyId;
         });
-        dispatch({ type: 'RECEIVED_ROUTES', payload: routes });
+        dispatch({ type: 'RECEIVED_ROUTES', data: routes });
       })
       .catch(err => {
-        dispatch({ type: 'ERROR_ROUTES', payload: err });
+        dispatch({ type: 'ERROR_ROUTES', error: err });
       });
   };
 }
@@ -215,20 +215,24 @@ export function fetchPrecomputedStats(params) {
     {
       dispatch({
         type: 'REQUEST_PRECOMPUTED_WAIT_TIMES',
-        payload: {agencyId: agencyId, url: waitTimesUrl}
+        agencyId: agencyId,
+        url: waitTimesUrl
       });
       axios
         .get(waitTimesUrl)
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
-            payload: {agencyId: agencyId, url: waitTimesUrl, data: response.data},
+            agencyId,
+            url: waitTimesUrl,
+            data: response.data
           });
         })
         .catch(() => {
           dispatch({
             type: 'ERROR_PRECOMPUTED_WAIT_TIMES',
-            payload: {agencyId: agencyId, url: waitTimesUrl}
+            agencyId,
+            url: waitTimesUrl
           });
           /* do something? */
         });
@@ -239,20 +243,24 @@ export function fetchPrecomputedStats(params) {
     {
       dispatch({
         type: 'REQUEST_PRECOMPUTED_TRIP_TIMES',
-        payload: {agencyId: agencyId, url: tripTimesUrl}
+        agencyId,
+        url: tripTimesUrl
       });
       axios
         .get(tripTimesUrl)
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
-            payload: {agencyId: agencyId, url: tripTimesUrl, data: response.data},
+            agencyId,
+            url: tripTimesUrl,
+            data: response.data
           });
         })
         .catch(() => {
           dispatch({
             type: 'ERROR_PRECOMPUTED_TRIP_TIMES',
-            payload: {agencyId: agencyId, url: tripTimesUrl}
+            agencyId: agencyId,
+            url: tripTimesUrl
           });
           /* do something? */
         });
@@ -280,11 +288,12 @@ export function fetchArrivals(params) {
         .then(response => {
           dispatch({
             type: 'RECEIVED_ARRIVALS',
-            payload: {data: response.data, url: s3Url},
+            data: response.data,
+            url: s3Url,
           });
         })
         .catch(err => {
-          dispatch({ type: 'ERROR_ARRIVALS', payload: 'No data.' });
+          dispatch({ type: 'ERROR_ARRIVALS', error: 'No data.' });
           console.error(err);
         });
     }
@@ -296,20 +305,20 @@ export function fetchArrivals(params) {
  */
 export function resetArrivals() {
   return function(dispatch) {
-    dispatch({ type: 'RECEIVED_ARRIVALS', payload: {url: null, data: null} });
+    dispatch({ type: 'RECEIVED_ARRIVALS', url: null, data: null });
   };
 }
 
 export function handleSpiderMapClick(stops, latLng) {
   return function(dispatch) {
-    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', payload: {stops, latLng} });
+    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', stops, latLng });
   };
 }
 
 export function handleGraphParams(params) {
   return function(dispatch, getState) {
     const oldParams = getState().graphParams;
-    dispatch({ type: 'RECEIVED_GRAPH_PARAMS', payload: params });
+    dispatch({ type: 'RECEIVED_GRAPH_PARAMS', params });
     const graphParams = getState().graphParams;
 
     if (oldParams.date !== graphParams.date

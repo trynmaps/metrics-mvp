@@ -24,7 +24,7 @@ export const initialGraphParams = {
 export function graphParams(state = initialGraphParams, action) {
   switch (action.type) {
     case 'RECEIVED_GRAPH_PARAMS':
-      return {...state, ...action.payload};
+      return {...state, ...action.params};
     default:
       return state;
   }
@@ -37,7 +37,7 @@ const initialRoutes = {
 export function routes(state = initialRoutes, action) {
   switch (action.type) {
     case 'RECEIVED_ROUTES':
-      return { ...state, data: action.payload };
+      return { ...state, data: action.data };
     case 'ERROR_ROUTES':
       return state;
     default:
@@ -62,12 +62,12 @@ export function tripMetrics(state = initialTripMetrics, action) {
       return {
         ...state,
         error: null,
-        data: action.payload,
+        data: action.data,
       };
     case 'ERROR_TRIP_METRICS':
       return {
         ...state,
-        error: action.payload,
+        error: action.error,
         data: null
       };
     default:
@@ -87,15 +87,15 @@ export function arrivals(state = initialArrivals, action) {
     case 'RECEIVED_ARRIVALS':
       return {
         ...state,
-        data: action.payload.data,
-        url: action.payload.url,
+        data: action.data,
+        url: action.url,
         error: null,
       };
     case 'ERROR_ARRIVALS':
       return {
         ...state,
         data: null,
-        error: action.payload,
+        error: action.error,
       };
     default:
       return state;
@@ -112,8 +112,8 @@ export function spiderSelection(state = initialSpiderSelection, action) {
     case 'RECEIVED_SPIDER_MAP_CLICK':
       return {
         ...state,
-        stops: action.payload.stops,
-        latLng: action.payload.latLng,
+        stops: action.stops,
+        latLng: action.latLng,
       };
     default:
       return state;
@@ -132,25 +132,25 @@ export function precomputedStats(state = initialPrecomputedStats, action) {
     case 'RECEIVED_PRECOMPUTED_WAIT_TIMES':
       return {
         ...state,
-        waitTimesUrl: action.payload.url,
-        waitTimes: action.payload.data,
+        waitTimesUrl: action.url,
+        waitTimes: action.data,
       }
     case 'REQUEST_PRECOMPUTED_WAIT_TIMES':
       return {
         ...state,
-        waitTimesUrl: action.payload.url,
+        waitTimesUrl: action.url,
         waitTimes: null,
       };
     case 'RECEIVED_PRECOMPUTED_TRIP_TIMES':
       return {
         ...state,
-        tripTimesUrl: action.payload.url,
-        tripTimes: action.payload.data,
+        tripTimesUrl: action.url,
+        tripTimes: action.data,
       }
     case 'REQUEST_PRECOMPUTED_TRIP_TIMES':
       return {
         ...state,
-        tripTimesUrl: action.payload.url,
+        tripTimesUrl: action.url,
         tripTimes: null,
       };
     default:
