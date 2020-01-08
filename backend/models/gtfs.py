@@ -876,8 +876,10 @@ class GtfsScraper:
             title = f'{short_name}-{long_name}'
         elif isinstance(short_name, str):
             title = short_name
-        else:
+        elif isinstance(long_name, str):
             title = long_name
+        else:
+            title = gtfs_route_id
 
         type = int(route.route_type) if hasattr(route, 'route_type') else None
         url = route.route_url if hasattr(route, 'route_url') and isinstance(route.route_url, str) else None
