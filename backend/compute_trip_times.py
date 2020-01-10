@@ -78,6 +78,8 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
     for dir_info in route_config.get_direction_infos():
         dir_id = dir_info.id
 
+        is_loop = dir_info.is_loop()
+
         for interval_index, _ in enumerate(timestamp_intervals):
             for stat_id in stat_ids:
                 all_trip_time_stats[interval_index][stat_id][route_id][dir_id] = {}
@@ -85,7 +87,8 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
         stop_ids = dir_info.get_stop_ids()
         num_stops = len(stop_ids)
 
-        trip_values_by_stop = {}
+        departure_trip_values_by_stop = {}
+        arrival_trip_values_by_stop = {}
         departure_time_values_by_stop = {}
         arrival_time_values_by_stop = {}
 
@@ -93,16 +96,32 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
             stop_df = route_df[(sid_values == stop_id) & (did_values == dir_id)]
 
             trip_values = stop_df['TRIP'].values
+            departure_time_values = stop_df['DEPARTURE_TIME'].values
+            arrival_time_values = stop_df['TIME'].values
 
-            trip_values_by_stop[stop_id] = trip_values
-            departure_time_values_by_stop[stop_id] = stop_df['DEPARTURE_TIME'].values
-            arrival_time_values_by_stop[stop_id] = stop_df['TIME'].values
+            if is_loop:
+                # for loop routes, pre-sort arrays by departure/arrival times for better performance.
+                sorted_departure_time_values, sorted_departure_trip_values = trip_times.sort_parallel(departure_time_values, trip_values)
+                sorted_arrival_time_values, sorted_arrival_trip_values = trip_times.sort_parallel(arrival_time_values, trip_values)
+            else:
+                # for non-loop routes, arrays are already sorted by trip ID.
+                sorted_departure_trip_values = trip_values
+                sorted_arrival_trip_values = trip_values
+                sorted_departure_time_values = departure_time_values
+                sorted_arrival_time_values = arrival_time_values
 
-        for i in range(0, num_stops-1):
+            departure_trip_values_by_stop[stop_id] = sorted_departure_trip_values
+            departure_time_values_by_stop[stop_id] = sorted_departure_time_values
+            arrival_trip_values_by_stop[stop_id] = sorted_arrival_trip_values
+            arrival_time_values_by_stop[stop_id] = sorted_arrival_time_values
+
+        i_end_index = num_stops if is_loop else (num_stops - 1)
+
+        for i in range(0, i_end_index):
 
             s1 = stop_ids[i]
 
-            s1_trip_values = trip_values_by_stop[s1]
+            s1_trip_values = departure_trip_values_by_stop[s1]
 
             if len(s1_trip_values) == 0:
                 continue
@@ -119,15 +138,18 @@ def add_trip_time_stats_for_route(all_trip_time_stats, timestamp_intervals, stat
                 for stat_id in stat_ids:
                     all_trip_time_stats[interval_index][stat_id][route_id][dir_id][s1] = {}
 
-            for j in range(i + 1, num_stops):
+            j_start_index = 0 if is_loop else i + 1
+
+            for j in range(j_start_index, num_stops):
                 s2 = stop_ids[j]
 
                 for interval_index, _ in enumerate(timestamp_intervals):
                     trip_min = trip_times.get_completed_trip_times(
                         s1_trip_values_by_interval[interval_index],
                         s1_departure_time_values_by_interval[interval_index],
-                        trip_values_by_stop[s2],
+                        arrival_trip_values_by_stop[s2],
                         arrival_time_values_by_stop[s2],
+                        is_loop=is_loop,
                         assume_sorted=True
                     )
 

@@ -7,13 +7,14 @@ import pytz
 import numpy as np
 import pandas as pd
 
-from models import config, arrival_history, util, metrics, wait_times
+from models import config, arrival_history, util, metrics, wait_times, timetables
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Compute wait times (in minutes) at a given stop in a given direction on a route, for one or more dates, optionally at particular times of day')
     parser.add_argument('--agency', required=True, help='Agency id')
     parser.add_argument('--route', required = True, help = 'Route id')
     parser.add_argument('--stop', required = True, help = 'Stop id')
+    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='show scheduled times')
 
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
@@ -25,6 +26,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     agency = config.get_agency(args.agency)
+
+    show_scheduled = args.scheduled
 
     route_id = args.route
     date_str = args.date
@@ -50,24 +53,20 @@ if __name__ == '__main__':
     else:
         raise Exception('missing date, start-date, or end-date')
 
-    waits = []
-
     # print results for each direction
     for stop_dir in stop_dirs:
         dir_info = route_config.get_direction_info(stop_dir)
 
-        averages = []
-        minimums = []
-        medians = []
-        p10s = []
-        p90s = []
-        maximums = []
-
+        interval_stats_arr = []
         first_bus_date_times = []
         last_bus_date_times = []
 
         for d in dates:
-            hist = arrival_history.get_by_date(agency.id, route_id, d)
+            if show_scheduled:
+                hist = timetables.get_by_date(agency.id, route_id, d)
+            else:
+                hist = arrival_history.get_by_date(agency.id, route_id, d)
+
             arrivals = hist.get_data_frame(stop_id = stop, direction_id = stop_dir)
 
             start_time = util.get_timestamp_or_none(d, start_time_str, tz)
@@ -81,17 +80,8 @@ if __name__ == '__main__':
             last_bus_date_times.append(datetime.fromtimestamp(departure_times[-1], tz))
 
             stats = wait_times.get_stats(departure_times, start_time, end_time)
-            average = stats.get_average()
-            if average is not None:
-                averages.append(average)
 
-            quantiles = stats.get_quantiles([0,0.1,0.5,0.9,1])
-            if quantiles is not None:
-                minimums.append(quantiles[0])
-                p10s.append(quantiles[1])
-                medians.append(quantiles[2])
-                p90s.append(quantiles[3])
-                maximums.append(quantiles[4])
+            interval_stats_arr.append(stats)
 
         print(f"Date: {', '.join([str(date) for date in dates])}")
         print(f"Local Time Range: [{start_time_str}, {end_time_str}]")
@@ -99,18 +89,17 @@ if __name__ == '__main__':
         print(f"Stop: {stop} ({stop_info.title})")
         print(f"Direction: {stop_dir} ({dir_info.title})")
 
-        if len(averages) > 0:
-            print(f'first bus departure = {" ".join([str(dt) for dt in first_bus_date_times])}')
-            print(f'last bus departure  = {" ".join([str(dt) for dt in last_bus_date_times])}')
+        if len(interval_stats_arr) == 1:
+            stats = interval_stats_arr[0]
+        else:
+            stats = wait_times.combine_stats(interval_stats_arr)
 
-            # approximate average over multiple days by taking average of averages
-            print(f'average wait time   = {round(np.average(averages),1)} min')
+        print(f'first bus departure = {" ".join([str(dt) for dt in first_bus_date_times])}')
+        print(f'last bus departure  = {" ".join([str(dt) for dt in last_bus_date_times])}')
 
-            print(f'shortest wait time  = {round(np.min(minimums),1)} min')
-
-            # approximate percentiles over multiple days by taking median of each percentile
-            print(f'10% wait time       = {round(np.median(p10s),1)} min')
-            print(f'median wait time    = {round(np.median(medians),1)} min')
-            print(f'90% wait time       = {round(np.median(p90s),1)} min')
-
-            print(f'longest wait time   = {round(np.max(maximums),1)} min')
+        print(f'average wait time   = {round(stats.get_average(),1)} min')
+        print(f'shortest wait time  = {round(stats.get_quantile(0),1)} min')
+        print(f'10% wait time       = {round(stats.get_quantile(0.1),1)} min')
+        print(f'median wait time    = {round(stats.get_quantile(0.5),1)} min')
+        print(f'90% wait time       = {round(stats.get_quantile(0.9),1)} min')
+        print(f'longest wait time   = {round(stats.get_quantile(1),1)} min')

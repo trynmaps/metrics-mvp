@@ -66,7 +66,7 @@ function TravelTimeChart(props) {
         props.routes,
         routeId,
         directionId,
-      );
+      ).tripTime;
 
       /* this is the end-to-end speed in the selected direction, not currently used
     if (dist <= 0 || Number.isNaN(tripTime)) { speed = "?"; } // something wrong with the data here
@@ -86,49 +86,43 @@ function TravelTimeChart(props) {
 
   return directionId ? (
     <Fragment>
-          <Typography variant="h5">Travel time along route</Typography>
-          Full travel time: {tripTimeForDirection} minutes &nbsp;&nbsp; Stops:{' '}
-          {tripData[tripData.length - 1]
-            ? tripData[tripData.length - 1].stopIndex + 1
-            : '?'}
-          <br />
-          {/* set the y domain to start at zero and end at highest value (which is not always
+      <Typography variant="h5">Travel time along route</Typography>
+      Full travel time: {tripTimeForDirection} minutes &nbsp;&nbsp; Stops:{' '}
+      {tripData[tripData.length - 1]
+        ? tripData[tripData.length - 1].stopIndex + 1
+        : '?'}
+      <br />
+      {/* set the y domain to start at zero and end at highest value (which is not always
          the end to end travel time due to spikes in the data) */}
-          <XYPlot
-            height={300}
-            width={400}
-            xDomain={[
-              0,
-              tripData.reduce(
-                (max, coord) => (coord.x > max ? coord.x : max),
-                0,
-              ),
-            ]}
-            yDomain={[
-              0,
-              tripData.reduce(
-                (max, coord) => (coord.y > max ? coord.y : max),
-                0,
-              ),
-            ]}
-            onMouseLeave={onMouseLeave}
-          >
-            <HorizontalGridLines />
-            <VerticalGridLines />
-            <XAxis tickPadding={4} />
-            <YAxis hideLine tickPadding={4} />
+      <XYPlot
+        height={300}
+        width={400}
+        xDomain={[
+          0,
+          tripData.reduce((max, coord) => (coord.x > max ? coord.x : max), 0),
+        ]}
+        yDomain={[
+          0,
+          tripData.reduce((max, coord) => (coord.y > max ? coord.y : max), 0),
+        ]}
+        onMouseLeave={onMouseLeave}
+      >
+        <HorizontalGridLines />
+        <VerticalGridLines />
+        <XAxis tickPadding={4} />
+        <YAxis hideLine tickPadding={4} />
 
-            <LineMarkSeries
-              data={tripData}
-              stroke="#aa82c5"
-              color="aa82c5"
-              style={{
-                strokeWidth: '3px',
-              }}
-              size="1"
-              onNearestX={onNearestTripX}
-            />
-            {/* <LineSeries data={ scheduleData }
+        <LineMarkSeries
+          data={tripData}
+          stroke="#aa82c5"
+          color="aa82c5"
+          style={{
+            strokeWidth: '3px',
+          }}
+          size="1"
+          onNearestX={onNearestTripX}
+        />
+        {/* <LineSeries data={ scheduleData }
               stroke="#a4a6a9"
               strokeWidth="4"
               style={{
@@ -136,50 +130,52 @@ function TravelTimeChart(props) {
               }}
             /> */}
 
-            <ChartLabel
-              text="Minutes"
-              className="alt-y-label"
-              includeMargin
-              xPercent={0.02}
-              yPercent={0.2}
-              style={{
-                transform: 'rotate(-90)',
-                textAnchor: 'end',
-              }}
-            />
+        <ChartLabel
+          text="Minutes"
+          className="alt-y-label"
+          includeMargin
+          xPercent={0.02}
+          yPercent={0.2}
+          style={{
+            transform: 'rotate(-90)',
+            textAnchor: 'end',
+          }}
+        />
 
-            <ChartLabel
-              text="Distance Along Route (miles)"
-              className="alt-x-label"
-              includeMargin
-              xPercent={0.7}
-              yPercent={0.86}
-              style={{
-                textAnchor: 'end',
-              }}
-            />
+        <ChartLabel
+          text="Distance Along Route (miles)"
+          className="alt-x-label"
+          includeMargin
+          xPercent={0.7}
+          yPercent={0.86}
+          style={{
+            textAnchor: 'end',
+          }}
+        />
 
-            {crosshairValues.length > 0 && (
-              <Crosshair
-                values={crosshairValues}
-                style={{ line: { background: 'none' } }}
-              >
-                <div className="rv-crosshair__inner__content">
-                  <p>{Math.round(crosshairValues[0].y)} min</p>
-                  {/* <p>Scheduled: { Math.round(crosshairValues[1].y)} min</p> */}
-                  <p>{crosshairValues[0].title}</p>
-                  <p>(Stop #{crosshairValues[0].stopIndex + 1})</p>
-                </div>
-              </Crosshair>
-            )}
-          </XYPlot>
-          <DiscreteColorLegend
-            orientation="horizontal"
-            width={300}
-            items={legendItems}
-          />
+        {crosshairValues.length > 0 && (
+          <Crosshair
+            values={crosshairValues}
+            style={{ line: { background: 'none' } }}
+          >
+            <div className="rv-crosshair__inner__content">
+              <p>{Math.round(crosshairValues[0].y)} min</p>
+              {/* <p>Scheduled: { Math.round(crosshairValues[1].y)} min</p> */}
+              <p>{crosshairValues[0].title}</p>
+              <p>(Stop #{crosshairValues[0].stopIndex + 1})</p>
+            </div>
+          </Crosshair>
+        )}
+      </XYPlot>
+      <DiscreteColorLegend
+        orientation="horizontal"
+        width={300}
+        items={legendItems}
+      />
     </Fragment>
-  ) : <Fragment>Select a direction to see the travel time chart.</Fragment>;
+  ) : (
+    <Fragment>Select a direction to see the travel time chart.</Fragment>
+  );
 }
 
 const mapStateToProps = state => ({

@@ -16,16 +16,21 @@ import * as d3 from 'd3';
 import { Snackbar } from '@material-ui/core';
 import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import {
+  getDownstreamStopIds,
+  getTripPoints,
+  isInServiceArea,
+} from '../helpers/mapGeometry';
+import {
   getAllWaits,
   filterRoutes,
   milesBetween,
 } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
-import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
+
 import MapShield from './MapShield';
 
-//import { STARTING_COORDINATES } from '../locationConstants1';
+// import { STARTING_COORDINATES } from '../locationConstants1';
 // const ZOOM = 13;
 
 const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
@@ -238,7 +243,7 @@ class MapSpider extends Component {
 
     return (
       <CircleMarker
-        key={`startMarker-${startMarker.routeId}-terminal-${lastStop.stopId}`}
+        key={`startMarker-${startMarker.routeId}-terminal-${lastStop.id}`}
         center={terminalPosition}
         radius={3.0 + waitScaled / 2.0}
         fillColor={routeColor}
@@ -260,12 +265,12 @@ class MapSpider extends Component {
 
     return (
       <Polyline
-        key={`poly-${startMarker.routeId}-${downstreamStops[i].stopId}`}
+        key={`poly-${startMarker.routeId}-${downstreamStops[i].id}`}
         positions={getTripPoints(
           startMarker.routeInfo,
           startMarker.direction,
-          downstreamStops[i].stopId,
-          downstreamStops[i + 1].stopId,
+          downstreamStops[i].id,
+          downstreamStops[i + 1].id,
         )}
         color={routeColor}
         opacity={0.5}
@@ -294,7 +299,7 @@ class MapSpider extends Component {
             .buildPath(ROUTE, startMarker.routeId)
             .buildPath(DIRECTION, startMarker.direction.id)
             .buildPath(FROM_STOP, startMarker.stopId)
-            .buildPath(TO_STOP, downstreamStops[i + 1].stopId)
+            .buildPath(TO_STOP, downstreamStops[i + 1].id)
             .commitPath();
         }}
       >
@@ -389,25 +394,19 @@ class MapSpider extends Component {
   /**
    * Append info about the downstream stops to the given stop object for plotting on the map.
    */
-  addDownstreamStops(myStop) {
-    const targetStop = myStop;
+  addDownstreamStops(targetStop) {
+    const routeInfo = targetStop.routeInfo;
 
-    const selectedRoute = this.props.routes.find(
-      route => route.id === targetStop.routeId,
+    const stopIds = getDownstreamStopIds(
+      routeInfo,
+      targetStop.direction,
+      targetStop.stopId,
     );
+    stopIds.unshift(targetStop.stopId);
 
-    const secondStopInfo = targetStop.direction;
-    const secondStopListIndex = secondStopInfo.stops.indexOf(targetStop.stopId);
-
-    const secondStopList = secondStopInfo.stops.slice(
-      secondStopListIndex /* + 1  include starting stop */,
-    );
-
-    const downstreamStops = secondStopList.map(stopId =>
-      Object.assign(selectedRoute.stops[stopId], { stopId }),
-    );
-
-    targetStop.downstreamStops = downstreamStops;
+    targetStop.downstreamStops = stopIds.map(stopId => {
+      return routeInfo.stops[stopId];
+    });
   }
 
   /**

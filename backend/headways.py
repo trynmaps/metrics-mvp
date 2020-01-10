@@ -2,7 +2,7 @@ import argparse
 import json
 import sys
 from datetime import datetime, timedelta
-from models import config, arrival_history, util, metrics
+from models import config, arrival_history, util, metrics, timetables
 import pytz
 import time
 import numpy as np
@@ -10,14 +10,14 @@ import pandas as pd
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Compute headways (in minutes) at stop s1 for one or more routes, on one or more dates, optionally at particular times of day'
+        description='Compute headways (in minutes) at stop s1 for a route, on one or more dates, optionally at particular times of day'
     )
     parser.add_argument('--agency', required=True, help='Agency id')
-    parser.add_argument('--route', nargs='+', required=True, help='Route id(s)')
+    parser.add_argument('--route', required=True, help='Route id')
     parser.add_argument('--stop', required=True, help='Stop id')
-
+    parser.add_argument("--dir", help = "Direction ID")
     parser.add_argument('--version')
-
+    parser.add_argument("--comparison", dest = "comparison", action = "store_true", help = "option to compare timetables to actual data - true or false")
     parser.add_argument('--date', help='Date (yyyy-mm-dd)')
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
@@ -25,15 +25,19 @@ if __name__ == '__main__':
     parser.add_argument('--start-time', help='hh:mm of first local time to include each day')
     parser.add_argument('--end-time', help='hh:mm of first local time to exclude each day')
 
+    parser.set_defaults(comparison = False)
+
     args = parser.parse_args()
 
-    agency = config.get_agency(args.agency)
+    agency_id = args.agency
+
+    agency = config.get_agency(agency_id)
 
     version = args.version
     if version is None:
         version = arrival_history.DefaultVersion
 
-    route_ids = args.route
+    route_id = args.route
     date_str = args.date
     stop_id = args.stop
 
@@ -43,18 +47,22 @@ if __name__ == '__main__':
     dir_infos = []
     route_configs = []
 
-    for route_id in route_ids:
-        route_config = agency.get_route_config(route_id)
+    direction_id = args.dir
 
-        stop_info = route_config.get_stop_info(stop_id)
-        if stop_info is None:
-            raise Exception(f"Stop ID {stop_id} is not valid for route {route_id}")
-        route_dirs = route_config.get_directions_for_stop(stop_id)
-        if len(route_dirs) == 0:
-            raise Exception(f"Stop ID does not have any directions for route {route_id}")
+    route_config = agency.get_route_config(route_id)
 
-        route_configs.append(route_config)
+    stop_info = route_config.get_stop_info(stop_id)
+    if stop_info is None:
+        raise Exception(f"Stop ID {stop_id} is not valid for route {route_id}")
+
+    route_dirs = route_config.get_directions_for_stop(stop_id)
+    if len(route_dirs) == 0:
+        raise Exception(f"Stop ID does not have any directions for route {route_id}")
+
+    if direction_id is None:
         dir_infos.extend([route_config.get_direction_info(dir) for dir in route_dirs])
+    else:
+        dir_infos.append(route_config.get_direction_info(direction_id))
 
     date_strs = []
     tz = agency.tz
@@ -68,7 +76,7 @@ if __name__ == '__main__':
 
     print(f"Date: {', '.join([str(date) for date in dates])}")
     print(f"Time of Day: [{start_time_str}, {end_time_str})")
-    print(f"Route: {', '.join(route_ids)} ({', '.join([route_config.title for route_config in route_configs])})")
+    print(f"Route: {route_id} ({route_config.title})")
     print(f"Stop: {stop_id} ({stop_info.title})")
     print(f"Direction: {', '.join([dir_info.id for dir_info in dir_infos])} " +
         f"({', '.join([dir_info.title for dir_info in dir_infos])})")
@@ -83,29 +91,29 @@ if __name__ == '__main__':
     for d in dates:
         date_str = str(d)
 
-        route_dfs = []
-        for route_id in route_ids:
-            t1 = time.time()*1000
+        t1 = time.time()*1000
 
-            history = arrival_history.get_by_date(agency.id, route_id, d, version)
+        history = arrival_history.get_by_date(agency.id, route_id, d, version)
 
-            t2 = time.time()*1000
+        t2 = time.time()*1000
 
-            route_df = history.get_data_frame(stop_id,
-                start_time=util.get_timestamp_or_none(d, start_time_str, tz),
-                end_time=util.get_timestamp_or_none(d, end_time_str, tz)
-            )
+        df = history.get_data_frame(stop_id=stop_id, direction_id=direction_id,
+            start_time=util.get_timestamp_or_none(d, start_time_str, tz),
+            end_time=util.get_timestamp_or_none(d, end_time_str, tz)
+        )
 
-            t3 = time.time()*1000
+        t3 = time.time()*1000
 
-            if not route_df.empty:
-                route_df['ROUTE'] = route_id
-                route_dfs.append(route_df)
+        if args.comparison:
+            timetable = timetables.get_by_date(agency_id, route_id, d)
+            timetable_df = timetable.get_data_frame(stop_id=stop_id, direction_id=direction_id)
 
-            get_history_ms += t2 - t1
-            get_data_frame_ms += t3 - t2
+            comparison_df = timetables.match_actual_times_to_schedule(df['TIME'].values, timetable_df['TIME'].values)
 
-        df = pd.concat(route_dfs)
+            df = pd.concat([df, comparison_df], axis=1)
+
+        get_history_ms += t2 - t1
+        get_data_frame_ms += t3 - t2
 
         if df.empty:
             print(f"no arrival times found for stop {stop_id} on {date_str}")
@@ -126,7 +134,17 @@ if __name__ == '__main__':
             dist_str = f'{row.DIST}'.rjust(3)
             dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
             headway_str = f'{round(row.headway_min, 1)}'.rjust(4)
-            print(f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  {dist_str}m  {headway_str} min   ({row.ROUTE} - {dir_info.title})")
+
+            if args.comparison:
+                closest_scheduled_time = datetime.fromtimestamp(row.closest_scheduled_time, tz).time() if not np.isnan(row.closest_scheduled_time) else None
+
+                headway_diff = row.headway_min - row.closest_scheduled_headway if not np.isnan(row.closest_scheduled_headway) else None
+
+                comparison_info = f'scheduled: {closest_scheduled_time} ({util.render_delta(row.closest_scheduled_delta/60)} min) @ {round(row.closest_scheduled_headway, 1)} min headway ({util.render_delta(headway_diff).rjust(5)} min)'
+            else:
+                comparison_info = ''
+
+            print(f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  dir:{did}  {dist_str}m  {headway_str} min   {comparison_info}")
 
         t6 = time.time()*1000
 
@@ -141,7 +159,7 @@ if __name__ == '__main__':
 
     t8 = time.time()*1000
 
-    headways = pd.concat(headways_arr)
+    headways = pd.concat(headways_arr) if headways_arr else None
 
     t9 = time.time()*1000
 
@@ -150,9 +168,9 @@ if __name__ == '__main__':
     print(f"get data frame      = {round(get_data_frame_ms)} ms")
     print(f"compute headway     = {round(compute_headway_ms)} ms")
     print(f"remove null         = {round(remove_null_ms)} ms")
-    print(f'** headway stats **')
-    print(f'count              = {len((headways))}')
-    if len(headways) > 0:
+    if headways is not None and len(headways) > 0:
+        print(f'** headway stats **')
+        print(f'count              = {len((headways))}')
         print(f'average headway    = {round(np.average(headways),1)} min')
         print(f'standard deviation = {round(np.std(headways),1)} min')
         print(f'shortest headway   = {round(np.min(headways),1)} min')

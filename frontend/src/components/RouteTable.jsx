@@ -1,7 +1,8 @@
 import React, { useEffect, useState, Fragment } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
-import { lighten, makeStyles } from '@material-ui/core/styles';
+import { lighten, makeStyles, createMuiTheme } from '@material-ui/core/styles';
+import Chip from '@material-ui/core/Chip';
 import Popover from '@material-ui/core/Popover';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -13,7 +14,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
-import { createMuiTheme } from '@material-ui/core/styles';
+
 import FilterListIcon from '@material-ui/icons/FilterList';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import { connect } from 'react-redux';
@@ -25,7 +26,6 @@ import {
   getAllScores,
   quartileBackgroundColor,
   quartileContrastColor,
-  quartileTextColor,
 } from '../helpers/routeCalculations';
 
 import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
@@ -93,21 +93,21 @@ function getSorting(order, orderBy) {
 }
 
 const headRows = [
-  { id: 'title', numeric: false, disablePadding: false, label: 'Name' },
-  { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
-  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait (min)' },
+  { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
+  { id: 'totalScore', numeric: true, disablePadding: true, label: 'Score' },
+  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait' },
   {
     id: 'longWait',
     numeric: true,
     disablePadding: true,
     label: 'Long Wait %',
   },
-  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed (mph)' },
+  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed' },
   {
     id: 'variability',
     numeric: true,
     disablePadding: true,
-    label: 'Travel Time Variability (min)',
+    label: 'Travel Time Variability',
   },
 ];
 
@@ -125,6 +125,7 @@ function EnhancedTableHead(props) {
             key={row.id}
             align={row.numeric ? 'right' : 'left'}
             padding={row.disablePadding ? 'none' : 'default'}
+            style={{ paddingRight: 12 }}
             sortDirection={orderBy === row.id ? order : false}
           >
             <TableSortLabel
@@ -180,7 +181,7 @@ const useToolbarStyles = makeStyles(theme => ({
 const EnhancedTableToolbar = props => {
   const classes = useToolbarStyles();
   const { numSelected } = props;
-  
+
   const [anchorEl, setAnchorEl] = useState(null);
 
   function handleClick(event) {
@@ -189,7 +190,7 @@ const EnhancedTableToolbar = props => {
 
   function handleClose() {
     setAnchorEl(null);
-  }  
+  }
 
   return (
     <Toolbar
@@ -205,9 +206,9 @@ const EnhancedTableToolbar = props => {
         ) : (
           <Typography variant="h6" id="tableTitle">
             Routes
-                  <IconButton size="small" onClick={handleClick}>
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
+            <IconButton size="small" onClick={handleClick}>
+              <InfoIcon fontSize="small" />
+            </IconButton>
           </Typography>
         )}
       </div>
@@ -233,25 +234,26 @@ const EnhancedTableToolbar = props => {
           horizontal: 'center',
         }}
       >
-        <div className={classes.popover}><b>Score</b> is the average of subscores (0-100) for median wait,
-          long wait probability, average speed, and travel time variability.  Click on a route to see its metrics
-          and explanations of how the subscores are calculated.
-          <p/>
-          <b>Median Wait</b> is the 50th percentile (typical) wait time for a rider arriving
-          randomly at a stop while the route is running.
-          <p/>
-          <b>Long wait probability</b> is the chance a rider has of a wait of twenty minutes
-          or longer after arriving randomly at a stop. 
-          <p/>
-          <b>Average speed</b> is the speed of the 50th percentile (typical) end to end trip, averaged
-          for all directions.
-          <p/>
-          <b>Travel time variability</b> is the 90th percentile end to end travel time minus the 10th percentile
-          travel time.  This measures how much extra travel time is needed for some trips.
-          
+        <div className={classes.popover}>
+          <b>Score</b> is the average of subscores (0-100) for median wait, long
+          wait probability, average speed, and travel time variability. Click on
+          a route to see its metrics and explanations of how the subscores are
+          calculated.
+          <p />
+          <b>Median Wait</b> is the 50th percentile (typical) wait time for a
+          rider arriving randomly at a stop while the route is running.
+          <p />
+          <b>Long wait probability</b> is the chance a rider has of a wait of
+          twenty minutes or longer after arriving randomly at a stop.
+          <p />
+          <b>Average speed</b> is the speed of the 50th percentile (typical) end
+          to end trip, averaged for all directions.
+          <p />
+          <b>Travel time variability</b> is the 90th percentile end to end
+          travel time minus the 10th percentile travel time. This measures how
+          much extra travel time is needed for some trips.
         </div>
       </Popover>
-
     </Toolbar>
   );
 };
@@ -336,22 +338,18 @@ function RouteTable(props) {
 
   return (
     <div>
-        <EnhancedTableToolbar numSelected={0} />
-        <div className={classes.tableWrapper}>
-          <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
-            <EnhancedTableHead
-              order={order}
-              orderBy={orderBy}
-              onRequestSort={handleRequestSort}
-              rowCount={routes.length}
-            />
-            <TableBody>
-              {stableSort(
-                routes,
-                getSorting(order, orderBy),
-                order,
-                orderBy,
-              ).map((row, index) => {
+      <EnhancedTableToolbar numSelected={0} />
+      <div className={classes.tableWrapper}>
+        <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
+          <EnhancedTableHead
+            order={order}
+            orderBy={orderBy}
+            onRequestSort={handleRequestSort}
+            rowCount={routes.length}
+          />
+          <TableBody>
+            {stableSort(routes, getSorting(order, orderBy), order, orderBy).map(
+              (row, index) => {
                 const labelId = `enhanced-table-checkbox-${index}`;
 
                 return (
@@ -361,9 +359,17 @@ function RouteTable(props) {
                       id={labelId}
                       scope="row"
                       padding="none"
+                      style={{
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
+                      }}
                     >
                       <Navlink
-                        style={{color: theme.palette.primary.dark, textDecoration: 'none'}}
+                        style={{
+                          color: theme.palette.primary.dark,
+                          textDecoration: 'none',
+                        }}
                         to={{
                           type: 'ROUTESCREEN',
                           payload: {
@@ -380,67 +386,133 @@ function RouteTable(props) {
                     </TableCell>
                     <TableCell
                       align="right"
+                      padding="none"
                       style={{
-                        color: quartileContrastColor(row.totalScore / 100),
-                        backgroundColor: quartileBackgroundColor(
-                          row.totalScore / 100,
-                        ),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
                     >
-                      {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
+                      <Chip
+                        style={{
+                          color: quartileContrastColor(row.totalScore / 100),
+                          backgroundColor: quartileBackgroundColor(
+                            row.totalScore / 100,
+                          ),
+                        }}
+                        label={
+                          Number.isNaN(row.totalScore) ? '--' : row.totalScore
+                        }
+                      />
                     </TableCell>
                     <TableCell
                       align="right"
                       padding="none"
                       style={{
-                        color: quartileTextColor(row.medianWaitScore / 100),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
                     >
-                      {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
+                      <Chip
+                        style={{
+                          color: quartileContrastColor(
+                            row.medianWaitScore / 100,
+                          ),
+                          backgroundColor: quartileBackgroundColor(
+                            row.medianWaitScore / 100,
+                          ),
+                        }}
+                        label={
+                          Number.isNaN(row.wait)
+                            ? '--'
+                            : `${row.wait.toFixed(0)} min`
+                        }
+                      />
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      style={{ border: 'none' }}
+                      padding="none"
+                    >
+                      <Chip
+                        style={{
+                          color: quartileContrastColor(row.longWaitScore / 100),
+                          backgroundColor: quartileBackgroundColor(
+                            row.longWaitScore / 100,
+                          ),
+                        }}
+                        label={
+                          Number.isNaN(row.longWait) ? (
+                            '--'
+                          ) : (
+                            <Fragment>
+                              {(row.longWait * 100).toFixed(0)}
+                              {'%'}
+                            </Fragment>
+                          )
+                        }
+                      />
                     </TableCell>
                     <TableCell
                       align="right"
                       padding="none"
                       style={{
-                        color: quartileTextColor(row.longWaitScore / 100),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
                     >
-                      {Number.isNaN(row.longWait)
-                        ? '--'
-                        : <Fragment>
-                            {(row.longWait * 100).toFixed(0)}<font style={{color:"#8a8a8a"}}>%</font>
-                          </Fragment>
-                      }
+                      <Chip
+                        style={{
+                          color: quartileContrastColor(row.speedScore / 100),
+                          backgroundColor: quartileBackgroundColor(
+                            row.speedScore / 100,
+                          ),
+                        }}
+                        label={
+                          Number.isNaN(row.speed)
+                            ? '--'
+                            : `${row.speed.toFixed(0)} mph`
+                        }
+                      />
                     </TableCell>
                     <TableCell
                       align="right"
                       padding="none"
                       style={{
-                        color: quartileTextColor(row.speedScore / 100),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
                     >
-                      {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      padding="none"
-                      style={{
-                        color: quartileTextColor(row.travelVarianceScore / 100),
-                      }}
-                    >
-                      {Number.isNaN(row.variability)
-                        ? '--'
-                        : <Fragment>
-                            <font style={{color:"#8a8a8a"}}>{'\u00b1'} </font>{row.variability.toFixed(0)}
-                          </Fragment>
-                      }
+                      <Chip
+                        style={{
+                          color: quartileContrastColor(
+                            row.travelVarianceScore / 100,
+                          ),
+                          backgroundColor: quartileBackgroundColor(
+                            row.travelVarianceScore / 100,
+                          ),
+                        }}
+                        label={
+                          Number.isNaN(row.variability) ? (
+                            '--'
+                          ) : (
+                            <Fragment>
+                              {'\u00b1'} {row.variability.toFixed(0)} min
+                            </Fragment>
+                          )
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+              },
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
