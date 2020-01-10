@@ -25,10 +25,13 @@ def parse_date(date_str):
     (y,m,d) = date_str.split('-')
     return date(int(y),int(m),int(d))
 
-# todo: allow specifying day(s) of week
-def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
-    start_date = parse_date(start_date_str)
-    end_date = parse_date(end_date_str)
+def get_dates_in_range(start_date, end_date, weekdays=None, max_dates=1000):
+
+    if isinstance(start_date, str):
+        start_date = parse_date(start_date)
+
+    if isinstance(end_date, str):
+        end_date = parse_date(end_date)
 
     delta = end_date - start_date
     if delta.days < 0:
@@ -39,13 +42,16 @@ def get_dates_in_range(start_date_str, end_date_str, max_dates=1000):
     res = []
     cur_date = start_date
     while True:
-        res.append(cur_date)
+
+        if weekdays is None or cur_date.weekday() in weekdays:
+            res.append(cur_date)
+
         cur_date = cur_date + incr
         if cur_date > end_date:
             break
 
         if len(res) > max_dates:
-            raise Exception(f'too many dates between {start_date_str} and {end_date_str}')
+            raise Exception(f'too many dates between {start_date} and {end_date}')
 
     return res
 
@@ -68,9 +74,15 @@ def render_dwell_time(seconds):
     # remove 0 hours and replace 00 minutes with spaces to make it easier to scan column for large durations
     return f'+{timedelta(seconds=round(seconds))}'.replace('+0:','+').replace('+00:','+  :')
 
+def render_delta(value, round_digits=1):
+    if value is None:
+        return '-'
+    rounded = round(value, 1)
+    return f'+{rounded}' if value > 0 else f'{rounded}'
+
 def get_data_dir():
     return f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/data"
-    
+
 def get_timestamp_or_none(d: date, time_str: str, tz: pytz.timezone):
     return int(get_localized_datetime(d, time_str, tz).timestamp()) if time_str is not None else None
 
@@ -100,7 +112,7 @@ def get_intervals(start_time, end_time, interval_length):
 
     time_str_intervals = []
 
-    # if the next interval would extend beyond the end time, exclude it 
+    # if the next interval would extend beyond the end time, exclude it
     while rounded_start_time <= rounded_end_time:
         new_start_time = rounded_start_time + timedelta(hours = interval_length)
         time_str_intervals.append((

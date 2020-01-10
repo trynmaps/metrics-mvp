@@ -13,6 +13,7 @@ import Grid from '@material-ui/core/Grid';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { handleGraphParams } from '../actions';
+import { getDownstreamStopIds } from '../helpers/mapGeometry';
 import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { Colors } from '../UIConstants';
 
@@ -54,30 +55,8 @@ function ControlPanel(props) {
 
   const selectedRoute = getSelectedRouteInfo();
 
-  function getStopsInfoInGivenDirection(mySelectedRoute, directionId) {
+  function getDirectionInfo(mySelectedRoute, directionId) {
     return mySelectedRoute.directions.find(dir => dir.id === directionId);
-  }
-
-  function generateSecondStopList(mySelectedRoute, directionId, stopId) {
-    const secondStopInfo = getStopsInfoInGivenDirection(
-      mySelectedRoute,
-      directionId,
-    );
-    
-    const stopsList = secondStopInfo.stops;
-    const secondStopListIndex = stopId
-      ? stopsList.indexOf(stopId)
-      : 0;
-    
-    // loop routes start and stop at same stop
-    const isLoopRoute = stopsList[0] === stopsList[stopsList.length - 1];
-    const oneWaySecondStopsList = stopsList.slice(secondStopListIndex + 1);
-
-    if (!isLoopRoute) {
-      return oneWaySecondStopsList;
-    }
-    // loop routes display all subsequent stops up to origin stop
-    return oneWaySecondStopsList.concat(stopsList.slice(1, secondStopListIndex));
   }
 
   function onSelectFirstStop(event) {
@@ -87,11 +66,6 @@ function ControlPanel(props) {
     const secondStopId = props.graphParams.endStopId;
     const mySelectedRoute = { ...getSelectedRouteInfo() };
 
-    secondStopList = generateSecondStopList(
-      mySelectedRoute,
-      directionId,
-      stopId,
-    );
     const path = new Path();
     path.buildPath(FROM_STOP, stopId);
 
@@ -176,14 +150,16 @@ function ControlPanel(props) {
   }
 
   if (selectedDirection) {
-    secondStopList = generateSecondStopList(
+    secondStopList = getDownstreamStopIds(
       selectedRoute,
-      graphParams.directionId,
+      selectedDirection,
       graphParams.startStopId,
     );
   }
 
   const classes = useStyles();
+
+  const directionStops = selectedDirection ? selectedDirection.stops : [];
 
   return (
     <div className="ControlPanel">
@@ -236,7 +212,7 @@ function ControlPanel(props) {
                     onOpen={() => setAllowHover(true)}
                     onClose={handleSelectClose}
                   >
-                    {(selectedDirection.stops || []).map(firstStopId => {
+                    {directionStops.map(firstStopId => {
                       const icon = document.querySelector(`.id${firstStopId}`);
                       const title = (
                         selectedRoute.stops[firstStopId] || {

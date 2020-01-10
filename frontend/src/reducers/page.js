@@ -1,6 +1,6 @@
 import { NOT_FOUND } from 'redux-first-router';
 
-const components = {
+export const components = {
   ABOUT: 'About',
   ISOCHRONE: 'Isochrone',
   LANDING: 'Landing',

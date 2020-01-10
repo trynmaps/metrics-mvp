@@ -18,10 +18,11 @@ import Popover from '@material-ui/core/Popover';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import {
-  milesBetween,
   computeGrades,
-  metersToMiles,
 } from '../helpers/routeCalculations';
+import {
+  getDistanceInMiles
+} from '../helpers/mapGeometry';
 import { PLANNING_PERCENTILE, TENTH_PERCENTILE } from '../UIConstants';
 import { getPercentileValue } from '../helpers/graphData';
 import InfoScoreCard from './InfoScoreCard';
@@ -30,14 +31,13 @@ import InfoIcon from '@material-ui/icons/InfoOutlined';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import WatchLaterOutlinedIcon from '@material-ui/icons/WatchLaterOutlined';
 
-
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.
  *
  * @param {any} props
  */
 export default function InfoTripSummary(props) {
-  
+
   const [typicalAnchorEl, setTypicalAnchorEl] = useState(null);
   const [planningAnchorEl, setPlanningAnchorEl] = useState(null);
 
@@ -56,51 +56,27 @@ export default function InfoTripSummary(props) {
   function handlePlanningClose() {
     setPlanningAnchorEl(null);
   }
-  
+
   const { graphData, graphParams, routes } = props;
   const waitTimes = graphData ? graphData.waitTimes : null;
   const tripTimes = graphData ? graphData.tripTimes : null;
 
   const computeDistance = (myGraphParams, myRoutes) => {
-    let miles = 0;
-
     if (myGraphParams && myGraphParams.endStopId) {
       const directionId = myGraphParams.directionId;
       const routeId = myGraphParams.routeId;
-
       const route = myRoutes.find(thisRoute => thisRoute.id === routeId);
       const directionInfo = route.directions.find(
         dir => dir.id === directionId,
       );
-
-      // if precomputed stop distance is available, use it
-
-      if (
-        directionInfo.stop_geometry[myGraphParams.startStopId] &&
-        directionInfo.stop_geometry[myGraphParams.endStopId]
-      ) {
-        const distance =
-          directionInfo.stop_geometry[myGraphParams.endStopId].distance -
-          directionInfo.stop_geometry[myGraphParams.startStopId].distance;
-        return metersToMiles(distance);
-      }
-
-      const startIndex = directionInfo.stops.indexOf(myGraphParams.startStopId);
-      const endIndex = directionInfo.stops.indexOf(myGraphParams.endStopId);
-
-      if (startIndex !== -1 && endIndex !== -1) {
-        for (let i = startIndex; i < endIndex; i++) {
-          const fromStopInfo = route.stops[directionInfo.stops[i]];
-          const toStopInfo = route.stops[directionInfo.stops[i + 1]];
-          miles += milesBetween(fromStopInfo, toStopInfo);
-        }
-      }
+      return getDistanceInMiles(route, directionInfo, myGraphParams.startStopId, myGraphParams.endStopId);
+    } else {
+      return 0;
     }
-
-    return miles;
   };
 
   const distance = routes ? computeDistance(graphParams, routes) : null;
+
   const speed =
     tripTimes && tripTimes.count > 0 && distance
       ? distance / (tripTimes.avg / 60.0)
@@ -165,7 +141,7 @@ export default function InfoTripSummary(props) {
     getPercentileValue(tripTimes, PLANNING_PERCENTILE),
   );
   const travelVariability = Math.round(
-    (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -      
+    (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
      getPercentileValue(tripTimes, TENTH_PERCENTILE)) / 2.0,
   );
 
@@ -222,7 +198,7 @@ export default function InfoTripSummary(props) {
   const popoverContentLongWait = grades ? (
     <Fragment>
       Long wait probability is the chance a rider has of a wait of twenty minutes or
-      longer after arriving randomly at the "from" stop. 
+      longer after arriving randomly at the "from" stop.
       Probability of{' '}
       {(longWaitProbability * 100).toFixed(1) /* be more precise than card */}%
       gets a score of {grades.longWaitScore}.
@@ -314,7 +290,7 @@ export default function InfoTripSummary(props) {
                   </IconButton>
                  </Box>
               </Grid>
-              
+
               <Grid item xs component={Paper} className={classes.uncolored}>
                 <Typography variant="overline">Journey planning</Typography>
                 <br />
@@ -335,7 +311,7 @@ export default function InfoTripSummary(props) {
                   <Typography variant="body1">
                     <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
                     {planningWait} min
-                    <br/> 
+                    <br/>
                     <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
                     {planningTravel} min
                   </Typography>
