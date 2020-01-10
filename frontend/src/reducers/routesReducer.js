@@ -19,8 +19,16 @@ export const initialState = {
     date: momentYesterday.format('YYYY-MM-DD'), // used where date ranges are not supported
     startDate: momentYesterday.format('YYYY-MM-DD'),
     // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
-    daysOfTheWeek: { ...WEEKDAYS.reduce((map, obj) => { map[obj.value] = true; return map}, {}),
-                     ...WEEKENDS.reduce((map, obj) => { map[obj.value] = true; return map}, {})},
+    daysOfTheWeek: {
+      ...WEEKDAYS.reduce((map, obj) => {
+        map[obj.value] = true;
+        return map;
+      }, {}),
+      ...WEEKENDS.reduce((map, obj) => {
+        map[obj.value] = true;
+        return map;
+      }, {}),
+    },
   },
   spiderLatLng: null,
   tripTimesCache: {},

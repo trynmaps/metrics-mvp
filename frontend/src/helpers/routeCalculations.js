@@ -24,7 +24,11 @@ import { getAgency } from '../config';
 export function filterRoutes(routes) {
   return routes.filter(route => {
     const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
-    return !routeHeuristics || !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute;
+    return (
+      !routeHeuristics ||
+      !routeHeuristics[route.id] ||
+      !routeHeuristics[route.id].ignoreRoute
+    );
   });
 }
 
@@ -75,12 +79,12 @@ function getTripTimesUsingHeuristics(
   );
 
   if (!tripTimesForDir || !routes) {
-    //console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
+    // console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
     return { tripTimesForFirstStop: null, directionInfo: null };
   }
 
-  //console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
+  // console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
 
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
@@ -108,7 +112,7 @@ function getTripTimesUsingHeuristics(
   // then find the stop with the most trip time entries
 
   if (!tripTimesForFirstStop || !Object.keys(tripTimesForFirstStop).length) {
-    //console.log("No trip times found for " + routeId + " from stop " + firstStop + ".  Using stop with most entries.");
+    // console.log("No trip times found for " + routeId + " from stop " + firstStop + ".  Using stop with most entries.");
     tripTimesForFirstStop = Object.values(tripTimesForDir).reduce(
       (accumulator, currentValue) =>
         Object.values(currentValue).length > Object.values(accumulator).length
@@ -217,7 +221,7 @@ export function getTripDataSeries(props, routeId, directionId) {
   );
 
   if (!tripTimesForFirstStop) {
-    //console.log('no trip times for first stop ' + routeId + ' ' + directionId);
+    // console.log('no trip times for first stop ' + routeId + ' ' + directionId);
     return [];
   } // no precomputed times
 
@@ -231,7 +235,7 @@ export function getTripDataSeries(props, routeId, directionId) {
 
   directionInfo.stops.slice(1).map((stop, index) => {
     if (!directionInfo.stop_geometry[stop]) {
-      //console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
+      // console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
     } else if (tripTimesForFirstStop[stop]) {
       dataSeries.push({
         x: metersToMiles(directionInfo.stop_geometry[stop].distance),
@@ -318,13 +322,13 @@ function getSpeedAndVariabilityForRoute(
     );
 
     const p10tripTime = getEndToEndTripTime(
-        tripTimesCache,
-        graphParams,
-        routes,
-        route.id,
-        direction.id,
-        'p10',
-      );
+      tripTimesCache,
+      graphParams,
+      routes,
+      route.id,
+      direction.id,
+      'p10',
+    );
 
     if (dist <= 0 || Number.isNaN(tripTime)) {
       // something wrong with the data here

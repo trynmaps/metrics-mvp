@@ -3,7 +3,10 @@ import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
+import Breadcrumbs from '@material-ui/core/Breadcrumbs';
+import Typography from '@material-ui/core/Typography';
 import AppBar from '@material-ui/core/AppBar';
+import { NavLink } from 'redux-first-router-link';
 
 import { connect } from 'react-redux';
 import Info from '../components/Info';
@@ -32,7 +35,7 @@ function RouteScreen(props) {
 
   useEffect(() => {
     if (!routes && agencyId) {
-      myFetchRoutes({agencyId: agencyId});
+      myFetchRoutes({ agencyId });
     }
   }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
@@ -40,7 +43,10 @@ function RouteScreen(props) {
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
-      ? routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId))
+      ? routes.find(
+          route =>
+            route.id === graphParams.routeId && route.agencyId === agencyId,
+        )
       : null;
 
   const direction =
@@ -63,21 +69,26 @@ function RouteScreen(props) {
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className="page-title">
-            {agency ? agency.title : null}
-          </div>
-          <div style={{flexGrow: 1}}/>
-          <DateTimePanel dateRangeSupported={graphData || graphError}/>
+          <div className="page-title">{agency ? agency.title : null}</div>
+          <div style={{ flexGrow: 1 }} />
+          <DateTimePanel dateRangeSupported={graphData || graphError} />
         </Toolbar>
       </AppBar>
-      
+
       <Paper>
-        <Box p={2} className="page-title">            
-          {selectedRoute ? ` ${selectedRoute.title}` : null}
-          {direction ? ` > ${direction.title}` : null}
-          &nbsp;
-          {startStopInfo ? `(from ${startStopInfo.title}` : null}
-          {endStopInfo ? ` to ${endStopInfo.title})` : null}
+        <Box p={2} className="page-title">
+          <Breadcrumbs aria-label="breadcrumb">
+            <NavLink to={{ type: 'DASHBOARD' }} exact strict>
+              Home
+            </NavLink>
+            <Typography color="textPrimary">
+              {selectedRoute ? ` ${selectedRoute.title}` : null}
+              {direction ? ` > ${direction.title}` : null}
+              &nbsp;
+              {startStopInfo ? `(from ${startStopInfo.title}` : null}
+              {endStopInfo ? ` to ${endStopInfo.title})` : null}
+            </Typography>
+          </Breadcrumbs>
         </Box>
       </Paper>
 

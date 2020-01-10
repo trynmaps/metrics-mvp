@@ -18,9 +18,9 @@ export const ArrivalsVersion = config.ArrivalsVersion;
 
 const agenciesMap = {};
 Agencies.forEach(agency => {
-    agenciesMap[agency.id] = agency;
+  agenciesMap[agency.id] = agency;
 });
 
 export function getAgency(agencyId) {
-   return agenciesMap[agencyId];
+  return agenciesMap[agencyId];
 }
