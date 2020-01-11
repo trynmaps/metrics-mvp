@@ -228,8 +228,7 @@ export function fetchPrecomputedStats(params) {
         })
         .catch(() => {
           dispatch({
-            type: 'ERROR_PRECOMPUTED_WAIT_TIMES',
-            url: waitTimesUrl
+            type: 'ERROR_PRECOMPUTED_WAIT_TIMES'
           });
           /* do something? */
         });
