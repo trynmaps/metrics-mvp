@@ -66,7 +66,8 @@ function MareyChart(props) {
   const INBOUND = '1'; // same as directionInfo id
   const OUTBOUND = '0'; // same as directionInfo id
 
-  const { graphParams, fetchArrivals, arrivals, arrivalsErr, routes, hidden } = props;
+  const { graphParams, arrivals, arrivalsErr, routes, hidden } = props;
+  const myFetchArrivals = props.fetchArrivals;
 
   const [hintValue, setHintValue] = useState();
   const [tripHighlight, setTripHighlight] = useState();
@@ -81,10 +82,10 @@ function MareyChart(props) {
 
   useEffect(() => {
     if (!arrivals && graphParams.routeId && !hidden) {
-      fetchArrivals(graphParams);
+      myFetchArrivals(graphParams);
     }
 
-  }, [graphParams, fetchArrivals, arrivals, hidden]);
+  }, [graphParams, myFetchArrivals, arrivals, hidden]);
 
   // When both the raw arrival history and route configs have loaded, first
   // rebucket the data by trip ID.  Then create react-vis Series objects for

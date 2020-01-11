@@ -215,7 +215,6 @@ export function fetchPrecomputedStats(params) {
     {
       dispatch({
         type: 'REQUEST_PRECOMPUTED_WAIT_TIMES',
-        agencyId: agencyId,
         url: waitTimesUrl
       });
       axios
@@ -223,7 +222,6 @@ export function fetchPrecomputedStats(params) {
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
-            agencyId,
             url: waitTimesUrl,
             data: response.data
           });
@@ -231,7 +229,6 @@ export function fetchPrecomputedStats(params) {
         .catch(() => {
           dispatch({
             type: 'ERROR_PRECOMPUTED_WAIT_TIMES',
-            agencyId,
             url: waitTimesUrl
           });
           /* do something? */
@@ -243,7 +240,6 @@ export function fetchPrecomputedStats(params) {
     {
       dispatch({
         type: 'REQUEST_PRECOMPUTED_TRIP_TIMES',
-        agencyId,
         url: tripTimesUrl
       });
       axios
@@ -251,7 +247,6 @@ export function fetchPrecomputedStats(params) {
         .then(response => {
           dispatch({
             type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
-            agencyId,
             url: tripTimesUrl,
             data: response.data
           });
@@ -259,8 +254,6 @@ export function fetchPrecomputedStats(params) {
         .catch(() => {
           dispatch({
             type: 'ERROR_PRECOMPUTED_TRIP_TIMES',
-            agencyId: agencyId,
-            url: tripTimesUrl
           });
           /* do something? */
         });
@@ -324,6 +317,8 @@ export function handleGraphParams(params) {
     if (oldParams.date !== graphParams.date
       || oldParams.routeId !== graphParams.routeId
       || oldParams.agencyId !== graphParams.agencyId) {
+      // Clear out stale data.  We have arrivals for a different route, day, or agency
+      // from what is currently selected.
       dispatch(resetArrivals());
     }
 

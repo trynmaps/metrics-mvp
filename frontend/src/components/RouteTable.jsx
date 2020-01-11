@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles } from '@material-ui/core/styles';
@@ -27,8 +27,6 @@ import {
   quartileBackgroundColor,
   quartileContrastColor,
 } from '../helpers/routeCalculations';
-
-import { handleGraphParams, fetchPrecomputedStats } from '../actions';
 
 function desc(a, b, orderBy) {
   // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
@@ -278,13 +276,7 @@ function RouteTable(props) {
   const dense = true;
   const theme = createMuiTheme();
 
-  const { graphParams, fetchPrecomputedStats, precomputedStats } = props;
-
-  useEffect(() => {
-    if (graphParams.date) {
-      fetchPrecomputedStats(graphParams);
-    }
-  }, [graphParams, fetchPrecomputedStats]); // like componentDidMount, this runs only on first render
+  const { precomputedStats } = props;
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -496,16 +488,12 @@ function RouteTable(props) {
 }
 
 const mapStateToProps = state => ({
-  graphParams: state.graphParams,
   spiderSelection: state.spiderSelection,
   precomputedStats: state.precomputedStats,
 });
 
 const mapDispatchToProps = dispatch => {
-  return {
-    fetchPrecomputedStats: params => dispatch(fetchPrecomputedStats(params)),
-    handleGraphParams: params => dispatch(handleGraphParams(params)),
-  };
+  return {};
 };
 
 export default connect(

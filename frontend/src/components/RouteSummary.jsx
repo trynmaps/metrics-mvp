@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from 'react';
+import React, { Fragment } from 'react';
 
 import { connect } from 'react-redux';
 
@@ -10,7 +10,6 @@ import InfoScoreCard from './InfoScoreCard';
 import InfoScoreLegend from './InfoScoreLegend';
 import TravelTimeChart from './TravelTimeChart';
 import MareyChart from './MareyChart';
-import { fetchPrecomputedStats } from '../actions';
 import {
   filterRoutes,
   getAllWaits,
@@ -26,12 +25,8 @@ import {
  * @param {any} props
  */
 function RouteSummary(props) {
-  const { graphParams, precomputedStats, fetchPrecomputedStats } = props;
+  const { graphParams, precomputedStats } = props;
   const [tabValue, setTabValue] = React.useState(0);
-
-  useEffect(() => {
-    fetchPrecomputedStats(graphParams);
-  }, [graphParams, fetchPrecomputedStats]); // like componentDidMount, this runs only on first render
 
   let wait = null;
   let speed = null;
@@ -343,9 +338,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => {
-  return {
-    fetchPrecomputedStats: params => dispatch(fetchPrecomputedStats(params)),
-  };
+  return {};
 };
 
 export default connect(

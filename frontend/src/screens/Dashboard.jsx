@@ -13,15 +13,20 @@ import DateTimePanel from '../components/DateTimePanel';
 import { fetchRoutes, handleGraphParams } from '../actions';
 
 function Dashboard(props) {
-  const { routes, fetchRoutes } = props;
+  const { routes } = props;
+  const myFetchRoutes = props.fetchRoutes;
+  const myHandleGraphParams = props.handleGraphParams;
 
   const agency = Agencies[0];
 
   useEffect(() => {
     if (!routes) {
-      fetchRoutes();
+      myFetchRoutes();
     }
-  }, [routes, fetchRoutes]); // like componentDidMount, this runs only on first render
+
+    // trigger action to fetch precomputed stats for initial graphParams
+    myHandleGraphParams({});
+  }, [routes, myFetchRoutes, myHandleGraphParams]); // like componentDidMount, this runs only on first render
 
   return (
     <div className="flex-screen">
