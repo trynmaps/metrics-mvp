@@ -144,7 +144,7 @@ class Isochrone extends React.Component {
 
   componentDidMount() {
     if (!this.props.routes) {
-      this.props.fetchRoutes({agencyId: this.agencyId});
+      this.props.fetchRoutes();
     }
   }
 

@@ -24,16 +24,16 @@ function RouteScreen(props) {
     tripMetricsError,
     graphParams,
     routes,
-    fetchRoutes,
   } = props;
 
+  const myFetchRoutes = props.fetchRoutes;
   const agencyId = graphParams ? graphParams.agencyId : null;
 
   useEffect(() => {
     if (!routes && agencyId) {
-      fetchRoutes({agencyId: agencyId});
+      myFetchRoutes({agencyId: agencyId});
     }
-  }, [agencyId, routes, fetchRoutes]); // like componentDidMount, this runs only on first render
+  }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
   const agency = getAgency(agencyId);
 

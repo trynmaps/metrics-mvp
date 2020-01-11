@@ -12,7 +12,7 @@ import QuadrantChart from '../components/QuadrantChart';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { fetchRoutes, fetchPrecomputedStats, handleGraphParams } from '../actions';
+import { fetchRoutes, handleGraphParams } from '../actions';
 
 const useStyles = makeStyles({
   title: {
@@ -28,21 +28,18 @@ function DataDiagnostic(props) {
   const {
     graphParams,
     routes,
-    myFetchRoutes,
-    myFetchPrecomputedStats,
-    myHandleGraphParams,
   } = props;
 
   const agency = Agencies[0];
+  const myFetchRoutes = props.fetchRoutes;
+  const myHandleGraphParams = props.handleGraphParams;
 
   useEffect(() => {
-    myHandleGraphParams({agencyId: agency.id});
-
+    myHandleGraphParams({});
     if (!routes) {
-      myFetchRoutes({agencyId: agency.id});
+      myFetchRoutes();
     }
-    myFetchPrecomputedStats(graphParams);
-  }, [routes, myFetchRoutes, myFetchPrecomputedStats, graphParams, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
+  }, [routes, myFetchRoutes, graphParams, myHandleGraphParams]); // like componentDidMount, this runs only on first render
 
   const classes = useStyles();
 
@@ -86,9 +83,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: props => dispatch(fetchRoutes(props)),
-  myFetchPrecomputedStats: params => dispatch(fetchPrecomputedStats(params)),
-  myHandleGraphParams: props => dispatch(handleGraphParams(props)),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
+  handleGraphParams: params => dispatch(handleGraphParams(params)),
 });
 
 export default connect(

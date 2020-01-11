@@ -23,7 +23,6 @@ function Dashboard(props) {
     if (!routes) {
       myFetchRoutes();
     }
-
     // trigger action to fetch precomputed stats for initial graphParams
     myHandleGraphParams({});
   }, [routes, myFetchRoutes, myHandleGraphParams]); // like componentDidMount, this runs only on first render
@@ -57,8 +56,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: props => dispatch(fetchRoutes(props)),
-  handleGraphParams: props => dispatch(handleGraphParams(props)),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
+  handleGraphParams: params => dispatch(handleGraphParams(params)),
 });
 
 export default connect(
