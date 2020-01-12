@@ -23,9 +23,13 @@ import { getAgency } from '../config';
  */
 export function filterRoutes(routes) {
   return routes.filter(route => {
-    const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
-    return !routeHeuristics || !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute;
+    return !isIgnoredRoute(route);
   });
+}
+
+export function isIgnoredRoute(route) {
+  const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
+  return routeHeuristics && routeHeuristics[route.id] && routeHeuristics[route.id].ignoreRoute;
 }
 
 /**
@@ -275,7 +279,7 @@ export function getAllWaits(waitTimes, routes) {
     });
     allWaits = allWaits.filter(waitObj => !Number.isNaN(waitObj.wait));
     allWaits.sort((a, b) => {
-      return b.wait - a.wait;
+      return a.wait - b.wait;
     });
   }
 
@@ -383,31 +387,22 @@ export function getAllSpeeds(tripTimes, routes) {
 }
 
 /**
- * Grade computation.
+ * Score computation.
  *
  * TODO: refactor with Info.jsx's computation of grades once we add in probability
  * of long wait and travel variability to RouteSummary.
  */
-export function computeGrades(
+export function computeScores(
   medianWait,
   longWaitProbability,
   speed,
   variability,
 ) {
-  //
-  // grade and score for median wait
-  //
-
   const medianWaitScoreScale = d3
     .scaleLinear()
     .domain([5, 10])
     .rangeRound([100, 0])
     .clamp(true);
-
-  const medianWaitGradeScale = d3
-    .scaleThreshold()
-    .domain([5, 7.5, 10])
-    .range(['A', 'B', 'C', 'D']);
 
   const longWaitScoreScale = d3
     .scaleLinear()
@@ -415,24 +410,14 @@ export function computeGrades(
     .rangeRound([100, 0])
     .clamp(true);
 
-  // grade and score for travel speed
-
   const speedScoreScale = d3
     .scaleLinear()
     .domain([5, 10])
     .rangeRound([0, 100])
     .clamp(true);
 
-  const speedGradeScale = d3
-    .scaleThreshold()
-    .domain([5, 7.5, 10])
-    .range(['D', 'C', 'B', 'A']);
-
-  //
-  // grade score for travel time variability
-  //
+  // score for travel time variability
   // where variability is half of (90th percentile time minus 10th percentile)
-  //
 
   const variabilityScoreScale = d3
     .scaleLinear()
@@ -440,55 +425,25 @@ export function computeGrades(
     .rangeRound([100, 0])
     .clamp(true);
 
-  const totalGradeScale = d3
-    .scaleThreshold()
-    .domain([25, 50, 75])
-    .range(['D', 'C', 'B', 'A']);
+  const medianWaitScore = (medianWait != null) ? medianWaitScoreScale(medianWait) : 0;
+  const longWaitScore = (longWaitProbability != null) ? longWaitScoreScale(longWaitProbability) : 0;
+  const speedScore = (speed != null) ? speedScoreScale(speed) : 0;
+  const travelVarianceScore = (variability != null) ? variabilityScoreScale(variability) : 0;
 
-  let medianWaitScore = 0;
-  let medianWaitGrade = '';
-  let longWaitScore = 0;
-  let speedScore = 0;
-  let speedGrade = '';
-  let travelVarianceScore = 0;
-  let totalScore = 0;
-  let totalGrade = '';
-
-  if (medianWait != null) {
-    medianWaitScore = medianWaitScoreScale(medianWait);
-    medianWaitGrade = medianWaitGradeScale(medianWait);
-  }
-
-  if (longWaitProbability != null) {
-    longWaitScore = longWaitScoreScale(longWaitProbability);
-  }
-
-  if (speed != null) {
-    speedScore = speedScoreScale(speed);
-    speedGrade = speedGradeScale(speed);
-  }
-
-  if (variability != null) {
-    travelVarianceScore = variabilityScoreScale(variability);
-  }
-
-  totalScore = Math.round(
+  const totalScore = Math.round(
     (medianWaitScore + longWaitScore + speedScore + travelVarianceScore) / 4.0,
   );
-  totalGrade = totalGradeScale(totalScore);
 
   return {
     medianWaitScore,
-    medianWaitGrade,
     longWaitScore,
     speedScore,
-    speedGrade,
     travelVarianceScore,
     totalScore,
-    totalGrade,
-    highestPossibleScore: 100,
   };
 }
+
+export const HighestPossibleScore = 100;
 
 /**
  * Computes scores of all routes.
@@ -503,20 +458,13 @@ export function getAllScores(routes, waits, speeds) {
     const speedObj = speeds.find(speed => speed.routeId === route.id);
     const waitObj = waits.find(wait => wait.routeId === route.id);
     if (waitObj && speedObj) {
-      const grades = computeGrades(
+      const scores = computeScores(
         waitObj.wait,
         waitObj.longWait,
         speedObj.speed,
         speedObj.variability,
       );
-      allScores.push({
-        routeId: route.id,
-        totalScore: grades.totalScore,
-        medianWaitScore: grades.medianWaitScore,
-        longWaitScore: grades.longWaitScore,
-        speedScore: grades.speedScore,
-        travelVarianceScore: grades.travelVarianceScore,
-      });
+      allScores.push(Object.assign({ routeId: route.id }, scores));
     }
   });
 
@@ -524,20 +472,40 @@ export function getAllScores(routes, waits, speeds) {
     return b.totalScore - a.totalScore;
   });
 
-  // console.log(JSON.stringify(allScores));
-
   return allScores;
 }
 
-export const quartileBackgroundColor = d3
-  .scaleThreshold()
-  .domain([0.25, 0.5, 0.75])
-  .range([red[300], yellow[300], lightGreen[700], green[900]]);
+export const scoreBackgroundColor = score => {
+  if (score == null || Number.isNaN(score)) {
+    return null;
+  }
+  if (score <= 25) {
+    return red[300];
+  }
+  if (score <= 50) {
+    return yellow[300];
+  }
+  if (score <= 75) {
+    return lightGreen[700];
+  }
+  return green[900];
+}
 
-export const quartileContrastColor = d3
-  .scaleThreshold()
-  .domain([0.25, 0.5, 0.75])
-  .range(['rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)', 'white', 'white']);
+export const scoreContrastColor = score => {
+  if (score == null || Number.isNaN(score)) {
+    return null;
+  }
+  if (score <= 25) {
+    return 'rgba(0,0,0,0.87)';
+  }
+  if (score <= 50) {
+    return 'rgba(0,0,0,0.87)';
+  }
+  if (score <= 75) {
+    return 'white';
+  }
+  return 'white';
+}
 
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon

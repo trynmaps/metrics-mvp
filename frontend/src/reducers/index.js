@@ -157,3 +157,12 @@ export function precomputedStats(state = initialPrecomputedStats, action) {
       return state;
   }
 };
+
+export function routeStats(state = {}, action) {
+  switch (action.type) {
+    case 'COMPUTED_ROUTE_STATS':
+      return action.stats;
+    default:
+      return state;
+  }
+};

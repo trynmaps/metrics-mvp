@@ -3,6 +3,12 @@ import { MetricsBaseURL, S3Bucket, RoutesVersion, TripTimesVersion, WaitTimesVer
 import Moment from 'moment';
 import { MAX_DATE_RANGE } from '../UIConstants';
 import { Agencies } from '../config';
+import {
+  filterRoutes,
+  getAllWaits,
+  getAllSpeeds,
+  getAllScores,
+} from '../helpers/routeCalculations';
 
 /**
  * Helper function to compute the list of days for the GraphQL query.
@@ -178,6 +184,7 @@ export function fetchRoutes(params) {
           route.agencyId = agencyId;
         });
         dispatch({ type: 'RECEIVED_ROUTES', data: routes });
+        dispatch(computeRouteStats());
       })
       .catch(err => {
         dispatch({ type: 'ERROR_ROUTES', error: err });
@@ -225,6 +232,7 @@ export function fetchPrecomputedStats(params) {
             url: waitTimesUrl,
             data: response.data
           });
+          dispatch(computeRouteStats());
         })
         .catch(() => {
           dispatch({
@@ -249,6 +257,7 @@ export function fetchPrecomputedStats(params) {
             url: tripTimesUrl,
             data: response.data
           });
+          dispatch(computeRouteStats());
         })
         .catch(() => {
           dispatch({
@@ -321,6 +330,12 @@ export function handleGraphParams(params) {
       dispatch(resetArrivals());
     }
 
+    if (oldParams.date !== graphParams.date
+      || oldParams.startTime !== graphParams.startTime
+      || oldParams.endTime !== graphParams.endTime) {
+      dispatch(resetRouteStats());
+    }
+
     // for debugging: console.log('hGP: ' + graphParams.routeId + ' dirid: ' + graphParams.directionId + " start: " + graphParams.startStopId + " end: " + graphParams.endStopId);
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
@@ -341,6 +356,68 @@ export function handleGraphParams(params) {
       // when we don't have all params, clear graph data
 
       dispatch(resetTripMetrics());
+    }
+  };
+}
+
+export function resetRouteStats(params) {
+  return function(dispatch) {
+    dispatch({ type: 'COMPUTED_ROUTE_STATS', stats: {} });
+  };
+};
+
+export function computeRouteStats(params) {
+  return function(dispatch, getState) {
+    const state = getState();
+    const routes = state.routes.data;
+    const { precomputedStats } = state;
+    if (routes) {
+
+      const routeStats = {};
+
+      filterRoutes(routes).forEach(function(route) {
+        routeStats[route.id] = {};
+      });
+
+      const allWaits = getAllWaits(precomputedStats.waitTimes, routes);
+      const waitRankCount = allWaits.length;
+      allWaits.forEach(function(waitObj, index) {
+        const routeId = waitObj.routeId;
+        const stats = routeStats[routeId];
+        if (stats) {
+          Object.assign(stats, waitObj);
+          stats.waitRank = index + 1;
+          stats.waitRankCount = waitRankCount;
+        }
+      });
+
+      const allSpeeds = getAllSpeeds(precomputedStats.tripTimes, routes);
+      const speedRankCount = allSpeeds.length;
+      allSpeeds.forEach(function(speedObj, index) {
+        const routeId = speedObj.routeId;
+        const stats = routeStats[routeId];
+        if (stats) {
+          Object.assign(stats, speedObj);
+          stats.speedRank = index + 1;
+          stats.speedRankCount = speedRankCount;
+        }
+      });
+
+      const allScores = getAllScores(routes, allWaits, allSpeeds);
+      const scoreRankCount = allScores.length;
+      allScores.forEach(function(scoreObj, index) {
+        const routeId = scoreObj.routeId;
+        const stats = routeStats[routeId];
+        if (stats) {
+          Object.assign(stats, scoreObj);
+          stats.scoreRank = index + 1;
+          stats.scoreRankCount = scoreRankCount;
+        }
+      });
+
+      dispatch({ type: 'COMPUTED_ROUTE_STATS', stats: routeStats });
+    } else {
+      dispatch(resetRouteStats());
     }
   };
 }
