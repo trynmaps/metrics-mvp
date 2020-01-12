@@ -180,7 +180,7 @@ export default function InfoTripSummary(props) {
 
   const popoverContentWait = (
     <Fragment>
-      Median wait of {waitTimes.median.toFixed(1)} min gets a score of{' '}
+      Median wait of {(waitTimes && waitTimes.median != null) ? waitTimes.median.toFixed(1) : '--'} min gets a score of{' '}
       {scores.medianWaitScore}.
       <Box pt={2}>
         <InfoScoreLegend

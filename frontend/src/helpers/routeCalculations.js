@@ -69,7 +69,7 @@ function getTripTimesUsingHeuristics(
   route,
   directionId,
 ) {
-  const routeId = route.id;
+  const routeId = route ? route.id : null;
   const tripTimesForDir = getTripTimesForDirection(
     tripTimes,
     routeId,
