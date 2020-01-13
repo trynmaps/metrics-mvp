@@ -990,26 +990,6 @@ class GtfsScraper:
 
         routes_data = sorted(routes_data, key=sort_key)
 
-        data_str = json.dumps({
-            'version': routeconfig.DefaultVersion,
-            'routes': routes_data
-        }, separators=(',', ':'))
+        routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
-        cache_path = routeconfig.get_cache_path(agency_id)
-
-        with open(cache_path, "w") as f:
-            f.write(data_str)
-
-        if save_to_s3:
-            s3 = boto3.resource('s3')
-            s3_path = routeconfig.get_s3_path(agency_id)
-            s3_bucket = config.s3_bucket
-            print(f'saving to s3://{s3_bucket}/{s3_path}')
-            object = s3.Object(s3_bucket, s3_path)
-            object.put(
-                Body=gzip.compress(bytes(data_str, 'utf-8')),
-                CacheControl='max-age=86400',
-                ContentType='application/json',
-                ContentEncoding='gzip',
-                ACL='public-read'
-            )
+        routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)

@@ -1,4 +1,4 @@
-import re, os, time, requests, json
+import re, os, time, requests, json, boto3, gzip
 from . import util, config
 
 DefaultVersion = 'v3a'
@@ -149,3 +149,28 @@ def get_route_config(agency_id, route_id, version=DefaultVersion):
         if route.id == route_id:
             return route
     return None
+
+def save_routes(agency_id, routes, save_to_s3=False):
+    data_str = json.dumps({
+        'version': DefaultVersion,
+        'routes': [route.data for route in routes]
+    }, separators=(',', ':'))
+
+    cache_path = get_cache_path(agency_id)
+
+    with open(cache_path, "w") as f:
+        f.write(data_str)
+
+    if save_to_s3:
+        s3 = boto3.resource('s3')
+        s3_path = get_s3_path(agency_id)
+        s3_bucket = config.s3_bucket
+        print(f'saving to s3://{s3_bucket}/{s3_path}')
+        object = s3.Object(s3_bucket, s3_path)
+        object.put(
+            Body=gzip.compress(bytes(data_str, 'utf-8')),
+            CacheControl='max-age=86400',
+            ContentType='application/json',
+            ContentEncoding='gzip',
+            ACL='public-read'
+        )
