@@ -362,9 +362,6 @@ function RouteTable(props) {
                           payload: {
                             agencyId: row.agencyId,
                             routeId: row.id,
-                            directionId: null,
-                            startStopId: null,
-                            endStopId: null,
                           },
                         }}
                       >

@@ -5,7 +5,7 @@ export const components = {
   ISOCHRONE: 'Isochrone',
   LANDING: 'Landing',
   DASHBOARD: 'Dashboard',
-  ROUTESCREEN: 'Route',
+  ROUTESCREEN: 'RouteScreen',
   DATADIAGNOSTIC: 'DataDiagnostic',
   [NOT_FOUND]: 'NotFound',
 };

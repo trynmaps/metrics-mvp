@@ -4,7 +4,6 @@ import { Map, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet';
 import * as d3 from 'd3';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
-import { DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
@@ -388,18 +387,15 @@ class MapStops extends Component {
       endStopId = null;
       directionId = newDirectionId;
     }
-    const path = new Path();
-    path.buildPath(DIRECTION, directionId).buildPath(FROM_STOP, startStopId);
-    if (endStopId) {
-      path.buildPath(TO_STOP, endStopId);
-    }
-    path.commitPath();
-    // for debugging
-    // console.log("end state is: start: " + startStopId + " end: " + endStopId + " dir: " + directionId);
-    this.props.handleGraphParams({
-      startStopId,
-      endStopId,
-      directionId,
+
+    this.props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        routeId: routeId,
+        directionId: directionId,
+        startStopId: startStopId,
+        endStopId: endStopId
+      }
     });
   };
 
@@ -507,6 +503,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => {
   return {
     handleGraphParams: params => dispatch(handleGraphParams(params)),
+    dispatch,
   };
 };
 
