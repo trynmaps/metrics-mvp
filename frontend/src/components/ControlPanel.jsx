@@ -12,9 +12,7 @@ import Select from '@material-ui/core/Select';
 import Grid from '@material-ui/core/Grid';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
-import { handleGraphParams } from '../actions';
 import { getDownstreamStopIds } from '../helpers/mapGeometry';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { Colors } from '../UIConstants';
 
 const useStyles = makeStyles(theme => ({
@@ -39,12 +37,12 @@ function ControlPanel(props) {
   function setDirectionId(event) {
     const directionId = event.target.value;
 
-    const path = new Path();
-    path.buildPath(DIRECTION, directionId).commitPath();
-    return props.handleGraphParams({
-      directionId,
-      startStopId: null,
-      endStopId: null,
+    props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        routeId: graphParams.routeId,
+        directionId: directionId,
+      }
     });
   }
 
@@ -56,28 +54,27 @@ function ControlPanel(props) {
   const selectedRoute = getSelectedRouteInfo();
 
   function onSelectFirstStop(event) {
-    const stopId = event.target.value;
+    const startStopId = event.target.value;
 
-    const secondStopId = props.graphParams.endStopId;
-
-    const path = new Path();
-    path.buildPath(FROM_STOP, stopId);
-
-    if (secondStopId) {
-      path.buildPath(TO_STOP, secondStopId);
-    }
-
-    path.commitPath();
-
-    // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
+    props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        ...graphParams,
+        startStopId,
+      }
+    });
   }
 
   function onSelectSecondStop(event) {
     const endStopId = event.target.value;
 
-    const path = new Path();
-    path.buildPath(TO_STOP, endStopId).commitPath();
-
+    props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        ...graphParams,
+        endStopId: endStopId,
+      }
+    });
     // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
   }
 
@@ -97,17 +94,14 @@ function ControlPanel(props) {
         ? mySelectedRoute.directions[0].id
         : null;
 
-    const path = new Path();
-    path
-      .buildPath(ROUTE, routeId)
-      .buildPath(DIRECTION, directionId)
-      .commitPath();
-    props.handleGraphParams({
-      routeId,
-      directionId,
-      startStopId: null,
-      endStopId: null,
+    props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        routeId: routeId,
+        directionId: directionId
+      }
     });
+
   }
   /**
    * Handle mouseover event on Select TO & From dropdown list item.
@@ -277,7 +271,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    handleGraphParams: params => dispatch(handleGraphParams(params)),
+    dispatch,
   };
 };
 

@@ -14,7 +14,6 @@ import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as d3 from 'd3';
 import { Snackbar } from '@material-ui/core';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import {
   getDownstreamStopIds
 } from '../helpers/mapGeometry';
@@ -27,9 +26,6 @@ import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 import MapShield from './MapShield';
-
-//import { STARTING_COORDINATES } from '../locationConstants1';
-// const ZOOM = 13;
 
 const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
 
@@ -127,13 +123,15 @@ class MapSpider extends Component {
         riseOnHover
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
-          const path = new Path();
-          path
-            .buildPath(ROUTE, startMarker.routeId)
-            .buildPath(DIRECTION, startMarker.direction.id)
-            .buildPath(FROM_STOP, startMarker.stopId)
-            .buildPath(TO_STOP, lastStop.stopId)
-            .commitPath();
+          this.props.dispatch({
+            type: 'ROUTESCREEN',
+            payload: {
+              routeId: startMarker.routeId,
+              directionId: startMarker.direction.id,
+              startStopId: startMarker.stopId,
+              endStopId: lastStop.stopId
+            }
+          });
         }}
       ></Marker>
     );
@@ -297,13 +295,16 @@ class MapSpider extends Component {
 
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
-          const path = new Path();
-          path
-            .buildPath(ROUTE, startMarker.routeId)
-            .buildPath(DIRECTION, startMarker.direction.id)
-            .buildPath(FROM_STOP, startMarker.stopId)
-            .buildPath(TO_STOP, downstreamStops[i + 1].id)
-            .commitPath();
+
+          this.props.dispatch({
+            type: 'ROUTESCREEN',
+            payload: {
+              routeId: startMarker.routeId,
+              directionId: startMarker.direction.id,
+              startStopId: startMarker.stopId,
+              endStopId: downstreamStops[i + 1].id
+            }
+          });
         }}
       >
         <Tooltip>
@@ -543,6 +544,7 @@ const mapDispatchToProps = dispatch => {
   return {
     onSpiderMapClick: (stops, latLng) =>
       dispatch(handleSpiderMapClick(stops, latLng)),
+    dispatch,
   };
 };
 
