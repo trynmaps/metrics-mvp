@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from 'react';
+import React, { Fragment } from 'react';
 
 import { connect } from 'react-redux';
 
@@ -10,7 +10,6 @@ import InfoScoreCard from './InfoScoreCard';
 import InfoScoreLegend from './InfoScoreLegend';
 import TravelTimeChart from './TravelTimeChart';
 import MareyChart from './MareyChart';
-import { fetchPrecomputedWaitAndTripData } from '../actions';
 import {
   filterRoutes,
   getAllWaits,
@@ -26,12 +25,8 @@ import {
  * @param {any} props
  */
 function RouteSummary(props) {
-  const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
+  const { graphParams, precomputedStats } = props;
   const [tabValue, setTabValue] = React.useState(0);
-
-  useEffect(() => {
-    myFetchPrecomputedWaitAndTripData(graphParams);
-  }, [graphParams, myFetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
 
   let wait = null;
   let speed = null;
@@ -54,8 +49,8 @@ function RouteSummary(props) {
   if (graphParams.routeId) {
     routes = props.routes ? filterRoutes(props.routes) : [];
 
-    allWaits = getAllWaits(props.waitTimesCache, graphParams, routes);
-    allSpeeds = getAllSpeeds(props.tripTimesCache, graphParams, routes);
+    allWaits = getAllWaits(precomputedStats.waitTimes, routes);
+    allSpeeds = getAllSpeeds(precomputedStats.tripTimes, routes);
     allScores = getAllScores(routes, allWaits, allSpeeds);
 
     const routeId = graphParams.routeId;
@@ -214,7 +209,7 @@ function RouteSummary(props) {
 
   return (
     <Fragment>
-    
+
       <br />
       <AppBar position="static" color="default">
         <Tabs
@@ -240,9 +235,9 @@ function RouteSummary(props) {
             {...a11yProps(MAREY_CHART)}
           />
         </Tabs>
-      </AppBar>    
-    
-    
+      </AppBar>
+
+
       <Box p={2} hidden={tabValue !== SUMMARY}>
         <div style={{ padding: 8 }}>
         <Grid container spacing={4}>
@@ -337,17 +332,13 @@ function RouteSummary(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
-  graphParams: state.routes.graphParams,
-  waitTimesCache: state.routes.waitTimesCache,
-  tripTimesCache: state.routes.tripTimesCache,
+  routes: state.routes.data,
+  graphParams: state.graphParams,
+  precomputedStats: state.precomputedStats,
 });
 
 const mapDispatchToProps = dispatch => {
-  return {
-    myFetchPrecomputedWaitAndTripData: params =>
-      dispatch(fetchPrecomputedWaitAndTripData(params)),
-  };
+  return {};
 };
 
 export default connect(

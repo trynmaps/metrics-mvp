@@ -61,20 +61,18 @@ function ignoreLastStop(routeHeuristics, routeId, directionId) {
  * to trim off the first stop or first stops if needed.
  */
 function getTripTimesUsingHeuristics(
-  tripTimesCache,
-  graphParams,
-  routes,
-  routeId,
+  tripTimes,
+  route,
   directionId,
 ) {
+  const routeId = route.id;
   const tripTimesForDir = getTripTimesForDirection(
-    tripTimesCache,
-    graphParams,
+    tripTimes,
     routeId,
     directionId,
   );
 
-  if (!tripTimesForDir || !routes) {
+  if (!tripTimesForDir) {
     //console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
     return { tripTimesForFirstStop: null, directionInfo: null, firstStopDistance: null };
@@ -85,12 +83,11 @@ function getTripTimesUsingHeuristics(
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
 
-  const route = routes.find(thisRoute => thisRoute.id === routeId);
   const directionInfo = route.directions.find(
     direction => direction.id === directionId,
   );
 
-  const routeHeuristics = getAgency(graphParams.agencyId).routeHeuristics;
+  const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
 
   const ignoreFirst = ignoreFirstStop(routeHeuristics, routeId, directionId); // look up heuristic rule
   let firstStop = null;
@@ -130,18 +127,15 @@ function getTripTimesUsingHeuristics(
  * the last stop or stops as needed.
  */
 export function getEndToEndTripTime(
-  tripTimesCache,
-  graphParams,
-  routes,
-  routeId,
+  tripTimes,
+  route,
   directionId,
   stat = 'median',
 ) {
+  const routeId = route.id;
   const { tripTimesForFirstStop, directionInfo, firstStopDistance } = getTripTimesUsingHeuristics(
-    tripTimesCache,
-    graphParams,
-    routes,
-    routeId,
+    tripTimes,
+    route,
     directionId,
   );
 
@@ -151,7 +145,7 @@ export function getEndToEndTripTime(
     return '?';
   }
 
-  const routeHeuristics = getAgency(graphParams.agencyId).routeHeuristics;
+  const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
 
   const ignoreLast = ignoreLastStop(routeHeuristics, routeId, directionId); // look up heuristic rule
 
@@ -219,12 +213,10 @@ export function metersToMiles(meters) {
  * Returns an array of {x: stop index, y: time} objects for
  * plotting on a chart.
  */
-export function getTripDataSeries(props, routeId, directionId) {
+export function getTripDataSeries(tripTimes, route, directionId) {
   const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
-    props.tripTimesCache,
-    props.graphParams,
-    props.routes,
-    routeId,
+    tripTimes,
+    route,
     directionId,
   );
 
@@ -232,8 +224,6 @@ export function getTripDataSeries(props, routeId, directionId) {
     //console.log('no trip times for first stop ' + routeId + ' ' + directionId);
     return [];
   } // no precomputed times
-
-  const route = props.routes.find(thisRoute => thisRoute.id === routeId);
 
   const dataSeries = [];
 
@@ -264,22 +254,20 @@ export function getTripDataSeries(props, routeId, directionId) {
 /**
  * Computes waits of all routes.
  *
- * @param {Object} waitTimesCache
- * @param {Object} graphParams
+ * @param {Object} waitTimes
  * @param {Object} routes
  */
-export function getAllWaits(waitTimesCache, graphParams, routes) {
+export function getAllWaits(waitTimes, routes) {
   let allWaits = null;
   if (routes) {
     allWaits = filterRoutes(routes).map(route => {
       return {
         routeId: route.id,
-        wait: getAverageOfMedianWaitStat(waitTimesCache, graphParams, route),
+        wait: getAverageOfMedianWaitStat(waitTimes, route),
         longWait:
           1 -
           getAverageOfMedianWaitStat(
-            waitTimesCache,
-            graphParams,
+            waitTimes,
             route,
             'plt20m',
           ),
@@ -297,43 +285,31 @@ export function getAllWaits(waitTimesCache, graphParams, routes) {
 /**
  * Computes the end to end speed for a route.
  *
- * @param {Object} tripTimesCache
- * @param {Object} graphParams
- * @param {any} routes
- * @param {any} routeId
+ * @param {Object} tripTimes
+ * @param {Object} route
  */
 function getSpeedAndVariabilityForRoute(
-  tripTimesCache,
-  graphParams,
-  routes,
-  routeId,
+  tripTimes,
+  route,
 ) {
-  const route = routes.find(thisRoute => thisRoute.id === routeId);
-
   let speeds = route.directions.map(direction => {
 
     const { tripTime, tripDistance } = getEndToEndTripTime(
-      tripTimesCache,
-      graphParams,
-      routes,
-      route.id,
+      tripTimes,
+      route,
       direction.id,
     );
 
     const p90tripTime = getEndToEndTripTime(
-      tripTimesCache,
-      graphParams,
-      routes,
-      route.id,
+      tripTimes,
+      route,
       direction.id,
       'p90',
     ).tripTime;
 
     const p10tripTime = getEndToEndTripTime(
-        tripTimesCache,
-        graphParams,
-        routes,
-        route.id,
+        tripTimes,
+        route,
         direction.id,
         'p10',
       ).tripTime;
@@ -381,15 +357,13 @@ function getSpeedAndVariabilityForRoute(
  * @param {any} routes
  * @param {any} allDistances
  */
-export function getAllSpeeds(tripTimesCache, graphParams, routes) {
+export function getAllSpeeds(tripTimes, routes) {
   let allSpeeds = null;
   if (routes) {
     allSpeeds = filterRoutes(routes).map(route => {
       const speedAndVariability = getSpeedAndVariabilityForRoute(
-        tripTimesCache,
-        graphParams,
-        routes,
-        route.id,
+        tripTimes,
+        route,
       );
       return {
         routeId: route.id,

@@ -146,8 +146,12 @@ class MapSpider extends Component {
     let items = null;
 
     /* eslint-disable react/no-array-index-key */
-    if (this.props.spiderSelection) {
-      items = this.props.spiderSelection.map((startMarker, index) => {
+
+    var selectedStops = this.props.spiderSelection.stops;
+
+    if (selectedStops) {
+
+      items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
         const routeColor = this.routeColor(startMarker.routeIndex % 10);
 
@@ -181,8 +185,7 @@ class MapSpider extends Component {
    */
   DownstreamLines = () => {
     const allWaits = getAllWaits(
-      this.props.waitTimesCache,
-      this.props.graphParams,
+      this.props.precomputedStats.waitTimes,
       this.props.routes,
     );
 
@@ -190,8 +193,10 @@ class MapSpider extends Component {
 
     let items = null;
 
-    if (this.props.spiderSelection) {
-      items = this.props.spiderSelection.map(startMarker => {
+    const selectedStops = this.props.spiderSelection.stops;
+
+    if (selectedStops) {
+      items = selectedStops.map(startMarker => {
         const downstreamStops = startMarker.downstreamStops;
 
         const polylines = [];
@@ -467,7 +472,7 @@ class MapSpider extends Component {
    * Main React render method.
    */
   render() {
-    const { position, zoom } = this.props;
+    const { position, zoom, spiderSelection } = this.props;
     const { isValidLocation } = this.state;
     const mapClass = { width: '100%', height: this.state.height };
     const startMarkers = this.getStartMarkers();
@@ -493,10 +498,10 @@ class MapSpider extends Component {
           {/* see http://maps.stamen.com for details */}
           <this.DownstreamLines />
           {startMarkers}
-          <this.SpiderOriginMarker spiderLatLng={this.props.spiderLatLng} />
+          <this.SpiderOriginMarker spiderLatLng={spiderSelection.latLng} />
           <Control position="topright">
             <div className="map-instructions">
-              {this.props.spiderLatLng && startMarkers && startMarkers.length
+              {spiderSelection.latLng && startMarkers && startMarkers.length
                 ? 'Click anywhere along a route to see statistics for trips between the two stops.'
                 : 'Click anywhere in the city to see the routes near that point.'}
             </div>
@@ -528,11 +533,10 @@ class MapSpider extends Component {
 } // end class
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
-  graphParams: state.routes.graphParams,
-  waitTimesCache: state.routes.waitTimesCache,
-  spiderLatLng: state.routes.spiderLatLng,
-  spiderSelection: state.routes.spiderSelection,
+  routes: state.routes.data,
+  precomputedStats: state.precomputedStats,
+  graphParams: state.graphParams,
+  spiderSelection: state.spiderSelection,
 });
 
 const mapDispatchToProps = dispatch => {

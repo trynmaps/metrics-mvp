@@ -30,8 +30,8 @@ export default (state = {}, action) => {
   return {
     ...state,
     // Store whether a request is happening at the moment or not
-    // e.g. will be true when receiving REQUEST_GRAPH_DATA
-    //      and false when receiving RECEIVED_GRAPH_DATA / ERROR_GRAPH_DATA
+    // e.g. will be true when receiving REQUEST_TRIP_METRICS
+    //      and false when receiving REQUEST_TRIP_METRICS / REQUEST_TRIP_METRICS
     [requestName]: requestState === 'REQUEST',
   };
 };
