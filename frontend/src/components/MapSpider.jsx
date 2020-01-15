@@ -199,7 +199,7 @@ class MapSpider extends Component {
         // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
         // when selecting a line.
 
-        const stats = routeStats[startMarker.routeId];
+        const stats = routeStats[startMarker.routeId] || {};
 
         // scale wait score to 0, 1, or 2
         let waitScaled = (stats.medianWaitScore != null) ? Math.trunc((stats.medianWaitScore / HighestPossibleScore) * 3) : 0;
