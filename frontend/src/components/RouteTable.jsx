@@ -21,50 +21,24 @@ import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
 import {
   filterRoutes,
-  getAllWaits,
-  getAllSpeeds,
-  getAllScores,
-  quartileBackgroundColor,
-  quartileContrastColor,
+  scoreBackgroundColor,
+  scoreContrastColor,
 } from '../helpers/routeCalculations';
 
-function desc(a, b, orderBy) {
-  // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
-  // NaN needs special handling because NaN < 3 is false as is Nan > 3.
-
-  if (Number.isNaN(a[orderBy]) && Number.isNaN(b[orderBy])) {
-    return 0;
-  }
-  if (Number.isNaN(a[orderBy])) {
-    return -1;
-  }
-  if (Number.isNaN(b[orderBy])) {
-    return 1;
-  }
-
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
 /**
- * Sorts the given array using a comparator.  Equal values are ordered by array index.
+ * Sorts the given array by an object property.  Equal values are ordered by array index.
  *
  * Sorting by title is a special case because the original order of the routes array is
  * better than sorting route title alphabetically.  For example, 1 should be followed by
  * 1AX rather than 10 and 12.
  *
  * @param {Array} array      Array to sort
- * @param {Function} cmp     Comparator to use
  * @param {String} sortOrder Either 'desc' or 'asc'
- * @param {String} orderBy   Column to sort by
+ * @param {String} orderBy   Property to sort by
  * @returns {Array}          The sorted array
  */
-function stableSort(array, cmp, sortOrder, orderBy) {
+function stableSort(array, sortOrder, orderBy) {
+
   // special case for title sorting that short circuits the use of the comparator
 
   if (orderBy === 'title') {
@@ -75,6 +49,8 @@ function stableSort(array, cmp, sortOrder, orderBy) {
     return array;
   }
 
+  const cmp = getComparisonFunction(sortOrder, orderBy);
+
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);
@@ -84,10 +60,31 @@ function stableSort(array, cmp, sortOrder, orderBy) {
   return stabilizedThis.map(el => el[0]);
 }
 
-function getSorting(order, orderBy) {
-  return order === 'desc'
-    ? (a, b) => desc(a, b, orderBy)
-    : (a, b) => -desc(a, b, orderBy);
+function getComparisonFunction(order, orderBy) {
+  // Sort null values to bottom regardless of ascending/descending
+  var factor = order === 'desc' ? 1 : -1;
+  return (a, b) => {
+    const aValue = a[orderBy];
+    const bValue = b[orderBy];
+
+    if (aValue == null && bValue == null) {
+      return 0;
+    }
+    if (aValue == null) {
+      return 1;
+    }
+    if (bValue == null) {
+      return -1;
+    }
+
+    if (bValue < aValue) {
+      return -factor;
+    }
+    if (bValue > aValue) {
+      return factor;
+    }
+    return 0;
+  };
 }
 
 const headRows = [
@@ -276,7 +273,7 @@ function RouteTable(props) {
   const dense = true;
   const theme = createMuiTheme();
 
-  const { precomputedStats } = props;
+  const { routeStats } = props;
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -294,35 +291,10 @@ function RouteTable(props) {
     routes = routes.filter(myRoute => spiderRouteIds.includes(myRoute.id));
   }
 
-  const allWaits = getAllWaits(precomputedStats.waitTimes, routes);
-  const allSpeeds = getAllSpeeds(
-    precomputedStats.tripTimes,
-    routes,
-  );
-  const allScores = getAllScores(routes, allWaits, allSpeeds);
-
-  routes = routes.map(route => {
-    const waitObj = allWaits.find(
-      thisWaitObj => thisWaitObj.routeId === route.id,
-    );
-    const speedObj = allSpeeds.find(
-      thisSpeedObj => thisSpeedObj.routeId === route.id,
-    );
-    const scoreObj = allScores.find(
-      thisScoreObj => thisScoreObj.routeId === route.id,
-    );
-
+  const displayedRouteStats = routes.map(route => {
     return {
-      ...route,
-      wait: waitObj ? waitObj.wait : NaN,
-      longWait: waitObj ? waitObj.longWait : NaN,
-      speed: speedObj ? speedObj.speed : NaN,
-      variability: speedObj ? speedObj.variability : NaN,
-      totalScore: scoreObj ? scoreObj.totalScore : NaN,
-      medianWaitScore: scoreObj ? scoreObj.medianWaitScore : NaN,
-      longWaitScore: scoreObj ? scoreObj.longWaitScore : NaN,
-      speedScore: scoreObj ? scoreObj.speedScore : NaN,
-      travelVarianceScore: scoreObj ? scoreObj.travelVarianceScore : NaN,
+      route,
+      ...(routeStats[route.id] || {})
     };
   });
 
@@ -335,19 +307,18 @@ function RouteTable(props) {
               order={order}
               orderBy={orderBy}
               onRequestSort={handleRequestSort}
-              rowCount={routes.length}
+              rowCount={displayedRouteStats.length}
             />
             <TableBody>
               {stableSort(
-                routes,
-                getSorting(order, orderBy),
+                displayedRouteStats,
                 order,
                 orderBy,
               ).map((row, index) => {
                 const labelId = `enhanced-table-checkbox-${index}`;
 
                 return (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                  <TableRow hover role="checkbox" tabIndex={-1} key={row.route.id}>
                     <TableCell
                       component="th"
                       id={labelId}
@@ -360,12 +331,12 @@ function RouteTable(props) {
                         to={{
                           type: 'ROUTESCREEN',
                           payload: {
-                            agencyId: row.agencyId,
-                            routeId: row.id,
+                            agencyId: row.route.agencyId,
+                            routeId: row.route.id,
                           },
                         }}
                       >
-                        {row.title}
+                        {row.route.title}
                       </Navlink>
                     </TableCell>
                     <TableCell
@@ -375,15 +346,11 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
-                        color: quartileContrastColor(
-                          row.totalScore / 100,
-                        ),
-                        backgroundColor: quartileBackgroundColor(
-                          row.totalScore / 100,
-                        ),
+                        color: scoreContrastColor(row.totalScore),
+                        backgroundColor: scoreBackgroundColor(row.totalScore),
                       }}
                       label=
-                        {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
+                        {row.totalScore == null ? '--' : row.totalScore}
                     />
                     </TableCell>
                     <TableCell
@@ -393,15 +360,11 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
-                        color: quartileContrastColor(
-                          row.medianWaitScore / 100
-                        ),
-                        backgroundColor: quartileBackgroundColor(
-                          row.medianWaitScore / 100
-                        ),
+                        color: scoreContrastColor(row.medianWaitScore),
+                        backgroundColor: scoreBackgroundColor(row.medianWaitScore),
                       }}
                       label=
-                        {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0) + ' min'}
+                        {row.wait == null ? '--' : row.wait.toFixed(0) + ' min'}
                     />
 
                     </TableCell>
@@ -413,15 +376,11 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
-                        color: quartileContrastColor(
-                          row.longWaitScore / 100,
-                        ),
-                        backgroundColor: quartileBackgroundColor(
-                          row.longWaitScore / 100,
-                        ),
+                        color: scoreContrastColor(row.longWaitScore),
+                        backgroundColor: scoreBackgroundColor(row.longWaitScore),
                       }}
                       label=
-                        {Number.isNaN(row.longWait)
+                        {row.longWait == null
                         ? '--'
                         : <Fragment>
                             {(row.longWait * 100).toFixed(0)}{'%'}
@@ -429,7 +388,6 @@ function RouteTable(props) {
                       }
                     />
                     </TableCell>
-
                     <TableCell
                       align="right"
                       padding="none"
@@ -437,15 +395,11 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
-                        color: quartileContrastColor(
-                          row.speedScore / 100,
-                        ),
-                        backgroundColor: quartileBackgroundColor(
-                          row.speedScore / 100,
-                        ),
+                        color: scoreContrastColor(row.speedScore),
+                        backgroundColor: scoreBackgroundColor(row.speedScore),
                       }}
                       label=
-                        {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0) + ' mph'}
+                        {row.speed == null ? '--' : row.speed.toFixed(0) + ' mph'}
 
                     />
                     </TableCell>
@@ -456,15 +410,11 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
-                        color: quartileContrastColor(
-                          row.travelVarianceScore / 100,
-                        ),
-                        backgroundColor: quartileBackgroundColor(
-                          row.travelVarianceScore / 100,
-                        ),
+                        color: scoreContrastColor(row.travelVarianceScore),
+                        backgroundColor: scoreBackgroundColor(row.travelVarianceScore),
                       }}
                       label=
-                        {Number.isNaN(row.variability)
+                        {row.variability == null
                           ? '--'
                           : <Fragment>
                               {'\u00b1'} {row.variability.toFixed(0)} min
@@ -486,7 +436,7 @@ function RouteTable(props) {
 
 const mapStateToProps = state => ({
   spiderSelection: state.spiderSelection,
-  precomputedStats: state.precomputedStats,
+  routeStats: state.routeStats,
 });
 
 const mapDispatchToProps = dispatch => {

@@ -18,9 +18,9 @@ import {
   getDownstreamStopIds
 } from '../helpers/mapGeometry';
 import {
-  getAllWaits,
   filterRoutes,
   milesBetween,
+  HighestPossibleScore
 } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
@@ -182,10 +182,7 @@ class MapSpider extends Component {
    * Rendering of route from nearest stop to terminal.
    */
   DownstreamLines = () => {
-    const allWaits = getAllWaits(
-      this.props.precomputedStats.waitTimes,
-      this.props.routes,
-    );
+    const routeStats = this.props.routeStats;
 
     // One polyline for each start marker
 
@@ -202,16 +199,9 @@ class MapSpider extends Component {
         // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
         // when selecting a line.
 
-        // get wait rank, most frequent is highest (largest) rank
-        const waitRank = allWaits.findIndex(
-          wait => wait.routeId === startMarker.routeId,
-        );
+        const stats = routeStats[startMarker.routeId] || {};
 
-        // scale wait rank to 0, 1, or 2
-        let waitScaled = Math.trunc((waitRank / allWaits.length) * 3);
-        if (!isFinite(waitScaled)) {
-          waitScaled = 0;
-        }
+        let waitScaled = stats.waitRankCount ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3) : 0;
 
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           // for each stop
@@ -536,6 +526,7 @@ class MapSpider extends Component {
 const mapStateToProps = state => ({
   routes: state.routes.data,
   precomputedStats: state.precomputedStats,
+  routeStats: state.routeStats,
   graphParams: state.graphParams,
   spiderSelection: state.spiderSelection,
 });
