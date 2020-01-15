@@ -475,36 +475,26 @@ export function getAllScores(routes, waits, speeds) {
   return allScores;
 }
 
+const backgroundColorScale = d3.scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range([red[300], yellow[300], lightGreen[700], green[900]]);
+
 export const scoreBackgroundColor = score => {
   if (score == null || Number.isNaN(score)) {
     return null;
   }
-  if (score <= 25) {
-    return red[300];
-  }
-  if (score <= 50) {
-    return yellow[300];
-  }
-  if (score <= 75) {
-    return lightGreen[700];
-  }
-  return green[900];
+  return backgroundColorScale(score / HighestPossibleScore);
 }
+
+const contrastColorScale = d3.scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range(['rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)', 'white', 'white']);
 
 export const scoreContrastColor = score => {
   if (score == null || Number.isNaN(score)) {
     return null;
   }
-  if (score <= 25) {
-    return 'rgba(0,0,0,0.87)';
-  }
-  if (score <= 50) {
-    return 'rgba(0,0,0,0.87)';
-  }
-  if (score <= 75) {
-    return 'white';
-  }
-  return 'white';
+  return contrastColorScale(score / HighestPossibleScore);
 }
 
 /**
