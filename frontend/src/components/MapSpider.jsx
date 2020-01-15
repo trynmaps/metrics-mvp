@@ -201,8 +201,7 @@ class MapSpider extends Component {
 
         const stats = routeStats[startMarker.routeId] || {};
 
-        // scale wait score to 0, 1, or 2
-        let waitScaled = (stats.medianWaitScore != null) ? Math.trunc((stats.medianWaitScore / HighestPossibleScore) * 3) : 0;
+        let waitScaled = stats.waitRankCount ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3) : 0;
 
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           // for each stop
