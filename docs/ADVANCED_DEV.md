@@ -110,14 +110,24 @@ Show overview of routes and directions:
 python routes.py --agency=muni
 ```
 
-Show overall statistics for a particular route:
+Show static configuration for a particular route:
 ```
-python route.py --date=2019-11-19 --agency=muni --route=1
+python route.py --agency=muni --route=1
 ```
 
-Show headways between buses at a particular stop:
+Show overall statistics for a particular route:
+```
+python route.py --agency=muni --route=1  --date=2019-11-19
+```
+
+Show arrival times and headways between buses at a particular stop:
 ```
 python headways.py --date=2019-11-19 --agency=muni --route=1 --stop=16290
+```
+
+Compare arrival times and headways between buses at a particular stop, comparing with closest scheduled arrival times and headways:
+```
+python headways.py --date=2019-11-19 --agency=muni --route=1 --stop=16290 --comparison
 ```
 
 Show trips between two stops:
@@ -135,6 +145,16 @@ Show summary statistics of waiting times at a particular stop:
 python waits.py --date=2019-11-19 --agency=muni --route=12 --stop=13476
 ```
 
+Show scheduled timetable for a particular stop:
+```
+python timetable.py --agency=muni --route=12 --dir=1 --stop=13476 --date=2019-11-19
+```
+
+Compare scheduled timetable to actual arrival data, and show schedule adherence:
+```
+python timetable.py --agency=muni --route=12 --dir=1 --stop=13476 --date=2019-11-19 --comparison
+```
+
 Compute wait time statistics for all stops on a particular day:
 ```
 python compute_wait_times.py --agency=muni --date=2019-11-19
@@ -145,15 +165,16 @@ Compute trip time statistics for all pairs of stops on a particular day:
 python compute_trip_times.py --agency=muni --date=2019-11-19
 ```
 
-Show scheduled timetable for a particular stop:
+Parse route configuration from GTFS feed:
 ```
-python timetables.py --agency=muni --route=12 --stops=3476 --date=2019-04-12
+python save_routes.py --agency=muni
 ```
 
-Compare scheduled timetable to collected arrival data, with 3/5 minutes as the on-time/late thresholds(thresholds optional, the default value are 5/10 minutes)
+Parse timetables from GTFS feed:
 ```
-python timetables.py --agency=muni --route=12 --stops=3476 --date=2019-06-06 --comparison --threshold=3,5
+python save_timetables.py --agency=muni
 ```
+
 
 You can add the argument `--version=t2` to headways.py, trips.py, or vehicle.py to use the timepoint data from Muni
 (available for 2018-09-01 to 2018-11-30), instead of the arrival times computed from GPS coordinates from Nextbus.
@@ -171,7 +192,3 @@ and show discrepancies between the two data sets based on differences between ar
 python compare_versions.py --date=2018-11-14 --agency=muni --route=1 t2 v2
 ```
 
-Scrape timetables from GTFS data stored locally in `inpath` and extract them to the `data` directory:
-```
-python gtfs_scraper.py --inpath=path/to/google_transit
-```

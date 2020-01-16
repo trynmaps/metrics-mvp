@@ -30,14 +30,14 @@ import Moment from 'moment';
 import MomentTZ from 'moment-timezone/builds/moment-timezone-with-data-10-year-range'; // this augments Moment
 
 import * as d3 from 'd3';
-import { fetchArrivals, resetArrivals } from '../actions';
+import { fetchArrivals } from '../actions';
 import { getAgency } from '../config';
 import { DWELL_THRESHOLD_SECS } from '../UIConstants';
 
 import { metersToMiles } from '../helpers/routeCalculations';
 
 /**
- * Within state.route.arrivals, the data is organized as follows:
+ * Within state.arrivals.data, the data is organized as follows:
  *
  * Top level dictionary with version, agency, route_id, start_time/end_time timestamps
  * Stops dictionary by stop id -> arrivals -> direction id (usually just one) -> array of data points
@@ -66,7 +66,8 @@ function MareyChart(props) {
   const INBOUND = '1'; // same as directionInfo id
   const OUTBOUND = '0'; // same as directionInfo id
 
-  const { graphParams, myFetchArrivals, myResetArrivals, arrivals, arrivalsErr, routes, hidden } = props;
+  const { graphParams, arrivals, arrivalsErr, routes, hidden } = props;
+  const myFetchArrivals = props.fetchArrivals;
 
   const [hintValue, setHintValue] = useState();
   const [tripHighlight, setTripHighlight] = useState();
@@ -76,23 +77,10 @@ function MareyChart(props) {
   const agency = getAgency(graphParams.agencyId);
   const timezoneId = agency ? agency.timezoneId : 'UTC';
 
-  // Clear out stale data.  We have arrivals for a different route or
-  // different day versus what is currently selected.
-
-  useEffect(() => {
-     
-    if (arrivals && (arrivals.date !== graphParams.date || arrivals.route_id !== graphParams.routeId)) {
-      
-      //console.log('resetting arrivals because: ' + arrivals.date + ' vs ' + graphParams.date + ' ' + arrivals.route_id + ' vs ' + graphParams.routeId);
-      myResetArrivals(null);
-    }
-  }, [graphParams, myResetArrivals, arrivals]);
-      
   // Request missing arrival data lazily, only when this chart is tabbed into view.
   // This makes the app more responsive to route and date changes if we are hidden.
 
   useEffect(() => {
-      
     if (!arrivals && graphParams.routeId && !hidden) {
       myFetchArrivals(graphParams);
     }
@@ -222,27 +210,36 @@ function MareyChart(props) {
       const routeId = myArrivals.route_id;
       const route = myRoutes.find(myRoute => myRoute.id === routeId);
 
+      const allArrivals = [];
+
       Object.keys(stops).forEach(stopId => {
-        // console.log("Starting " + stopId);
         const stopsByDirection = stops[stopId].arrivals;
         Object.keys(stopsByDirection).forEach(directionId => {
-          const directionInfo = route.directions.find(
-            direction => direction.id === directionId,
-          );
-
-          const dataArray = stopsByDirection[directionId];
-          dataArray.forEach(arrival => {
-            addArrival(
-              tripData,
-              arrival,
-              stopId,
-              route,
-              directionInfo,
-              startTime,
-              startHourOfDay,
-            );
+          stopsByDirection[directionId].forEach(arrival => {
+            allArrivals.push({stopId: stopId, directionId: directionId, ...arrival});
           });
         });
+      });
+
+      allArrivals.sort((a, b) => {
+        return a.t - b.t;
+      });
+
+      const directionInfos = {};
+      route.directions.forEach(direction => {
+        directionInfos[direction.id] = direction;
+      });
+
+      allArrivals.forEach(arrival => {
+        addArrival(
+          tripData,
+          arrival,
+          arrival.stopId,
+          route,
+          directionInfos[arrival.directionId],
+          startTime,
+          startHourOfDay,
+        );
       });
 
       return tripData;
@@ -280,10 +277,7 @@ function MareyChart(props) {
         selectedOption === INBOUND_AND_OUTBOUND ||
         (trip.directionInfo && trip.directionInfo.id === selectedOption)
       ) {
-        const dataSeries = trip.series.sort((a, b) => {
-          const deltaY = b.y - a.y;
-          return deltaY !== 0 ? deltaY : b.x - a.x;
-        });
+        const dataSeries = trip.series;
 
         tripSeriesArray.push(
           <LineMarkSeries
@@ -480,16 +474,15 @@ function MareyChart(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
-  graphParams: state.routes.graphParams,
-  arrivals: state.routes.arrivals,
-  arrivalsErr: state.routes.arrivalsErr,
+  routes: state.routes.data,
+  graphParams: state.graphParams,
+  arrivals: state.arrivals.data,
+  arrivalsErr: state.arrivals.error,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    myFetchArrivals: params => dispatch(fetchArrivals(params)),
-    myResetArrivals: params => dispatch(resetArrivals(params)),
+    fetchArrivals: params => dispatch(fetchArrivals(params)),
   };
 };
 

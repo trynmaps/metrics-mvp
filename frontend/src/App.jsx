@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 
 import './App.css';
@@ -10,17 +10,19 @@ import RouteScreen from './screens/RouteScreen';
 import DataDiagnostic from './screens/DataDiagnostic';
 import Isochrone from './screens/Isochrone';
 
+const Components = {
+  About,
+  Isochrone,
+  Landing,
+  Dashboard,
+  RouteScreen,
+  DataDiagnostic,
+  NotFound
+};
+
 const App = ({ page }) => {
-  const components = {
-    About: <About />,
-    Isochrone: <Isochrone />,
-    Landing: <Landing />,
-    Dashboard: <Dashboard />,
-    Route: <RouteScreen />,
-    DataDiagnostic: <DataDiagnostic />,
-    NotFound: <NotFound />,
-  };
-  return <Fragment>{components[page]}</Fragment>;
+  const Component = Components[page];
+  return <Component />;
 };
 
 const mapStateToProps = ({ page }) => ({ page });

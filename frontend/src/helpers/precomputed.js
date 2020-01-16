@@ -16,17 +16,6 @@ export function getTripTimeStat(tripTimeValues, index) {
 }
 
 /**
- * Utility method to pull time and date out of graphParams as strings
- */
-export function getTimeStrAndDateStr(graphParams) {
-  const timeStr = graphParams.startTime
-    ? `${graphParams.startTime}-${graphParams.endTime}`
-    : '';
-  const dateStr = graphParams.date;
-  return [timeStr, dateStr];
-}
-
-/**
  * Access of precomputed wait and trip times.
  *
  * See https://github.com/trynmaps/metrics-mvp/pull/143 for an overview of the file structure and
@@ -39,43 +28,19 @@ export function getTimeStrAndDateStr(graphParams) {
  */
 
 /**
- * Maps time range to a file path (used by Redux action).
- */
-
-export function getTimePath(timeStr) {
-  return timeStr
-    ? `_${timeStr
-        .replace(/:/g, '')
-        .replace('-', '_')
-        .replace(/\+/g, '%2B')}`
-    : '';
-}
-
-/**
  * Gets trip times for a given route and direction.
  *
- * @param tripTimesCache
- * @param graphParams -- date and time values
+ * @param tripTimes
  * @param routeId
  * @param directionId
  * @param stat
  * @returns
  */
 export function getTripTimesForDirection(
-  tripTimesCache,
-  graphParams,
+  tripTimes,
   routeId,
   directionId,
 ) {
-  const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
-
-  if (!tripTimesCache) {
-    return null;
-  }
-
-  const agencyId = graphParams.agencyId;
-  const tripTimes = tripTimesCache[`${agencyId}-${dateStr + timeStr}-p10-median-p90`]; // 'median'
-
   if (!tripTimes) {
     //console.log('no trip times');
     return null;
@@ -94,25 +59,22 @@ export function getTripTimesForDirection(
 /**
  * Gets the downstream trip times for a given route, direction, and stop.
  *
+ * @param tripTimes
  * @param routeId
  * @param directionId
  * @param startStopId
- * @param dateStr  "2019-07-02"
- * @param timeStr  "0700-1900" or empty string (values from time picker)
  * @param stat     "median"
  * @returns
  */
 export function getTripTimesFromStop(
-  tripTimesCache,
-  graphParams,
+  tripTimes,
   routeId,
   directionId,
   startStopId,
   stat = 'median',
 ) {
   const directionTripTimes = getTripTimesForDirection(
-    tripTimesCache,
-    graphParams,
+    tripTimes,
     routeId,
     directionId,
   );
@@ -139,45 +101,17 @@ export function getTripTimesFromStop(
 }
 
 /**
- * Maps the given stat to a stat group (part of the file path).  Example stat groups are
- * "median" and "p10-median-p90".  When fetching an individual stat, this function returns
- * which group should be used, favoring more compact groups over larger ones.
- *
- * @param stat
- */
-export function getStatPath(stat) {
-  switch (stat) {
-    case 'median':
-      return 'median';
-    case 'p10':
-    case 'p90':
-      return 'p10-median-p90';
-    default:
-      throw new Error(`unknown stat ${stat}`);
-  }
-}
-
-/**
  * Gets the wait time info for a given route and direction.
  *
- * @param waitTimesCache
- * @param graphParams -- used for date and time values
+ * @param waitTimes
  * @param routeId
  * @param directionId
- * @param stat
  */
 export function getWaitTimeForDirection(
-  waitTimesCache,
-  graphParams,
+  waitTimes,
   routeId,
   directionId,
 ) {
-  const [timeStr, dateStr] = getTimeStrAndDateStr(graphParams);
-
-  const agencyId = graphParams.agencyId;
-
-  const waitTimes = waitTimesCache[`${agencyId}-${dateStr + timeStr}-median-p90-plt20m`];
-
   if (!waitTimes) {
     return null;
   }
@@ -197,21 +131,18 @@ export function getWaitTimeForDirection(
 /**
  * Averages together the median wait in all directions for a route.
  *
- * @param {any} waitTimesCache
- * @param {any} graphParams
+ * @param {any} waitTimes
  * @param {any} route
  */
 export function getAverageOfMedianWaitStat(
-  waitTimesCache,
-  graphParams,
+  waitTimes,
   route,
   stat = 'median',
 ) {
   const directions = route.directions;
   const sumOfMedians = directions.reduce((total, direction) => {
     const waitForDir = getWaitTimeForDirection(
-      waitTimesCache,
-      graphParams,
+      waitTimes,
       route.id,
       direction.id,
     );

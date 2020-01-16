@@ -13,6 +13,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
     parser.add_argument('--vid', help='Vehicle ID', required=True)
+    parser.add_argument('--dir', help='Direction ID')
 
     parser.add_argument('--version')
 
@@ -30,6 +31,7 @@ if __name__ == '__main__':
     route_id = args.route
     date_str = args.date
     vid = args.vid
+    direction_id = args.dir
 
     start_time_str = args.start_time
     end_time_str = args.end_time
@@ -53,13 +55,13 @@ if __name__ == '__main__':
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)
 
-        df = history.get_data_frame(vehicle_id=vid, start_time=start_time, end_time=end_time)
+        df = history.get_data_frame(vehicle_id=vid, direction_id=direction_id, start_time=start_time, end_time=end_time)
 
         if df.empty:
             print(f"no arrival times found for vehicle {vid} on {date_str}")
             continue
 
-        df = df.sort_values('TIME', axis=0)
+        df = df.sort_values(['TIME','TRIP'], axis=0)
         df['DATE_TIME'] = df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
 
         for row in df.itertuples():
@@ -75,7 +77,7 @@ if __name__ == '__main__':
             dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
             dist_str = f'{row.DIST}'.rjust(3)
 
-            print(f"t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  #{row.TRIP} {dist_str}m stop:{stop_id} {row.DID}[{stop_index}] {stop_info.title if stop_info else '?'} dir:{dir_info.title if dir_info else '?'}")
+            print(f"t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  #{row.TRIP} {dist_str}m  dir:{row.DID} stop:{stop_id} [{stop_index}] {stop_info.title if stop_info else '?'}")
 
             num_stops += 1
 

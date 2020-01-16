@@ -12,8 +12,7 @@ import Select from '@material-ui/core/Select';
 import Grid from '@material-ui/core/Grid';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
-import { handleGraphParams } from '../actions';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
+import { getDownstreamStopIds } from '../helpers/mapGeometry';
 import { Colors } from '../UIConstants';
 
 const useStyles = makeStyles(theme => ({
@@ -38,12 +37,12 @@ function ControlPanel(props) {
   function setDirectionId(event) {
     const directionId = event.target.value;
 
-    const path = new Path();
-    path.buildPath(DIRECTION, directionId).commitPath();
-    return props.onGraphParams({
-      directionId,
-      startStopId: null,
-      endStopId: null,
+    props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        routeId: graphParams.routeId,
+        directionId: directionId,
+      }
     });
   }
 
@@ -54,66 +53,29 @@ function ControlPanel(props) {
 
   const selectedRoute = getSelectedRouteInfo();
 
-  function getStopsInfoInGivenDirection(mySelectedRoute, directionId) {
-    return mySelectedRoute.directions.find(dir => dir.id === directionId);
-  }
-
-  function generateSecondStopList(mySelectedRoute, directionId, stopId) {
-    const secondStopInfo = getStopsInfoInGivenDirection(
-      mySelectedRoute,
-      directionId,
-    );
-    
-    const stopsList = secondStopInfo.stops;
-    const secondStopListIndex = stopId
-      ? stopsList.indexOf(stopId)
-      : 0;
-    
-    // loop routes start and stop at same stop
-    const isLoopRoute = stopsList[0] === stopsList[stopsList.length - 1];
-    const oneWaySecondStopsList = stopsList.slice(secondStopListIndex + 1);
-
-    if (!isLoopRoute) {
-      return oneWaySecondStopsList;
-    }
-    // loop routes display all subsequent stops up to origin stop
-    return oneWaySecondStopsList.concat(stopsList.slice(1, secondStopListIndex));
-  }
-
   function onSelectFirstStop(event) {
-    const stopId = event.target.value;
+    const startStopId = event.target.value;
 
-    const directionId = props.graphParams.directionId;
-    const secondStopId = props.graphParams.endStopId;
-    const mySelectedRoute = { ...getSelectedRouteInfo() };
-
-    secondStopList = generateSecondStopList(
-      mySelectedRoute,
-      directionId,
-      stopId,
-    );
-    const path = new Path();
-    path.buildPath(FROM_STOP, stopId);
-
-    if (secondStopId) {
-      path.buildPath(TO_STOP, secondStopId);
-    }
-
-    path.commitPath();
-
-    props.onGraphParams({
-      startStopId: stopId,
-      endStopId: secondStopId,
+    props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        ...graphParams,
+        startStopId,
+      }
     });
   }
 
   function onSelectSecondStop(event) {
     const endStopId = event.target.value;
 
-    const path = new Path();
-    path.buildPath(TO_STOP, endStopId).commitPath();
-
-    props.onGraphParams({ endStopId });
+    props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        ...graphParams,
+        endStopId: endStopId,
+      }
+    });
+    // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
   }
 
   function setRouteId(event) {
@@ -132,17 +94,14 @@ function ControlPanel(props) {
         ? mySelectedRoute.directions[0].id
         : null;
 
-    const path = new Path();
-    path
-      .buildPath(ROUTE, routeId)
-      .buildPath(DIRECTION, directionId)
-      .commitPath();
-    props.onGraphParams({
-      routeId,
-      directionId,
-      startStopId: null,
-      endStopId: null,
+    props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        routeId: routeId,
+        directionId: directionId
+      }
     });
+
   }
   /**
    * Handle mouseover event on Select TO & From dropdown list item.
@@ -176,14 +135,16 @@ function ControlPanel(props) {
   }
 
   if (selectedDirection) {
-    secondStopList = generateSecondStopList(
+    secondStopList = getDownstreamStopIds(
       selectedRoute,
-      graphParams.directionId,
+      selectedDirection,
       graphParams.startStopId,
     );
   }
 
   const classes = useStyles();
+
+  const directionStops = selectedDirection ? selectedDirection.stops : [];
 
   return (
     <div className="ControlPanel">
@@ -236,7 +197,7 @@ function ControlPanel(props) {
                     onOpen={() => setAllowHover(true)}
                     onClose={handleSelectClose}
                   >
-                    {(selectedDirection.stops || []).map(firstStopId => {
+                    {directionStops.map(firstStopId => {
                       const icon = document.querySelector(`.id${firstStopId}`);
                       const title = (
                         selectedRoute.stops[firstStopId] || {
@@ -305,12 +266,12 @@ function ControlPanel(props) {
 
 // for this entire component, now using graphParams values in Redux instead of local state.
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
+  graphParams: state.graphParams,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    onGraphParams: params => dispatch(handleGraphParams(params)),
+    dispatch,
   };
 };
 

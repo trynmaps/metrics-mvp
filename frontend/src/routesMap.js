@@ -1,6 +1,11 @@
 import { handleGraphParams } from './actions';
 import { Agencies } from './config';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, DATE, START_DATE, START_TIME, END_TIME, DAYS_OF_THE_WEEK } from './routeUtil';
+
+export const DATE = 'date';
+export const START_DATE = 'startDate';
+export const START_TIME = 'startTime';
+export const END_TIME = 'endTime';
+export const DAYS_OF_THE_WEEK = 'daysOfTheWeek';
 
 export default {
   ABOUT: '/about',
@@ -16,11 +21,12 @@ export default {
     the ? after the : means an optional paramter variable
     ()* shows am optional parameter label
     */
-    path: `/${ROUTE}/:routeId/(${DIRECTION})*/:directionId?/(${FROM_STOP})*/:startStopId?/(${TO_STOP})*/:endStopId?`
+    path: `/route/:routeId/:directionId?/:startStopId?/:endStopId?`
       + `/(${DATE})*/:date?/(${START_DATE})*/:startDate?`
       + `/(${START_TIME})*/:startTime?/(${END_TIME})*/:endTime?`
       + `/(${DAYS_OF_THE_WEEK})*/:daysOfTheWeek?`
       ,
+
     thunk: async (dispatch, getState) => {
       const { location } = getState();
       const { routeId, directionId, startStopId, endStopId,

@@ -19,18 +19,17 @@ function Info(props) {
   const [tabValue, setTabValue] = React.useState(0);
 
   const {
-    graphData,
-    graphError,
+    tripMetrics,
+    tripMetricsError,
+    tripMetricsLoading,
     graphParams,
-    intervalData,
-    intervalError,
-    byDayData,
     routes,
   } = props;
 
-  const headways = graphData ? graphData.headways : null;
-  const waitTimes = graphData ? graphData.waitTimes : null;
-  const tripTimes = graphData ? graphData.tripTimes : null;
+  const headways = tripMetrics ? tripMetrics.interval.headways : null;
+  const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
+  const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
+  const byDayData = tripMetrics ? tripMetrics.byDay : null;
 
   const headwayData =
     headways && headways.histogram
@@ -151,7 +150,7 @@ function Info(props) {
         <div>
           <Box p={2} hidden={tabValue !== SUMMARY}>
             <InfoTripSummary
-              graphData={graphData}
+              tripMetrics={tripMetrics}
               graphParams={graphParams}
               routes={routes}
             />
@@ -175,8 +174,7 @@ function Info(props) {
             </Typography>
 
             <InfoIntervalsOfDay
-              intervalData={intervalData}
-              intervalError={intervalError}
+              tripMetrics={tripMetrics}
             />
           </Box>
 
@@ -363,9 +361,14 @@ function Info(props) {
         </Box>
       ) : null}
 
-      {graphError ? (
+      {tripMetricsError ? (
         <Box p={2}>
-          <code>{graphError}</code>
+          <code>Error: {tripMetricsError}</code>
+        </Box>
+      ) : null}
+      {tripMetricsLoading ? (
+        <Box p={2}>
+          Loading...
         </Box>
       ) : null}
     </div>
