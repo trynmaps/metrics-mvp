@@ -14,6 +14,8 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
 import { createMuiTheme } from '@material-ui/core/styles';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
@@ -159,7 +161,7 @@ const useToolbarStyles = makeStyles(theme => ({
           backgroundColor: theme.palette.secondary.dark,
         },
   spacer: {
-    flex: '1 1 100%',
+    flex: '1',
   },
   actions: {
     color: theme.palette.text.secondary,
@@ -187,6 +189,27 @@ const EnhancedTableToolbar = props => {
     setAnchorEl(null);
   }
 
+  const filters = {
+    ALL: 'All Routes',
+    DEMO: 'Demo Routes',
+    LVR: 'Light Rail Routes',
+    BUS: 'But Routes',
+    OWL: 'OWL Routes',
+    XR: 'Express and Rapid Routes',
+    CABLE: 'Cable Car Routes',
+  }
+
+  let filterOptions = {};
+  for (let filterName in filters){
+    filterOptions.push(
+      <MenuItem value={filterName}>{filters[filterName]}</MenuItem>
+    );
+  }
+
+  const applyFilter = event => {
+    console.log(event['target']['value']);
+  }
+
   return (
     <Toolbar
       className={clsx(classes.root, {
@@ -201,19 +224,19 @@ const EnhancedTableToolbar = props => {
         ) : (
           <Typography variant="h6" id="tableTitle">
             Routes
-                  <IconButton size="small" onClick={handleClick}>
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
+              <IconButton size="small" onClick={handleClick}>
+                <InfoIcon fontSize="small" />
+              </IconButton>
           </Typography>
         )}
       </div>
       <div className={classes.spacer} />
       <div className={classes.actions}>
-        <Tooltip title="Filter list">
-          <IconButton aria-label="Filter list">
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
+        <Select
+          IconComponent={FilterListIcon}
+        >
+          {filterOptions}
+        </Select>
       </div>
 
       <Popover

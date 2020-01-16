@@ -32,4 +32,10 @@ export default {
       );
     },
   },
+  FILTER: {
+    path: `/filter/:filterName`,
+    thunk: async (dispatch, getState) => {
+      const { location } = getState();
+      const { filterName } = location.payload;
+  }
 };
