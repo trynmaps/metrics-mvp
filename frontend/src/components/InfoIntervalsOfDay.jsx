@@ -215,5 +215,4 @@ class InfoIntervalsOfDay extends Component {
   }
 }
 
-
 export default InfoIntervalsOfDay;

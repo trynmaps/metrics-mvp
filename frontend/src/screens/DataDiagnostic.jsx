@@ -12,7 +12,11 @@ import QuadrantChart from '../components/QuadrantChart';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { fetchRoutes, fetchPrecomputedWaitAndTripData, handleGraphParams } from '../actions';
+import {
+  fetchRoutes,
+  fetchPrecomputedWaitAndTripData,
+  handleGraphParams,
+} from '../actions';
 
 const useStyles = makeStyles({
   title: {
@@ -36,13 +40,20 @@ function DataDiagnostic(props) {
   const agency = Agencies[0];
 
   useEffect(() => {
-    myHandleGraphParams({agencyId: agency.id});
+    myHandleGraphParams({ agencyId: agency.id });
 
     if (!routes) {
-      myFetchRoutes({agencyId: agency.id});
+      myFetchRoutes({ agencyId: agency.id });
     }
     myFetchPrecomputedWaitAndTripData(graphParams);
-  }, [routes, myFetchRoutes, myFetchPrecomputedWaitAndTripData, graphParams, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
+  }, [
+    routes,
+    myFetchRoutes,
+    myFetchPrecomputedWaitAndTripData,
+    graphParams,
+    myHandleGraphParams,
+    agency,
+  ]); // like componentDidMount, this runs only on first render
 
   const classes = useStyles();
 

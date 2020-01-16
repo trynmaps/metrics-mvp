@@ -20,10 +20,10 @@ function Dashboard(props) {
   const agency = Agencies[0];
 
   useEffect(() => {
-    myHandleGraphParams({agencyId: agency.id}); // temporary hack, probably should remove once frontend can show routes from multiple agencies at once
+    myHandleGraphParams({ agencyId: agency.id }); // temporary hack, probably should remove once frontend can show routes from multiple agencies at once
 
     if (!routes) {
-      myFetchRoutes({agencyId: agency.id});
+      myFetchRoutes({ agencyId: agency.id });
     }
   }, [routes, myFetchRoutes, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
 

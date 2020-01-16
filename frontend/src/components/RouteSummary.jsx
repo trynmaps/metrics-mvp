@@ -4,7 +4,16 @@ import { connect } from 'react-redux';
 
 import Grid from '@material-ui/core/Grid';
 
-import { AppBar, Box, Tab, Tabs, Table, TableBody, TableCell, TableRow } from '@material-ui/core';
+import {
+  AppBar,
+  Box,
+  Tab,
+  Tabs,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from '@material-ui/core';
 
 import InfoScoreCard from './InfoScoreCard';
 import InfoScoreLegend from './InfoScoreLegend';
@@ -137,9 +146,8 @@ function RouteSummary(props) {
 
   const popoverContentLongWait = grades ? (
     <Fragment>
-      Long wait probability is the chance a rider has of a wait of twenty minutes or
-      longer after arriving randomly at a stop.
-      Probability of{' '}
+      Long wait probability is the chance a rider has of a wait of twenty
+      minutes or longer after arriving randomly at a stop. Probability of{' '}
       {(longWait * 100).toFixed(1) /* be more precise than card */}% gets a
       score of {grades.longWaitScore}.
       <Box pt={2}>
@@ -158,8 +166,8 @@ function RouteSummary(props) {
 
   const popoverContentSpeed = grades ? (
     <Fragment>
-      This is the average of the speeds for median end to end trips, in all directions.
-      Average speed of{' '}
+      This is the average of the speeds for median end to end trips, in all
+      directions. Average speed of{' '}
       {speed === null || Number.isNaN(speed) ? '--' : speed.toFixed(1)} mph gets
       a score of {grades.speedScore}.
       <Box pt={2}>
@@ -178,11 +186,11 @@ function RouteSummary(props) {
 
   const popoverContentTravelVariability = grades ? (
     <Fragment>
-      Travel time variability is the 90th percentile end to end travel time minus the 10th percentile
-      travel time.  This measures how much extra travel time is needed for some trips.
-      Variability of{' '}
-      {variability === null ? '--' : '\u00b1' + variability.toFixed(1)} min gets a score of{' '}
-      {grades.travelVarianceScore}.
+      Travel time variability is the 90th percentile end to end travel time
+      minus the 10th percentile travel time. This measures how much extra travel
+      time is needed for some trips. Variability of{' '}
+      {variability === null ? '--' : `\u00b1${variability.toFixed(1)}`} min gets
+      a score of {grades.travelVarianceScore}.
       <Box pt={2}>
         <InfoScoreLegend
           rows={[
@@ -214,7 +222,6 @@ function RouteSummary(props) {
 
   return (
     <Fragment>
-    
       <br />
       <AppBar position="static" color="default">
         <Tabs
@@ -240,97 +247,105 @@ function RouteSummary(props) {
             {...a11yProps(MAREY_CHART)}
           />
         </Tabs>
-      </AppBar>    
-    
-    
+      </AppBar>
+
       <Box p={2} hidden={tabValue !== SUMMARY}>
         <div style={{ padding: 8 }}>
-        <Grid container spacing={4}>
-          <InfoScoreCard
-            grades={wait && speed && grades ? grades : null}
-            gradeName="totalScore"
-            hideRating
-            title="Route Score"
-            largeValue={wait && speed ? grades.totalScore : '--'}
-            smallValue={`/${grades ? grades.highestPossibleScore : '--'}`}
-            bottomContent={
-              scoreRanking
-                ? `#${scoreRanking} out of ${allScores.length} routes`
-                : 'No data'
-            }
-            popoverContent={popoverContentTotalScore}
-          />
+          <Grid container spacing={4}>
+            <InfoScoreCard
+              grades={wait && speed && grades ? grades : null}
+              gradeName="totalScore"
+              hideRating
+              title="Route Score"
+              largeValue={wait && speed ? grades.totalScore : '--'}
+              smallValue={`/${grades ? grades.highestPossibleScore : '--'}`}
+              bottomContent={
+                scoreRanking
+                  ? `#${scoreRanking} out of ${allScores.length} routes`
+                  : 'No data'
+              }
+              popoverContent={popoverContentTotalScore}
+            />
 
-          <InfoScoreCard
-            grades={wait && grades ? grades : null}
-            gradeName="medianWaitScore"
-            title="Median Wait"
-            largeValue={wait === null ? '--' : wait.toFixed(0)}
-            smallValue="&nbsp;min"
-            bottomContent={
-              <Fragment>
-                {waitRanking
-                  ? `#${waitRanking} of ${allWaits.length} for shortest wait`
-                  : null}
-              </Fragment>
-            }
-            popoverContent={popoverContentWait}
-          />
+            <InfoScoreCard
+              grades={wait && grades ? grades : null}
+              gradeName="medianWaitScore"
+              title="Median Wait"
+              largeValue={wait === null ? '--' : wait.toFixed(0)}
+              smallValue="&nbsp;min"
+              bottomContent={
+                <Fragment>
+                  {waitRanking
+                    ? `#${waitRanking} of ${allWaits.length} for shortest wait`
+                    : null}
+                </Fragment>
+              }
+              popoverContent={popoverContentWait}
+            />
 
-          <InfoScoreCard
-            grades={wait && grades ? grades : null}
-            gradeName="longWaitScore"
-            title="Long Wait %"
-            largeValue={(longWait * 100).toFixed(0)}
-            smallValue="%"
-            bottomContent={
-              <Fragment>
-                {longWait > 0
-                  ? `1 time out of ${Math.round(1 / longWait)}`
-                  : ''}
-              </Fragment>
-            }
-            popoverContent={popoverContentLongWait}
-          />
+            <InfoScoreCard
+              grades={wait && grades ? grades : null}
+              gradeName="longWaitScore"
+              title="Long Wait %"
+              largeValue={(longWait * 100).toFixed(0)}
+              smallValue="%"
+              bottomContent={
+                <Fragment>
+                  {longWait > 0
+                    ? `1 time out of ${Math.round(1 / longWait)}`
+                    : ''}
+                </Fragment>
+              }
+              popoverContent={popoverContentLongWait}
+            />
 
-          <InfoScoreCard
-            grades={speed && grades ? grades : null}
-            gradeName="speedScore"
-            title="Average Speed"
-            largeValue={
-              speed === null || Number.isNaN(speed) ? '--' : speed.toFixed(0)
-            }
-            smallValue="&nbsp;mph"
-            bottomContent={
-              <Fragment>
-                {speedRanking
-                  ? `#${speedRanking} of ${allSpeeds.length} for fastest`
-                  : null}
-                <br />
-                {metersToMiles(dist).toFixed(1)} miles
-              </Fragment>
-            }
-            popoverContent={popoverContentSpeed}
-          />
+            <InfoScoreCard
+              grades={speed && grades ? grades : null}
+              gradeName="speedScore"
+              title="Average Speed"
+              largeValue={
+                speed === null || Number.isNaN(speed) ? '--' : speed.toFixed(0)
+              }
+              smallValue="&nbsp;mph"
+              bottomContent={
+                <Fragment>
+                  {speedRanking
+                    ? `#${speedRanking} of ${allSpeeds.length} for fastest`
+                    : null}
+                  <br />
+                  {metersToMiles(dist).toFixed(1)} miles
+                </Fragment>
+              }
+              popoverContent={popoverContentSpeed}
+            />
 
-          <InfoScoreCard
-            grades={speed && grades ? grades : null}
-            gradeName="travelVarianceScore"
-            title="Travel Time Variability"
-            largeValue={variability === null ? '--' : '\u00b1' + variability.toFixed(0)}
-            smallValue="&nbsp;min"
-            bottomContent="&nbsp;"
-            popoverContent={popoverContentTravelVariability}
-          />
-
-        </Grid>
+            <InfoScoreCard
+              grades={speed && grades ? grades : null}
+              gradeName="travelVarianceScore"
+              title="Travel Time Variability"
+              largeValue={
+                variability === null ? '--' : `\u00b1${variability.toFixed(0)}`
+              }
+              smallValue="&nbsp;min"
+              bottomContent="&nbsp;"
+              popoverContent={popoverContentTravelVariability}
+            />
+          </Grid>
         </div>
-        </Box>
-      <Box p={2} hidden={tabValue !== TRAVEL_TIME} style={{overflowX: 'auto'}}>
+      </Box>
+      <Box
+        p={2}
+        hidden={tabValue !== TRAVEL_TIME}
+        style={{ overflowX: 'auto' }}
+      >
         <TravelTimeChart />
       </Box>
-      <Box p={2} hidden={tabValue !== MAREY_CHART} style={{overflowX: 'auto'}}>
-        <MareyChart hidden={tabValue !== MAREY_CHART}/>
+      <Box
+        p={2}
+        hidden={tabValue !== MAREY_CHART}
+        style={{ overflowX: 'auto' }}
+      >
+        <MareyChart hidden={tabValue !== MAREY_CHART} />
       </Box>
     </Fragment>
   );
