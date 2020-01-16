@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavLink } from 'redux-first-router-link';
 import { connect } from 'react-redux';
-import { components } from '../reducers/page.js';
 import Drawer from '@material-ui/core/Drawer';
 import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
@@ -15,6 +14,7 @@ import TimelineRoundedIcon from '@material-ui/icons/TimelineRounded';
 import CodeRoundedIcon from '@material-ui/icons/CodeRounded';
 import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
 import Divider from '@material-ui/core/Divider';
+import { components } from '../reducers/page.js';
 
 function SidebarButton(props) {
   const currentPage = props.currentPage;
@@ -56,7 +56,7 @@ function SidebarButton(props) {
             onClick={toggleDrawer}
             edge="start"
           >
-            <ChevronLeftIcon color="primary"/>
+            <ChevronLeftIcon color="primary" />
           </IconButton>
           <List>
             <ListItem
@@ -66,12 +66,12 @@ function SidebarButton(props) {
               exact
               style={inactiveStyle}
               button
-              selected={currentPage===components.DASHBOARD}
+              selected={currentPage === components.DASHBOARD}
             >
               <ListItemIcon>
-                <MapRoundedIcon color="primary"/>
+                <MapRoundedIcon color="primary" />
               </ListItemIcon>
-              <ListItemText primary="Dashboard"/>
+              <ListItemText primary="Dashboard" />
             </ListItem>
             <ListItem
               component={NavLink}
@@ -80,12 +80,12 @@ function SidebarButton(props) {
               exact
               style={inactiveStyle}
               button
-              selected={currentPage===components.ISOCHRONE}
+              selected={currentPage === components.ISOCHRONE}
             >
               <ListItemIcon>
-                <TimelineRoundedIcon color="primary"/>
+                <TimelineRoundedIcon color="primary" />
               </ListItemIcon>
-              <ListItemText primary="Isochrone"/>
+              <ListItemText primary="Isochrone" />
             </ListItem>
             <ListItem
               component={NavLink}
@@ -94,12 +94,12 @@ function SidebarButton(props) {
               exact
               style={inactiveStyle}
               button
-              selected={currentPage===components.DATADIAGNOSTIC}
+              selected={currentPage === components.DATADIAGNOSTIC}
             >
               <ListItemIcon>
-                <CodeRoundedIcon color="primary"/>
+                <CodeRoundedIcon color="primary" />
               </ListItemIcon>
-              <ListItemText primary="Developer Tools"/>
+              <ListItemText primary="Developer Tools" />
             </ListItem>
             <Divider light />
             <ListItem
@@ -110,9 +110,9 @@ function SidebarButton(props) {
               button
             >
               <ListItemIcon>
-                <InfoRoundedIcon color="primary"/>
+                <InfoRoundedIcon color="primary" />
               </ListItemIcon>
-              <ListItemText primary="About" style={inactiveStyle}/>
+              <ListItemText primary="About" style={inactiveStyle} />
             </ListItem>
           </List>
         </div>
@@ -125,6 +125,4 @@ const mapStateToProps = state => ({
   currentPage: state.page,
 });
 
-export default connect(
-  mapStateToProps,
-)(SidebarButton);
+export default connect(mapStateToProps)(SidebarButton);

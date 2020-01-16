@@ -25,10 +25,7 @@ const useStyles = makeStyles({
  * for all routes.  Access via /dataDiagnostic.
  */
 function DataDiagnostic(props) {
-  const {
-    graphParams,
-    routes,
-  } = props;
+  const { graphParams, routes } = props;
 
   const agency = Agencies[0];
   const myFetchRoutes = props.fetchRoutes;
@@ -79,7 +76,7 @@ function DataDiagnostic(props) {
 
 const mapStateToProps = state => ({
   routes: state.routes.data,
-  graphParams: state.graphParams
+  graphParams: state.graphParams,
 });
 
 const mapDispatchToProps = dispatch => ({

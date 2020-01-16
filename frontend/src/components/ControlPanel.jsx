@@ -41,8 +41,8 @@ function ControlPanel(props) {
       type: 'ROUTESCREEN',
       payload: {
         routeId: graphParams.routeId,
-        directionId: directionId,
-      }
+        directionId,
+      },
     });
   }
 
@@ -61,7 +61,7 @@ function ControlPanel(props) {
       payload: {
         ...graphParams,
         startStopId,
-      }
+      },
     });
   }
 
@@ -72,8 +72,8 @@ function ControlPanel(props) {
       type: 'ROUTESCREEN',
       payload: {
         ...graphParams,
-        endStopId: endStopId,
-      }
+        endStopId,
+      },
     });
     // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
   }
@@ -97,11 +97,10 @@ function ControlPanel(props) {
     props.dispatch({
       type: 'ROUTESCREEN',
       payload: {
-        routeId: routeId,
-        directionId: directionId
-      }
+        routeId,
+        directionId,
+      },
     });
-
   }
   /**
    * Handle mouseover event on Select TO & From dropdown list item.
@@ -170,13 +169,13 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.directionId || ""}
+                value={graphParams.directionId || ''}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >
                 {(selectedRoute.directions || []).map(direction => (
                   <MenuItem key={direction.id} value={direction.id}>
-                      {direction.title}
+                    {direction.title}
                   </MenuItem>
                 ))}
               </Select>

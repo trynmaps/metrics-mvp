@@ -17,18 +17,26 @@ export const initialGraphParams = {
   date: momentYesterday.format('YYYY-MM-DD'), // used where date ranges are not supported
   startDate: momentYesterday.format('YYYY-MM-DD'),
   // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
-  daysOfTheWeek: { ...WEEKDAYS.reduce((map, obj) => { map[obj.value] = true; return map}, {}),
-                   ...WEEKENDS.reduce((map, obj) => { map[obj.value] = true; return map}, {})},
+  daysOfTheWeek: {
+    ...WEEKDAYS.reduce((map, obj) => {
+      map[obj.value] = true;
+      return map;
+    }, {}),
+    ...WEEKENDS.reduce((map, obj) => {
+      map[obj.value] = true;
+      return map;
+    }, {}),
+  },
 };
 
 export function graphParams(state = initialGraphParams, action) {
   switch (action.type) {
     case 'RECEIVED_GRAPH_PARAMS':
-      return {...state, ...action.params};
+      return { ...state, ...action.params };
     default:
       return state;
   }
-};
+}
 
 const initialRoutes = {
   data: null, // array of route config objects for Agencies[0]
@@ -43,7 +51,7 @@ export function routes(state = initialRoutes, action) {
     default:
       return state;
   }
-};
+}
 
 const initialTripMetrics = {
   data: null, // TripMetrics object returned by GraphQL API, containing 'interval' and 'timeRanges' properties
@@ -68,13 +76,13 @@ export function tripMetrics(state = initialTripMetrics, action) {
       return {
         ...state,
         error: action.error,
-        data: null
+        data: null,
       };
     default:
       break;
   }
   return state;
-};
+}
 
 const initialArrivals = {
   data: null,
@@ -134,7 +142,7 @@ export function precomputedStats(state = initialPrecomputedStats, action) {
         ...state,
         waitTimesUrl: action.url,
         waitTimes: action.data,
-      }
+      };
     case 'REQUEST_PRECOMPUTED_WAIT_TIMES':
       return {
         ...state,
@@ -146,7 +154,7 @@ export function precomputedStats(state = initialPrecomputedStats, action) {
         ...state,
         tripTimesUrl: action.url,
         tripTimes: action.data,
-      }
+      };
     case 'REQUEST_PRECOMPUTED_TRIP_TIMES':
       return {
         ...state,
@@ -156,7 +164,7 @@ export function precomputedStats(state = initialPrecomputedStats, action) {
     default:
       return state;
   }
-};
+}
 
 export function routeStats(state = {}, action) {
   switch (action.type) {
@@ -165,4 +173,4 @@ export function routeStats(state = {}, action) {
     default:
       return state;
   }
-};
+}

@@ -153,9 +153,7 @@ function Info(props) {
               Performance by Time of Day
             </Typography>
 
-            <InfoIntervalsOfDay
-              tripMetrics={tripMetrics}
-            />
+            <InfoIntervalsOfDay tripMetrics={tripMetrics} />
           </Box>
 
           <Box p={2} hidden={tabValue !== HEADWAYS}>
@@ -226,8 +224,8 @@ function Info(props) {
             Wait Times
           </Typography>
           <p>
-            median wait time {Math.round(waitTimes.median)} minutes, max wait time{' '}
-            {Math.round(waitTimes.max)} minutes
+            median wait time {Math.round(waitTimes.median)} minutes, max wait
+            time {Math.round(waitTimes.max)} minutes
           </p>
           <XYPlot
             xDomain={[0, Math.max(60, Math.round(waitTimes.max) + 5)]}
@@ -346,11 +344,7 @@ function Info(props) {
           <code>Error: {tripMetricsError}</code>
         </Box>
       ) : null}
-      {tripMetricsLoading ? (
-        <Box p={2}>
-          Loading...
-        </Box>
-      ) : null}
+      {tripMetricsLoading ? <Box p={2}>Loading...</Box> : null}
     </div>
   );
 }

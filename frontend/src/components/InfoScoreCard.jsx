@@ -53,21 +53,16 @@ export default function InfoScoreCard(props) {
     setAnchorEl(null);
   }
 
-  const cardStyle = (score) => {
+  const cardStyle = score => {
     return {
-      background: (score != null)
-        ? scoreBackgroundColor(score)
-        : 'gray',
-      color: (score != null)
-        ? scoreContrastColor(score)
-        : 'black',
+      background: score != null ? scoreBackgroundColor(score) : 'gray',
+      color: score != null ? scoreContrastColor(score) : 'black',
       margin: 4,
     };
   };
 
-  const rating = (score != null)
-    ? Math.max(Math.round(score / 10.0) / 2.0, 0.5)
-    : 0;
+  const rating =
+    score != null ? Math.max(Math.round(score / 10.0) / 2.0, 0.5) : 0;
 
   return (
     <Fragment>

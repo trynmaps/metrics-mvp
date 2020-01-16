@@ -36,19 +36,15 @@ export function getTripTimeStat(tripTimeValues, index) {
  * @param stat
  * @returns
  */
-export function getTripTimesForDirection(
-  tripTimes,
-  routeId,
-  directionId,
-) {
+export function getTripTimesForDirection(tripTimes, routeId, directionId) {
   if (!tripTimes) {
-    //console.log('no trip times');
+    // console.log('no trip times');
     return null;
   }
 
   const routeTripTimes = tripTimes.routes[routeId];
   if (!routeTripTimes) {
-    //console.log('no trip times for route ' + routeId);
+    // console.log('no trip times for route ' + routeId);
     return null;
   }
 
@@ -107,11 +103,7 @@ export function getTripTimesFromStop(
  * @param routeId
  * @param directionId
  */
-export function getWaitTimeForDirection(
-  waitTimes,
-  routeId,
-  directionId,
-) {
+export function getWaitTimeForDirection(waitTimes, routeId, directionId) {
   if (!waitTimes) {
     return null;
   }
@@ -134,11 +126,7 @@ export function getWaitTimeForDirection(
  * @param {any} waitTimes
  * @param {any} route
  */
-export function getAverageOfMedianWaitStat(
-  waitTimes,
-  route,
-  stat = 'median',
-) {
+export function getAverageOfMedianWaitStat(waitTimes, route, stat = 'median') {
   const directions = route.directions;
   const sumOfMedians = directions.reduce((total, direction) => {
     const waitForDir = getWaitTimeForDirection(
