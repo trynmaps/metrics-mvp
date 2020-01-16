@@ -21,8 +21,7 @@ import {
 } from '../helpers/mapGeometry';
 import {
   filterRoutes,
-  milesBetween,
-  HighestPossibleScore,
+  milesBetween
 } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
