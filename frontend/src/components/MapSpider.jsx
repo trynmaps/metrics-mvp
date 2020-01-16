@@ -14,22 +14,18 @@ import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import * as d3 from 'd3';
 import { Snackbar } from '@material-ui/core';
-import { ROUTE, DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import {
   getDownstreamStopIds
 } from '../helpers/mapGeometry';
 import {
-  getAllWaits,
   filterRoutes,
   milesBetween,
+  HighestPossibleScore
 } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 import MapShield from './MapShield';
-
-//import { STARTING_COORDINATES } from '../locationConstants1';
-// const ZOOM = 13;
 
 const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
 
@@ -127,13 +123,15 @@ class MapSpider extends Component {
         riseOnHover
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
-          const path = new Path();
-          path
-            .buildPath(ROUTE, startMarker.routeId)
-            .buildPath(DIRECTION, startMarker.direction.id)
-            .buildPath(FROM_STOP, startMarker.stopId)
-            .buildPath(TO_STOP, lastStop.stopId)
-            .commitPath();
+          this.props.dispatch({
+            type: 'ROUTESCREEN',
+            payload: {
+              routeId: startMarker.routeId,
+              directionId: startMarker.direction.id,
+              startStopId: startMarker.stopId,
+              endStopId: lastStop.stopId
+            }
+          });
         }}
       ></Marker>
     );
@@ -146,8 +144,12 @@ class MapSpider extends Component {
     let items = null;
 
     /* eslint-disable react/no-array-index-key */
-    if (this.props.spiderSelection) {
-      items = this.props.spiderSelection.map((startMarker, index) => {
+
+    var selectedStops = this.props.spiderSelection.stops;
+
+    if (selectedStops) {
+
+      items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
         const routeColor = this.routeColor(startMarker.routeIndex % 10);
 
@@ -180,18 +182,16 @@ class MapSpider extends Component {
    * Rendering of route from nearest stop to terminal.
    */
   DownstreamLines = () => {
-    const allWaits = getAllWaits(
-      this.props.waitTimesCache,
-      this.props.graphParams,
-      this.props.routes,
-    );
+    const routeStats = this.props.routeStats;
 
     // One polyline for each start marker
 
     let items = null;
 
-    if (this.props.spiderSelection) {
-      items = this.props.spiderSelection.map(startMarker => {
+    const selectedStops = this.props.spiderSelection.stops;
+
+    if (selectedStops) {
+      items = selectedStops.map(startMarker => {
         const downstreamStops = startMarker.downstreamStops;
 
         const polylines = [];
@@ -199,16 +199,9 @@ class MapSpider extends Component {
         // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
         // when selecting a line.
 
-        // get wait rank, most frequent is highest (largest) rank
-        const waitRank = allWaits.findIndex(
-          wait => wait.routeId === startMarker.routeId,
-        );
+        const stats = routeStats[startMarker.routeId] || {};
 
-        // scale wait rank to 0, 1, or 2
-        let waitScaled = Math.trunc((waitRank / allWaits.length) * 3);
-        if (!isFinite(waitScaled)) {
-          waitScaled = 0;
-        }
+        let waitScaled = stats.waitRankCount ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3) : 0;
 
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           // for each stop
@@ -292,13 +285,16 @@ class MapSpider extends Component {
 
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
-          const path = new Path();
-          path
-            .buildPath(ROUTE, startMarker.routeId)
-            .buildPath(DIRECTION, startMarker.direction.id)
-            .buildPath(FROM_STOP, startMarker.stopId)
-            .buildPath(TO_STOP, downstreamStops[i + 1].id)
-            .commitPath();
+
+          this.props.dispatch({
+            type: 'ROUTESCREEN',
+            payload: {
+              routeId: startMarker.routeId,
+              directionId: startMarker.direction.id,
+              startStopId: startMarker.stopId,
+              endStopId: downstreamStops[i + 1].id
+            }
+          });
         }}
       >
         <Tooltip>
@@ -467,7 +463,7 @@ class MapSpider extends Component {
    * Main React render method.
    */
   render() {
-    const { position, zoom } = this.props;
+    const { position, zoom, spiderSelection } = this.props;
     const { isValidLocation } = this.state;
     const mapClass = { width: '100%', height: this.state.height };
     const startMarkers = this.getStartMarkers();
@@ -493,10 +489,10 @@ class MapSpider extends Component {
           {/* see http://maps.stamen.com for details */}
           <this.DownstreamLines />
           {startMarkers}
-          <this.SpiderOriginMarker spiderLatLng={this.props.spiderLatLng} />
+          <this.SpiderOriginMarker spiderLatLng={spiderSelection.latLng} />
           <Control position="topright">
             <div className="map-instructions">
-              {this.props.spiderLatLng && startMarkers && startMarkers.length
+              {spiderSelection.latLng && startMarkers && startMarkers.length
                 ? 'Click anywhere along a route to see statistics for trips between the two stops.'
                 : 'Click anywhere in the city to see the routes near that point.'}
             </div>
@@ -528,17 +524,18 @@ class MapSpider extends Component {
 } // end class
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
-  graphParams: state.routes.graphParams,
-  waitTimesCache: state.routes.waitTimesCache,
-  spiderLatLng: state.routes.spiderLatLng,
-  spiderSelection: state.routes.spiderSelection,
+  routes: state.routes.data,
+  precomputedStats: state.precomputedStats,
+  routeStats: state.routeStats,
+  graphParams: state.graphParams,
+  spiderSelection: state.spiderSelection,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
     onSpiderMapClick: (stops, latLng) =>
       dispatch(handleSpiderMapClick(stops, latLng)),
+    dispatch,
   };
 };
 

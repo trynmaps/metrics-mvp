@@ -18,7 +18,8 @@ import Popover from '@material-ui/core/Popover';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import {
-  computeGrades,
+  computeScores,
+  HighestPossibleScore
 } from '../helpers/routeCalculations';
 import {
   getDistanceInMiles
@@ -57,9 +58,9 @@ export default function InfoTripSummary(props) {
     setPlanningAnchorEl(null);
   }
 
-  const { graphData, graphParams, routes } = props;
-  const waitTimes = graphData ? graphData.waitTimes : null;
-  const tripTimes = graphData ? graphData.tripTimes : null;
+  const { tripMetrics, graphParams, routes } = props;
+  const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
+  const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
 
   const computeDistance = (myGraphParams, myRoutes) => {
     if (myGraphParams && myGraphParams.endStopId) {
@@ -101,15 +102,15 @@ export default function InfoTripSummary(props) {
       getPercentileValue(tripTimes, TENTH_PERCENTILE)) / 2.0;
   }
 
-  const grades =
+  const scores =
     speed && waitTimes.median
-      ? computeGrades(
+      ? computeScores(
           waitTimes.median,
           longWaitProbability,
           speed,
           travelVariabilityTime,
         )
-      : null;
+      : {};
 
   let whyNoData = null;
   if (!distance) {
@@ -148,39 +149,39 @@ export default function InfoTripSummary(props) {
   const typicalWait = Math.round(waitTimes.median);
   const typicalTravel = Math.round(tripTimes.median); // note: can have NaN issues here due to lack of trip data between stops
 
-  const popoverContentTotalScore = grades ? (
+  const popoverContentTotalScore = (
     <Fragment>
-      Trip score of {grades.totalScore} is the average of the following
+      Trip score of {scores.totalScore} is the average of the following
       subscores:
       <Box pt={2}>
         <Table>
           <TableBody>
             <TableRow>
               <TableCell>Median wait</TableCell>
-              <TableCell align="right">{grades.medianWaitScore}</TableCell>
+              <TableCell align="right">{scores.medianWaitScore}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell>Long wait probability</TableCell>
-              <TableCell align="right">{grades.longWaitScore}</TableCell>
+              <TableCell align="right">{scores.longWaitScore}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell>Speed for median trip</TableCell>
-              <TableCell align="right"> {grades.speedScore}</TableCell>
+              <TableCell align="right"> {scores.speedScore}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell>Travel time variability</TableCell>
-              <TableCell align="right"> {grades.travelVarianceScore}</TableCell>
+              <TableCell align="right"> {scores.travelVarianceScore}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </Box>
     </Fragment>
-  ) : null;
+  );
 
-  const popoverContentWait = grades ? (
+  const popoverContentWait = (
     <Fragment>
-      Median wait of {waitTimes.median.toFixed(1)} min gets a score of{' '}
-      {grades.medianWaitScore}.
+      Median wait of {(waitTimes && waitTimes.median != null) ? waitTimes.median.toFixed(1) : '--'} min gets a score of{' '}
+      {scores.medianWaitScore}.
       <Box pt={2}>
         <InfoScoreLegend
           rows={[
@@ -193,15 +194,15 @@ export default function InfoTripSummary(props) {
         />
       </Box>
     </Fragment>
-  ) : null;
+  );
 
-  const popoverContentLongWait = grades ? (
+  const popoverContentLongWait = (
     <Fragment>
       Long wait probability is the chance a rider has of a wait of twenty minutes or
       longer after arriving randomly at the "from" stop.
       Probability of{' '}
       {(longWaitProbability * 100).toFixed(1) /* be more precise than card */}%
-      gets a score of {grades.longWaitScore}.
+      gets a score of {scores.longWaitScore}.
       <Box pt={2}>
         <InfoScoreLegend
           rows={[
@@ -214,12 +215,12 @@ export default function InfoTripSummary(props) {
         />
       </Box>
     </Fragment>
-  ) : null;
+  );
 
-  const popoverContentSpeed = grades ? (
+  const popoverContentSpeed = (
     <Fragment>
       Speed for median trip of {speed.toFixed(1)}{' '}
-      mph gets a score of {grades.speedScore}.
+      mph gets a score of {scores.speedScore}.
       <Box pt={2}>
         <InfoScoreLegend
           rows={[
@@ -232,14 +233,14 @@ export default function InfoTripSummary(props) {
         />
       </Box>
     </Fragment>
-  ) : null;
+  );
 
-  const popoverContentTravelVariability = grades ? (
+  const popoverContentTravelVariability = (
     <Fragment>
       Travel time variability is the 90th percentile travel time minus the 10th percentile
       travel time.  This measures how much extra travel time is needed for some trips.
       Variability of {'\u00b1' + travelVariabilityTime.toFixed(1)} min gets a score of{' '}
-      {grades.travelVarianceScore}.
+      {scores.travelVarianceScore}.
       <Box pt={2}>
         <InfoScoreLegend
           rows={[
@@ -252,12 +253,12 @@ export default function InfoTripSummary(props) {
         />
       </Box>
     </Fragment>
-  ) : null;
+  );
 
   return (
     <Fragment>
       <div style={{ padding: 8 }}>
-        {grades ? (
+        {scores ? (
           <Fragment>
             <Grid container spacing={4}>
               {/* spacing doesn't work exactly right here, just pads the Papers */}
@@ -321,18 +322,16 @@ export default function InfoTripSummary(props) {
                 </Box>
               </Grid>
               <InfoScoreCard
-                grades={grades}
-                gradeName="totalScore"
+                score={scores.totalScore}
                 hideRating
                 title="Trip Score"
-                largeValue={grades ? grades.totalScore : '--'}
-                smallValue={`/${grades ? grades.highestPossibleScore : '--'}`}
+                largeValue={scores.totalScore != null ? scores.totalScore : '--'}
+                smallValue={`/${HighestPossibleScore}`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTotalScore}
               />
               <InfoScoreCard
-                grades={grades}
-                gradeName="medianWaitScore"
+                score={scores.medianWaitScore}
                 title="Median Wait"
                 largeValue={Math.round(waitTimes.median)}
                 smallValue="&nbsp;min"
@@ -340,8 +339,7 @@ export default function InfoTripSummary(props) {
                 popoverContent={popoverContentWait}
               />
               <InfoScoreCard
-                grades={grades}
-                gradeName="longWaitScore"
+                score={scores.longWaitScore}
                 title="Long Wait %"
                 largeValue={Math.round(longWaitProbability * 100)}
                 smallValue="%"
@@ -353,17 +351,15 @@ export default function InfoTripSummary(props) {
                 popoverContent={popoverContentLongWait}
               />
               <InfoScoreCard
-                grades={grades}
-                gradeName="speedScore"
+                score={scores.speedScore}
                 title="Median Trip Speed"
                 largeValue={speed.toFixed(0)}
                 smallValue="&nbsp;mph"
-                bottomContent={`${distance.toFixed(1)} miles`}
+                bottomContent={`${distance != null ? distance.toFixed(1) : '--'} miles`}
                 popoverContent={popoverContentSpeed}
               />
               <InfoScoreCard
-                grades={grades}
-                gradeName="travelVarianceScore"
+                score={scores.travelVarianceScore}
                 title="Travel Time Variability"
                 largeValue={'\u00b1' + travelVariability}
                 smallValue="&nbsp;min"

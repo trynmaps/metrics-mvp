@@ -28,7 +28,7 @@ import {
  */
 function TravelTimeChart(props) {
   const [crosshairValues, setCrosshairValues] = useState([]);
-  const { graphParams } = props;
+  const { graphParams, precomputedStats, routes } = props;
 
   /**
    * Event handler for onMouseLeave.
@@ -53,18 +53,18 @@ function TravelTimeChart(props) {
   let directionId = null;
   let tripTimeForDirection = null;
 
-  if (props.routeId || graphParams.routeId) {
-    // take route id from props if given, else use redux graphParams
+  const routeId = props.routeId || graphParams.routeId; // take route id from props if given, else use redux graphParams
 
-    const routeId = props.routeId || graphParams.routeId;
+  if (routes && routeId) {
+
     directionId = props.directionId || graphParams.directionId; // also take direction_id from props if given
+
+    const route = routes.find(thisRoute => thisRoute.id === routeId);
 
     if (directionId != null) {
       tripTimeForDirection = getEndToEndTripTime(
-        props.tripTimesCache,
-        graphParams,
-        props.routes,
-        routeId,
+        precomputedStats.tripTimes,
+        route,
         directionId,
       ).tripTime;
 
@@ -76,7 +76,7 @@ function TravelTimeChart(props) {
     } */
     }
 
-    tripData = getTripDataSeries(props, routeId, directionId);
+    tripData = getTripDataSeries(precomputedStats.tripTimes, route, directionId);
   }
 
   const legendItems = [
@@ -183,10 +183,9 @@ function TravelTimeChart(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
-  graphParams: state.routes.graphParams,
-  waitTimesCache: state.routes.waitTimesCache,
-  tripTimesCache: state.routes.tripTimesCache,
+  routes: state.routes.data,
+  precomputedStats: state.precomputedStats,
+  graphParams: state.graphParams,
 });
 
 export default connect(mapStateToProps)(TravelTimeChart);

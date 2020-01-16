@@ -4,12 +4,14 @@ import json
 from graphene.test import Client
 import pandas as pd
 import datetime
-from backend.models import arrival_history
+from backend.models import arrival_history, routeconfig
 from backend.models.schema import metrics_api
 
 class SchemaTest(unittest.TestCase):
 
     def test_route_metrics_query(self):
+
+        routeconfig.save_routes('test', [], save_to_s3=False)
 
         d = datetime.date(2019,12,28)
         start_time = 1577530800

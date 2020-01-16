@@ -4,7 +4,6 @@ import { Map, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet';
 import * as d3 from 'd3';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
-import { DIRECTION, FROM_STOP, TO_STOP, Path } from '../routeUtil';
 import { handleGraphParams } from '../actions';
 import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
@@ -278,12 +277,10 @@ class MapStops extends Component {
   };
 
   getSpeed = (routeInfo, direction, firstStopId, nextStopId) => {
-    const graphParams = this.props.graphParams;
     const routeId = routeInfo.id;
 
     const tripTimesFromStop = getTripTimesFromStop(
-      this.props.tripTimesCache,
-      graphParams,
+      this.props.precomputedStats.tripTimes,
       routeId,
       direction.id,
       firstStopId,
@@ -390,19 +387,15 @@ class MapStops extends Component {
       endStopId = null;
       directionId = newDirectionId;
     }
-    const path = new Path();
-    path.buildPath(DIRECTION, directionId).buildPath(FROM_STOP, startStopId);
-    if (endStopId) {
-      path.buildPath(TO_STOP, endStopId);
-    }
-    path.commitPath();
-    const { onGraphParams } = this.props;
-    // for debugging
-    // console.log("end state is: start: " + startStopId + " end: " + endStopId + " dir: " + directionId);
-    onGraphParams({
-      startStopId,
-      endStopId,
-      directionId,
+
+    this.props.dispatch({
+      type: 'ROUTESCREEN',
+      payload: {
+        routeId: routeId,
+        directionId: directionId,
+        startStopId: startStopId,
+        endStopId: endStopId
+      }
     });
   };
 
@@ -503,13 +496,14 @@ class MapStops extends Component {
 }
 
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
-  tripTimesCache: state.routes.tripTimesCache,
+  graphParams: state.graphParams,
+  precomputedStats: state.precomputedStats,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    onGraphParams: params => dispatch(handleGraphParams(params)),
+    handleGraphParams: params => dispatch(handleGraphParams(params)),
+    dispatch,
   };
 };
 

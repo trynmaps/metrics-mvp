@@ -100,9 +100,9 @@ class InfoIntervalsOfDay extends Component {
   }
 
   render() {
-    const { intervalData, intervalError } = this.props;
+    const { tripMetrics } = this.props;
 
-    const intervals = intervalData;
+    const intervals = tripMetrics.timeRanges;
     this.waitData = intervals
       ? intervals.map(this.mapInterval('waitTimes'))
       : null;
@@ -209,7 +209,6 @@ class InfoIntervalsOfDay extends Component {
             />
           </div>
         ) : null}
-        <code>{intervalError || ''}</code>
       </div>
     );
   }

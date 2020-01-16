@@ -3,7 +3,7 @@ import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Checkbox from '@material-ui/core/Checkbox';
-import CircularProgress from '@material-ui/core/CircularProgress';      
+import CircularProgress from '@material-ui/core/CircularProgress';
 import Divider from '@material-ui/core/Divider';
 import Grid from '@material-ui/core/Grid';
 import Popover from '@material-ui/core/Popover';
@@ -29,7 +29,7 @@ import {
   TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
   MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
 } from '../UIConstants';
-import { initialState } from '../reducers/routesReducer';
+import { initialGraphParams } from '../reducers';
 import { isLoadingRequest } from '../reducers/loadingReducer';
 import { handleGraphParams } from '../actions';
 
@@ -73,7 +73,7 @@ const useStyles = makeStyles(theme => ({
     padding: theme.spacing(2),
     maxWidth: 400,
   },
-  
+
 }));
 
 /**
@@ -92,7 +92,7 @@ function DateTimePanel(props) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [infoAnchorEl, setInfoAnchorEl] = useState(null);
   const maxDate = Moment(Date.now()).format('YYYY-MM-DD');
-  
+
   function handleClick(event) {
     setAnchorEl(event.currentTarget);
   }
@@ -110,14 +110,13 @@ function DateTimePanel(props) {
   }
 
   function handleReset() {
-    const initialParams = initialState.graphParams;
     props.handleGraphParams({
-      date: initialParams.date,
-      startTime: initialParams.startTime,
-      endTime: initialParams.endTime,
-      daysBack: initialParams.daysBack,
-      startDate: initialParams.date,
-      daysOfTheWeek: initialParams.daysOfTheWeek,
+      date: initialGraphParams.date,
+      startTime: initialGraphParams.startTime,
+      endTime: initialGraphParams.endTime,
+      daysBack: initialGraphParams.daysBack,
+      startDate: initialGraphParams.date,
+      daysOfTheWeek: initialGraphParams.daysOfTheWeek,
     });
     handleClose(); // this forces the native date picker to reset, otherwise it doesn't stay in sync
   }
@@ -142,20 +141,20 @@ function DateTimePanel(props) {
   // these are the read-only representations of the date and time range
   let dateLabel = convertDate(graphParams.date);
   let rangeInfo = null;
-  
+
   //
   // If a date range is set, either update the date label to the full
   // range if we support it, or else show an info icon that explains
   // that we are only showing one day's data.
   //
-  
+
   if (graphParams.startDate !== graphParams.date) {
     if (dateRangeSupported) {
 
       dateLabel = convertDate(graphParams.startDate) + ' - ' + dateLabel;
 
     } else {
-      
+
       rangeInfo =
         <Fragment>
           <IconButton size="small" color="inherit" onClick={handleInfoClick}>
@@ -177,7 +176,7 @@ function DateTimePanel(props) {
             <div className={classes.popover}>Date ranges are implemented for
             Dashboard statistics when a route, direction, and stops are selected.
             Currently showing data for one day.</div>
-          </Popover>          
+          </Popover>
         </Fragment>
     }
   }
@@ -216,13 +215,13 @@ function DateTimePanel(props) {
     } else {
       const newMoment = Moment(newDate);
       const startMoment = Moment(graphParams.startDate);
-      
+
       const payload = {
         date: newDate
-      };      
-      
+      };
+
       if (newMoment.isBefore(graphParams.startDate)) {
-        payload.startDate = newDate; 
+        payload.startDate = newDate;
       } else if (newMoment.diff(startMoment, 'days') > MAX_DATE_RANGE) {
         payload.startDate = newMoment.subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD');
       }
@@ -246,10 +245,9 @@ function DateTimePanel(props) {
   };
 
   const setDateRange = daysBack => {
-    const initialParams = initialState.graphParams;
-    const date = initialParams.date;
+    const date = initialGraphParams.date;
     const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
-    
+
     props.handleGraphParams({
       date: date,
       startDate: startMoment.format('YYYY-MM-DD'),
@@ -313,7 +311,7 @@ function DateTimePanel(props) {
 
   return (
     <div className={classes.root}>
-    
+
       { props.isLoading
         ?
           <Box p={1}>
@@ -325,7 +323,7 @@ function DateTimePanel(props) {
             />
           </Box>
         : null
-      }      
+      }
 
       { rangeInfo }
       <Button
@@ -343,7 +341,7 @@ function DateTimePanel(props) {
             </Typography>
           </span>
           <ExpandMoreIcon/>
-          
+
         </div>
       </Button>
 
@@ -371,7 +369,7 @@ function DateTimePanel(props) {
         </IconButton>
 
         <List style={{ color: 'black', marginTop: 32 }}>
-        
+
             <ListItem>
               <FormControl className={classes.formControl}>
                 <TextField
@@ -393,7 +391,7 @@ function DateTimePanel(props) {
                 />
               </FormControl>
             </ListItem>
-        
+
           <ListItem>
             <FormControl className={classes.formControl}>
               <TextField
@@ -418,7 +416,7 @@ function DateTimePanel(props) {
           <ListItem>
             <Grid container style={{maxWidth:250}}>
                 {DATE_RANGES.map(range => (
-                  
+
                   <Grid item xs={6} key = {range.value}>
                   <Button
                     key={range.value}
@@ -514,8 +512,8 @@ function DateTimePanel(props) {
 }
 
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
-  isLoading: isLoadingRequest(state), 
+  graphParams: state.graphParams,
+  isLoading: isLoadingRequest(state),
 });
 
 const mapDispatchToProps = dispatch => {
