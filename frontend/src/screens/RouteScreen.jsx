@@ -1,16 +1,16 @@
 import React, { Fragment, useEffect } from 'react';
 import Box from '@material-ui/core/Box';
-import Breadcrumbs from '@material-ui/core/Breadcrumbs';
-import Typography from '@material-ui/core/Typography';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import IconButton from '@material-ui/core/IconButton';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import { NavLink } from 'redux-first-router-link';
 import { connect } from 'react-redux';
+
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
-import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { getAgency } from '../config';
@@ -33,7 +33,7 @@ function RouteScreen(props) {
 
   useEffect(() => {
     if (!routes && agencyId) {
-      myFetchRoutes({ agencyId });
+      myFetchRoutes({ agencyId: agencyId });
     }
   }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
@@ -62,11 +62,19 @@ function RouteScreen(props) {
       ? selectedRoute.stops[graphParams.endStopId]
       : null;
 
+  const backArrowStyle = {
+    color: '#ffffff',
+  };
+
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
-          <SidebarButton />
+          <NavLink to={{ type: 'DASHBOARD' }} exact strict>
+            <IconButton aria-label="Back to dashboard" edge="start">
+              <ArrowBackIcon style={backArrowStyle} />
+            </IconButton>
+          </NavLink>
           <div className="page-title">{agency ? agency.title : null}</div>
           <div style={{ flexGrow: 1 }} />
           <DateTimePanel
@@ -79,18 +87,11 @@ function RouteScreen(props) {
 
       <Paper>
         <Box p={2} className="page-title">
-          <Breadcrumbs aria-label="breadcrumb">
-            <NavLink to={{ type: 'DASHBOARD' }} exact strict>
-              Home
-            </NavLink>
-            <Typography color="textPrimary">
-              {selectedRoute ? ` ${selectedRoute.title}` : null}
-              {direction ? ` > ${direction.title}` : null}
-              &nbsp;
-              {startStopInfo ? `(from ${startStopInfo.title}` : null}
-              {endStopInfo ? ` to ${endStopInfo.title})` : null}
-            </Typography>
-          </Breadcrumbs>
+          {selectedRoute ? ` ${selectedRoute.title}` : null}
+          {direction ? ` > ${direction.title}` : null}
+          &nbsp;
+          {startStopInfo ? `(from ${startStopInfo.title}` : null}
+          {endStopInfo ? ` to ${endStopInfo.title})` : null}
         </Box>
       </Paper>
 
