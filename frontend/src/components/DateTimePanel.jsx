@@ -29,7 +29,6 @@ import {
   TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
   MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
 } from '../UIConstants';
-import { DATE, START_DATE, START_TIME, END_TIME, Path } from '../routeUtil';
 import { initialGraphParams } from '../reducers';
 import { isLoadingRequest } from '../reducers/loadingReducer';
 import { handleGraphParams } from '../actions';
@@ -111,7 +110,9 @@ function DateTimePanel(props) {
   }
 
   function applyGraphParams(payload) {
-    
+    // xxx need to figure out how we're going update the path or query
+    props.handleGraphParams(payload);
+    /*
     const newState = Object.assign(graphParams, payload);
     const path = new Path();
     // rebuild path using new future state -- temporary code
@@ -120,6 +121,7 @@ function DateTimePanel(props) {
     path.buildPath(START_TIME, newState.startTime);
     path.buildPath(END_TIME, newState.endTime);
     path.commitPath(); // this will trigger handleGraphParams
+    */
   }
   
   function handleReset() {

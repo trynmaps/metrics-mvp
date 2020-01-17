@@ -20,7 +20,6 @@ import {
 import {
   filterRoutes,
   milesBetween,
-  HighestPossibleScore
 } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';

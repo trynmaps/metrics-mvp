@@ -17,7 +17,7 @@ import {
   REACT_VIS_CROSSHAIR_NO_LINE,
 } from '../UIConstants';
 import {
-  computeGrades,
+  computeScores,
   computeDistance,
 } from '../helpers/routeCalculations';
 import Moment from 'moment';
@@ -151,7 +151,7 @@ function InfoByDay(props) {
     // 5th chart: score
 
     const scoreData = byDayData.map((day, index) => {
-      const grades = computeGrades(
+      const grades = computeScores(
         waitData[index].y,
         longWaitData[index].y,
         speedData[index].y,

@@ -571,7 +571,7 @@ class TripMetrics(ObjectType):
             for start_time,end_time in constants.DEFAULT_TIME_STR_INTERVALS
         ]
 
-    def resolve_byDay(parent, info, date_strs, start_time, end_time):
+    def resolve_byDay(parent, info, date_strs, start_time = None, end_time = None):
         return [{**parent,
                 "start_time": start_time,
                 "end_time": end_time,
