@@ -119,14 +119,14 @@ popular React framework and looks great on mobile.
 
 ### Backend
 
-- **Flask** - provides API endpoints used by the frontend
-- **GraphQL/Graphene** - a flexible API for returning various metrics requested by the frontend
-- **Pandas** - much of the data processing logic is implemented using Pandas data frames, e.g. when computing arrival times from raw GPS data
-- **Numpy** - algorithms involving arrays are implemented using Numpy for better performance, e.g. computing wait times and trip times
-- **Amazon S3** - the backend stores various data files (including route configuration, timetables, historical arrival times, and precomputed stats) as publicly-readable gzipped JSON files in S3, allowing the frontend to fetch data directly from S3 without hitting the Flask backend, and allowing multiple developers to share the same data without having to compute it themselves
+- **Flask** - provides API endpoints used by the frontend.
+- **GraphQL/Graphene** - a flexible API for returning various metrics requested by the frontend.
+- **Pandas** - much of the data processing logic is implemented using Pandas data frames, e.g. when computing arrival times from raw GPS data.
+- **NumPy** - algorithms involving arrays are implemented using Numpy for better performance, e.g. computing wait times and trip times.
+- **Amazon S3** - the backend stores various data files (including route configuration, timetables, historical arrival times, and precomputed stats) as publicly-readable gzipped JSON files in S3, allowing the frontend to fetch data directly from S3 without hitting the Flask backend, and allowing multiple developers to share the same data without having to compute it themselves.
 - **orion** - A node.js app in a separate repo (https://github.com/trynmaps/orion) which fetches the raw GPS location data for all vehicles in a transit agency every 15 seconds and stores the data in S3.
 - **tryn-api** - A node.js app in a separate repo (https://github.com/trynmaps/tryn-api) which implements another GraphQL API that the backend uses to fetch the stored GPS location data from S3.
-- **Unittest** - Framework for testing the backend Python code
+- **Unittest** - Framework for testing the backend Python code.
 
 ## Notes for developers
 
