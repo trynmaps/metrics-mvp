@@ -180,6 +180,7 @@ const EnhancedTableToolbar = props => {
   const { numSelected } = props;
 
   const [anchorEl, setAnchorEl] = useState(null);
+  const [currentFilter, setCurrentFilter] = useState('DEMO');
 
   function handleClick(event) {
     setAnchorEl(event.currentTarget);
@@ -193,7 +194,7 @@ const EnhancedTableToolbar = props => {
     ALL: 'All Routes',
     DEMO: 'Demo Routes',
     LVR: 'Light Rail Routes',
-    BUS: 'But Routes',
+    BUS: 'Bus Routes',
     OWL: 'OWL Routes',
     XR: 'Express and Rapid Routes',
     CABLE: 'Cable Car Routes',
@@ -207,7 +208,8 @@ const EnhancedTableToolbar = props => {
   }
 
   const applyFilter = event => {
-    console.log(event['target']['value']);
+    let newFilter = event['target']['value'];
+    setCurrentFilter(newFilter);
   }
 
   return (
@@ -233,6 +235,8 @@ const EnhancedTableToolbar = props => {
       <div className={classes.spacer} />
       <div className={classes.actions}>
         <Select
+          value={currentFilter}
+          onChange={applyFilter}
           IconComponent={FilterListIcon}
         >
           {filterOptions}
