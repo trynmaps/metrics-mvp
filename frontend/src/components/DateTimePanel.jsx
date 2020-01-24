@@ -29,6 +29,7 @@ import {
   TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
   MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
 } from '../UIConstants';
+import { components } from '../reducers/page';
 import { initialGraphParams } from '../reducers';
 import { isLoadingRequest } from '../reducers/loadingReducer';
 import { handleGraphParams } from '../actions';
@@ -76,6 +77,16 @@ const useStyles = makeStyles(theme => ({
 
 }));
 
+export function queryFromParams(params) {
+  const query = {
+    startDate: params.startDate,
+    date: params.date,
+    startTime: params.startTime,
+    endTime: params.endTime,
+    daysOfTheWeek: params.daysOfTheWeek,
+  }
+  return query;
+}
 /**
  * Displays the current date and time selections and an "expand" icon as
  * a large button.  Clicking the button reveals a Popper with a date and
@@ -110,18 +121,24 @@ function DateTimePanel(props) {
   }
 
   function applyGraphParams(payload) {
-    // xxx need to figure out how we're going update the path or query
-    props.handleGraphParams(payload);
-    /*
-    const newState = Object.assign(graphParams, payload);
-    const path = new Path();
-    // rebuild path using new future state -- temporary code
-    path.buildPath(DATE, newState.date);
-    path.buildPath(START_DATE, newState.startDate);
-    path.buildPath(START_TIME, newState.startTime);
-    path.buildPath(END_TIME, newState.endTime);
-    path.commitPath(); // this will trigger handleGraphParams
-    */
+    
+    // Find the current dispatch type.  This is the key of the "components" object
+    // whose value matches the current page name.
+    
+    let currentType = null;
+    const types = Object.keys(components);
+    for (let i = 0; i < types.length; i++) {
+      if (props.currentPage === components[types[i]]) {
+        currentType = types[i];
+        break;
+      }
+    }
+    
+    props.dispatch({
+      type: currentType,
+      payload: graphParams, // not affected by date changes
+      query: queryFromParams(Object.assign({}, graphParams, payload)), 
+    });
   }
   
   function handleReset() {
@@ -529,11 +546,13 @@ function DateTimePanel(props) {
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
   isLoading: isLoadingRequest(state),
+  currentPage: state.page,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
     handleGraphParams: params => dispatch(handleGraphParams(params)),
+    dispatch,
   };
 };
 

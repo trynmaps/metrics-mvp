@@ -42,7 +42,8 @@ function ControlPanel(props) {
       payload: {
         routeId: graphParams.routeId,
         directionId: directionId,
-      }
+      },
+      query: props.query,
     });
   }
 
@@ -61,7 +62,8 @@ function ControlPanel(props) {
       payload: {
         ...graphParams,
         startStopId,
-      }
+      },
+      query: props.query,
     });
   }
 
@@ -73,7 +75,8 @@ function ControlPanel(props) {
       payload: {
         ...graphParams,
         endStopId: endStopId,
-      }
+      },
+      query: props.query,      
     });
     // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
   }
@@ -99,7 +102,8 @@ function ControlPanel(props) {
       payload: {
         routeId: routeId,
         directionId: directionId
-      }
+      },
+      query: props.query,
     });
 
   }
@@ -267,6 +271,7 @@ function ControlPanel(props) {
 // for this entire component, now using graphParams values in Redux instead of local state.
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {

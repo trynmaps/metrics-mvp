@@ -7,6 +7,7 @@ import {
   YAxis,
   LineSeries,
   LineMarkSeries,
+  VerticalBarSeries,
   ChartLabel,
   Crosshair,
 } from 'react-vis';
@@ -18,8 +19,10 @@ import {
 } from '../UIConstants';
 import {
   computeScores,
-  computeDistance,
 } from '../helpers/routeCalculations';
+import {
+  getDistanceInMiles
+} from '../helpers/mapGeometry';
 import Moment from 'moment';
 import '../../node_modules/react-vis/dist/style.css';
 
@@ -68,6 +71,21 @@ function InfoByDay(props) {
     // TODO: need to make only one chart's crosshair visible at a time,
     // this currently makes it appear on all charts: setCrosshairValues([_value]);
   };
+  
+  const computeDistance = (myGraphParams, myRoutes) => {
+    if (myGraphParams && myGraphParams.endStopId) {
+      const directionId = myGraphParams.directionId;
+      const routeId = myGraphParams.routeId;
+      const route = myRoutes.find(thisRoute => thisRoute.id === routeId);
+      const directionInfo = route.directions.find(
+        dir => dir.id === directionId,
+      );
+      return getDistanceInMiles(route, directionInfo, myGraphParams.startStopId, myGraphParams.endStopId);
+    } else {
+      return 0;
+    }
+  };
+
 
   /**
    * Returns a mapping function for creating a react-vis XYPlot data series out of interval data.
@@ -163,6 +181,11 @@ function InfoByDay(props) {
     });
     const maxScore = scoreData && scoreData.length > 0 && scoreData.reduce((max, value) => max > value.y ? max : value.y, 0);
 
+    // Non-default chart margins for rotated x-axis tick marks.
+    // Default is {left: 40, right: 10, top: 10, bottom: 40}
+    
+    const chartMargins = {left: 40, right: 10, top: 10, bottom: 60};
+    
     return (
       <div>
         {byDayData ? (
@@ -207,23 +230,24 @@ function InfoByDay(props) {
               xType="ordinal"
               height={300}
               width={400}
+              margin={chartMargins}
               stackBy="y"
               yDomain={[ 0, maxWait + maxTrip ]}              
               onMouseLeave={onMouseLeave}
             >
               <HorizontalGridLines />
-              <XAxis />
+              <XAxis tickLabelAngle={-90} />
               <YAxis hideLine />
 
-              <LineMarkSeries
+              <VerticalBarSeries
                 data={waitData}
                 color={CHART_COLORS[0]}
                 onNearestX={onNearestX}
                 stack={true}
               />
-              <LineMarkSeries data={tripData} color={CHART_COLORS[1]} stack={true}/>
-              <LineSeries data={meanWaitData} color={CHART_COLORS[0]} strokeDasharray={'7, 3'}/>
-              <LineSeries data={meanTripData} color={CHART_COLORS[1]} strokeDasharray={'7, 3'}/>
+              <VerticalBarSeries data={tripData} color={CHART_COLORS[1]} stack={true}/>
+              <LineSeries data={meanWaitData} color={CHART_COLORS[2]} strokeDasharray={'5, 5'}/>
+              <LineSeries data={meanTripData} color={CHART_COLORS[3]} strokeDasharray={'5, 5'}/>
 
               <ChartLabel
                 text="minutes"
@@ -266,11 +290,12 @@ function InfoByDay(props) {
               xType="ordinal"
               height={300}
               width={400}
+              margin={chartMargins}
               yDomain={[ 0, maxLongWait ]}              
               onMouseLeave={onMouseLeave}
             >
               <HorizontalGridLines />
-              <XAxis />
+              <XAxis tickLabelAngle={-90} />
               <YAxis hideLine />
 
               <LineMarkSeries
@@ -307,11 +332,12 @@ function InfoByDay(props) {
               xType="ordinal"
               height={300}
               width={400}
+              margin={chartMargins}
               yDomain={[ 0, maxSpeed ]}              
               onMouseLeave={onMouseLeave}
             >
               <HorizontalGridLines />
-              <XAxis />
+              <XAxis tickLabelAngle={-90} />
               <YAxis hideLine />
 
               <LineMarkSeries
@@ -348,11 +374,12 @@ function InfoByDay(props) {
               xType="ordinal"
               height={300}
               width={400}
+              margin={chartMargins}
               yDomain={[ 0, maxTravelVariability ]}              
               onMouseLeave={onMouseLeave}
             >
               <HorizontalGridLines />
-              <XAxis />
+              <XAxis tickLabelAngle={-90} />
               <YAxis hideLine />
 
               <LineMarkSeries
@@ -390,11 +417,12 @@ function InfoByDay(props) {
               xType="ordinal"
               height={300}
               width={400}
+              margin={chartMargins}
               yDomain={[ 0, maxScore ]}              
               onMouseLeave={onMouseLeave}
             >
               <HorizontalGridLines />
-              <XAxis />
+              <XAxis tickLabelAngle={-90} />
               <YAxis hideLine />
 
               <LineMarkSeries

@@ -7,11 +7,68 @@ export const START_TIME = 'startTime';
 export const END_TIME = 'endTime';
 export const DAYS_OF_THE_WEEK = 'daysOfTheWeek';
 
+/**
+ * Gets the string values into an object that be stored as graphParams.
+ *
+ * @param getState
+ * @returns The new graphParams.
+ */
+function processQuery(getState) {
+
+  const { location } = getState();
+  const { date, startDate, startTime, endTime, daysOfTheWeek } = (location.query || {});
+
+  const newParams = {
+      agencyId: Agencies[0].id, // todo: add agency to path to support multiple agencies
+  };
+
+  if (date) {
+    newParams['date'] = date;
+  }
+  if (startDate) {
+    newParams['startDate'] = startDate;
+  }
+  if (startTime) {
+    newParams['startTime'] = startTime;
+  }
+  if (endTime) {
+    newParams['endTime'] = endTime;
+  }
+  if (daysOfTheWeek) {
+
+    // Deserialization via the actual query string gives us an object with values of strings
+    // "true" or "false", which we need to convert to booleans.  When we get here via
+    // dispatch, then the values are already primitive booleans.
+
+    newParams['daysOfTheWeek'] = Object.keys(daysOfTheWeek).reduce((newDaysOfTheWeek, key) => {
+      if (typeof daysOfTheWeek[key] === "string") {
+        newDaysOfTheWeek[key] = (daysOfTheWeek[key].toUpperCase() === 'TRUE');
+      } else {
+        newDaysOfTheWeek[key] = daysOfTheWeek[key];
+      }
+      return newDaysOfTheWeek;
+    }, {});
+  }
+  return newParams;
+}
+
 export default {
   ABOUT: '/about',
   LANDING: '/landing',
-  ISOCHRONE: '/isochrone',
-  DASHBOARD: '/',
+  ISOCHRONE: {
+    path: '/isochrone',
+    thunk: async (dispatch, getState) => {
+      const newParams = processQuery(getState);
+      dispatch(handleGraphParams(newParams));
+    }
+  },
+  DASHBOARD: {
+    path: '/',
+    thunk: async (dispatch, getState) => {
+      const newParams = processQuery(getState);
+      dispatch(handleGraphParams(newParams));
+    }
+  },
   DATADIAGNOSTIC: '/dataDiagnostic',
   ROUTESCREEN: {
     /*
@@ -21,39 +78,19 @@ export default {
     the ? after the : means an optional paramter variable
     ()* shows am optional parameter label
     */
-    path: `/route/:routeId/:directionId?/:startStopId?/:endStopId?`
-      + `/(${DATE})*/:date?/(${START_DATE})*/:startDate?`
-      + `/(${START_TIME})*/:startTime?/(${END_TIME})*/:endTime?`
-      + `/(${DAYS_OF_THE_WEEK})*/:daysOfTheWeek?`
-      ,
-
+    path: `/route/:routeId/:directionId?/:startStopId?/:endStopId?`,
     thunk: async (dispatch, getState) => {
       const { location } = getState();
-      const { routeId, directionId, startStopId, endStopId,
-        date, startDate, startTime, endTime /*, daysOfTheWeek*/} = location.payload;
+      const { routeId, directionId, startStopId, endStopId } = location.payload;
 
       const newParams = {
-        agencyId: Agencies[0].id,
         routeId,
         directionId,
         startStopId,
         endStopId
       };
-      // these are "optional" in urls -- if null (absent) or "null" (serialized to url with no value), do not override existing state
-      if (date && date !== 'null') {
-        newParams['date'] = date;
-      }
-      if (startDate && startDate !== 'null') {
-        newParams['startDate'] = startDate;
-      }
-      if (startTime && startTime !== 'null') {
-        newParams['startTime'] = startTime;
-      }
-      if (endTime && endTime !== 'null') {
-        newParams['endTime'] = endTime;
-      }
-      // daysOfTheWeek TODO: serialize and deserialize days of the week into dictionary  */
-      // todo: add agency to path to support multiple agencies
+
+      Object.assign(newParams, processQuery(getState));
       dispatch(
         handleGraphParams(newParams)
       );
