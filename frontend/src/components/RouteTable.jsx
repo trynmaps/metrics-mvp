@@ -199,7 +199,7 @@ const EnhancedTableToolbar = props => {
     CABLE: 'Cable Car Routes',
   }
 
-  let filterOptions = {};
+  let filterOptions = [];
   for (let filterName in filters){
     filterOptions.push(
       <MenuItem value={filterName}>{filters[filterName]}</MenuItem>
@@ -460,6 +460,7 @@ function RouteTable(props) {
 const mapStateToProps = state => ({
   spiderSelection: state.spiderSelection,
   routeStats: state.routeStats,
+  routeFilter: state.routeFilter,
 });
 
 const mapDispatchToProps = dispatch => {

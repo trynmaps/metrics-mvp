@@ -37,5 +37,6 @@ export default {
     thunk: async (dispatch, getState) => {
       const { location } = getState();
       const { filterName } = location.payload;
-  }
-};
+    },
+  },
+}
