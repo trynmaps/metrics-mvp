@@ -61,6 +61,7 @@ export default function InfoTripSummary(props) {
   const { tripMetrics, graphParams, routes } = props;
   const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
   const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
+  const scheduleAdherence = tripMetrics ? tripMetrics.interval.departureScheduleAdherence : null;
 
   const computeDistance = (myGraphParams, myRoutes) => {
     if (myGraphParams && myGraphParams.endStopId) {
@@ -83,17 +84,7 @@ export default function InfoTripSummary(props) {
       ? distance / (tripTimes.avg / 60.0)
       : 0; // convert avg trip time to hours for mph
 
-  let longWaitProbability = 0;
-  if (waitTimes && waitTimes.histogram) {
-    const reducer = (accumulator, currentValue) => {
-      const LONG_WAIT = 20; // histogram bins are in minutes
-      return currentValue.binStart >= LONG_WAIT
-        ? accumulator + currentValue.count
-        : accumulator;
-    };
-
-    longWaitProbability = waitTimes.histogram.reduce(reducer, 0) / 100;
-  }
+  let onTimeRate = scheduleAdherence && scheduleAdherence.scheduledCount > 0 ? (scheduleAdherence.onTimeCount / scheduleAdherence.scheduledCount) : null;
 
   let travelVariabilityTime = 0;
   if (tripTimes) {
@@ -106,7 +97,7 @@ export default function InfoTripSummary(props) {
     speed && waitTimes.median
       ? computeScores(
           waitTimes.median,
-          longWaitProbability,
+          onTimeRate,
           speed,
           travelVariabilityTime,
         )
@@ -196,24 +187,11 @@ export default function InfoTripSummary(props) {
     </Fragment>
   );
 
-  const popoverContentLongWait = (
+  const popoverContentOnTimeRate = (
     <Fragment>
-      Long wait probability is the chance a rider has of a wait of twenty minutes or
-      longer after arriving randomly at the "from" stop.
       Probability of{' '}
-      {(longWaitProbability * 100).toFixed(1) /* be more precise than card */}%
-      gets a score of {scores.longWaitScore}.
-      <Box pt={2}>
-        <InfoScoreLegend
-          rows={[
-            { label: '10% or less', value: 100 },
-            { label: '15.75%', value: 75 },
-            { label: '21.5%', value: 50 },
-            { label: '27.25%', value: 25 },
-            { label: '33% or more', value: 0 },
-          ]}
-        />
-      </Box>
+      {(onTimeRate * 100).toFixed(1) /* be more precise than card */}%
+      gets a score of {scores.onTimeRateScore}.
     </Fragment>
   );
 
@@ -339,16 +317,12 @@ export default function InfoTripSummary(props) {
                 popoverContent={popoverContentWait}
               />
               <InfoScoreCard
-                score={scores.longWaitScore}
-                title="Long Wait %"
-                largeValue={Math.round(longWaitProbability * 100)}
+                score={scores.onTimeRateScore}
+                title="On Time %"
+                largeValue={Math.round(onTimeRate * 100)}
                 smallValue="%"
-                bottomContent={
-                  longWaitProbability > 0
-                    ? `1 time out of ${Math.round(1 / longWaitProbability)}`
-                    : ''
-                }
-                popoverContent={popoverContentLongWait}
+                bottomContent={scheduleAdherence  ? `${scheduleAdherence.onTimeCount} times out of ${scheduleAdherence.scheduledCount}` : null}
+                popoverContent={popoverContentOnTimeRate}
               />
               <InfoScoreCard
                 score={scores.speedScore}

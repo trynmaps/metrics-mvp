@@ -20,7 +20,6 @@ import {
 import {
   filterRoutes,
   milesBetween,
-  HighestPossibleScore
 } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
@@ -182,7 +181,7 @@ class MapSpider extends Component {
    * Rendering of route from nearest stop to terminal.
    */
   DownstreamLines = () => {
-    const routeStats = this.props.routeStats;
+    const statsByRouteId = this.props.statsByRouteId;
 
     // One polyline for each start marker
 
@@ -199,7 +198,7 @@ class MapSpider extends Component {
         // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
         // when selecting a line.
 
-        const stats = routeStats[startMarker.routeId] || {};
+        const stats = statsByRouteId[startMarker.routeId] || {};
 
         let waitScaled = stats.waitRankCount ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3) : 0;
 
@@ -525,8 +524,7 @@ class MapSpider extends Component {
 
 const mapStateToProps = state => ({
   routes: state.routes.data,
-  precomputedStats: state.precomputedStats,
-  routeStats: state.routeStats,
+  statsByRouteId: state.agencyMetrics.statsByRouteId,
   graphParams: state.graphParams,
   spiderSelection: state.spiderSelection,
 });

@@ -12,19 +12,25 @@ class StopInfo:
         self.route = route
 
 class DirectionInfo:
-    def __init__(self, data):
+    def __init__(self, route, data):
+        self.route = route
         self.id = data['id']
         self.title = data['title']
         #self.name = data['name']
         self.data = data
         self.gtfs_direction_id = data['gtfs_direction_id']
         self.gtfs_shape_id = data['gtfs_shape_id']
+        self.stop_geometry = data['stop_geometry']
 
     def is_loop(self):
         return self.data.get('loop', False)
 
     def get_stop_ids(self):
         return self.data['stops']
+
+    def get_stop_geometry(self, stop_id):
+        return self.stop_geometry.get(stop_id, None)
+
 
 class RouteConfig:
     def __init__(self, agency_id, data):
@@ -68,7 +74,7 @@ class RouteConfig:
         return None
 
     def get_direction_infos(self):
-        return [DirectionInfo(direction) for direction in self.data['directions']]
+        return [DirectionInfo(self, direction) for direction in self.data['directions']]
 
     def get_direction_info(self, direction_id):
         if direction_id in self.dir_infos:
@@ -76,7 +82,7 @@ class RouteConfig:
 
         for direction in self.data['directions']:
             if direction['id'] == direction_id:
-                dir_info = DirectionInfo(direction)
+                dir_info = DirectionInfo(self, direction)
                 self.dir_infos[direction_id] = dir_info
                 return dir_info
 

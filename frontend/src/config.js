@@ -16,8 +16,7 @@ if (!config)
 
 export const S3Bucket = config.S3Bucket;
 export const Agencies = config.Agencies;
-export const WaitTimesVersion = config.WaitTimesVersion;
-export const TripTimesVersion = config.TripTimesVersion;
+export const PrecomputedStatsVersion = config.PrecomputedStatsVersion;
 export const RoutesVersion = config.RoutesVersion;
 export const ArrivalsVersion = config.ArrivalsVersion;
 

@@ -1,5 +1,6 @@
 import Moment from 'moment';
 import { WEEKDAYS, WEEKENDS } from '../UIConstants';
+import { isIgnoredRoute, addRanks, computeScores } from '../helpers/routeCalculations';
 
 export { default as loading } from './loadingReducer';
 export { default as page } from './page';
@@ -31,13 +32,16 @@ export function graphParams(state = initialGraphParams, action) {
 };
 
 const initialRoutes = {
+  agencyId: null,
   data: null, // array of route config objects for Agencies[0]
 };
 
 export function routes(state = initialRoutes, action) {
   switch (action.type) {
+    case 'REQUEST_ROUTES':
+      return { ...state, agencyId: action.agencyId };
     case 'RECEIVED_ROUTES':
-      return { ...state, data: action.data };
+      return { ...state, data: action.data, agencyId: action.agencyId };
     case 'ERROR_ROUTES':
       return state;
     default:
@@ -120,48 +124,96 @@ export function spiderSelection(state = initialSpiderSelection, action) {
   }
 }
 
-const initialPrecomputedStats = {
-  waitTimes: null,
-  waitTimesUrl: null,
-  tripTimes: null,
-  tripTimesUrl: null,
+const initialAgencyMetrics = {
+  variablesJson: null,
+  data: null,
+  statsByRouteId: {},
 };
 
-export function precomputedStats(state = initialPrecomputedStats, action) {
+export function agencyMetrics(state = initialAgencyMetrics, action) {
   switch (action.type) {
-    case 'RECEIVED_PRECOMPUTED_WAIT_TIMES':
+    case 'RECEIVED_AGENCY_METRICS':
+      const agencyMetrics = action.data;
       return {
         ...state,
-        waitTimesUrl: action.url,
-        waitTimes: action.data,
+        variablesJson: action.variablesJson,
+        data: agencyMetrics,
+        statsByRouteId: makeStatsByRouteId(agencyMetrics),
       }
-    case 'REQUEST_PRECOMPUTED_WAIT_TIMES':
+    case 'REQUEST_AGENCY_METRICS':
       return {
         ...state,
-        waitTimesUrl: action.url,
-        waitTimes: null,
-      };
-    case 'RECEIVED_PRECOMPUTED_TRIP_TIMES':
-      return {
-        ...state,
-        tripTimesUrl: action.url,
-        tripTimes: action.data,
-      }
-    case 'REQUEST_PRECOMPUTED_TRIP_TIMES':
-      return {
-        ...state,
-        tripTimesUrl: action.url,
-        tripTimes: null,
+        variablesJson: action.variablesJson,
+        data: null,
+        statsByRouteId: {},
       };
     default:
       return state;
   }
 };
 
-export function routeStats(state = {}, action) {
+function makeStatsByRouteId(agencyMetrics) {
+
+  const visibleRouteStats = agencyMetrics ? agencyMetrics.interval.routes.filter(stats => !isIgnoredRoute({agencyId: agencyMetrics.agencyId, id: stats.routeId})) : [];
+
+  addRanks(visibleRouteStats, 'medianWaitTime', 1, 'waitRank', 'waitRankCount');
+  addRanks(visibleRouteStats, 'averageSpeed', -1, 'speedRank', 'speedRankCount');
+  addRanks(visibleRouteStats, 'onTimeRate', -1, 'onTimeRank', 'onTimeRankCount');
+  addRanks(visibleRouteStats, 'travelTimeVariability', 1, 'variabilityRank', 'variabilityRankCount');
+
+  visibleRouteStats.forEach(function(stats) {
+    Object.assign(stats, computeScores(
+      stats.medianWaitTime,
+      stats.onTimeRate,
+      stats.averageSpeed,
+      stats.travelTimeVariability,
+    ));
+  });
+
+  addRanks(visibleRouteStats, 'totalScore', -1, 'scoreRank', 'scoreRankCount');
+
+  const statsByRouteId = {};
+  visibleRouteStats.forEach(stats => {
+    statsByRouteId[stats.routeId] = stats;
+  });
+
+  return statsByRouteId;
+}
+
+const initialRouteMetrics = {
+  variablesJson: null,
+  data: null,
+  segmentsMap: {},
+};
+
+export function routeMetrics(state = initialRouteMetrics, action) {
   switch (action.type) {
-    case 'COMPUTED_ROUTE_STATS':
-      return action.stats;
+    case 'RECEIVED_ROUTE_METRICS':
+
+      const segmentsMap = {};
+
+      action.data.interval.directions.forEach(function(dirMetrics) {
+        const dirSegmentsMap = {};
+        dirMetrics.segments.forEach(function(segment) {
+          dirSegmentsMap[segment.fromStopId] = segment;
+        });
+
+        segmentsMap[dirMetrics.directionId] = dirSegmentsMap;
+      });
+
+      return {
+        ...state,
+        variablesJson: action.variablesJson,
+        data: action.data,
+        segmentsMap: segmentsMap,
+      }
+    case 'REQUEST_ROUTE_METRICS':
+      return {
+        ...state,
+        variablesJson: action.variablesJson,
+        data: null,
+        segmentsMap: {},
+      };
     default:
       return state;
   }

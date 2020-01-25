@@ -90,16 +90,16 @@ function getComparisonFunction(order, orderBy) {
 const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'totalScore', numeric: true, disablePadding: true, label: 'Score' },
-  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait' },
+  { id: 'medianWaitTime', numeric: true, disablePadding: true, label: 'Median Wait' },
   {
-    id: 'longWait',
+    id: 'onTimeRate',
     numeric: true,
     disablePadding: true,
-    label: 'Long Wait %',
+    label: 'On Time %',
   },
-  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed' },
+  { id: 'averageSpeed', numeric: true, disablePadding: true, label: 'Average Speed' },
   {
-    id: 'variability',
+    id: 'travelTimeVariability',
     numeric: true,
     disablePadding: true,
     label: 'Travel Time Variability',
@@ -273,7 +273,7 @@ function RouteTable(props) {
   const dense = true;
   const theme = createMuiTheme();
 
-  const { routeStats } = props;
+  const { statsByRouteId } = props;
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -294,7 +294,7 @@ function RouteTable(props) {
   const displayedRouteStats = routes.map(route => {
     return {
       route,
-      ...(routeStats[route.id] || {})
+      ...(statsByRouteId[route.id] || {})
     };
   });
 
@@ -364,7 +364,7 @@ function RouteTable(props) {
                         backgroundColor: scoreBackgroundColor(row.medianWaitScore),
                       }}
                       label=
-                        {row.wait == null ? '--' : row.wait.toFixed(0) + ' min'}
+                        {row.medianWaitTime == null ? '--' : row.medianWaitTime.toFixed(0) + ' min'}
                     />
 
                     </TableCell>
@@ -376,14 +376,14 @@ function RouteTable(props) {
                     >
                     <Chip
                       style={{
-                        color: scoreContrastColor(row.longWaitScore),
-                        backgroundColor: scoreBackgroundColor(row.longWaitScore),
+                        color: scoreContrastColor(row.onTimeRateScore),
+                        backgroundColor: scoreBackgroundColor(row.onTimeRateScore),
                       }}
                       label=
-                        {row.longWait == null
+                        {row.onTimeRate == null
                         ? '--'
                         : <Fragment>
-                            {(row.longWait * 100).toFixed(0)}{'%'}
+                            {(row.onTimeRate * 100).toFixed(0)}{'%'}
                           </Fragment>
                       }
                     />
@@ -399,7 +399,7 @@ function RouteTable(props) {
                         backgroundColor: scoreBackgroundColor(row.speedScore),
                       }}
                       label=
-                        {row.speed == null ? '--' : row.speed.toFixed(0) + ' mph'}
+                        {row.averageSpeed == null ? '--' : row.averageSpeed.toFixed(0) + ' mph'}
 
                     />
                     </TableCell>
@@ -414,13 +414,12 @@ function RouteTable(props) {
                         backgroundColor: scoreBackgroundColor(row.travelVarianceScore),
                       }}
                       label=
-                        {row.variability == null
+                        {row.travelTimeVariability == null
                           ? '--'
                           : <Fragment>
-                              {'\u00b1'} {row.variability.toFixed(0)} min
+                              {'\u00b1'} {row.travelTimeVariability.toFixed(0)} min
                             </Fragment>
                         }
-
                     />
 
                     </TableCell>
@@ -436,7 +435,7 @@ function RouteTable(props) {
 
 const mapStateToProps = state => ({
   spiderSelection: state.spiderSelection,
-  routeStats: state.routeStats,
+  statsByRouteId: state.agencyMetrics.statsByRouteId,
 });
 
 const mapDispatchToProps = dispatch => {

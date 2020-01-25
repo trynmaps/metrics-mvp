@@ -181,8 +181,9 @@ def match_schedule_to_actual_times(scheduled_times, actual_times, early_sec=60, 
     abs_next_closest_actual_deltas = np.abs(next_closest_actual_deltas)
     abs_prev_closest_actual_deltas = np.abs(prev_closest_actual_deltas)
 
-    closer_than_next = is_next_new_closest_actual_time | (abs_closest_actual_deltas <= abs_next_closest_actual_deltas)
-    closer_than_prev = (abs_closest_actual_deltas < abs_prev_closest_actual_deltas)
+    with np.errstate(invalid="ignore"):
+        closer_than_next = is_next_new_closest_actual_time | (abs_closest_actual_deltas <= abs_next_closest_actual_deltas)
+        closer_than_prev = (abs_closest_actual_deltas < abs_prev_closest_actual_deltas)
 
     is_match = (is_new_closest_actual_time & closer_than_next) | (~is_new_closest_actual_time & closer_than_prev & closer_than_next)
     no_match = ~is_match
@@ -214,8 +215,10 @@ def match_schedule_to_actual_times(scheduled_times, actual_times, early_sec=60, 
         is_match = is_match | prev_is_unmatched | next_is_unmatched
         no_match = ~is_match
 
-    early = is_match & (matching_actual_deltas < -early_sec)
-    late = is_match & (matching_actual_deltas > late_sec)
+    with np.errstate(invalid="ignore"):
+        early = is_match & (matching_actual_deltas < -early_sec)
+        late = is_match & (matching_actual_deltas > late_sec)
+
     on_time = is_match & ~early & ~late
 
     return pd.DataFrame({

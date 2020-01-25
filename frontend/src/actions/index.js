@@ -1,14 +1,8 @@
 import axios from 'axios';
-import { MetricsBaseURL, S3Bucket, RoutesVersion, TripTimesVersion, WaitTimesVersion, ArrivalsVersion } from '../config';
+import { MetricsBaseURL, S3Bucket, RoutesVersion, ArrivalsVersion } from '../config';
 import Moment from 'moment';
 import { MAX_DATE_RANGE } from '../UIConstants';
 import { Agencies } from '../config';
-import {
-  filterRoutes,
-  getAllWaits,
-  getAllSpeeds,
-  getAllScores,
-} from '../helpers/routeCalculations';
 
 /**
  * Helper function to compute the list of days for the GraphQL query.
@@ -52,36 +46,6 @@ export function generateRoutesURL(agencyId) {
 }
 
 /**
- * Generate S3 url for cached trip time statistics
- * @param agencyId {string} agency ID
- * @param dateStr {string} date
- * @param statPath {string} the statistical measure (e.g. median)
- * @param timePath {string} the time of day
- * @returns {string} S3 url
- */
-export function generateTripTimesURL(agencyId, dateStr, statPath, timePath) {
-  return `https://${S3Bucket}.s3.amazonaws.com/trip-times/${TripTimesVersion}/${agencyId}/${dateStr.replace(
-    /-/g,
-    '/',
-  )}/trip-times_${TripTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?p`;
-}
-
-/**
- * Generate S3 url for cached wait time statistics
- * @param agencyId {string} agency ID
- * @param dateStr {string} date
- * @param statPath {string} the statistical measure (e.g. median)
- * @param timePath {string} the time of day
- * @returns {string} S3 url
- */
-export function generateWaitTimesURL(agencyId, dateStr, statPath, timePath) {
-  return `https://${S3Bucket}.s3.amazonaws.com/wait-times/${WaitTimesVersion}/${agencyId}/${dateStr.replace(
-    /-/g,
-    '/',
-  )}/wait-times_${WaitTimesVersion}_${agencyId}_${dateStr}_${statPath}${timePath}.json.gz?f`;
-}
-
-/**
  * Generate S3 url for arrivals
  * @param dateStr {string} date
  * @param routeId {string} route id
@@ -101,33 +65,39 @@ export function fetchTripMetrics(params) {
   return function(dispatch) {
 
     var query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
-    $directionId:String, $date:[String!], $startTime:String, $endTime:String) {
-  routeMetrics(agencyId:$agencyId, routeId:$routeId) {
-    trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
-      interval(dates:$date, startTime:$startTime, endTime:$endTime) {
-        headways {
-          count median max
-          percentiles(percentiles:[90]) { percentile value }
-          histogram { binStart binEnd count }
+    $directionId:String, $dates:[String!], $startTime:String, $endTime:String) {
+  agency(agencyId:$agencyId) {
+    route(routeId:$routeId) {
+      trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
+        interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
+          headways {
+            count median max
+            percentiles(percentiles:[90]) { percentile value }
+            histogram { binStart binEnd count }
+          }
+          tripTimes {
+            count median avg max
+            percentiles(percentiles:[90]) { percentile value }
+            histogram { binStart binEnd count }
+          }
+          waitTimes {
+            median max
+            percentiles(percentiles:[90]) { percentile value }
+            histogram { binStart binEnd count }
+          }
+          departureScheduleAdherence {
+            onTimeCount
+            scheduledCount
+          }
         }
-        tripTimes {
-          count median avg max
-          percentiles(percentiles:[90]) { percentile value }
-          histogram { binStart binEnd count }
-        }
-        waitTimes {
-          median max
-          percentiles(percentiles:[90]) { percentile value }
-          histogram { binStart binEnd count }
-        }
-      }
-      timeRanges(dates:$date) {
-        startTime endTime
-        waitTimes {
-          percentiles(percentiles:[50,90]) { percentile value }
-        }
-        tripTimes {
-          percentiles(percentiles:[50,90]) { percentile value }
+        timeRanges(dates:$dates) {
+          startTime endTime
+          waitTimes {
+            percentiles(percentiles:[50,90]) { percentile value }
+          }
+          tripTimes {
+            percentiles(percentiles:[50,90]) { percentile value }
+          }
         }
       }
     }
@@ -136,7 +106,7 @@ export function fetchTripMetrics(params) {
 
     dispatch({ type: 'REQUEST_TRIP_METRICS' });
     axios.get('/api/graphql', {
-        params: { query: query, variables: JSON.stringify({...params, date: dates}) }, // computed dates aren't in graphParams so add here
+        params: { query: query, variables: JSON.stringify({...params, dates}) }, // computed dates aren't in graphParams so add here
         baseURL: MetricsBaseURL,
       })
       .then(response => {
@@ -148,7 +118,8 @@ export function fetchTripMetrics(params) {
             error: responseData.errors[0].message
           });
         } else {
-          const routeMetrics = responseData && responseData.data ? responseData.data.routeMetrics : null;
+          const agencyMetrics = responseData && responseData.data ? responseData.data.agency : null;
+          const routeMetrics = agencyMetrics ? agencyMetrics.route : null;
           const tripMetrics = routeMetrics ? routeMetrics.trip : null;
           dispatch({
             type: 'RECEIVED_TRIP_METRICS',
@@ -172,98 +143,160 @@ export function resetTripMetrics() {
   };
 }
 
-export function fetchRoutes(params) {
-  return function(dispatch) {
-    const agencyId = Agencies[0].id;
-    dispatch({ type: 'REQUEST_ROUTES' });
-    axios
-      .get(generateRoutesURL(agencyId))
-      .then(response => {
-        var routes = response.data.routes;
-        routes.forEach(route => {
-          route.agencyId = agencyId;
-        });
-        dispatch({ type: 'RECEIVED_ROUTES', data: routes });
-        dispatch(computeRouteStats());
-      })
-      .catch(err => {
-        dispatch({ type: 'ERROR_ROUTES', error: err });
+export function fetchRouteMetrics(params) {
+
+  const dates = computeDates(params);
+
+  return function(dispatch, getState) {
+
+    var query = `query($agencyId:String!, $routeId:String!, $dates:[String!], $startTime:String, $endTime:String) {
+  agency(agencyId:$agencyId) {
+    route(routeId:$routeId) {
+      interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
+        directions {
+          directionId
+          segments {
+            fromStopId
+            toStopId
+            medianTripTime
+          }
+          cumulativeSegments {
+            fromStopId
+            toStopId
+            medianTripTime
+          }
+        }
+      }
+    }
+  }
+}`.replace(/\s+/g, ' ');
+
+    const variablesJson = JSON.stringify({
+        agencyId: Agencies[0].id,
+        routeId: params.routeId,
+        dates,
+        startTime: params.startTime,
+        endTime: params.endTime,
+    });
+
+
+    if (getState().routeMetrics.variablesJson !== variablesJson) {
+      dispatch({
+        type: 'REQUEST_ROUTE_METRICS',
+        variablesJson: variablesJson
       });
+      axios.get('/api/graphql', {
+          params: { query: query, variables: variablesJson }, // computed dates aren't in graphParams so add here
+          baseURL: MetricsBaseURL,
+        })
+        .then(response => {
+          const responseData = response.data;
+          if (responseData && responseData.errors) {
+            // assume there is at least one error, but only show the first one
+            dispatch({
+              type: 'ERROR_ROUTE_METRICS',
+              error: responseData.errors[0].message
+            });
+          } else {
+            const agencyMetrics = responseData && responseData.data ? responseData.data.agency : null;
+            const routeMetrics = agencyMetrics ? agencyMetrics.route : null;
+            dispatch({
+              type: 'RECEIVED_ROUTE_METRICS',
+              variablesJson: variablesJson,
+              data: routeMetrics
+            });
+          }
+        })
+        .catch(err => {
+          const errStr =
+            err.response && err.response.data && err.response.data.errors
+              ? err.response.data.errors[0].message
+              : err.message;
+          dispatch({ type: 'ERROR_ROUTE_METRICS', error: errStr });
+        });
+    }
   };
 }
 
-/**
- * Maps time range to a file path (used by Redux action).
- */
-
-function getTimePath(timeStr) {
-  return timeStr
-    ? `_${timeStr
-        .replace(/:/g, '')
-        .replace('-', '_')
-        .replace(/\+/g, '%2B')}`
-    : '';
-}
-
-export function fetchPrecomputedStats(params) {
+export function fetchRoutes(params) {
   return function(dispatch, getState) {
-    const timeStr = params.startTime
-      ? `${params.startTime}-${params.endTime}`
-      : '';
-    const dateStr = params.date;
+    const agencyId = Agencies[0].id;
 
-    const timePath = getTimePath(timeStr);
-
-    const agency = Agencies[0];
-
-    const agencyId = agency.id;
-    const waitTimesUrl = generateWaitTimesURL(agencyId, dateStr, 'median-p90-plt20m', timePath);
-    if (getState().precomputedStats.waitTimesUrl !== waitTimesUrl)
-    {
-      dispatch({
-        type: 'REQUEST_PRECOMPUTED_WAIT_TIMES',
-        url: waitTimesUrl
-      });
+    if (agencyId !== getState().routes.agencyId) {
+      dispatch({ type: 'REQUEST_ROUTES', agencyId: agencyId });
       axios
-        .get(waitTimesUrl)
+        .get(generateRoutesURL(agencyId))
         .then(response => {
-          dispatch({
-            type: 'RECEIVED_PRECOMPUTED_WAIT_TIMES',
-            url: waitTimesUrl,
-            data: response.data
+          var routes = response.data.routes;
+          routes.forEach(route => {
+            route.agencyId = agencyId;
           });
-          dispatch(computeRouteStats());
+          dispatch({ type: 'RECEIVED_ROUTES', data: routes, agencyId: agencyId });
         })
-        .catch(() => {
-          dispatch({
-            type: 'ERROR_PRECOMPUTED_WAIT_TIMES'
-          });
-          /* do something? */
+        .catch(err => {
+          dispatch({ type: 'ERROR_ROUTES', error: err });
         });
     }
+  };
+}
 
-    const tripTimesUrl = generateTripTimesURL(agencyId, dateStr, 'p10-median-p90', timePath);
-    if (getState().precomputedStats.tripTimesUrl !== tripTimesUrl)
-    {
-      dispatch({
-        type: 'REQUEST_PRECOMPUTED_TRIP_TIMES',
-        url: tripTimesUrl
-      });
-      axios
-        .get(tripTimesUrl)
-        .then(response => {
-          dispatch({
-            type: 'RECEIVED_PRECOMPUTED_TRIP_TIMES',
-            url: tripTimesUrl,
-            data: response.data
-          });
-          dispatch(computeRouteStats());
+export function fetchAgencyMetrics(params) {
+
+  const dates = computeDates(params);
+
+  return function(dispatch, getState) {
+
+    var query = `query($agencyId:String!, $dates:[String!], $startTime:String, $endTime:String) {
+  agency(agencyId:$agencyId) {
+    agencyId
+    interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
+      routes {
+        routeId
+        medianWaitTime
+        averageSpeed(units:"mph")
+        travelTimeVariability
+        onTimeRate
+      }
+    }
+  }
+}`.replace(/\s+/g, ' ');
+
+    const variablesJson = JSON.stringify({
+        agencyId: Agencies[0].id,
+        dates,
+        startTime: params.startTime,
+        endTime: params.endTime,
+    });
+
+    if (getState().agencyMetrics.variablesJson !== variablesJson) {
+      dispatch({ type: 'REQUEST_AGENCY_METRICS', variablesJson: variablesJson });
+      axios.get('/api/graphql', {
+          params: { query: query, variables: variablesJson },
+          baseURL: MetricsBaseURL,
         })
-        .catch(() => {
-          dispatch({
-            type: 'ERROR_PRECOMPUTED_TRIP_TIMES',
-          });
-          /* do something? */
+        .then(response => {
+          const responseData = response.data;
+          if (responseData && responseData.errors) {
+            // assume there is at least one error, but only show the first one
+            dispatch({
+              type: 'ERROR_AGENCY_METRICS',
+              error: responseData.errors[0].message
+            });
+          } else {
+            const agencyMetrics = responseData && responseData.data ? responseData.data.agency : null;
+            dispatch({
+              type: 'RECEIVED_AGENCY_METRICS',
+              variablesJson: variablesJson,
+              data: agencyMetrics
+            });
+          }
+        })
+        .catch(err => {
+          const errStr =
+            err.response && err.response.data && err.response.data.errors
+              ? err.response.data.errors[0].message
+              : err.message;
+          dispatch({ type: 'ERROR_AGENCY_METRICS', error: errStr });
         });
     }
   };
@@ -330,18 +363,16 @@ export function handleGraphParams(params) {
       dispatch(resetArrivals());
     }
 
-    if (oldParams.date !== graphParams.date
-      || oldParams.startTime !== graphParams.startTime
-      || oldParams.endTime !== graphParams.endTime) {
-      dispatch(resetRouteStats());
-    }
-
     // for debugging: console.log('hGP: ' + graphParams.routeId + ' dirid: ' + graphParams.directionId + " start: " + graphParams.startStopId + " end: " + graphParams.endStopId);
     // fetch graph data if all params provided
     // TODO: fetch route summary data if all we have is a route ID.
 
     if (graphParams.date) {
-      dispatch(fetchPrecomputedStats(graphParams));
+      dispatch(fetchAgencyMetrics(graphParams));
+    }
+
+    if (graphParams.agencyId && graphParams.routeId) {
+      dispatch(fetchRouteMetrics(graphParams));
     }
 
     if (
@@ -354,70 +385,7 @@ export function handleGraphParams(params) {
       dispatch(fetchTripMetrics(graphParams));
     } else {
       // when we don't have all params, clear graph data
-
       dispatch(resetTripMetrics());
-    }
-  };
-}
-
-export function resetRouteStats(params) {
-  return function(dispatch) {
-    dispatch({ type: 'COMPUTED_ROUTE_STATS', stats: {} });
-  };
-};
-
-export function computeRouteStats(params) {
-  return function(dispatch, getState) {
-    const state = getState();
-    const routes = state.routes.data;
-    const { precomputedStats } = state;
-    if (routes) {
-
-      const routeStats = {};
-
-      filterRoutes(routes).forEach(function(route) {
-        routeStats[route.id] = {};
-      });
-
-      const allWaits = getAllWaits(precomputedStats.waitTimes, routes);
-      const waitRankCount = allWaits.length;
-      allWaits.forEach(function(waitObj, index) {
-        const routeId = waitObj.routeId;
-        const stats = routeStats[routeId];
-        if (stats) {
-          Object.assign(stats, waitObj);
-          stats.waitRank = index + 1;
-          stats.waitRankCount = waitRankCount;
-        }
-      });
-
-      const allSpeeds = getAllSpeeds(precomputedStats.tripTimes, routes);
-      const speedRankCount = allSpeeds.length;
-      allSpeeds.forEach(function(speedObj, index) {
-        const routeId = speedObj.routeId;
-        const stats = routeStats[routeId];
-        if (stats) {
-          Object.assign(stats, speedObj);
-          stats.speedRank = index + 1;
-          stats.speedRankCount = speedRankCount;
-        }
-      });
-
-      const allScores = getAllScores(routes, allWaits, allSpeeds);
-      const scoreRankCount = allScores.length;
-      allScores.forEach(function(scoreObj, index) {
-        const routeId = scoreObj.routeId;
-        const stats = routeStats[routeId];
-        if (stats) {
-          Object.assign(stats, scoreObj);
-          stats.scoreRank = index + 1;
-          stats.scoreRankCount = scoreRankCount;
-        }
-      });
-
-      dispatch({ type: 'COMPUTED_ROUTE_STATS', stats: routeStats });
-    } else {
-      dispatch(resetRouteStats());
     }
   };
 }

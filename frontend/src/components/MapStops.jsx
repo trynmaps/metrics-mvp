@@ -5,7 +5,6 @@ import * as d3 from 'd3';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import { handleGraphParams } from '../actions';
-import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { Colors } from '../UIConstants';
 import { Agencies } from '../config';
@@ -277,21 +276,18 @@ class MapStops extends Component {
   };
 
   getSpeed = (routeInfo, direction, firstStopId, nextStopId) => {
-    const routeId = routeInfo.id;
 
-    const tripTimesFromStop = getTripTimesFromStop(
-      this.props.precomputedStats.tripTimes,
-      routeId,
-      direction.id,
-      firstStopId,
-    );
+    const segmentMetricsMap = this.props.segmentMetricsMap;
 
-    let time = null;
-    if (tripTimesFromStop && tripTimesFromStop[nextStopId]) {
-      time = tripTimesFromStop[nextStopId];
-    } else {
-      return -1; // speed not available;
+    const directionMetrics = segmentMetricsMap ? segmentMetricsMap[direction.id] : null;
+
+    const segmentMetrics = directionMetrics ? directionMetrics[firstStopId] :  null
+
+    if (!segmentMetrics || segmentMetrics.toStopId !== nextStopId) {
+      return -1;
     }
+
+    const time = segmentMetrics.medianTripTime;
 
     const distance = getDistanceInMiles(
       routeInfo,
@@ -300,7 +296,7 @@ class MapStops extends Component {
       nextStopId,
     );
 
-    return (distance / time) * 60; // miles per minute -> mph
+    return time > 0 ? ((distance / time) * 60) : -1; // miles per minute -> mph
   };
 
   SpeedLegend = () => {
@@ -497,7 +493,7 @@ class MapStops extends Component {
 
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
-  precomputedStats: state.precomputedStats,
+  segmentMetricsMap: state.routeMetrics.segmentsMap,
 });
 
 const mapDispatchToProps = dispatch => {

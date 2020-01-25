@@ -66,7 +66,7 @@ function RouteScreen(props) {
             {agency ? agency.title : null}
           </div>
           <div style={{flexGrow: 1}}/>
-          <DateTimePanel dateRangeSupported={tripMetrics || tripMetricsError || tripMetricsLoading}/>
+          <DateTimePanel dateRangeSupported={true} />
         </Toolbar>
       </AppBar>
 
