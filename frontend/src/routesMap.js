@@ -1,5 +1,6 @@
 import { handleGraphParams } from './actions';
 import { Agencies } from './config';
+import { initialGraphParams } from './reducers';
 
 export const DATE = 'date';
 export const START_DATE = 'startDate';
@@ -8,7 +9,9 @@ export const END_TIME = 'endTime';
 export const DAYS_OF_THE_WEEK = 'daysOfTheWeek';
 
 /**
- * Gets the string values into an object that be stored as graphParams.
+ * Gets the string values from the query into an object that can be used as graphParams
+ * if the route does not provide any values, or merged into graphParams if the route does
+ * provide values.
  *
  * @param getState
  * @returns The new graphParams.
@@ -18,22 +21,17 @@ function processQuery(getState) {
   const { location } = getState();
   const { date, startDate, startTime, endTime, daysOfTheWeek } = (location.query || {});
 
+  // If the values are missing, we must use the defaults, in case the user is changing
+  // from a nondefault to default value.
+
   const newParams = {
-      agencyId: Agencies[0].id, // todo: add agency to path to support multiple agencies
+    agencyId: Agencies[0].id, // todo: add agency to path to support multiple agencies
+    date: date || initialGraphParams.date,
+    startDate: startDate || initialGraphParams.startDate,
+    startTime: startTime || null,
+    endTime: endTime || null,
   };
 
-  if (date) {
-    newParams['date'] = date;
-  }
-  if (startDate) {
-    newParams['startDate'] = startDate;
-  }
-  if (startTime) {
-    newParams['startTime'] = startTime;
-  }
-  if (endTime) {
-    newParams['endTime'] = endTime;
-  }
   if (daysOfTheWeek) {
 
     // Deserialization via the actual query string gives us an object with values of strings
@@ -48,8 +46,41 @@ function processQuery(getState) {
       }
       return newDaysOfTheWeek;
     }, {});
+  } else {
+    newParams['daysOfTheWeek'] = initialGraphParams.daysOfTheWeek;
   }
   return newParams;
+}
+
+/**
+ * This function is the reverse of the above method, building a query object from
+ * a graphParams object. This should be used by any code that needs to update/regenerate
+ * the query string in the url.
+ *
+ * @param {Object} params The current graphParams state.
+ * @returns The query object to dispatch.
+ */
+export function queryFromParams(params) {
+
+  const query = {};
+
+  if (params.startDate !== initialGraphParams.startDate) {
+    query.startDate = params.startDate;
+  }
+  if (params.date !== initialGraphParams.date) {
+    query.date = params.date;
+  }
+  if (params.startTime !== initialGraphParams.startTime) {
+    query.startTime = params.startTime;
+  }
+  if (params.endTime !== initialGraphParams.endTime) {
+    query.endTime = params.endTime;
+  }
+  if (JSON.stringify(initialGraphParams.daysOfTheWeek) !==
+    JSON.stringify(params.daysOfTheWeek)) {
+    query.daysOfTheWeek = params.daysOfTheWeek;
+  }
+  return query;
 }
 
 export default {

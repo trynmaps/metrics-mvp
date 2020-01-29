@@ -185,6 +185,12 @@ function InfoByDay(props) {
     // Default is {left: 40, right: 10, top: 10, bottom: 40}
     
     const chartMargins = {left: 40, right: 10, top: 10, bottom: 60};
+
+    // Show a prompt to choose a date range if a date range is not selected.
+    
+    if (graphParams.date === graphParams.startDate) {
+      return (<div><p/>To see performance by day, select a start date and end date.</div>); 
+    }
     
     return (
       <div>

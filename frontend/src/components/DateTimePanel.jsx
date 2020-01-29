@@ -33,6 +33,7 @@ import { components } from '../reducers/page';
 import { initialGraphParams } from '../reducers';
 import { isLoadingRequest } from '../reducers/loadingReducer';
 import { handleGraphParams } from '../actions';
+import { queryFromParams } from '../routesMap';
 
 const useStyles = makeStyles(theme => ({
   button: {
@@ -77,16 +78,6 @@ const useStyles = makeStyles(theme => ({
 
 }));
 
-export function queryFromParams(params) {
-  const query = {
-    startDate: params.startDate,
-    date: params.date,
-    startTime: params.startTime,
-    endTime: params.endTime,
-    daysOfTheWeek: params.daysOfTheWeek,
-  }
-  return query;
-}
 /**
  * Displays the current date and time selections and an "expand" icon as
  * a large button.  Clicking the button reveals a Popper with a date and
