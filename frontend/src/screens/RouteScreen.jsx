@@ -88,8 +88,8 @@ function RouteScreen(props) {
         link = Object.assign({...link}, {payload:updatedPayload});
         const {label, specialLabel}  = labels(param, path.title);
         return hasNextValue
-        ? ( <Typography variant="subtitle1" className={`${breadCrumbStyling} ${darkLinks}`}> {specialLabel}  <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>  {label}  </Link> </Typography> )
-        : ( <Typography variant="subtitle1" className={breadCrumbStyling}> {specialLabel} {label} </Typography> )
+        ? ( <Typography variant="subtitle1" key={label} className={`${breadCrumbStyling} ${darkLinks}`}> {specialLabel}  <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>  {label}  </Link> </Typography> )
+        : ( <Typography variant="subtitle1" key={label} className={breadCrumbStyling}> {specialLabel} {label} </Typography> )
     });
   }
 
@@ -127,16 +127,14 @@ function RouteScreen(props) {
           <DateTimePanel dateRangeSupported={tripMetrics || tripMetricsError || tripMetricsLoading}/>
         </Toolbar>
       </AppBar>
-
       <Paper className={breadCrumbsWrapper}>
-         <Breadcrumbs separator={ <NavigateNextIcon fontSize="medium"  className={breadCrumbStyling}/> }>
+        <Breadcrumbs separator={ <NavigateNextIcon fontSize="default"  className={breadCrumbStyling}/> }>
 
-            {breadCrumbs([selectedRoute,direction,
-              startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
-              endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null],classes)}
-          </Breadcrumbs>
+          {breadCrumbs([selectedRoute,direction,
+            startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
+            endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null],classes)}
+        </Breadcrumbs>
       </Paper>
-
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
           <MapStops routes={routes} />
