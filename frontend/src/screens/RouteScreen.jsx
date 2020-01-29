@@ -1,7 +1,6 @@
 import React, { Fragment, useEffect } from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
-import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -29,9 +28,6 @@ const useStyles = makeStyles(theme => ({
     fontWeight: 'bold',
     textTransform : 'initial',
     display : 'inline',
-    },
-    whiteLinks : {
-      color: 'white'
     },
     darkLinks : {
       color: theme.palette.primary.dark
@@ -114,7 +110,7 @@ function RouteScreen(props) {
       : null;
 
   const classes = useStyles();
-  const { breadCrumbStyling, whiteLinks, breadCrumbsWrapper } = classes;
+  const { breadCrumbStyling, breadCrumbsWrapper } = classes;
   return (
     <Fragment>
       <AppBar position="relative">
