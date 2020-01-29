@@ -505,29 +505,49 @@ class TripMetrics(ObjectType):
             for date in dates
         ]
 
-class RouteIntervalStats(ObjectType):
-    routeId = String()
+class DirectionIntervalStats(ObjectType):
+    directionId = String()
     medianWaitTime = Float() # minutes
     averageSpeed = Float(
         units = String(required=False),
     )
-    travelTimeVariability = Float() # minutes
+    travelTimeVariability = Float() # minutes, 90th percentile - 10th percentile trip time
     onTimeRate = Float()
+    numCompletedTrips = Int()
+
+    def resolve_directionId(parent, info):
+        return parent["direction_id"]
+
+    def resolve_travelTimeVariability(parent, info):
+        return round_or_none(parent["agency_metrics"].get_travel_time_variability(parent["route_id"], parent["direction_id"], parent["range"]))
+
+    def resolve_averageSpeed(parent, info, units=constants.MILES_PER_HOUR):
+        return round_or_none(parent["agency_metrics"].get_average_speed(parent["route_id"], parent["direction_id"], parent["range"], units))
+
+    def resolve_medianWaitTime(parent, info):
+        return round_or_none(parent["agency_metrics"].get_median_wait_time(parent["route_id"], parent["direction_id"], "median", parent["range"]))
+
+    def resolve_onTimeRate(parent, info):
+        return round_or_none(parent["agency_metrics"].get_on_time_rate(parent["route_id"], parent["direction_id"], "median", parent["range"]))
+
+    def resolve_numCompletedTrips(parent, info):
+        return parent["agency_metrics"].get_num_completed_trips(parent["route_id"], parent["direction_id"], parent["range"])
+
+class RouteIntervalStats(ObjectType):
+    routeId = String()
+    directions = List(DirectionIntervalStats)
 
     def resolve_routeId(parent, info):
         return parent["route_id"]
 
-    def resolve_travelTimeVariability(parent, info):
-        return round_or_none(parent["agency_metrics"].get_travel_time_variability(parent["route_id"], None, parent["range"]))
+    def resolve_directions(parent, info):
+        route_config = parent["agency_metrics"].get_route_config(parent["route_id"])
 
-    def resolve_averageSpeed(parent, info, units=constants.MILES_PER_HOUR):
-        return round_or_none(parent["agency_metrics"].get_average_speed(parent["route_id"], None, parent["range"], units))
-
-    def resolve_medianWaitTime(parent, info):
-        return round_or_none(parent["agency_metrics"].get_median_wait_time(parent["route_id"], None, "median", parent["range"]))
-
-    def resolve_onTimeRate(parent, info):
-        return round_or_none(parent["agency_metrics"].get_on_time_rate(parent["route_id"], None, "median", parent["range"]))
+        return [{
+                **parent,
+                "direction_id": direction_id,
+            } for direction_id in route_config.get_direction_ids()
+        ]
 
 class AgencyIntervalMetrics(ObjectType):
     routes = List(RouteIntervalStats)
@@ -547,6 +567,7 @@ class SegmentStats(ObjectType):
     fromStopId = String()
     toStopId = String()
     medianTripTime = Float()
+    numTrips = Int()
 
     def resolve_fromStopId(parent, info):
         return parent['from_stop_id']
@@ -556,6 +577,9 @@ class SegmentStats(ObjectType):
 
     def resolve_medianTripTime(parent, info):
         return parent['median_trip_time']
+
+    def resolve_numTrips(parent, info):
+        return parent['num_trips']
 
 class DirectionIntervalMetrics(ObjectType):
     directionId = String()

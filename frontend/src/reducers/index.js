@@ -152,28 +152,56 @@ export function agencyMetrics(state = initialAgencyMetrics, action) {
   }
 };
 
+function addAveragesForAllDirections(routeStats, property) {
+  routeStats.forEach(function(stats) {
+    let total = 0;
+    let count = 0;
+    stats.directions.forEach(function(direction) {
+      const directionValue = direction[property];
+      if (directionValue != null) {
+        total += directionValue;
+        count += 1;
+      }
+    });
+    stats[property] = count > 0 ? (total / count) : null;
+  });
+}
+
+function addScores(stats) {
+  Object.assign(stats, computeScores(
+    stats.medianWaitTime,
+    stats.onTimeRate,
+    stats.averageSpeed,
+    stats.travelTimeVariability,
+  ));
+}
+
 function makeStatsByRouteId(agencyMetrics) {
 
-  const visibleRouteStats = agencyMetrics ? agencyMetrics.interval.routes.filter(stats => !isIgnoredRoute({agencyId: agencyMetrics.agencyId, id: stats.routeId})) : [];
+  const routeStats = agencyMetrics ? agencyMetrics.interval.routes : [];
+  const rankedRouteStats = routeStats.filter(stats => !isIgnoredRoute({agencyId: agencyMetrics.agencyId, id: stats.routeId}));
 
-  addRanks(visibleRouteStats, 'medianWaitTime', 1, 'waitRank', 'waitRankCount');
-  addRanks(visibleRouteStats, 'averageSpeed', -1, 'speedRank', 'speedRankCount');
-  addRanks(visibleRouteStats, 'onTimeRate', -1, 'onTimeRank', 'onTimeRankCount');
-  addRanks(visibleRouteStats, 'travelTimeVariability', 1, 'variabilityRank', 'variabilityRankCount');
+  addAveragesForAllDirections(routeStats, 'medianWaitTime');
+  addAveragesForAllDirections(routeStats, 'averageSpeed');
+  addAveragesForAllDirections(routeStats, 'onTimeRate');
+  addAveragesForAllDirections(routeStats, 'travelTimeVariability');
 
-  visibleRouteStats.forEach(function(stats) {
-    Object.assign(stats, computeScores(
-      stats.medianWaitTime,
-      stats.onTimeRate,
-      stats.averageSpeed,
-      stats.travelTimeVariability,
-    ));
+  addRanks(rankedRouteStats, 'medianWaitTime', 1, 'waitRank', 'waitRankCount');
+  addRanks(rankedRouteStats, 'averageSpeed', -1, 'speedRank', 'speedRankCount');
+  addRanks(rankedRouteStats, 'onTimeRate', -1, 'onTimeRank', 'onTimeRankCount');
+  addRanks(rankedRouteStats, 'travelTimeVariability', 1, 'variabilityRank', 'variabilityRankCount');
+
+  routeStats.forEach(function(stats) {
+    addScores(stats);
+    stats.directions.forEach(function(dirStats) {
+      addScores(dirStats);
+    });
   });
 
-  addRanks(visibleRouteStats, 'totalScore', -1, 'scoreRank', 'scoreRankCount');
+  addRanks(rankedRouteStats, 'totalScore', -1, 'scoreRank', 'scoreRankCount');
 
   const statsByRouteId = {};
-  visibleRouteStats.forEach(stats => {
+  routeStats.forEach(stats => {
     statsByRouteId[stats.routeId] = stats;
   });
 

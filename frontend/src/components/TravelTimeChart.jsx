@@ -49,6 +49,7 @@ export function getTripDataSeries(routeMetrics, route, directionId) {
     directionInfo.stops.forEach((stop, index) => {
       const stopGeometry = directionInfo.stop_geometry[stop];
       const title = route.stops[stop].title;
+      const segment = segmentsMap[stop];
       if (stop === firstStopId) {
         dataSeries.push({
           x: 0,
@@ -56,12 +57,13 @@ export function getTripDataSeries(routeMetrics, route, directionId) {
           title,
           stopIndex: index,
         });
-      } else if (segmentsMap[stop] && stopGeometry) {   // Drop trip data points with no data.
+      } else if (segment && segment.medianTripTime != null && stopGeometry) {   // Drop trip data points with no data.
         dataSeries.push({
           x: metersToMiles(stopGeometry.distance - firstStopDistance),
-          y: segmentsMap[stop].medianTripTime,
+          y: segment.medianTripTime,
           title,
           stopIndex: index,
+          numTrips: segment.numTrips,
         });
       }
     });
@@ -100,7 +102,9 @@ function TravelTimeChart(props) {
 
   let tripData = [];
   let tripTimeForDirection = null;
+  let distanceForDirection = null;
   let numStops = null;
+  let numTrips = null;
 
   const { routeId , directionId } = graphParams;
 
@@ -111,6 +115,8 @@ function TravelTimeChart(props) {
 
     numStops = tripData.length;
     tripTimeForDirection = numStops > 0 ? tripData[numStops - 1].y : null;
+    distanceForDirection = numStops > 0 ? tripData[numStops - 1].x : null;
+    numTrips = numStops > 0 ? tripData[numStops - 1].numTrips : null;
   }
 
   const legendItems = [
@@ -121,10 +127,12 @@ function TravelTimeChart(props) {
   return directionId ? (
     <Fragment>
           <Typography variant="h5">Travel time along route</Typography>
-          Full travel time: {tripTimeForDirection} minutes &nbsp;&nbsp; Stops:{' '}
-          {numStops > 0
-            ? tripData[numStops - 1].stopIndex + 1
-            : '?'}
+          Median travel time: {tripTimeForDirection > 0 ? tripTimeForDirection.toFixed(1) : '?'} min &nbsp;&nbsp;
+          Average speed: {tripTimeForDirection > 0 ? (60 * distanceForDirection / tripTimeForDirection).toFixed(1) : '?'} mph
+          <br />
+          Distance: {distanceForDirection != null ? distanceForDirection.toFixed(1) : '?'} mi &nbsp;&nbsp;
+          Stops: {numStops > 0 ? numStops : '?'} &nbsp;&nbsp;
+          Completed trips: {numTrips != null ? numTrips : '0'}
           <br />
           {/* set the y domain to start at zero and end at highest value (which is not always
          the end to end travel time due to spikes in the data) */}

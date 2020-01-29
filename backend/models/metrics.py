@@ -284,10 +284,19 @@ class RouteMetrics:
                 rng
             )
 
+            num_trips = self.agency_metrics.get_num_trips(
+                self.route_id,
+                direction_id,
+                from_stop_id,
+                to_stop_id,
+                rng
+            )
+
             segment_stats.append({
                 'from_stop_id': from_stop_id,
                 'to_stop_id': to_stop_id,
                 'median_trip_time': median_trip_time,
+                'num_trips': num_trips,
             })
 
         return segment_stats
@@ -304,11 +313,22 @@ class RouteMetrics:
 
         segment_stats = []
 
-        from_stop_id = stop_ids[0]
+        from_stop_id, end_stop_id = dir_info.get_endpoint_stop_ids()
 
-        for index in range(1, len(stop_ids)):
+        from_stop_index = stop_ids.index(from_stop_id)
+
+        for index in range(from_stop_index + 1, len(stop_ids)):
             to_stop_id = stop_ids[index]
-            median_trip_time = agency_metrics.get_median_trip_time(
+
+            median_trip_time = self.agency_metrics.get_median_trip_time(
+                self.route_id,
+                direction_id,
+                from_stop_id,
+                to_stop_id,
+                rng
+            )
+
+            num_trips = self.agency_metrics.get_num_trips(
                 self.route_id,
                 direction_id,
                 from_stop_id,
@@ -320,7 +340,11 @@ class RouteMetrics:
                 'from_stop_id': from_stop_id,
                 'to_stop_id': to_stop_id,
                 'median_trip_time': median_trip_time,
+                'num_trips': num_trips,
             })
+
+            if to_stop_id == end_stop_id:
+                break
 
         return segment_stats
 
@@ -444,39 +468,11 @@ class AgencyMetrics:
 
         return self.precomputed_stats[key]
 
-    def get_dir_endpoints(self, dir_info):
-        agency = self.agency
-
-        stop_ids = dir_info.get_stop_ids()
-
-        first_stop_id = stop_ids[0]
-        last_stop_id = stop_ids[-1]
-
-        route_heuristics = agency.js_properties.get('routeHeuristics', {}).get(dir_info.route.id, {})
-        if route_heuristics is not None:
-            ignore_first_stop = route_heuristics.get('ignoreFirstStop', None)
-            if ignore_first_stop == True:
-                first_stop_id = stop_ids[1]
-            elif isinstance(ignore_first_stop, str):
-                first_stop_id = ignore_first_stop
-
-            ignore_last_stop = route_heuristics.get('ignoreLastStop', None)
-            if ignore_last_stop == True:
-                first_stop_id = stop_ids[-2]
-            elif isinstance(ignore_last_stop, str):
-                last_stop_id = ignore_last_stop
-
-        return (first_stop_id, last_stop_id)
-
     def get_route_ids(self):
         return self.get_route_configs().keys()
 
     def get_median_trip_time(self, route_id, direction_id, start_stop_id, end_stop_id, rng: Range):
         all_trip_times = []
-
-        route = self.get_route_config(route_id)
-        if route is None:
-            return None
 
         for d in rng.dates:
             stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
@@ -489,6 +485,34 @@ class AgencyMetrics:
 
         return np.median(all_trip_times) if len(all_trip_times) > 0 else None
 
+    def get_num_trips(self, route_id, direction_id, start_stop_id, end_stop_id, rng: Range):
+        total_trips = None
+
+        for d in rng.dates:
+            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            if stats is None:
+                continue
+
+            num_trips = stats.get_num_trips(route_id, direction_id, start_stop_id, end_stop_id)
+            if num_trips is not None:
+                if total_trips is None:
+                    total_trips = num_trips
+                else:
+                    total_trips += num_trips
+
+        return total_trips
+
+    def get_num_completed_trips(self, route_id, direction_id, rng: Range):
+        route = self.get_route_config(route_id)
+        if route is None:
+            return None
+
+        dir_info = route.get_direction_info(direction_id)
+
+        first_stop_id, last_stop_id = dir_info.get_endpoint_stop_ids()
+
+        return self.get_num_trips(route_id, direction_id, first_stop_id, last_stop_id, rng)
+
     def get_travel_time_variability(self, route_id, direction_id, rng: Range):
         all_variabilities = []
 
@@ -496,24 +520,21 @@ class AgencyMetrics:
         if route is None:
             return None
 
-        direction_ids = [direction_id] if direction_id is not None else route.get_direction_ids()
+        dir_info = route.get_direction_info(direction_id)
 
-        for dir_id in direction_ids:
+        first_stop_id, last_stop_id = dir_info.get_endpoint_stop_ids()
 
-            dir_info = route.get_direction_info(dir_id)
+        for d in rng.dates:
 
-            first_stop_id, last_stop_id = self.get_dir_endpoints(dir_info)
+            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            if stats is None:
+                continue
 
-            for d in rng.dates:
-
-                stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
-                if stats is None:
-                    continue
-
-                trip_time_arr = stats.get_trip_time_ranges(route_id, dir_id, first_stop_id, last_stop_id)
-                #print(f'{route_id} {dir_id} {first_stop_id}->{last_stop_id} : {trip_time_arr}', file=sys.stderr)
-                if trip_time_arr is not None:
-                    all_variabilities.append((trip_time_arr[1] - trip_time_arr[0])/2)
+            p10_trip_time = stats.get_p10_trip_time(route_id, direction_id, first_stop_id, last_stop_id)
+            p90_trip_time = stats.get_p90_trip_time(route_id, direction_id, first_stop_id, last_stop_id)
+            #print(f'{route_id} {direction_id} {first_stop_id}->{last_stop_id} : {trip_time_arr}', file=sys.stderr)
+            if p10_trip_time is not None and p90_trip_time is not None:
+                all_variabilities.append(p90_trip_time - p10_trip_time)
 
         return np.median(all_variabilities) if len(all_variabilities) > 0 else None
 
@@ -531,74 +552,58 @@ class AgencyMetrics:
         else:
             raise Exception(f"Unsupported unit {units}")
 
-        direction_ids = [direction_id] if direction_id is not None else route.get_direction_ids()
 
-        for dir_id in direction_ids:
+        dir_info = route.get_direction_info(direction_id)
 
-            dir_info = route.get_direction_info(dir_id)
+        first_stop_id, last_stop_id = dir_info.get_endpoint_stop_ids()
 
-            first_stop_id, last_stop_id = self.get_dir_endpoints(dir_info)
+        first_stop_geometry = dir_info.get_stop_geometry(first_stop_id)
+        last_stop_geometry = dir_info.get_stop_geometry(last_stop_id)
 
-            first_stop_geometry = dir_info.get_stop_geometry(first_stop_id)
-            last_stop_geometry = dir_info.get_stop_geometry(last_stop_id)
+        if first_stop_geometry is None or last_stop_geometry is None:
+            raise Exception("Missing stop geometry")
 
-            if first_stop_geometry is None or last_stop_geometry is None:
-                raise Exception("Missing stop geometry")
+        dist = last_stop_geometry['distance'] - first_stop_geometry['distance']
+        if dist <= 0:
+            raise Exception(f'invalid distance {dist} between {first_stop_id} and {last_stop_id} in route_id {route_id} direction {direction_id}') # file=sys.stderr)
 
-            dist = last_stop_geometry['distance'] - first_stop_geometry['distance']
-            if dist <= 0:
-                raise Exception("Invalid distance")
+        for d in rng.dates:
+            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            if stats is None:
+                continue
 
-            for d in rng.dates:
-                stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
-                if stats is None:
-                    continue
+            trip_time = stats.get_median_trip_time(route_id, direction_id, first_stop_id, last_stop_id)
 
-                trip_time = stats.get_median_trip_time(route_id, dir_id, first_stop_id, last_stop_id)
-                if trip_time is not None:
-                    all_speeds.append((dist / trip_time) / conversion_factor)
+            if trip_time is not None:
+                all_speeds.append((dist / trip_time) / conversion_factor)
 
         return np.median(all_speeds) if len(all_speeds) > 0 else None
 
     def get_median_wait_time(self, route_id, direction_id, stop_id, rng: Range):
         all_wait_times = []
 
-        route = self.get_route_config(route_id)
-        if route is None:
-            return None
+        for d in rng.dates:
+            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            if stats is None:
+                continue
 
-        direction_ids = [direction_id] if direction_id is not None else route.get_direction_ids()
-
-        for dir_id in direction_ids:
-            for d in rng.dates:
-                stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
-                if stats is None:
-                    continue
-
-                wait_time = stats.get_median_wait_time(route_id, dir_id, stop_id)
-                if wait_time is not None:
-                    all_wait_times.append(wait_time)
+            wait_time = stats.get_median_wait_time(route_id, direction_id, stop_id)
+            if wait_time is not None:
+                all_wait_times.append(wait_time)
 
         return np.median(all_wait_times) if len(all_wait_times) > 0 else None
 
     def get_on_time_rate(self, route_id, direction_id, stop_id, rng: Range):
         all_on_time_rates = []
 
-        route = self.get_route_config(route_id)
-        if route is None:
-            return None
+        for d in rng.dates:
+            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            if stats is None:
+                continue
 
-        direction_ids = [direction_id] if direction_id is not None else route.get_direction_ids()
-
-        for dir_id in direction_ids:
-            for d in rng.dates:
-                stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
-                if stats is None:
-                    continue
-
-                on_time_rate = stats.get_on_time_rate(route_id, dir_id, stop_id)
-                if on_time_rate is not None:
-                    all_on_time_rates.append(on_time_rate)
+            on_time_rate = stats.get_on_time_rate(route_id, direction_id, stop_id)
+            if on_time_rate is not None:
+                all_on_time_rates.append(on_time_rate)
 
         return np.median(all_on_time_rates) if len(all_on_time_rates) > 0 else None
 

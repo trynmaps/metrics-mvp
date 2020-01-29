@@ -417,7 +417,7 @@ function RouteTable(props) {
                         {row.travelTimeVariability == null
                           ? '--'
                           : <Fragment>
-                              {'\u00b1'} {row.travelTimeVariability.toFixed(0)} min
+                              {'\u00b1'} {(row.travelTimeVariability / 2).toFixed(0)} min
                             </Fragment>
                         }
                     />

@@ -154,12 +154,9 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
         departure_time_values_by_stop = {}
         arrival_time_values_by_stop = {}
 
-        for stat_id in ['combined','median-trip-times']:
-            for interval_index, _ in enumerate(timestamp_intervals):
-                all_stats[stat_id][interval_index][route_id]['directions'][dir_id]['medianTripTimes'] = collections.defaultdict(dict)
-
         for interval_index, _ in enumerate(timestamp_intervals):
-            all_stats['combined'][interval_index][route_id]['directions'][dir_id]['tripTimeRanges'] = collections.defaultdict(dict)
+            all_stats['combined'][interval_index][route_id]['directions'][dir_id]['tripTimes'] = collections.defaultdict(dict)
+            all_stats['median-trip-times'][interval_index][route_id]['directions'][dir_id]['medianTripTimes'] = collections.defaultdict(dict)
 
         for stop_id in stop_ids:
             stop_df = history_df[(sid_values == stop_id) & (did_values == dir_id)]
@@ -185,6 +182,8 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
             arrival_time_values_by_stop[stop_id] = sorted_arrival_time_values
 
         i_end_index = num_stops if is_loop else (num_stops - 1)
+
+        start_stop_id, end_stop_id = dir_info.get_endpoint_stop_ids()
 
         for i in range(0, i_end_index):
 
@@ -226,19 +225,17 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
                         # save all pairs of stops in median-trip-times stat, used for the isochrone map
                         all_stats['median-trip-times'][interval_index][route_id]['directions'][dir_id]['medianTripTimes'][s1][s2] = median_trip_time
 
-                        # only store median trip times for adjacent stops, or from the first two stops in combined stats
+                        # only store median trip times for adjacent stops, or from the first three stops in combined stats
                         # to reduce file size and loading time, since the frontend only needs this for displaying segments
-                        # and cumulative time along a route
-                        if (i <= 1) or (j == (i + 1) % num_stops):
-                            all_stats['combined'][interval_index][route_id]['directions'][dir_id]['medianTripTimes'][s1][s2] = median_trip_time
-
-                        # only store trip time ranges between the first two and last two stops in the combined stats
-                        # to reduce file size and loading time, since the frontend only needs these to display end-to-end variability
-                        if (i <= 1) and (j >= num_stops - 2):
-                            all_stats['combined'][interval_index][route_id]['directions'][dir_id]['tripTimeRanges'][s1][s2] = [
+                        # and cumulative time along a route.
+                        if (i <= 2) or (j == (i + 1) % num_stops) or s1 == start_stop_id:
+                            all_stats['combined'][interval_index][route_id]['directions'][dir_id]['tripTimes'][s1][s2] = [
                                 round(util.quantile_sorted(sorted_trip_min, 0.1), 1),
-                                round(util.quantile_sorted(sorted_trip_min, 0.9), 1)
+                                median_trip_time,
+                                round(util.quantile_sorted(sorted_trip_min, 0.9), 1),
+                                len(trip_min)
                             ]
+
 
 def compute_stats(d: date, agency: config.Agency, routes, save_to_s3=True):
 

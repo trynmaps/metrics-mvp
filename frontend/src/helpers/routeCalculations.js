@@ -67,11 +67,11 @@ export function computeScores(
     .clamp(true);
 
   // score for travel time variability
-  // where variability is half of (90th percentile time minus 10th percentile)
+  // where variability is 90th percentile trip time minus 10th percentile trip time
 
   const variabilityScoreScale = d3
     .scaleLinear()
-    .domain([5, 10])
+    .domain([10, 20])
     .rangeRound([100, 0])
     .clamp(true);
 

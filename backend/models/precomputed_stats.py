@@ -24,35 +24,44 @@ class PrecomputedStats:
 
         return route_data['directions'].get(direction_id, None)
 
-    def get_trip_time_ranges(self, route_id, direction_id, start_stop_id, end_stop_id):
+    def get_trip_time_stats(self, route_id, direction_id, start_stop_id, end_stop_id):
         dir_stats = self.get_direction_stats(route_id, direction_id)
         if dir_stats is None:
             return None
 
-        trip_time_ranges = dir_stats.get('tripTimeRanges', None)
-        if trip_time_ranges is None:
+        trip_time_stats = dir_stats.get('tripTimes', None)
+        if trip_time_stats is None:
             return None
 
-        start_stop_stats = trip_time_ranges.get(start_stop_id, None)
+        start_stop_stats = trip_time_stats.get(start_stop_id, None)
         if start_stop_stats is None:
             return None
 
         return start_stop_stats.get(end_stop_id, None)
 
     def get_median_trip_time(self, route_id, direction_id, start_stop_id, end_stop_id):
-        dir_stats = self.get_direction_stats(route_id, direction_id)
-        if dir_stats is None:
+        trip_time_stats = self.get_trip_time_stats(route_id, direction_id, start_stop_id, end_stop_id)
+        if trip_time_stats is None:
             return None
+        return trip_time_stats[1]
 
-        median_trip_times = dir_stats.get('medianTripTimes', None)
-        if median_trip_times is None:
+    def get_p10_trip_time(self, route_id, direction_id, start_stop_id, end_stop_id):
+        trip_time_stats = self.get_trip_time_stats(route_id, direction_id, start_stop_id, end_stop_id)
+        if trip_time_stats is None:
             return None
+        return trip_time_stats[0]
 
-        start_stop_stats = median_trip_times.get(start_stop_id, None)
-        if start_stop_stats is None:
+    def get_p90_trip_time(self, route_id, direction_id, start_stop_id, end_stop_id):
+        trip_time_stats = self.get_trip_time_stats(route_id, direction_id, start_stop_id, end_stop_id)
+        if trip_time_stats is None:
             return None
+        return trip_time_stats[2]
 
-        return start_stop_stats.get(end_stop_id, None)
+    def get_num_trips(self, route_id, direction_id, start_stop_id, end_stop_id):
+        trip_time_stats = self.get_trip_time_stats(route_id, direction_id, start_stop_id, end_stop_id)
+        if trip_time_stats is None:
+            return None
+        return trip_time_stats[3]
 
     def get_median_wait_time(self, route_id, direction_id, stop_id):
         dir_stats = self.get_direction_stats(route_id, direction_id)

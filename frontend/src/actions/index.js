@@ -159,11 +159,13 @@ export function fetchRouteMetrics(params) {
             fromStopId
             toStopId
             medianTripTime
+            numTrips
           }
           cumulativeSegments {
             fromStopId
             toStopId
             medianTripTime
+            numTrips
           }
         }
       }
@@ -252,10 +254,13 @@ export function fetchAgencyMetrics(params) {
     interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
       routes {
         routeId
-        medianWaitTime
-        averageSpeed(units:"mph")
-        travelTimeVariability
-        onTimeRate
+        directions {
+          directionId
+          medianWaitTime
+          averageSpeed(units:"mph")
+          travelTimeVariability
+          onTimeRate
+        }
       }
     }
   }

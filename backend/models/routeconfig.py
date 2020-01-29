@@ -31,6 +31,29 @@ class DirectionInfo:
     def get_stop_geometry(self, stop_id):
         return self.stop_geometry.get(stop_id, None)
 
+    def get_endpoint_stop_ids(self):
+        agency = config.get_agency(self.route.agency_id)
+
+        stop_ids = self.get_stop_ids()
+
+        first_stop_id = stop_ids[0]
+        last_stop_id = stop_ids[-1]
+
+        dir_heuristics = agency.js_properties.get('routeHeuristics', {}).get(self.route.id, {}).get(self.id, None)
+        if dir_heuristics is not None:
+            ignore_first_stop = dir_heuristics.get('ignoreFirstStop', None)
+            if ignore_first_stop == True:
+                first_stop_id = stop_ids[1]
+            elif isinstance(ignore_first_stop, str):
+                first_stop_id = ignore_first_stop
+
+            ignore_last_stop = dir_heuristics.get('ignoreLastStop', None)
+            if ignore_last_stop == True:
+                last_stop_id = stop_ids[-2]
+            elif isinstance(ignore_last_stop, str):
+                last_stop_id = ignore_last_stop
+
+        return (first_stop_id, last_stop_id)
 
 class RouteConfig:
     def __init__(self, agency_id, data):

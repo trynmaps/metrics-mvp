@@ -23,8 +23,15 @@ function RouteSummary(props) {
   const { graphParams, statsByRouteId } = props;
   const [tabValue, setTabValue] = React.useState(0);
 
-  const routeId = graphParams.routeId;
-  const stats = statsByRouteId[routeId] || {};
+  const { routeId, directionId } = graphParams;
+  const routeStats = statsByRouteId[routeId] || {directions:[]};
+
+  let stats = null;
+  if (directionId) {
+    stats = routeStats.directions.find(dirStats => dirStats.directionId === directionId) || {};
+  } else {
+    stats = routeStats;
+  }
 
   const popoverContentTotalScore = (stats.totalScore != null) ? (
     <Fragment>
@@ -103,10 +110,10 @@ function RouteSummary(props) {
 
   const popoverContentTravelVariability = (stats.travelTimeVariability != null) ? (
     <Fragment>
-      Travel time variability is the 90th percentile end to end travel time minus the 10th percentile
+      Travel time variability is difference between the 90th percentile end to end travel time and the 10th percentile
       travel time.  This measures how much extra travel time is needed for some trips.
-      Variability of{' '}
-      {stats.travelTimeVariability.toFixed(1)} min gets a score of{' '}
+      Variability of{' \u00b1'}
+      {(stats.travelTimeVariability / 2).toFixed(1)} min gets a score of{' '}
       {stats.travelVarianceScore}.
       <Box pt={2}>
         <InfoScoreLegend
@@ -236,7 +243,7 @@ function RouteSummary(props) {
           <InfoScoreCard
             score={stats.travelVarianceScore}
             title="Travel Time Variability"
-            largeValue={stats.travelTimeVariability != null ? ('\u00b1' + stats.travelTimeVariability.toFixed(0)) : '--'}
+            largeValue={stats.travelTimeVariability != null ? ('\u00b1' + (stats.travelTimeVariability / 2).toFixed(0)) : '--'}
             smallValue="&nbsp;min"
             bottomContent={
               (stats.variabilityRank != null)

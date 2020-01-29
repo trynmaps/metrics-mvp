@@ -86,11 +86,11 @@ export default function InfoTripSummary(props) {
 
   let onTimeRate = scheduleAdherence && scheduleAdherence.scheduledCount > 0 ? (scheduleAdherence.onTimeCount / scheduleAdherence.scheduledCount) : null;
 
-  let travelVariabilityTime = 0;
+  let travelTimeVariability = null;
   if (tripTimes) {
-    travelVariabilityTime =
+    travelTimeVariability =
       (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
-      getPercentileValue(tripTimes, TENTH_PERCENTILE)) / 2.0;
+      getPercentileValue(tripTimes, TENTH_PERCENTILE));
   }
 
   const scores =
@@ -99,7 +99,7 @@ export default function InfoTripSummary(props) {
           waitTimes.median,
           onTimeRate,
           speed,
-          travelVariabilityTime,
+          travelTimeVariability,
         )
       : {};
 
@@ -131,10 +131,6 @@ export default function InfoTripSummary(props) {
   );
   const planningTravel = Math.round(
     getPercentileValue(tripTimes, PLANNING_PERCENTILE),
-  );
-  const travelVariability = Math.round(
-    (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
-     getPercentileValue(tripTimes, TENTH_PERCENTILE)) / 2.0,
   );
 
   const typicalWait = Math.round(waitTimes.median);
@@ -215,9 +211,9 @@ export default function InfoTripSummary(props) {
 
   const popoverContentTravelVariability = (
     <Fragment>
-      Travel time variability is the 90th percentile travel time minus the 10th percentile
+      Travel time variability is the difference between the 90th percentile travel time and the 10th percentile
       travel time.  This measures how much extra travel time is needed for some trips.
-      Variability of {'\u00b1' + travelVariabilityTime.toFixed(1)} min gets a score of{' '}
+      Variability of {'\u00b1' + (travelTimeVariability / 2).toFixed(1)} min gets a score of{' '}
       {scores.travelVarianceScore}.
       <Box pt={2}>
         <InfoScoreLegend
@@ -335,7 +331,7 @@ export default function InfoTripSummary(props) {
               <InfoScoreCard
                 score={scores.travelVarianceScore}
                 title="Travel Time Variability"
-                largeValue={'\u00b1' + travelVariability}
+                largeValue={travelTimeVariability != null ? ('\u00b1' + (travelTimeVariability / 2).toFixed(0)) : '-'}
                 smallValue="&nbsp;min"
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTravelVariability}
