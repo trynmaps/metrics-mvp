@@ -42,25 +42,27 @@ class SchemaTest(unittest.TestCase):
         client = Client(metrics_api)
         res = client.execute('''
 query {
-  routeMetrics(agencyId:"test",routeId:"A") {
-    trip(startStopId:"S1", endStopId: "S2", directionId:"1") {
-      interval(dates:["2019-12-28"]) {
-        waitTimes {
-          min
-          median
-          max
-        }
-        headways {
-          min
-          median
-          max
-          count
-        }
-        tripTimes {
-          min
-          median
-          max
-          count
+  agency(agencyId:"test") {
+    route(routeId:"A") {
+      trip(startStopId:"S1", endStopId: "S2", directionId:"1") {
+        interval(dates:["2019-12-28"]) {
+          waitTimes {
+            min
+            median
+            max
+          }
+          headways {
+            min
+            median
+            max
+            count
+          }
+          tripTimes {
+            min
+            median
+            max
+            count
+          }
         }
       }
     }
@@ -70,11 +72,12 @@ query {
         #print(json.dumps(res))
 
         self.assertIn('data', res)
-        self.assertIn('routeMetrics', res['data'])
-        self.assertIn('trip', res['data']['routeMetrics'])
-        self.assertIn('interval', res['data']['routeMetrics']['trip'])
+        self.assertIn('agency', res['data'])
+        self.assertIn('route', res['data']['agency'])
+        self.assertIn('trip', res['data']['agency']['route'])
+        self.assertIn('interval', res['data']['agency']['route']['trip'])
 
-        interval_metrics = res['data']['routeMetrics']['trip']['interval']
+        interval_metrics = res['data']['agency']['route']['trip']['interval']
 
         self.assertIn('waitTimes', interval_metrics)
         self.assertIn('tripTimes', interval_metrics)
