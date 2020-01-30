@@ -318,7 +318,20 @@ function RouteTable(props) {
                 const labelId = `enhanced-table-checkbox-${index}`;
 
                 return (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.route.id}>
+                  <TableRow hover 
+                  component={Navlink} 
+                  to={{
+                    type: 'ROUTESCREEN',
+                    payload: {
+                      agencyId: row.route.agencyId,
+                      routeId: row.route.id,
+                    },
+                    query: props.query, 
+                  }}                         
+                  style={{color: theme.palette.primary.dark, textDecoration: 'none'}}
+                  role="checkbox" 
+                  tabIndex={-1} 
+                  key={row.route.id}>
                     <TableCell
                       component="th"
                       id={labelId}
@@ -326,24 +339,20 @@ function RouteTable(props) {
                       padding="none"
                       style={{border:'none', paddingTop:6, paddingBottom:6}}
                     >
-                      <Navlink
-                        style={{color: theme.palette.primary.dark, textDecoration: 'none'}}
-                        to={{
-                          type: 'ROUTESCREEN',
-                          payload: {
-                            agencyId: row.route.agencyId,
-                            routeId: row.route.id,
-                          },
-                          query: props.query, 
-                        }}
-                      >
                         {row.route.title}
-                      </Navlink>
                     </TableCell>
                     <TableCell
                       align="right"
                       padding="none"
                       style={{border:'none', paddingTop:6, paddingBottom:6}}
+                      to={{
+                        type: 'ROUTESCREEN',
+                        payload: {
+                          agencyId: row.route.agencyId,
+                          routeId: row.route.id,
+                        },
+                        query: props.query, 
+                      }}
                     >
                     <Chip
                       style={{
@@ -367,7 +376,6 @@ function RouteTable(props) {
                       label=
                         {row.wait == null ? '--' : row.wait.toFixed(0) + ' min'}
                     />
-
                     </TableCell>
 
                     <TableCell
@@ -423,7 +431,6 @@ function RouteTable(props) {
                         }
 
                     />
-
                     </TableCell>
                   </TableRow>
                 );
