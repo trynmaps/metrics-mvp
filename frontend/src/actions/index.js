@@ -38,10 +38,10 @@ function computeDates(graphParams) {
   let dates = [];
   for (let i = 0; i < numberOfDaysBack; i++) {
 
-    if (graphParams.daysOfTheWeek[endMoment.day()]) {
-      dates.push(endMoment.format('YYYY-MM-DD'));
+    if (graphParams.daysOfTheWeek[startMoment.day()]) {
+      dates.push(startMoment.format('YYYY-MM-DD'));
     }
-    endMoment.subtract(1, 'days');
+    startMoment.add(1, 'days');
   }
   return dates;
 }
@@ -119,6 +119,21 @@ export function fetchTripMetrics(params) {
           median max
           percentiles(percentiles:[90]) { percentile value }
           histogram { binStart binEnd count }
+        }
+      }
+      byDay(dates:$date, startTime:$startTime, endTime:$endTime) {
+        dates
+        startTime
+        endTime
+        tripTimes {
+          median
+          p10:percentile(percentile:10)
+          p90:percentile(percentile:90)
+         }
+        waitTimes {
+          median
+          p90:percentile(percentile:90)
+          probabilityLessThan(minutes:20)
         }
       }
       timeRanges(dates:$date) {

@@ -61,7 +61,10 @@ function SidebarButton(props) {
           <List>
             <ListItem
               component={NavLink}
-              to={{ type: 'DASHBOARD' }}
+              to={{
+                type: 'DASHBOARD',
+                query: props.currentLocation.query,
+              }}
               activeStyle={activeStyle}
               exact
               style={inactiveStyle}
@@ -75,7 +78,10 @@ function SidebarButton(props) {
             </ListItem>
             <ListItem
               component={NavLink}
-              to={{ type: 'ISOCHRONE' }}
+              to={{
+                type: 'ISOCHRONE',
+                query: props.currentLocation.query,
+              }}
               activeStyle={activeStyle}
               exact
               style={inactiveStyle}
@@ -89,7 +95,10 @@ function SidebarButton(props) {
             </ListItem>
             <ListItem
               component={NavLink}
-              to={{ type: 'DATADIAGNOSTIC' }}
+              to={{
+                type: 'DATADIAGNOSTIC',
+                query: props.currentLocation.query,
+              }}
               activeStyle={activeStyle}
               exact
               style={inactiveStyle}
@@ -123,6 +132,7 @@ function SidebarButton(props) {
 
 const mapStateToProps = state => ({
   currentPage: state.page,
+  currentLocation: state.location,
 });
 
 export default connect(
