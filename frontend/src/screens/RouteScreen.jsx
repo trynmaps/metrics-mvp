@@ -31,7 +31,7 @@ function RouteScreen(props) {
 
   useEffect(() => {
     if (!routes && agencyId) {
-      myFetchRoutes({agencyId: agencyId});
+      myFetchRoutes({ agencyId });
     }
   }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
@@ -39,7 +39,10 @@ function RouteScreen(props) {
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
-      ? routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId))
+      ? routes.find(
+          route =>
+            route.id === graphParams.routeId && route.agencyId === agencyId,
+        )
       : null;
 
   const direction =
@@ -62,11 +65,9 @@ function RouteScreen(props) {
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
-          <div className="page-title">
-            {agency ? agency.title : null}
-          </div>
-          <div style={{flexGrow: 1}}/>
-          <DateTimePanel dateRangeSupported={true} />
+          <div className="page-title">{agency ? agency.title : null}</div>
+          <div style={{ flexGrow: 1 }} />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
 
@@ -87,7 +88,9 @@ function RouteScreen(props) {
         <Grid item xs={12} sm={6}>
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
           <ControlPanel routes={routes} />
-          {tripMetrics || tripMetricsError || tripMetricsLoading /* if we have trip metrics or an error, then show the info component */ ? (
+          {tripMetrics ||
+          tripMetricsError ||
+          tripMetricsLoading /* if we have trip metrics or an error, then show the info component */ ? (
             <Info
               tripMetrics={tripMetrics}
               tripMetricsError={tripMetricsError}

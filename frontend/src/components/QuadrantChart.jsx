@@ -40,7 +40,12 @@ function QuadrantChart(props) {
   });
 
   return (
-    <XYPlot height={600} width={1000} xDomain={[maxWaitTime, 0]} yDomain={[0, maxSpeed]}>
+    <XYPlot
+      height={600}
+      width={1000}
+      xDomain={[maxWaitTime, 0]}
+      yDomain={[0, maxSpeed]}
+    >
       <HorizontalGridLines />
       <VerticalGridLines />
       <XAxis top={300} style={{ text: { stroke: 'none', fill: '#cccccc' } }} />
@@ -85,9 +90,9 @@ function QuadrantChart(props) {
 }
 
 const mapStateToProps = state => ({
-  //routes: state.routes.data,
+  // routes: state.routes.data,
   statsByRouteId: state.agencyMetrics.statsByRouteId,
-  //graphParams: state.graphParams,
+  // graphParams: state.graphParams,
 });
 
 export default connect(mapStateToProps)(QuadrantChart);

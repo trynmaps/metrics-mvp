@@ -1,7 +1,7 @@
 import React, { useState, Fragment } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
-import { lighten, makeStyles } from '@material-ui/core/styles';
+import { lighten, makeStyles, createMuiTheme } from '@material-ui/core/styles';
 import Chip from '@material-ui/core/Chip';
 import Popover from '@material-ui/core/Popover';
 import Table from '@material-ui/core/Table';
@@ -14,7 +14,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
-import { createMuiTheme } from '@material-ui/core/styles';
+
 import FilterListIcon from '@material-ui/icons/FilterList';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import { connect } from 'react-redux';
@@ -38,7 +38,6 @@ import {
  * @returns {Array}          The sorted array
  */
 function stableSort(array, sortOrder, orderBy) {
-
   // special case for title sorting that short circuits the use of the comparator
 
   if (orderBy === 'title') {
@@ -62,7 +61,7 @@ function stableSort(array, sortOrder, orderBy) {
 
 function getComparisonFunction(order, orderBy) {
   // Sort null values to bottom regardless of ascending/descending
-  var factor = order === 'desc' ? 1 : -1;
+  const factor = order === 'desc' ? 1 : -1;
   return (a, b) => {
     const aValue = a[orderBy];
     const bValue = b[orderBy];
@@ -90,14 +89,24 @@ function getComparisonFunction(order, orderBy) {
 const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'totalScore', numeric: true, disablePadding: true, label: 'Score' },
-  { id: 'medianWaitTime', numeric: true, disablePadding: true, label: 'Median Wait' },
+  {
+    id: 'medianWaitTime',
+    numeric: true,
+    disablePadding: true,
+    label: 'Median Wait',
+  },
   {
     id: 'onTimeRate',
     numeric: true,
     disablePadding: true,
     label: 'On Time %',
   },
-  { id: 'averageSpeed', numeric: true, disablePadding: true, label: 'Average Speed' },
+  {
+    id: 'averageSpeed',
+    numeric: true,
+    disablePadding: true,
+    label: 'Average Speed',
+  },
   {
     id: 'travelTimeVariability',
     numeric: true,
@@ -201,9 +210,9 @@ const EnhancedTableToolbar = props => {
         ) : (
           <Typography variant="h6" id="tableTitle">
             Routes
-                  <IconButton size="small" onClick={handleClick}>
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
+            <IconButton size="small" onClick={handleClick}>
+              <InfoIcon fontSize="small" />
+            </IconButton>
           </Typography>
         )}
       </div>
@@ -229,25 +238,26 @@ const EnhancedTableToolbar = props => {
           horizontal: 'center',
         }}
       >
-        <div className={classes.popover}><b>Score</b> is the average of subscores (0-100) for median wait,
-          long wait probability, average speed, and travel time variability.  Click on a route to see its metrics
-          and explanations of how the subscores are calculated.
-          <p/>
-          <b>Median Wait</b> is the 50th percentile (typical) wait time for a rider arriving
-          randomly at a stop while the route is running.
-          <p/>
-          <b>Long wait probability</b> is the chance a rider has of a wait of twenty minutes
-          or longer after arriving randomly at a stop.
-          <p/>
-          <b>Average speed</b> is the speed of the 50th percentile (typical) end to end trip, averaged
-          for all directions.
-          <p/>
-          <b>Travel time variability</b> is the 90th percentile end to end travel time minus the 10th percentile
-          travel time.  This measures how much extra travel time is needed for some trips.
-
+        <div className={classes.popover}>
+          <b>Score</b> is the average of subscores (0-100) for median wait, long
+          wait probability, average speed, and travel time variability. Click on
+          a route to see its metrics and explanations of how the subscores are
+          calculated.
+          <p />
+          <b>Median Wait</b> is the 50th percentile (typical) wait time for a
+          rider arriving randomly at a stop while the route is running.
+          <p />
+          <b>Long wait probability</b> is the chance a rider has of a wait of
+          twenty minutes or longer after arriving randomly at a stop.
+          <p />
+          <b>Average speed</b> is the speed of the 50th percentile (typical) end
+          to end trip, averaged for all directions.
+          <p />
+          <b>Travel time variability</b> is the 90th percentile end to end
+          travel time minus the 10th percentile travel time. This measures how
+          much extra travel time is needed for some trips.
         </div>
       </Popover>
-
     </Toolbar>
   );
 };
@@ -294,40 +304,49 @@ function RouteTable(props) {
   const displayedRouteStats = routes.map(route => {
     return {
       route,
-      ...(statsByRouteId[route.id] || {})
+      ...(statsByRouteId[route.id] || {}),
     };
   });
 
   return (
     <div>
-        <EnhancedTableToolbar numSelected={0} />
-        <div className={classes.tableWrapper}>
-          <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
-            <EnhancedTableHead
-              order={order}
-              orderBy={orderBy}
-              onRequestSort={handleRequestSort}
-              rowCount={displayedRouteStats.length}
-            />
-            <TableBody>
-              {stableSort(
-                displayedRouteStats,
-                order,
-                orderBy,
-              ).map((row, index) => {
+      <EnhancedTableToolbar numSelected={0} />
+      <div className={classes.tableWrapper}>
+        <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
+          <EnhancedTableHead
+            order={order}
+            orderBy={orderBy}
+            onRequestSort={handleRequestSort}
+            rowCount={displayedRouteStats.length}
+          />
+          <TableBody>
+            {stableSort(displayedRouteStats, order, orderBy).map(
+              (row, index) => {
                 const labelId = `enhanced-table-checkbox-${index}`;
 
                 return (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.route.id}>
+                  <TableRow
+                    hover
+                    role="checkbox"
+                    tabIndex={-1}
+                    key={row.route.id}
+                  >
                     <TableCell
                       component="th"
                       id={labelId}
                       scope="row"
                       padding="none"
-                      style={{border:'none', paddingTop:6, paddingBottom:6}}
+                      style={{
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
+                      }}
                     >
                       <Navlink
-                        style={{color: theme.palette.primary.dark, textDecoration: 'none'}}
+                        style={{
+                          color: theme.palette.primary.dark,
+                          textDecoration: 'none',
+                        }}
                         to={{
                           type: 'ROUTESCREEN',
                           payload: {
@@ -342,93 +361,124 @@ function RouteTable(props) {
                     <TableCell
                       align="right"
                       padding="none"
-                      style={{border:'none', paddingTop:6, paddingBottom:6}}
-                    >
-                    <Chip
                       style={{
-                        color: scoreContrastColor(row.totalScore),
-                        backgroundColor: scoreBackgroundColor(row.totalScore),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
-                      label=
-                        {row.totalScore == null ? '--' : row.totalScore}
-                    />
+                    >
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.totalScore),
+                          backgroundColor: scoreBackgroundColor(row.totalScore),
+                        }}
+                        label={row.totalScore == null ? '--' : row.totalScore}
+                      />
                     </TableCell>
                     <TableCell
                       align="right"
                       padding="none"
-                      style={{border:'none', paddingTop:6, paddingBottom:6}}
-                    >
-                    <Chip
                       style={{
-                        color: scoreContrastColor(row.medianWaitScore),
-                        backgroundColor: scoreBackgroundColor(row.medianWaitScore),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
-                      label=
-                        {row.medianWaitTime == null ? '--' : row.medianWaitTime.toFixed(0) + ' min'}
-                    />
-
-                    </TableCell>
-
-                    <TableCell
-                      align="right"
-                      style={{border:'none'}}
-                      padding="none"
                     >
-                    <Chip
-                      style={{
-                        color: scoreContrastColor(row.onTimeRateScore),
-                        backgroundColor: scoreBackgroundColor(row.onTimeRateScore),
-                      }}
-                      label=
-                        {row.onTimeRate == null
-                        ? '--'
-                        : <Fragment>
-                            {(row.onTimeRate * 100).toFixed(0)}{'%'}
-                          </Fragment>
-                      }
-                    />
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      padding="none"
-                      style={{border:'none', paddingTop:6, paddingBottom:6}}
-                    >
-                    <Chip
-                      style={{
-                        color: scoreContrastColor(row.speedScore),
-                        backgroundColor: scoreBackgroundColor(row.speedScore),
-                      }}
-                      label=
-                        {row.averageSpeed == null ? '--' : row.averageSpeed.toFixed(0) + ' mph'}
-
-                    />
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      padding="none"
-                      style={{border:'none', paddingTop:6, paddingBottom:6}}
-                    >
-                    <Chip
-                      style={{
-                        color: scoreContrastColor(row.travelVarianceScore),
-                        backgroundColor: scoreBackgroundColor(row.travelVarianceScore),
-                      }}
-                      label=
-                        {row.travelTimeVariability == null
-                          ? '--'
-                          : <Fragment>
-                              {'\u00b1'} {(row.travelTimeVariability / 2).toFixed(0)} min
-                            </Fragment>
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.medianWaitScore),
+                          backgroundColor: scoreBackgroundColor(
+                            row.medianWaitScore,
+                          ),
+                        }}
+                        label={
+                          row.medianWaitTime == null
+                            ? '--'
+                            : `${row.medianWaitTime.toFixed(0)} min`
                         }
-                    />
+                      />
+                    </TableCell>
 
+                    <TableCell
+                      align="right"
+                      style={{ border: 'none' }}
+                      padding="none"
+                    >
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.onTimeRateScore),
+                          backgroundColor: scoreBackgroundColor(
+                            row.onTimeRateScore,
+                          ),
+                        }}
+                        label={
+                          row.onTimeRate == null ? (
+                            '--'
+                          ) : (
+                            <Fragment>
+                              {(row.onTimeRate * 100).toFixed(0)}
+                              {'%'}
+                            </Fragment>
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      padding="none"
+                      style={{
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
+                      }}
+                    >
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.speedScore),
+                          backgroundColor: scoreBackgroundColor(row.speedScore),
+                        }}
+                        label={
+                          row.averageSpeed == null
+                            ? '--'
+                            : `${row.averageSpeed.toFixed(0)} mph`
+                        }
+                      />
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      padding="none"
+                      style={{
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
+                      }}
+                    >
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.travelVarianceScore),
+                          backgroundColor: scoreBackgroundColor(
+                            row.travelVarianceScore,
+                          ),
+                        }}
+                        label={
+                          row.travelTimeVariability == null ? (
+                            '--'
+                          ) : (
+                            <Fragment>
+                              {'\u00b1'}{' '}
+                              {(row.travelTimeVariability / 2).toFixed(0)} min
+                            </Fragment>
+                          )
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+              },
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

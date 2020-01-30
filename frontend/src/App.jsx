@@ -17,7 +17,7 @@ const Components = {
   Dashboard,
   RouteScreen,
   DataDiagnostic,
-  NotFound
+  NotFound,
 };
 
 const App = ({ page }) => {

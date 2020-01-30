@@ -17,20 +17,18 @@ import Paper from '@material-ui/core/Paper';
 import Popover from '@material-ui/core/Popover';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
+import InfoIcon from '@material-ui/icons/InfoOutlined';
+import StartStopIcon from '@material-ui/icons/DirectionsTransit';
+import WatchLaterOutlinedIcon from '@material-ui/icons/WatchLaterOutlined';
 import {
   computeScores,
-  HighestPossibleScore
+  HighestPossibleScore,
 } from '../helpers/routeCalculations';
-import {
-  getDistanceInMiles
-} from '../helpers/mapGeometry';
+import { getDistanceInMiles } from '../helpers/mapGeometry';
 import { PLANNING_PERCENTILE, TENTH_PERCENTILE } from '../UIConstants';
 import { getPercentileValue } from '../helpers/graphData';
 import InfoScoreCard from './InfoScoreCard';
 import InfoScoreLegend from './InfoScoreLegend';
-import InfoIcon from '@material-ui/icons/InfoOutlined';
-import StartStopIcon from '@material-ui/icons/DirectionsTransit';
-import WatchLaterOutlinedIcon from '@material-ui/icons/WatchLaterOutlined';
 
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.
@@ -38,7 +36,6 @@ import WatchLaterOutlinedIcon from '@material-ui/icons/WatchLaterOutlined';
  * @param {any} props
  */
 export default function InfoTripSummary(props) {
-
   const [typicalAnchorEl, setTypicalAnchorEl] = useState(null);
   const [planningAnchorEl, setPlanningAnchorEl] = useState(null);
 
@@ -61,7 +58,9 @@ export default function InfoTripSummary(props) {
   const { tripMetrics, graphParams, routes } = props;
   const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
   const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
-  const scheduleAdherence = tripMetrics ? tripMetrics.interval.departureScheduleAdherence : null;
+  const scheduleAdherence = tripMetrics
+    ? tripMetrics.interval.departureScheduleAdherence
+    : null;
 
   const computeDistance = (myGraphParams, myRoutes) => {
     if (myGraphParams && myGraphParams.endStopId) {
@@ -71,10 +70,14 @@ export default function InfoTripSummary(props) {
       const directionInfo = route.directions.find(
         dir => dir.id === directionId,
       );
-      return getDistanceInMiles(route, directionInfo, myGraphParams.startStopId, myGraphParams.endStopId);
-    } else {
-      return 0;
+      return getDistanceInMiles(
+        route,
+        directionInfo,
+        myGraphParams.startStopId,
+        myGraphParams.endStopId,
+      );
     }
+    return 0;
   };
 
   const distance = routes ? computeDistance(graphParams, routes) : null;
@@ -84,13 +87,16 @@ export default function InfoTripSummary(props) {
       ? distance / (tripTimes.avg / 60.0)
       : 0; // convert avg trip time to hours for mph
 
-  let onTimeRate = scheduleAdherence && scheduleAdherence.scheduledCount > 0 ? (scheduleAdherence.onTimeCount / scheduleAdherence.scheduledCount) : null;
+  const onTimeRate =
+    scheduleAdherence && scheduleAdherence.scheduledCount > 0
+      ? scheduleAdherence.onTimeCount / scheduleAdherence.scheduledCount
+      : null;
 
   let travelTimeVariability = null;
   if (tripTimes) {
     travelTimeVariability =
-      (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
-      getPercentileValue(tripTimes, TENTH_PERCENTILE));
+      getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
+      getPercentileValue(tripTimes, TENTH_PERCENTILE);
   }
 
   const scores =
@@ -167,8 +173,11 @@ export default function InfoTripSummary(props) {
 
   const popoverContentWait = (
     <Fragment>
-      Median wait of {(waitTimes && waitTimes.median != null) ? waitTimes.median.toFixed(1) : '--'} min gets a score of{' '}
-      {scores.medianWaitScore}.
+      Median wait of{' '}
+      {waitTimes && waitTimes.median != null
+        ? waitTimes.median.toFixed(1)
+        : '--'}{' '}
+      min gets a score of {scores.medianWaitScore}.
       <Box pt={2}>
         <InfoScoreLegend
           rows={[
@@ -186,15 +195,15 @@ export default function InfoTripSummary(props) {
   const popoverContentOnTimeRate = (
     <Fragment>
       Probability of{' '}
-      {(onTimeRate * 100).toFixed(1) /* be more precise than card */}%
-      gets a score of {scores.onTimeRateScore}.
+      {(onTimeRate * 100).toFixed(1) /* be more precise than card */}% gets a
+      score of {scores.onTimeRateScore}.
     </Fragment>
   );
 
   const popoverContentSpeed = (
     <Fragment>
-      Speed for median trip of {speed.toFixed(1)}{' '}
-      mph gets a score of {scores.speedScore}.
+      Speed for median trip of {speed.toFixed(1)} mph gets a score of{' '}
+      {scores.speedScore}.
       <Box pt={2}>
         <InfoScoreLegend
           rows={[
@@ -211,9 +220,10 @@ export default function InfoTripSummary(props) {
 
   const popoverContentTravelVariability = (
     <Fragment>
-      Travel time variability is the difference between the 90th percentile travel time and the 10th percentile
-      travel time.  This measures how much extra travel time is needed for some trips.
-      Variability of {'\u00b1' + (travelTimeVariability / 2).toFixed(1)} min gets a score of{' '}
+      Travel time variability is the difference between the 90th percentile
+      travel time and the 10th percentile travel time. This measures how much
+      extra travel time is needed for some trips. Variability of{' '}
+      {`\u00b1${(travelTimeVariability / 2).toFixed(1)}`} min gets a score of{' '}
       {scores.travelVarianceScore}.
       <Box pt={2}>
         <InfoScoreLegend
@@ -254,16 +264,24 @@ export default function InfoTripSummary(props) {
                   pt={2}
                 >
                   <Typography variant="body1">
-                    <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+                    <WatchLaterOutlinedIcon
+                      fontSize="small"
+                      style={{ verticalAlign: 'sub' }}
+                    />
+                    &nbsp;
                     {typicalWait} min
-                    <br/>
-                    <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+                    <br />
+                    <StartStopIcon
+                      fontSize="small"
+                      style={{ verticalAlign: 'sub' }}
+                    />
+                    &nbsp;
                     {typicalTravel} min
                   </Typography>
                   <IconButton size="small" onClick={handleTypicalClick}>
                     <InfoIcon fontSize="small" />
                   </IconButton>
-                 </Box>
+                </Box>
               </Grid>
 
               <Grid item xs component={Paper} className={classes.uncolored}>
@@ -284,10 +302,18 @@ export default function InfoTripSummary(props) {
                   pt={2}
                 >
                   <Typography variant="body1">
-                    <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+                    <WatchLaterOutlinedIcon
+                      fontSize="small"
+                      style={{ verticalAlign: 'sub' }}
+                    />
+                    &nbsp;
                     {planningWait} min
-                    <br/>
-                    <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+                    <br />
+                    <StartStopIcon
+                      fontSize="small"
+                      style={{ verticalAlign: 'sub' }}
+                    />
+                    &nbsp;
                     {planningTravel} min
                   </Typography>
                   <IconButton size="small" onClick={handlePlanningClick}>
@@ -299,7 +325,9 @@ export default function InfoTripSummary(props) {
                 score={scores.totalScore}
                 hideRating
                 title="Trip Score"
-                largeValue={scores.totalScore != null ? scores.totalScore : '--'}
+                largeValue={
+                  scores.totalScore != null ? scores.totalScore : '--'
+                }
                 smallValue={`/${HighestPossibleScore}`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTotalScore}
@@ -317,7 +345,11 @@ export default function InfoTripSummary(props) {
                 title="On Time %"
                 largeValue={Math.round(onTimeRate * 100)}
                 smallValue="%"
-                bottomContent={scheduleAdherence  ? `${scheduleAdherence.onTimeCount} times out of ${scheduleAdherence.scheduledCount}` : null}
+                bottomContent={
+                  scheduleAdherence
+                    ? `${scheduleAdherence.onTimeCount} times out of ${scheduleAdherence.scheduledCount}`
+                    : null
+                }
                 popoverContent={popoverContentOnTimeRate}
               />
               <InfoScoreCard
@@ -325,13 +357,19 @@ export default function InfoTripSummary(props) {
                 title="Median Trip Speed"
                 largeValue={speed.toFixed(0)}
                 smallValue="&nbsp;mph"
-                bottomContent={`${distance != null ? distance.toFixed(1) : '--'} miles`}
+                bottomContent={`${
+                  distance != null ? distance.toFixed(1) : '--'
+                } miles`}
                 popoverContent={popoverContentSpeed}
               />
               <InfoScoreCard
                 score={scores.travelVarianceScore}
                 title="Travel Time Variability"
-                largeValue={travelTimeVariability != null ? ('\u00b1' + (travelTimeVariability / 2).toFixed(0)) : '-'}
+                largeValue={
+                  travelTimeVariability != null
+                    ? `\u00b1${(travelTimeVariability / 2).toFixed(0)}`
+                    : '-'
+                }
                 smallValue="&nbsp;min"
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTravelVariability}
@@ -351,9 +389,11 @@ export default function InfoTripSummary(props) {
                 horizontal: 'center',
               }}
             >
-              <div className={classes.popover}>This is the median wait time when a rider arrives
-              randomly at a stop or a rider starts checking predictions.  This is combined with the
-              median trip time.</div>
+              <div className={classes.popover}>
+                This is the median wait time when a rider arrives randomly at a
+                stop or a rider starts checking predictions. This is combined
+                with the median trip time.
+              </div>
             </Popover>
 
             <Popover
@@ -369,11 +409,13 @@ export default function InfoTripSummary(props) {
                 horizontal: 'center',
               }}
             >
-              <div className={classes.popover}>When planning to arrive by a specific time,
-                the 90th percentile wait time and 90th percentile travel time suggest how far
-                in advance to start checking predictions.  Walking time should also be added.</div>
+              <div className={classes.popover}>
+                When planning to arrive by a specific time, the 90th percentile
+                wait time and 90th percentile travel time suggest how far in
+                advance to start checking predictions. Walking time should also
+                be added.
+              </div>
             </Popover>
-
           </Fragment>
         ) : (
           `No trip summary (${whyNoData})`

@@ -24,7 +24,11 @@ export function filterRoutes(routes) {
 
 export function isIgnoredRoute(route) {
   const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
-  return routeHeuristics && routeHeuristics[route.id] && routeHeuristics[route.id].ignoreRoute;
+  return (
+    routeHeuristics &&
+    routeHeuristics[route.id] &&
+    routeHeuristics[route.id].ignoreRoute
+  );
 }
 
 /**
@@ -42,12 +46,7 @@ export function metersToMiles(meters) {
  * TODO: refactor with Info.jsx's computation of grades once we add in probability
  * of long wait and travel variability to RouteSummary.
  */
-export function computeScores(
-  medianWait,
-  onTimeRate,
-  speed,
-  variability,
-) {
+export function computeScores(medianWait, onTimeRate, speed, variability) {
   const medianWaitScoreScale = d3
     .scaleLinear()
     .domain([5, 10])
@@ -75,14 +74,27 @@ export function computeScores(
     .rangeRound([100, 0])
     .clamp(true);
 
-  const medianWaitScore = (medianWait != null) ? medianWaitScoreScale(medianWait) : null;
-  const onTimeRateScore = (onTimeRate != null) ? onTimeRateScoreScale(onTimeRate) : null;
-  const speedScore = (speed != null) ? speedScoreScale(speed) : null;
-  const travelVarianceScore = (variability != null) ? variabilityScoreScale(variability) : null;
+  const medianWaitScore =
+    medianWait != null ? medianWaitScoreScale(medianWait) : null;
+  const onTimeRateScore =
+    onTimeRate != null ? onTimeRateScoreScale(onTimeRate) : null;
+  const speedScore = speed != null ? speedScoreScale(speed) : null;
+  const travelVarianceScore =
+    variability != null ? variabilityScoreScale(variability) : null;
 
-  const totalScore = (medianWaitScore != null && onTimeRateScore != null && speedScore != null && travelVarianceScore != null)
-    ? Math.round((medianWaitScore + onTimeRateScore + speedScore + travelVarianceScore) / 4.0)
-    : null;
+  const totalScore =
+    medianWaitScore != null &&
+    onTimeRateScore != null &&
+    speedScore != null &&
+    travelVarianceScore != null
+      ? Math.round(
+          (medianWaitScore +
+            onTimeRateScore +
+            speedScore +
+            travelVarianceScore) /
+            4.0,
+        )
+      : null;
 
   return {
     medianWaitScore,
@@ -95,7 +107,8 @@ export function computeScores(
 
 export const HighestPossibleScore = 100;
 
-const backgroundColorScale = d3.scaleThreshold()
+const backgroundColorScale = d3
+  .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
   .range([red[300], yellow[300], lightGreen[700], green[900]]);
 
@@ -104,9 +117,10 @@ export const scoreBackgroundColor = score => {
     return null;
   }
   return backgroundColorScale(score / HighestPossibleScore);
-}
+};
 
-const contrastColorScale = d3.scaleThreshold()
+const contrastColorScale = d3
+  .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
   .range(['rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)', 'white', 'white']);
 
@@ -115,7 +129,7 @@ export const scoreContrastColor = score => {
     return null;
   }
   return contrastColorScale(score / HighestPossibleScore);
-}
+};
 
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon
@@ -155,7 +169,13 @@ export function milesBetween(p1, p2) {
   return metersToMiles(meters);
 }
 
-export function addRanks(statsArr, property, sortFactor, rankProperty, rankCountProperty) {
+export function addRanks(
+  statsArr,
+  property,
+  sortFactor,
+  rankProperty,
+  rankCountProperty,
+) {
   const rankedStats = statsArr.filter(stats => stats[property] != null);
   rankedStats.sort((a, b) => {
     return (a[property] - b[property]) * sortFactor;

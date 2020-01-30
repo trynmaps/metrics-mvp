@@ -1,6 +1,10 @@
 import Moment from 'moment';
 import { WEEKDAYS, WEEKENDS } from '../UIConstants';
-import { isIgnoredRoute, addRanks, computeScores } from '../helpers/routeCalculations';
+import {
+  isIgnoredRoute,
+  addRanks,
+  computeScores,
+} from '../helpers/routeCalculations';
 
 export { default as loading } from './loadingReducer';
 export { default as page } from './page';
@@ -18,18 +22,26 @@ export const initialGraphParams = {
   date: momentYesterday.format('YYYY-MM-DD'), // used where date ranges are not supported
   startDate: momentYesterday.format('YYYY-MM-DD'),
   // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
-  daysOfTheWeek: { ...WEEKDAYS.reduce((map, obj) => { map[obj.value] = true; return map}, {}),
-                   ...WEEKENDS.reduce((map, obj) => { map[obj.value] = true; return map}, {})},
+  daysOfTheWeek: {
+    ...WEEKDAYS.reduce((map, obj) => {
+      map[obj.value] = true;
+      return map;
+    }, {}),
+    ...WEEKENDS.reduce((map, obj) => {
+      map[obj.value] = true;
+      return map;
+    }, {}),
+  },
 };
 
 export function graphParams(state = initialGraphParams, action) {
   switch (action.type) {
     case 'RECEIVED_GRAPH_PARAMS':
-      return {...state, ...action.params};
+      return { ...state, ...action.params };
     default:
       return state;
   }
-};
+}
 
 const initialRoutes = {
   agencyId: null,
@@ -47,7 +59,7 @@ export function routes(state = initialRoutes, action) {
     default:
       return state;
   }
-};
+}
 
 const initialTripMetrics = {
   data: null, // TripMetrics object returned by GraphQL API, containing 'interval' and 'timeRanges' properties
@@ -72,13 +84,13 @@ export function tripMetrics(state = initialTripMetrics, action) {
       return {
         ...state,
         error: action.error,
-        data: null
+        data: null,
       };
     default:
       break;
   }
   return state;
-};
+}
 
 const initialArrivals = {
   data: null,
@@ -139,7 +151,7 @@ export function agencyMetrics(state = initialAgencyMetrics, action) {
         variablesJson: action.variablesJson,
         data: agencyMetrics,
         statsByRouteId: makeStatsByRouteId(agencyMetrics),
-      }
+      };
     case 'REQUEST_AGENCY_METRICS':
       return {
         ...state,
@@ -150,7 +162,7 @@ export function agencyMetrics(state = initialAgencyMetrics, action) {
     default:
       return state;
   }
-};
+}
 
 function addAveragesForAllDirections(routeStats, property) {
   routeStats.forEach(function(stats) {
@@ -163,23 +175,28 @@ function addAveragesForAllDirections(routeStats, property) {
         count += 1;
       }
     });
-    stats[property] = count > 0 ? (total / count) : null;
+    stats[property] = count > 0 ? total / count : null;
   });
 }
 
 function addScores(stats) {
-  Object.assign(stats, computeScores(
-    stats.medianWaitTime,
-    stats.onTimeRate,
-    stats.averageSpeed,
-    stats.travelTimeVariability,
-  ));
+  Object.assign(
+    stats,
+    computeScores(
+      stats.medianWaitTime,
+      stats.onTimeRate,
+      stats.averageSpeed,
+      stats.travelTimeVariability,
+    ),
+  );
 }
 
 function makeStatsByRouteId(agencyMetrics) {
-
   const routeStats = agencyMetrics ? agencyMetrics.interval.routes : [];
-  const rankedRouteStats = routeStats.filter(stats => !isIgnoredRoute({agencyId: agencyMetrics.agencyId, id: stats.routeId}));
+  const rankedRouteStats = routeStats.filter(
+    stats =>
+      !isIgnoredRoute({ agencyId: agencyMetrics.agencyId, id: stats.routeId }),
+  );
 
   addAveragesForAllDirections(routeStats, 'medianWaitTime');
   addAveragesForAllDirections(routeStats, 'averageSpeed');
@@ -189,7 +206,13 @@ function makeStatsByRouteId(agencyMetrics) {
   addRanks(rankedRouteStats, 'medianWaitTime', 1, 'waitRank', 'waitRankCount');
   addRanks(rankedRouteStats, 'averageSpeed', -1, 'speedRank', 'speedRankCount');
   addRanks(rankedRouteStats, 'onTimeRate', -1, 'onTimeRank', 'onTimeRankCount');
-  addRanks(rankedRouteStats, 'travelTimeVariability', 1, 'variabilityRank', 'variabilityRankCount');
+  addRanks(
+    rankedRouteStats,
+    'travelTimeVariability',
+    1,
+    'variabilityRank',
+    'variabilityRankCount',
+  );
 
   routeStats.forEach(function(stats) {
     addScores(stats);
@@ -217,7 +240,6 @@ const initialRouteMetrics = {
 export function routeMetrics(state = initialRouteMetrics, action) {
   switch (action.type) {
     case 'RECEIVED_ROUTE_METRICS':
-
       const segmentsMap = {};
 
       action.data.interval.directions.forEach(function(dirMetrics) {
@@ -233,8 +255,8 @@ export function routeMetrics(state = initialRouteMetrics, action) {
         ...state,
         variablesJson: action.variablesJson,
         data: action.data,
-        segmentsMap: segmentsMap,
-      }
+        segmentsMap,
+      };
     case 'REQUEST_ROUTE_METRICS':
       return {
         ...state,
@@ -245,4 +267,4 @@ export function routeMetrics(state = initialRouteMetrics, action) {
     default:
       return state;
   }
-};
+}

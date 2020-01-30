@@ -1,8 +1,13 @@
 import axios from 'axios';
-import { MetricsBaseURL, S3Bucket, RoutesVersion, ArrivalsVersion } from '../config';
 import Moment from 'moment';
+import {
+  MetricsBaseURL,
+  S3Bucket,
+  RoutesVersion,
+  ArrivalsVersion,
+  Agencies,
+} from '../config';
 import { MAX_DATE_RANGE } from '../UIConstants';
-import { Agencies } from '../config';
 
 /**
  * Helper function to compute the list of days for the GraphQL query.
@@ -16,22 +21,23 @@ function computeDates(graphParams) {
   // If this is a custom date range, compute the number of days back
   // based on the start date.
 
-    const startMoment = Moment(graphParams.startDate);
-    const deltaDays = endMoment.diff(startMoment, 'days');
-    let numberOfDaysBack = Math.abs(deltaDays) + 1; // add one for the end date itself
-    if (deltaDays < 0) { // if the start date is after end date, use the start date as the "end"
-      endMoment = startMoment;
-    }
+  const startMoment = Moment(graphParams.startDate);
+  const deltaDays = endMoment.diff(startMoment, 'days');
+  let numberOfDaysBack = Math.abs(deltaDays) + 1; // add one for the end date itself
+  if (deltaDays < 0) {
+    // if the start date is after end date, use the start date as the "end"
+    endMoment = startMoment;
+  }
 
-  if (numberOfDaysBack > MAX_DATE_RANGE) { // guard rail
+  if (numberOfDaysBack > MAX_DATE_RANGE) {
+    // guard rail
     numberOfDaysBack = MAX_DATE_RANGE;
   }
 
   // Generate the list of days, filtering by the days of the week checkboxes.
 
-  let dates = [];
+  const dates = [];
   for (let i = 0; i < numberOfDaysBack; i++) {
-
     if (graphParams.daysOfTheWeek[endMoment.day()]) {
       dates.push(endMoment.format('YYYY-MM-DD'));
     }
@@ -59,12 +65,10 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
 }
 
 export function fetchTripMetrics(params) {
-
   const dates = computeDates(params);
 
   return function(dispatch) {
-
-    var query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
+    const query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
     $directionId:String, $dates:[String!], $startTime:String, $endTime:String) {
   agency(agencyId:$agencyId) {
     route(routeId:$routeId) {
@@ -105,8 +109,12 @@ export function fetchTripMetrics(params) {
 }`.replace(/\s+/g, ' ');
 
     dispatch({ type: 'REQUEST_TRIP_METRICS' });
-    axios.get('/api/graphql', {
-        params: { query: query, variables: JSON.stringify({...params, dates}) }, // computed dates aren't in graphParams so add here
+    axios
+      .get('/api/graphql', {
+        params: {
+          query,
+          variables: JSON.stringify({ ...params, dates }),
+        }, // computed dates aren't in graphParams so add here
         baseURL: MetricsBaseURL,
       })
       .then(response => {
@@ -115,15 +123,16 @@ export function fetchTripMetrics(params) {
           // assume there is at least one error, but only show the first one
           dispatch({
             type: 'ERROR_TRIP_METRICS',
-            error: responseData.errors[0].message
+            error: responseData.errors[0].message,
           });
         } else {
-          const agencyMetrics = responseData && responseData.data ? responseData.data.agency : null;
+          const agencyMetrics =
+            responseData && responseData.data ? responseData.data.agency : null;
           const routeMetrics = agencyMetrics ? agencyMetrics.route : null;
           const tripMetrics = routeMetrics ? routeMetrics.trip : null;
           dispatch({
             type: 'RECEIVED_TRIP_METRICS',
-            data: tripMetrics
+            data: tripMetrics,
           });
         }
       })
@@ -144,12 +153,10 @@ export function resetTripMetrics() {
 }
 
 export function fetchRouteMetrics(params) {
-
   const dates = computeDates(params);
 
   return function(dispatch, getState) {
-
-    var query = `query($agencyId:String!, $routeId:String!, $dates:[String!], $startTime:String, $endTime:String) {
+    const query = `query($agencyId:String!, $routeId:String!, $dates:[String!], $startTime:String, $endTime:String) {
   agency(agencyId:$agencyId) {
     route(routeId:$routeId) {
       interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
@@ -174,21 +181,21 @@ export function fetchRouteMetrics(params) {
 }`.replace(/\s+/g, ' ');
 
     const variablesJson = JSON.stringify({
-        agencyId: Agencies[0].id,
-        routeId: params.routeId,
-        dates,
-        startTime: params.startTime,
-        endTime: params.endTime,
+      agencyId: Agencies[0].id,
+      routeId: params.routeId,
+      dates,
+      startTime: params.startTime,
+      endTime: params.endTime,
     });
-
 
     if (getState().routeMetrics.variablesJson !== variablesJson) {
       dispatch({
         type: 'REQUEST_ROUTE_METRICS',
-        variablesJson: variablesJson
+        variablesJson,
       });
-      axios.get('/api/graphql', {
-          params: { query: query, variables: variablesJson }, // computed dates aren't in graphParams so add here
+      axios
+        .get('/api/graphql', {
+          params: { query, variables: variablesJson }, // computed dates aren't in graphParams so add here
           baseURL: MetricsBaseURL,
         })
         .then(response => {
@@ -197,15 +204,18 @@ export function fetchRouteMetrics(params) {
             // assume there is at least one error, but only show the first one
             dispatch({
               type: 'ERROR_ROUTE_METRICS',
-              error: responseData.errors[0].message
+              error: responseData.errors[0].message,
             });
           } else {
-            const agencyMetrics = responseData && responseData.data ? responseData.data.agency : null;
+            const agencyMetrics =
+              responseData && responseData.data
+                ? responseData.data.agency
+                : null;
             const routeMetrics = agencyMetrics ? agencyMetrics.route : null;
             dispatch({
               type: 'RECEIVED_ROUTE_METRICS',
-              variablesJson: variablesJson,
-              data: routeMetrics
+              variablesJson,
+              data: routeMetrics,
             });
           }
         })
@@ -225,15 +235,19 @@ export function fetchRoutes(params) {
     const agencyId = Agencies[0].id;
 
     if (agencyId !== getState().routes.agencyId) {
-      dispatch({ type: 'REQUEST_ROUTES', agencyId: agencyId });
+      dispatch({ type: 'REQUEST_ROUTES', agencyId });
       axios
         .get(generateRoutesURL(agencyId))
         .then(response => {
-          var routes = response.data.routes;
+          const routes = response.data.routes;
           routes.forEach(route => {
             route.agencyId = agencyId;
           });
-          dispatch({ type: 'RECEIVED_ROUTES', data: routes, agencyId: agencyId });
+          dispatch({
+            type: 'RECEIVED_ROUTES',
+            data: routes,
+            agencyId,
+          });
         })
         .catch(err => {
           dispatch({ type: 'ERROR_ROUTES', error: err });
@@ -243,12 +257,10 @@ export function fetchRoutes(params) {
 }
 
 export function fetchAgencyMetrics(params) {
-
   const dates = computeDates(params);
 
   return function(dispatch, getState) {
-
-    var query = `query($agencyId:String!, $dates:[String!], $startTime:String, $endTime:String) {
+    const query = `query($agencyId:String!, $dates:[String!], $startTime:String, $endTime:String) {
   agency(agencyId:$agencyId) {
     agencyId
     interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
@@ -267,16 +279,20 @@ export function fetchAgencyMetrics(params) {
 }`.replace(/\s+/g, ' ');
 
     const variablesJson = JSON.stringify({
-        agencyId: Agencies[0].id,
-        dates,
-        startTime: params.startTime,
-        endTime: params.endTime,
+      agencyId: Agencies[0].id,
+      dates,
+      startTime: params.startTime,
+      endTime: params.endTime,
     });
 
     if (getState().agencyMetrics.variablesJson !== variablesJson) {
-      dispatch({ type: 'REQUEST_AGENCY_METRICS', variablesJson: variablesJson });
-      axios.get('/api/graphql', {
-          params: { query: query, variables: variablesJson },
+      dispatch({
+        type: 'REQUEST_AGENCY_METRICS',
+        variablesJson,
+      });
+      axios
+        .get('/api/graphql', {
+          params: { query, variables: variablesJson },
           baseURL: MetricsBaseURL,
         })
         .then(response => {
@@ -285,14 +301,17 @@ export function fetchAgencyMetrics(params) {
             // assume there is at least one error, but only show the first one
             dispatch({
               type: 'ERROR_AGENCY_METRICS',
-              error: responseData.errors[0].message
+              error: responseData.errors[0].message,
             });
           } else {
-            const agencyMetrics = responseData && responseData.data ? responseData.data.agency : null;
+            const agencyMetrics =
+              responseData && responseData.data
+                ? responseData.data.agency
+                : null;
             dispatch({
               type: 'RECEIVED_AGENCY_METRICS',
-              variablesJson: variablesJson,
-              data: agencyMetrics
+              variablesJson,
+              data: agencyMetrics,
             });
           }
         })
@@ -360,9 +379,11 @@ export function handleGraphParams(params) {
     dispatch({ type: 'RECEIVED_GRAPH_PARAMS', params });
     const graphParams = getState().graphParams;
 
-    if (oldParams.date !== graphParams.date
-      || oldParams.routeId !== graphParams.routeId
-      || oldParams.agencyId !== graphParams.agencyId) {
+    if (
+      oldParams.date !== graphParams.date ||
+      oldParams.routeId !== graphParams.routeId ||
+      oldParams.agencyId !== graphParams.agencyId
+    ) {
       // Clear out stale data.  We have arrivals for a different route, day, or agency
       // from what is currently selected.
       dispatch(resetArrivals());
