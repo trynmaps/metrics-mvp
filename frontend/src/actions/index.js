@@ -100,15 +100,6 @@ export function fetchTripMetrics(params) {
 
   return function(dispatch) {
 
-    /*
-     *
-          percentiles(percentiles:[10,90]) { percentile value }
-     *
-          probabilityLessThan(minutes:20)
-     *
-     */
-
-
     var query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
     $directionId:String, $date:[String!], $startTime:String, $endTime:String) {
   routeMetrics(agencyId:$agencyId, routeId:$routeId) {
