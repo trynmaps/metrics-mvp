@@ -15,7 +15,6 @@ import Typography from '@material-ui/core/Typography';
 import { connect } from 'react-redux';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
-import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { getAgency } from '../config';
@@ -145,7 +144,7 @@ function RouteScreen(props) {
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
-          <NavLink to={{ type: 'DASHBOARD' }} exact strict>
+          <NavLink to={{ type: 'DASHBOARD', query: props.query }} exact strict>
             <IconButton aria-label="Back to dashboard" edge="start">
               <ArrowBackIcon style={backArrowStyle} />
             </IconButton>
@@ -222,6 +221,7 @@ const mapStateToProps = state => ({
   tripMetricsLoading: state.loading.TRIP_METRICS,
   routes: state.routes.data,
   graphParams: state.graphParams,
+  query: state.location.query,  
 });
 
 const mapDispatchToProps = dispatch => ({
