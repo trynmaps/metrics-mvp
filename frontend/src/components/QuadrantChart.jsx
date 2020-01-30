@@ -20,10 +20,7 @@ import { getAllWaits, getAllSpeeds } from '../helpers/routeCalculations';
  * @param {any} props
  */
 function QuadrantChart(props) {
-  const allWaits = getAllWaits(
-    props.precomputedStats.waitTimes,
-    props.routes,
-  );
+  const allWaits = getAllWaits(props.precomputedStats.waitTimes, props.routes);
   const allSpeeds = getAllSpeeds(
     props.precomputedStats.tripTimes,
     props.routes,

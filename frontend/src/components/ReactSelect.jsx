@@ -375,7 +375,7 @@ function handleMenuOpen(
   menuTransition,
   setMenuIsOpenTransition,
   setMenuIsOpen,
-  onOpen
+  onOpen,
 ) {
   const allowTransition = menuTransition;
 
@@ -391,7 +391,7 @@ function handleMenuClose(
   menuTransition,
   setMenuIsOpenTransition,
   setMenuIsOpen,
-  onClose
+  onClose,
 ) {
   const allowTransition = menuTransition;
 
@@ -428,7 +428,7 @@ function handleReposition(
         allowTransition.current = false;
         setTextFieldDOMRect(textRef.current.getBoundingClientRect());
       },
-      eventType === 'scroll' ? scrollHandlerDelay : 0
+      eventType === 'scroll' ? scrollHandlerDelay : 0,
     );
   };
 
@@ -474,7 +474,7 @@ export default function ReactSelect(props) {
         menuTransition,
         setTextFieldDOMRect,
         textRef,
-      )
+      ),
     );
     window.addEventListener(
       'resize',
@@ -484,7 +484,7 @@ export default function ReactSelect(props) {
         menuTransition,
         setTextFieldDOMRect,
         textRef,
-      )
+      ),
     );
     inputEl.addEventListener(
       'focus',
@@ -494,7 +494,7 @@ export default function ReactSelect(props) {
         menuTransition,
         setTextFieldDOMRect,
         textRef,
-      )
+      ),
     );
 
     return () => {
@@ -513,7 +513,7 @@ export default function ReactSelect(props) {
         menuTransition,
         setMenuIsOpenTransition,
         setMenuIsOpen,
-        props.onOpen
+        props.onOpen,
       )}
       onMenuClose={handleMenuClose(
         menuTransition,

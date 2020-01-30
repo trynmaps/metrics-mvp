@@ -21,7 +21,12 @@ export const Colors = {
 };
 
 // placeholder colors: gray and purple from nyc busstats
-export const CHART_COLORS = [Colors.GRAY, Colors.PURPLE, Colors.GRAY_DARK, Colors.PURPLE_DARK];
+export const CHART_COLORS = [
+  Colors.GRAY,
+  Colors.PURPLE,
+  Colors.GRAY_DARK,
+  Colors.PURPLE_DARK,
+];
 
 // use this percentile (e.g. 90th) for waits/travel times
 // for planning purposes the idea here is to filter out

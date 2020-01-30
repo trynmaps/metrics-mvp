@@ -5,6 +5,9 @@ import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import IconButton from '@material-ui/core/IconButton';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import Link, { NavLink } from 'redux-first-router-link';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Typography from '@material-ui/core/Typography';
@@ -21,23 +24,20 @@ import RouteSummary from '../components/RouteSummary';
 
 import { fetchRoutes } from '../actions';
 
-import Link from 'redux-first-router-link';
-
 const useStyles = makeStyles(theme => ({
   breadCrumbStyling: {
     fontWeight: 'bold',
-    textTransform : 'initial',
-    display : 'inline',
-    },
-    darkLinks : {
-      color: theme.palette.primary.dark
-    },
-    breadCrumbsWrapper : {
-      padding: '1%',
-      paddingRight: '0'
-    }
+    textTransform: 'initial',
+    display: 'inline',
+  },
+  darkLinks: {
+    color: theme.palette.primary.dark,
+  },
+  breadCrumbsWrapper: {
+    padding: '1%',
+    paddingRight: '0',
+  },
 }));
-
 
 function RouteScreen(props) {
   const {
@@ -53,45 +53,75 @@ function RouteScreen(props) {
 
   useEffect(() => {
     if (!routes && agencyId) {
-      myFetchRoutes({agencyId: agencyId});
+      myFetchRoutes({ agencyId });
     }
   }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
   const agency = getAgency(agencyId);
 
+  const backArrowStyle = { color: '#ffffff' };
+
   const breadCrumbs = (paths, classes) => {
     const { breadCrumbStyling, darkLinks } = classes;
 
     let link = {
-      type:'ROUTESCREEN'
-    }
+      type: 'ROUTESCREEN',
+    };
     const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
     const labels = (param, title) => {
-        let  specialLabels = {};
-        specialLabels['startStopId'] = 'from ';
-        specialLabels['endStopId'] = 'to ';
-        return {label: title, specialLabel: specialLabels[param] ? specialLabels[param] : null};
-    }
-    return paths.filter(path => {
-      //return paths with non null values
-      return  path ?  true : false;
-      }).map((path, index, paths) => {
-        const hasNextValue = paths[index+1];
+      const specialLabels = {};
+      specialLabels.startStopId = 'from ';
+      specialLabels.endStopId = 'to ';
+      return {
+        label: title,
+        specialLabel: specialLabels[param] ? specialLabels[param] : null,
+      };
+    };
+    return paths
+      .filter(path => {
+        // return paths with non null values
+        return !!path;
+      })
+      .map((path, index, paths) => {
+        const hasNextValue = paths[index + 1];
         const param = params[index];
-        let payload = {};
+        const payload = {};
         payload[param] = path.id;
-        const updatedPayload = Object.assign({...link.payload}, payload);
-        link = Object.assign({...link}, {payload:updatedPayload});
-        const {label, specialLabel}  = labels(param, path.title);
-        return hasNextValue
-        ? ( <Typography variant="subtitle1" key={label} className={`${breadCrumbStyling} ${darkLinks}`}> {specialLabel}  <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>  {label}  </Link> </Typography> )
-        : ( <Typography variant="subtitle1" key={label} className={breadCrumbStyling}> {specialLabel} {label} </Typography> )
-    });
-  }
+        const updatedPayload = Object.assign({ ...link.payload }, payload);
+        link = Object.assign({ ...link }, { payload: updatedPayload });
+        const { label, specialLabel } = labels(param, path.title);
+        return hasNextValue ? (
+          <Typography
+            variant="subtitle1"
+            key={label}
+            className={`${breadCrumbStyling} ${darkLinks}`}
+          >
+            {' '}
+            {specialLabel}{' '}
+            <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
+              {' '}
+              {label}{' '}
+            </Link>{' '}
+          </Typography>
+        ) : (
+          <Typography
+            variant="subtitle1"
+            key={label}
+            className={breadCrumbStyling}
+          >
+            {' '}
+            {specialLabel} {label}{' '}
+          </Typography>
+        );
+      });
+  };
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
-      ? routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId))
+      ? routes.find(
+          route =>
+            route.id === graphParams.routeId && route.agencyId === agencyId,
+        )
       : null;
 
   const direction =
@@ -115,20 +145,48 @@ function RouteScreen(props) {
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
-          <SidebarButton />
-          <div className="page-title">
-            {agency ? agency.title : null}
-          </div>
-          <div style={{flexGrow: 1}}/>
-          <DateTimePanel dateRangeSupported={tripMetrics || tripMetricsError || tripMetricsLoading}/>
+          <NavLink to={{ type: 'DASHBOARD' }} exact strict>
+            <IconButton aria-label="Back to dashboard" edge="start">
+              <ArrowBackIcon style={backArrowStyle} />
+            </IconButton>
+          </NavLink>
+          <div className="page-title">{agency ? agency.title : null}</div>
+          <div style={{ flexGrow: 1 }} />
+          <DateTimePanel
+            dateRangeSupported={
+              tripMetrics || tripMetricsError || tripMetricsLoading
+            }
+          />
         </Toolbar>
       </AppBar>
       <Paper className={breadCrumbsWrapper}>
-        <Breadcrumbs separator={ <NavigateNextIcon fontSize="default"  className={breadCrumbStyling}/> }>
-
-          {breadCrumbs([selectedRoute,direction,
-            startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
-            endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null],classes)}
+        <Breadcrumbs
+          separator={
+            <NavigateNextIcon
+              fontSize="default"
+              className={breadCrumbStyling}
+            />
+          }
+        >
+          {breadCrumbs(
+            [
+              selectedRoute,
+              direction,
+              startStopInfo
+                ? Object.assign(
+                    { ...startStopInfo },
+                    { id: graphParams.startStopId },
+                  )
+                : null,
+              endStopInfo
+                ? Object.assign(
+                    { ...endStopInfo },
+                    { id: graphParams.endStopInfo },
+                  )
+                : null,
+            ],
+            classes,
+          )}
         </Breadcrumbs>
       </Paper>
       <Grid container spacing={0}>
@@ -138,7 +196,9 @@ function RouteScreen(props) {
         <Grid item xs={12} sm={6}>
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
           <ControlPanel routes={routes} />
-          {tripMetrics || tripMetricsError || tripMetricsLoading /* if we have trip metrics or an error, then show the info component */ ? (
+          {tripMetrics ||
+          tripMetricsError ||
+          tripMetricsLoading /* if we have trip metrics or an error, then show the info component */ ? (
             <Info
               tripMetrics={tripMetrics}
               tripMetricsError={tripMetricsError}

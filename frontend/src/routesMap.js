@@ -17,9 +17,9 @@ export const DAYS_OF_THE_WEEK = 'daysOfTheWeek';
  * @returns The new graphParams.
  */
 function processQuery(getState) {
-
   const { location } = getState();
-  const { date, startDate, startTime, endTime, daysOfTheWeek } = (location.query || {});
+  const { date, startDate, startTime, endTime, daysOfTheWeek } =
+    location.query || {};
 
   // If the values are missing, we must use the defaults, in case the user is changing
   // from a nondefault to default value.
@@ -33,21 +33,23 @@ function processQuery(getState) {
   };
 
   if (daysOfTheWeek) {
-
     // Deserialization via the actual query string gives us an object with values of strings
     // "true" or "false", which we need to convert to booleans.  When we get here via
     // dispatch, then the values are already primitive booleans.
 
-    newParams['daysOfTheWeek'] = Object.keys(daysOfTheWeek).reduce((newDaysOfTheWeek, key) => {
-      if (typeof daysOfTheWeek[key] === "string") {
-        newDaysOfTheWeek[key] = (daysOfTheWeek[key].toUpperCase() === 'TRUE');
-      } else {
-        newDaysOfTheWeek[key] = daysOfTheWeek[key];
-      }
-      return newDaysOfTheWeek;
-    }, {});
+    newParams.daysOfTheWeek = Object.keys(daysOfTheWeek).reduce(
+      (newDaysOfTheWeek, key) => {
+        if (typeof daysOfTheWeek[key] === 'string') {
+          newDaysOfTheWeek[key] = daysOfTheWeek[key].toUpperCase() === 'TRUE';
+        } else {
+          newDaysOfTheWeek[key] = daysOfTheWeek[key];
+        }
+        return newDaysOfTheWeek;
+      },
+      {},
+    );
   } else {
-    newParams['daysOfTheWeek'] = initialGraphParams.daysOfTheWeek;
+    newParams.daysOfTheWeek = initialGraphParams.daysOfTheWeek;
   }
   return newParams;
 }
@@ -61,7 +63,6 @@ function processQuery(getState) {
  * @returns The query object to dispatch.
  */
 export function queryFromParams(params) {
-
   const query = {};
 
   if (params.startDate !== initialGraphParams.startDate) {
@@ -76,8 +77,10 @@ export function queryFromParams(params) {
   if (params.endTime !== initialGraphParams.endTime) {
     query.endTime = params.endTime;
   }
-  if (JSON.stringify(initialGraphParams.daysOfTheWeek) !==
-    JSON.stringify(params.daysOfTheWeek)) {
+  if (
+    JSON.stringify(initialGraphParams.daysOfTheWeek) !==
+    JSON.stringify(params.daysOfTheWeek)
+  ) {
     query.daysOfTheWeek = params.daysOfTheWeek;
   }
   return query;
@@ -91,14 +94,14 @@ export default {
     thunk: async (dispatch, getState) => {
       const newParams = processQuery(getState);
       dispatch(handleGraphParams(newParams));
-    }
+    },
   },
   DASHBOARD: {
     path: '/',
     thunk: async (dispatch, getState) => {
       const newParams = processQuery(getState);
       dispatch(handleGraphParams(newParams));
-    }
+    },
   },
   DATADIAGNOSTIC: '/dataDiagnostic',
   ROUTESCREEN: {
@@ -118,13 +121,11 @@ export default {
         routeId,
         directionId,
         startStopId,
-        endStopId
+        endStopId,
       };
 
       Object.assign(newParams, processQuery(getState));
-      dispatch(
-        handleGraphParams(newParams)
-      );
+      dispatch(handleGraphParams(newParams));
     },
   },
 };

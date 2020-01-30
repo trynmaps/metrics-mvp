@@ -43,7 +43,7 @@ function ControlPanel(props) {
       type: 'ROUTESCREEN',
       payload: {
         routeId: graphParams.routeId,
-        directionId: directionId,
+        directionId,
       },
       query: props.query,
     });
@@ -76,9 +76,9 @@ function ControlPanel(props) {
       type: 'ROUTESCREEN',
       payload: {
         ...graphParams,
-        endStopId: endStopId,
+        endStopId,
       },
-      query: props.query,      
+      query: props.query,
     });
     // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
   }
@@ -102,12 +102,11 @@ function ControlPanel(props) {
     props.dispatch({
       type: 'ROUTESCREEN',
       payload: {
-        routeId: routeId,
-        directionId: directionId
+        routeId,
+        directionId,
       },
       query: props.query,
     });
-
   }
   /**
    * Handle mouseover event on Select TO & From dropdown list item.
@@ -176,13 +175,13 @@ function ControlPanel(props) {
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="direction">Direction</InputLabel>
               <Select
-                value={graphParams.directionId || ""}
+                value={graphParams.directionId || ''}
                 onChange={setDirectionId}
                 input={<Input name="direction" id="direction" />}
               >
                 {(selectedRoute.directions || []).map(direction => (
                   <MenuItem key={direction.id} value={direction.id}>
-                      {direction.title}
+                    {direction.title}
                   </MenuItem>
                 ))}
               </Select>
@@ -205,19 +204,17 @@ function ControlPanel(props) {
                         shrink: true,
                       },
                     }}
-                    options={directionStops.map(
-                      firstStopId => ({
-                        value: {
-                          stopId: firstStopId,
-                          icon: document.querySelector(`.id${firstStopId}`),
-                        },
-                        label: (
-                          selectedRoute.stops[firstStopId] || {
-                            title: firstStopId,
-                          }
-                        ).title,
-                      }),
-                    )}
+                    options={directionStops.map(firstStopId => ({
+                      value: {
+                        stopId: firstStopId,
+                        icon: document.querySelector(`.id${firstStopId}`),
+                      },
+                      label: (
+                        selectedRoute.stops[firstStopId] || {
+                          title: firstStopId,
+                        }
+                      ).title,
+                    }))}
                     stopId={graphParams.startStopId}
                     onOpen={() => setAllowHover(true)}
                     onClose={handleSelectClose}

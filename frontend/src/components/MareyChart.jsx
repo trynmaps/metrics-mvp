@@ -20,11 +20,7 @@ import '../../node_modules/react-vis/dist/style.css';
 import { connect } from 'react-redux';
 
 import Typography from '@material-ui/core/Typography';
-import {
-  Radio,
-  FormControl,
-  FormControlLabel,
-} from '@material-ui/core';
+import { Radio, FormControl, FormControlLabel } from '@material-ui/core';
 
 import Moment from 'moment';
 import MomentTZ from 'moment-timezone/builds/moment-timezone-with-data-10-year-range'; // this augments Moment
@@ -84,7 +80,6 @@ function MareyChart(props) {
     if (!arrivals && graphParams.routeId && !hidden) {
       myFetchArrivals(graphParams);
     }
-
   }, [graphParams, myFetchArrivals, arrivals, hidden]);
 
   // When both the raw arrival history and route configs have loaded, first
@@ -216,7 +211,7 @@ function MareyChart(props) {
         const stopsByDirection = stops[stopId].arrivals;
         Object.keys(stopsByDirection).forEach(directionId => {
           stopsByDirection[directionId].forEach(arrival => {
-            allArrivals.push({stopId: stopId, directionId: directionId, ...arrival});
+            allArrivals.push({ stopId, directionId, ...arrival });
           });
         });
       });
@@ -361,116 +356,118 @@ function MareyChart(props) {
 
   return processedArrivals ? (
     <Fragment>
-          <Typography variant="h5">Marey chart</Typography>
-          Vehicle runs: {series.length} <br />
-          <FormControl>
-            <div className="controls">
-              <FormControlLabel
-                control={
-                  <Radio
-                    id="inbound_and_outbound"
-                    type="radio"
-                    value={INBOUND_AND_OUTBOUND}
-                    checked={selectedOption === INBOUND_AND_OUTBOUND}
-                    onChange={changeEvent =>
-                      setSelectedOption(changeEvent.target.value)
-                    }
-                  />
+      <Typography variant="h5">Marey chart</Typography>
+      Vehicle runs: {series.length} <br />
+      <FormControl>
+        <div className="controls">
+          <FormControlLabel
+            control={
+              <Radio
+                id="inbound_and_outbound"
+                type="radio"
+                value={INBOUND_AND_OUTBOUND}
+                checked={selectedOption === INBOUND_AND_OUTBOUND}
+                onChange={changeEvent =>
+                  setSelectedOption(changeEvent.target.value)
                 }
-                label="Inbound and Outbound"
               />
-
-              <FormControlLabel
-                control={
-                  <Radio
-                    id="inbound"
-                    type="radio"
-                    value={INBOUND}
-                    checked={selectedOption === INBOUND}
-                    onChange={changeEvent =>
-                      setSelectedOption(changeEvent.target.value)
-                    }
-                  />
-                }
-                label="Inbound only"
-              />
-
-              <FormControlLabel
-                control={
-                  <Radio
-                    id="outbound"
-                    type="radio"
-                    value={OUTBOUND}
-                    checked={selectedOption === OUTBOUND}
-                    onChange={changeEvent =>
-                      setSelectedOption(changeEvent.target.value)
-                    }
-                  />
-                }
-                label="Outbound only"
-              />
-            </div>
-          </FormControl>
-          <XYPlot
-            height={(endHour - startHour) * 100}
-            width={600}
-            yDomain={
-              [
-                endHour,
-                startHour,
-              ] /* 3am the next day at the bottom, 3am for this day at the top */
             }
-            margin={{ left: 80 }}
-          >
-            {series}
-            <Borders
-              style={{
-                bottom: { fill: '#fff' },
-                left: { fill: '#fff' },
-                right: { fill: '#fff' },
-                top: { fill: '#fff' },
-              }}
-            />
+            label="Inbound and Outbound"
+          />
 
-            <HorizontalGridLines />
-            <VerticalGridLines />
-            <XAxis tickPadding={4} />
-            <YAxis hideLine tickPadding={4} tickFormat={hourFormatter} />
-
-            <ChartLabel
-              text="Time"
-              className="alt-y-label"
-              includeMargin
-              xPercent={0.02}
-              yPercent={0.3}
-              style={{
-                transform: 'rotate(-90)',
-              }}
-            />
-
-            <ChartLabel
-              text="Inbound Distance Along Route (miles)"
-              className="alt-x-label"
-              includeMargin
-              xPercent={0.7}
-              yPercent={1.0 - 85.0 / ((endHour - startHour) * 100.0)}
-              style={{
-                textAnchor: 'end',
-              }}
-            />
-            {hintValue ? (
-              <Hint
-                value={hintValue}
-                format={myHintValue => [
-                  { title: 'Stop', value: myHintValue.title },
-                  { title: 'Time', value: myHintValue.arrivalTimeString },
-                  { title: 'Vehicle ID', value: myHintValue.vehicleId },
-                ]}
+          <FormControlLabel
+            control={
+              <Radio
+                id="inbound"
+                type="radio"
+                value={INBOUND}
+                checked={selectedOption === INBOUND}
+                onChange={changeEvent =>
+                  setSelectedOption(changeEvent.target.value)
+                }
               />
-            ) : null}
-          </XYPlot>
+            }
+            label="Inbound only"
+          />
+
+          <FormControlLabel
+            control={
+              <Radio
+                id="outbound"
+                type="radio"
+                value={OUTBOUND}
+                checked={selectedOption === OUTBOUND}
+                onChange={changeEvent =>
+                  setSelectedOption(changeEvent.target.value)
+                }
+              />
+            }
+            label="Outbound only"
+          />
+        </div>
+      </FormControl>
+      <XYPlot
+        height={(endHour - startHour) * 100}
+        width={600}
+        yDomain={
+          [
+            endHour,
+            startHour,
+          ] /* 3am the next day at the bottom, 3am for this day at the top */
+        }
+        margin={{ left: 80 }}
+      >
+        {series}
+        <Borders
+          style={{
+            bottom: { fill: '#fff' },
+            left: { fill: '#fff' },
+            right: { fill: '#fff' },
+            top: { fill: '#fff' },
+          }}
+        />
+
+        <HorizontalGridLines />
+        <VerticalGridLines />
+        <XAxis tickPadding={4} />
+        <YAxis hideLine tickPadding={4} tickFormat={hourFormatter} />
+
+        <ChartLabel
+          text="Time"
+          className="alt-y-label"
+          includeMargin
+          xPercent={0.02}
+          yPercent={0.3}
+          style={{
+            transform: 'rotate(-90)',
+          }}
+        />
+
+        <ChartLabel
+          text="Inbound Distance Along Route (miles)"
+          className="alt-x-label"
+          includeMargin
+          xPercent={0.7}
+          yPercent={1.0 - 85.0 / ((endHour - startHour) * 100.0)}
+          style={{
+            textAnchor: 'end',
+          }}
+        />
+        {hintValue ? (
+          <Hint
+            value={hintValue}
+            format={myHintValue => [
+              { title: 'Stop', value: myHintValue.title },
+              { title: 'Time', value: myHintValue.arrivalTimeString },
+              { title: 'Vehicle ID', value: myHintValue.vehicleId },
+            ]}
+          />
+        ) : null}
+      </XYPlot>
     </Fragment>
-  ) : <Fragment>{ arrivalsErr ? arrivalsErr : 'Loading...'}</Fragment>;
+  ) : (
+    <Fragment>{arrivalsErr || 'Loading...'}</Fragment>
+  );
 }
 
 const mapStateToProps = state => ({

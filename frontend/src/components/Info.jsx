@@ -118,11 +118,7 @@ function Info(props) {
             label="Summary"
             {...a11yProps(SUMMARY)}
           />
-          <Tab
-            style={{ minWidth: 72 }}
-            label="By Day"
-            {...a11yProps(BY_DAY)}
-          />
+          <Tab style={{ minWidth: 72 }} label="By Day" {...a11yProps(BY_DAY)} />
           <Tab
             style={{ minWidth: 72 }}
             label="By Time of Day"
@@ -167,15 +163,13 @@ function Info(props) {
               routes={routes}
             />
           </Box>
-          
+
           <Box p={2} hidden={tabValue !== TIME_OF_DAY}>
             <Typography variant="h5" display="inline">
               Performance by Time of Day
             </Typography>
 
-            <InfoIntervalsOfDay
-              tripMetrics={tripMetrics}
-            />
+            <InfoIntervalsOfDay tripMetrics={tripMetrics} />
           </Box>
 
           <Box p={2} hidden={tabValue !== HEADWAYS}>
@@ -246,8 +240,8 @@ function Info(props) {
             Wait Times
           </Typography>
           <p>
-            median wait time {Math.round(waitTimes.median)} minutes, max wait time{' '}
-            {Math.round(waitTimes.max)} minutes
+            median wait time {Math.round(waitTimes.median)} minutes, max wait
+            time {Math.round(waitTimes.max)} minutes
           </p>
           <XYPlot
             xDomain={[0, Math.max(60, Math.round(waitTimes.max) + 5)]}
@@ -366,11 +360,7 @@ function Info(props) {
           <code>Error: {tripMetricsError}</code>
         </Box>
       ) : null}
-      {tripMetricsLoading ? (
-        <Box p={2}>
-          Loading...
-        </Box>
-      ) : null}
+      {tripMetricsLoading ? <Box p={2}>Loading...</Box> : null}
     </div>
   );
 }
