@@ -19,11 +19,7 @@ import {
   getTripPoints,
   isInServiceArea,
 } from '../helpers/mapGeometry';
-import {
-  filterRoutes,
-  milesBetween,
-  HighestPossibleScore,
-} from '../helpers/routeCalculations';
+import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
 

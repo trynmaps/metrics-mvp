@@ -14,6 +14,7 @@ import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { getDownstreamStopIds } from '../helpers/mapGeometry';
 import { Colors } from '../UIConstants';
+import ReactSelect from './ReactSelect';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -23,6 +24,7 @@ const useStyles = makeStyles(theme => ({
   formControl: {
     margin: theme.spacing(1),
     minWidth: 120,
+    maxWidth: '100%',
   },
 }));
 
@@ -43,6 +45,7 @@ function ControlPanel(props) {
         routeId: graphParams.routeId,
         directionId,
       },
+      query: props.query,
     });
   }
 
@@ -53,8 +56,8 @@ function ControlPanel(props) {
 
   const selectedRoute = getSelectedRouteInfo();
 
-  function onSelectFirstStop(event) {
-    const startStopId = event.target.value;
+  function onSelectFirstStop(option) {
+    const startStopId = option.value.stopId;
 
     props.dispatch({
       type: 'ROUTESCREEN',
@@ -62,11 +65,12 @@ function ControlPanel(props) {
         ...graphParams,
         startStopId,
       },
+      query: props.query,
     });
   }
 
-  function onSelectSecondStop(event) {
-    const endStopId = event.target.value;
+  function onSelectSecondStop(option) {
+    const endStopId = option.value.stopId;
 
     props.dispatch({
       type: 'ROUTESCREEN',
@@ -74,6 +78,7 @@ function ControlPanel(props) {
         ...graphParams,
         endStopId,
       },
+      query: props.query,
     });
     // handleGraphParams called via thunk in ../routesMap.js when path changes, no need to call again
   }
@@ -100,6 +105,7 @@ function ControlPanel(props) {
         routeId,
         directionId,
       },
+      query: props.query,
     });
   }
   /**
@@ -188,35 +194,33 @@ function ControlPanel(props) {
               <Box ml={1}>
                 <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
                 <FormControl className={classes.formControl}>
-                  <InputLabel htmlFor="fromstop">From Stop</InputLabel>
-                  <Select
-                    value={graphParams.startStopId || 1}
+                  <ReactSelect
                     onChange={onSelectFirstStop}
-                    input={<Input name="stop" id="fromstop" />}
-                    onOpen={() => setAllowHover(true)}
-                    onClose={handleSelectClose}
-                  >
-                    {directionStops.map(firstStopId => {
-                      const icon = document.querySelector(`.id${firstStopId}`);
-                      const title = (
+                    inputId="fromstop"
+                    textFieldProps={{
+                      label: 'From Stop',
+                      InputLabelProps: {
+                        htmlFor: 'fromstop',
+                        shrink: true,
+                      },
+                    }}
+                    options={directionStops.map(firstStopId => ({
+                      value: {
+                        stopId: firstStopId,
+                        icon: document.querySelector(`.id${firstStopId}`),
+                      },
+                      label: (
                         selectedRoute.stops[firstStopId] || {
                           title: firstStopId,
                         }
-                      ).title;
-                      return (
-                        <MenuItem
-                          key={firstStopId}
-                          value={firstStopId}
-                          onMouseOver={() => handleItemMouseOver(icon, title)}
-                          onFocus={() => handleItemMouseOver(icon, title)}
-                          onMouseOut={() => handleItemMouseOut(icon)}
-                          onBlur={() => handleItemMouseOut(icon)}
-                        >
-                          {title}
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
+                      ).title,
+                    }))}
+                    stopId={graphParams.startStopId}
+                    onOpen={() => setAllowHover(true)}
+                    onClose={handleSelectClose}
+                    handleItemMouseOver={handleItemMouseOver}
+                    handleItemMouseOut={handleItemMouseOut}
+                  />
                 </FormControl>
               </Box>
             </Grid>
@@ -224,35 +228,33 @@ function ControlPanel(props) {
               <Box ml={1}>
                 <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
                 <FormControl className={classes.formControl}>
-                  <InputLabel htmlFor="tostop">To Stop</InputLabel>
-                  <Select
-                    value={graphParams.endStopId || 1}
+                  <ReactSelect
                     onChange={onSelectSecondStop}
-                    input={<Input name="stop" id="tostop" />}
-                    onOpen={() => setAllowHover(true)}
-                    onClose={handleSelectClose}
-                  >
-                    {(secondStopList || []).map(secondStopId => {
-                      const icon = document.querySelector(`.id${secondStopId}`);
-                      const title = (
+                    inputId="tostop"
+                    textFieldProps={{
+                      label: 'To Stop',
+                      InputLabelProps: {
+                        htmlFor: 'tostop',
+                        shrink: true,
+                      },
+                    }}
+                    options={(secondStopList || []).map(secondStopId => ({
+                      value: {
+                        stopId: secondStopId,
+                        icon: document.querySelector(`.id${secondStopId}`),
+                      },
+                      label: (
                         selectedRoute.stops[secondStopId] || {
                           title: secondStopId,
                         }
-                      ).title;
-                      return (
-                        <MenuItem
-                          key={secondStopId}
-                          value={secondStopId}
-                          onMouseOver={() => handleItemMouseOver(icon, title)}
-                          onFocus={() => handleItemMouseOver(icon, title)}
-                          onMouseOut={() => handleItemMouseOut(icon)}
-                          onBlur={() => handleItemMouseOut(icon)}
-                        >
-                          {title}
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
+                      ).title,
+                    }))}
+                    stopId={graphParams.endStopId}
+                    onOpen={() => setAllowHover(true)}
+                    onClose={handleSelectClose}
+                    handleItemMouseOver={handleItemMouseOver}
+                    handleItemMouseOut={handleItemMouseOut}
+                  />
                 </FormControl>
               </Box>
             </Grid>
@@ -266,6 +268,7 @@ function ControlPanel(props) {
 // for this entire component, now using graphParams values in Redux instead of local state.
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {
