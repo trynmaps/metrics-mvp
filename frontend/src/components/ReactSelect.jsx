@@ -426,7 +426,11 @@ function handleReposition(
     window[`${inputId}Timeout`] = setTimeout(
       () => {
         allowTransition.current = false;
-        setTextFieldDOMRect(textRef.current.getBoundingClientRect());
+        // textRef.current becomes null after going to the dashboard
+        // and scrolling there triggers this event handler. 
+        if (textRef.current) { 
+          setTextFieldDOMRect(textRef.current.getBoundingClientRect());
+        }
       },
       eventType === 'scroll' ? scrollHandlerDelay : 0,
     );
