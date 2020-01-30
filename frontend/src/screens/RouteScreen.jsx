@@ -1,9 +1,13 @@
 import React, { Fragment, useEffect } from 'react';
-import Box from '@material-ui/core/Box';
+
+import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import NavigateNextIcon from '@material-ui/icons/NavigateNext';
+import Breadcrumbs from '@material-ui/core/Breadcrumbs';
+import Typography from '@material-ui/core/Typography';
 
 import { connect } from 'react-redux';
 import Info from '../components/Info';
@@ -16,6 +20,24 @@ import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 
 import { fetchRoutes } from '../actions';
+
+import Link from 'redux-first-router-link';
+
+const useStyles = makeStyles(theme => ({
+  breadCrumbStyling: {
+    fontWeight: 'bold',
+    textTransform : 'initial',
+    display : 'inline',
+    },
+    darkLinks : {
+      color: theme.palette.primary.dark
+    },
+    breadCrumbsWrapper : {
+      padding: '1%',
+      paddingRight: '0'
+    }
+}));
+
 
 function RouteScreen(props) {
   const {
@@ -37,6 +59,36 @@ function RouteScreen(props) {
 
   const agency = getAgency(agencyId);
 
+  const breadCrumbs = (paths, classes) => {
+    const { breadCrumbStyling, darkLinks } = classes;
+
+    let link = {
+      type:'ROUTESCREEN'
+    }
+    const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
+    const labels = (param, title) => {
+        let  specialLabels = {};
+        specialLabels['startStopId'] = 'from ';
+        specialLabels['endStopId'] = 'to ';
+        return {label: title, specialLabel: specialLabels[param] ? specialLabels[param] : null};
+    }
+    return paths.filter(path => {
+      //return paths with non null values
+      return  path ?  true : false;
+      }).map((path, index, paths) => {
+        const hasNextValue = paths[index+1];
+        const param = params[index];
+        let payload = {};
+        payload[param] = path.id;
+        const updatedPayload = Object.assign({...link.payload}, payload);
+        link = Object.assign({...link}, {payload:updatedPayload});
+        const {label, specialLabel}  = labels(param, path.title);
+        return hasNextValue
+        ? ( <Typography variant="subtitle1" key={label} className={`${breadCrumbStyling} ${darkLinks}`}> {specialLabel}  <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>  {label}  </Link> </Typography> )
+        : ( <Typography variant="subtitle1" key={label} className={breadCrumbStyling}> {specialLabel} {label} </Typography> )
+    });
+  }
+
   const selectedRoute =
     routes && graphParams && graphParams.routeId
       ? routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId))
@@ -57,6 +109,8 @@ function RouteScreen(props) {
       ? selectedRoute.stops[graphParams.endStopId]
       : null;
 
+  const classes = useStyles();
+  const { breadCrumbStyling, breadCrumbsWrapper } = classes;
   return (
     <Fragment>
       <AppBar position="relative">
@@ -69,17 +123,14 @@ function RouteScreen(props) {
           <DateTimePanel dateRangeSupported={tripMetrics || tripMetricsError || tripMetricsLoading}/>
         </Toolbar>
       </AppBar>
+      <Paper className={breadCrumbsWrapper}>
+        <Breadcrumbs separator={ <NavigateNextIcon fontSize="default"  className={breadCrumbStyling}/> }>
 
-      <Paper>
-        <Box p={2} className="page-title">
-          {selectedRoute ? ` ${selectedRoute.title}` : null}
-          {direction ? ` > ${direction.title}` : null}
-          &nbsp;
-          {startStopInfo ? `(from ${startStopInfo.title}` : null}
-          {endStopInfo ? ` to ${endStopInfo.title})` : null}
-        </Box>
+          {breadCrumbs([selectedRoute,direction,
+            startStopInfo ? Object.assign({...startStopInfo},{id: graphParams.startStopId }) : null,
+            endStopInfo ? Object.assign({...endStopInfo},{id: graphParams.endStopInfo }) : null],classes)}
+        </Breadcrumbs>
       </Paper>
-
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
           <MapStops routes={routes} />
