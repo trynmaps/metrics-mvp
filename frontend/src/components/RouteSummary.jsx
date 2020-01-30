@@ -95,6 +95,7 @@ function RouteSummary(props) {
       </Fragment>
     ) : null;
 
+
   const popoverContentOnTimeRate =
     stats.onTimeRate != null ? (
       <Fragment>
@@ -211,7 +212,6 @@ function RouteSummary(props) {
               }
               popoverContent={popoverContentTotalScore}
             />
-
             <InfoScoreCard
               score={stats.medianWaitScore}
               title="Median Wait"

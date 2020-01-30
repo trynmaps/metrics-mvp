@@ -353,6 +353,7 @@ function RouteTable(props) {
                             agencyId: row.route.agencyId,
                             routeId: row.route.id,
                           },
+                          query: props.query,
                         }}
                       >
                         {row.route.title}
@@ -486,6 +487,7 @@ function RouteTable(props) {
 const mapStateToProps = state => ({
   spiderSelection: state.spiderSelection,
   statsByRouteId: state.agencyMetrics.statsByRouteId,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {
