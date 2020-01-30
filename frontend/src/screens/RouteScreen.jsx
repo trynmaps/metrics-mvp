@@ -5,6 +5,9 @@ import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import IconButton from '@material-ui/core/IconButton';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import { NavLink } from 'redux-first-router-link';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Typography from '@material-ui/core/Typography';
@@ -115,7 +118,11 @@ function RouteScreen(props) {
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
-          <SidebarButton />
+          <NavLink to={{ type: 'DASHBOARD' }} exact strict>
+            <IconButton aria-label="Back to dashboard" edge="start">
+              <ArrowBackIcon style={backArrowStyle} />
+            </IconButton>
+          </NavLink>
           <div className="page-title">
             {agency ? agency.title : null}
           </div>
