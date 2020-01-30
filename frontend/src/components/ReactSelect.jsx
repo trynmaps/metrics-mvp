@@ -408,11 +408,11 @@ function filterValue(stopId) {
   return option => option.value.stopId === stopId;
 }
 
+const reposition = {};
 /**
  * updates textfield location on scroll/resize
  * re-renders menu if open which updates menu placement and max height
  */
-const reposition = {};
 function handleReposition(
   eventType,
   inputId,
@@ -420,23 +420,18 @@ function handleReposition(
   setTextFieldDOMRect,
   textRef,
 ) {
-  const allowTransition = menuTransition;
-  reposition[eventType] = () => {
+  reposition[`${inputId}${eventType}`] = () => {
     clearTimeout(window[`${inputId}Timeout`]);
     window[`${inputId}Timeout`] = setTimeout(
       () => {
-        allowTransition.current = false;
-        // textRef.current becomes null after going to the dashboard
-        // and scrolling there triggers this event handler. 
-        if (textRef.current) { 
-          setTextFieldDOMRect(textRef.current.getBoundingClientRect());
-        }
+        menuTransition.current = false;
+        setTextFieldDOMRect(textRef.current.getBoundingClientRect());
       },
       eventType === 'scroll' ? scrollHandlerDelay : 0,
     );
   };
 
-  return reposition[eventType];
+  return reposition[`${inputId}${eventType}`];
 }
 
 export default function ReactSelect(props) {
@@ -473,7 +468,7 @@ export default function ReactSelect(props) {
     window.addEventListener(
       'scroll',
       handleReposition(
-        'scroll',
+        'Scroll',
         props.inputId,
         menuTransition,
         setTextFieldDOMRect,
@@ -483,7 +478,7 @@ export default function ReactSelect(props) {
     window.addEventListener(
       'resize',
       handleReposition(
-        'resize',
+        'Resize',
         props.inputId,
         menuTransition,
         setTextFieldDOMRect,
@@ -493,7 +488,7 @@ export default function ReactSelect(props) {
     inputEl.addEventListener(
       'focus',
       handleReposition(
-        'focus',
+        'Focus',
         props.inputId,
         menuTransition,
         setTextFieldDOMRect,
@@ -502,9 +497,15 @@ export default function ReactSelect(props) {
     );
 
     return () => {
-      window.removeEventListener('scroll', reposition.scroll);
-      window.removeEventListener('resize', reposition.resize);
-      inputEl.removeEventListener('focus', reposition.focus);
+      window.removeEventListener(
+        'scroll',
+        reposition[`${props.inputId}Scroll`],
+      );
+      window.removeEventListener(
+        'resize',
+        reposition[`${props.inputId}Resize`],
+      );
+      inputEl.removeEventListener('focus', reposition[`${props.inputId}Focus`]);
     };
   }, [props.inputId, setTextFieldDOMRect]);
 
