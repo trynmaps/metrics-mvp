@@ -7,9 +7,9 @@
 
 import * as d3 from 'd3';
 import red from '@material-ui/core/colors/red';
+import green from '@material-ui/core/colors/green';
 import yellow from '@material-ui/core/colors/yellow';
 import lightGreen from '@material-ui/core/colors/lightGreen';
-import green from '@material-ui/core/colors/green';
 import {
   getTripTimeStat,
   getTripTimesForDirection,
@@ -23,9 +23,17 @@ import { getAgency } from '../config';
  */
 export function filterRoutes(routes) {
   return routes.filter(route => {
-    const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
-    return !routeHeuristics || !routeHeuristics[route.id] || !routeHeuristics[route.id].ignoreRoute;
+    return !isIgnoredRoute(route);
   });
+}
+
+export function isIgnoredRoute(route) {
+  const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
+  return (
+    routeHeuristics &&
+    routeHeuristics[route.id] &&
+    routeHeuristics[route.id].ignoreRoute
+  );
 }
 
 /**
@@ -60,37 +68,34 @@ function ignoreLastStop(routeHeuristics, routeId, directionId) {
  * Get precomputed trip times for the first stop, then apply heuristic rules
  * to trim off the first stop or first stops if needed.
  */
-function getTripTimesUsingHeuristics(
-  tripTimesCache,
-  graphParams,
-  routes,
-  routeId,
-  directionId,
-) {
+function getTripTimesUsingHeuristics(tripTimes, route, directionId) {
+  const routeId = route ? route.id : null;
   const tripTimesForDir = getTripTimesForDirection(
-    tripTimesCache,
-    graphParams,
+    tripTimes,
     routeId,
     directionId,
   );
 
-  if (!tripTimesForDir || !routes) {
-    //console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
+  if (!tripTimesForDir) {
+    // console.log("No trip times found at all for " + directionId + " (gtfs out of sync or route not running)");
     // not sure if we should remap to normal terminal
-    return { tripTimesForFirstStop: null, directionInfo: null };
+    return {
+      tripTimesForFirstStop: null,
+      directionInfo: null,
+      firstStopDistance: null,
+    };
   }
 
-  //console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
+  // console.log('trip times for dir: ' + Object.keys(tripTimesForDir).length + ' keys' );
 
   // Note that some routes do not run their full length all day like the 5 Fulton, so they
   // don't go to all the stops.  Ideally we should know which stops they do run to.
 
-  const route = routes.find(thisRoute => thisRoute.id === routeId);
   const directionInfo = route.directions.find(
     direction => direction.id === directionId,
   );
 
-  const routeHeuristics = getAgency(graphParams.agencyId).routeHeuristics;
+  const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
 
   const ignoreFirst = ignoreFirstStop(routeHeuristics, routeId, directionId); // look up heuristic rule
   let firstStop = null;
@@ -108,7 +113,7 @@ function getTripTimesUsingHeuristics(
   // then find the stop with the most trip time entries
 
   if (!tripTimesForFirstStop || !Object.keys(tripTimesForFirstStop).length) {
-    //console.log("No trip times found for " + routeId + " from stop " + firstStop + ".  Using stop with most entries.");
+    // console.log("No trip times found for " + routeId + " from stop " + firstStop + ".  Using stop with most entries.");
     tripTimesForFirstStop = Object.values(tripTimesForDir).reduce(
       (accumulator, currentValue) =>
         Object.values(currentValue).length > Object.values(accumulator).length
@@ -118,28 +123,29 @@ function getTripTimesUsingHeuristics(
     );
   }
 
-  return { tripTimesForFirstStop, directionInfo };
+  return {
+    tripTimesForFirstStop,
+    directionInfo,
+    firstStopDistance: directionInfo.stop_geometry[firstStop].distance,
+  };
 }
 
 /**
- * Returns trip time across the full route, applying heuristic rules to ignore
+ * Returns trip time and distance across the full route, applying heuristic rules to ignore
  * the last stop or stops as needed.
  */
 export function getEndToEndTripTime(
-  tripTimesCache,
-  graphParams,
-  routes,
-  routeId,
+  tripTimes,
+  route,
   directionId,
   stat = 'median',
 ) {
-  const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
-    tripTimesCache,
-    graphParams,
-    routes,
-    routeId,
-    directionId,
-  );
+  const routeId = route.id;
+  const {
+    tripTimesForFirstStop,
+    directionInfo,
+    firstStopDistance,
+  } = getTripTimesUsingHeuristics(tripTimes, route, directionId);
 
   if (!tripTimesForFirstStop) {
     // no precomputed times
@@ -147,17 +153,14 @@ export function getEndToEndTripTime(
     return '?';
   }
 
-  const routeHeuristics = getAgency(graphParams.agencyId).routeHeuristics;
+  const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
 
   const ignoreLast = ignoreLastStop(routeHeuristics, routeId, directionId); // look up heuristic rule
 
   let lastStop = null;
 
   /*
-   * For determining end to end trip time, but doesn't currently affect computation of route length,
-   * which is based on best guess as to the right GTFS shape. And the shape is not linked to the stops,
-   * it's just coordinates and distance along route, so more logic would be needed to "trim" the shape
-   * if stops are ignored.
+   * For determining end to end trip time, taking into account ignored stops.
    */
   if (ignoreLast !== true && ignoreLast !== false) {
     lastStop = ignoreLast; // ignore stops after index specified by ignoreLast
@@ -177,21 +180,38 @@ export function getEndToEndTripTime(
   }
 
   let tripTime = null;
+  let tripDistance = null;
+
   if (tripTimesForFirstStop[lastStop]) {
     tripTime = tripTimesForFirstStop[lastStop][statIndex];
+    tripDistance =
+      directionInfo.stop_geometry[lastStop].distance - firstStopDistance;
   }
 
   // if there is no trip time to the last stop, then use the highest trip time actually observed
 
   if (!tripTime) {
-    tripTime = Math.max(
-      ...Object.values(getTripTimeStat(tripTimesForFirstStop, statIndex)),
-    );
+    const tripTimes = getTripTimeStat(tripTimesForFirstStop, statIndex);
+    const stopIds = Object.keys(tripTimes);
+    tripTime = 0;
+
+    for (let i = 0; i < stopIds.length; i++) {
+      if (
+        tripTimes[stopIds[i]] > tripTime &&
+        directionInfo.stop_geometry[stopIds[i]]
+      ) {
+        tripTime = tripTimes[stopIds[i]];
+        tripDistance =
+          directionInfo.stop_geometry[stopIds[i]].distance - firstStopDistance;
+      }
+    }
+
     // console.log("No trip time found for " + routeId + " " + directionId + " to stop " + lastStop + '. max observed: ' + tripTime);
   }
 
   // console.log('trip time in minutes is ' + tripTime);
-  return tripTime;
+
+  return { tripTime, tripDistance };
 }
 
 /**
@@ -207,21 +227,17 @@ export function metersToMiles(meters) {
  * Returns an array of {x: stop index, y: time} objects for
  * plotting on a chart.
  */
-export function getTripDataSeries(props, routeId, directionId) {
+export function getTripDataSeries(tripTimes, route, directionId) {
   const { tripTimesForFirstStop, directionInfo } = getTripTimesUsingHeuristics(
-    props.tripTimesCache,
-    props.graphParams,
-    props.routes,
-    routeId,
+    tripTimes,
+    route,
     directionId,
   );
 
   if (!tripTimesForFirstStop) {
-    //console.log('no trip times for first stop ' + routeId + ' ' + directionId);
+    // console.log('no trip times for first stop ' + routeId + ' ' + directionId);
     return [];
   } // no precomputed times
-
-  const route = props.routes.find(thisRoute => thisRoute.id === routeId);
 
   const dataSeries = [];
 
@@ -231,7 +247,7 @@ export function getTripDataSeries(props, routeId, directionId) {
 
   directionInfo.stops.slice(1).map((stop, index) => {
     if (!directionInfo.stop_geometry[stop]) {
-      //console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
+      // console.log('no geometry for ' + routeId + ' ' + directionId + ' ' + stop);
     } else if (tripTimesForFirstStop[stop]) {
       dataSeries.push({
         x: metersToMiles(directionInfo.stop_geometry[stop].distance),
@@ -252,30 +268,22 @@ export function getTripDataSeries(props, routeId, directionId) {
 /**
  * Computes waits of all routes.
  *
- * @param {Object} waitTimesCache
- * @param {Object} graphParams
+ * @param {Object} waitTimes
  * @param {Object} routes
  */
-export function getAllWaits(waitTimesCache, graphParams, routes) {
+export function getAllWaits(waitTimes, routes) {
   let allWaits = null;
   if (routes) {
     allWaits = filterRoutes(routes).map(route => {
       return {
         routeId: route.id,
-        wait: getAverageOfMedianWaitStat(waitTimesCache, graphParams, route),
-        longWait:
-          1 -
-          getAverageOfMedianWaitStat(
-            waitTimesCache,
-            graphParams,
-            route,
-            'plt20m',
-          ),
+        wait: getAverageOfMedianWaitStat(waitTimes, route),
+        longWait: 1 - getAverageOfMedianWaitStat(waitTimes, route, 'plt20m'),
       };
     });
     allWaits = allWaits.filter(waitObj => !Number.isNaN(waitObj.wait));
     allWaits.sort((a, b) => {
-      return b.wait - a.wait;
+      return a.wait - b.wait;
     });
   }
 
@@ -285,54 +293,42 @@ export function getAllWaits(waitTimesCache, graphParams, routes) {
 /**
  * Computes the end to end speed for a route.
  *
- * @param {Object} tripTimesCache
- * @param {Object} graphParams
- * @param {any} routes
- * @param {any} routeId
+ * @param {Object} tripTimes
+ * @param {Object} route
  */
-function getSpeedAndVariabilityForRoute(
-  tripTimesCache,
-  graphParams,
-  routes,
-  routeId,
-) {
-  const route = routes.find(thisRoute => thisRoute.id === routeId);
-
+function getSpeedAndVariabilityForRoute(tripTimes, route) {
   let speeds = route.directions.map(direction => {
-    const dist = direction.distance;
-    const tripTime = getEndToEndTripTime(
-      tripTimesCache,
-      graphParams,
-      routes,
-      route.id,
+    const { tripTime, tripDistance } = getEndToEndTripTime(
+      tripTimes,
+      route,
       direction.id,
     );
 
     const p90tripTime = getEndToEndTripTime(
-      tripTimesCache,
-      graphParams,
-      routes,
-      route.id,
+      tripTimes,
+      route,
       direction.id,
       'p90',
-    );
+    ).tripTime;
 
     const p10tripTime = getEndToEndTripTime(
-        tripTimesCache,
-        graphParams,
-        routes,
-        route.id,
-        direction.id,
-        'p10',
-      );
+      tripTimes,
+      route,
+      direction.id,
+      'p10',
+    ).tripTime;
 
-    if (dist <= 0 || Number.isNaN(tripTime)) {
+    if (tripDistance <= 0 || Number.isNaN(tripTime)) {
       // something wrong with the data here
       // console.log('bad dist or tripTime: ' + dist + ' ' + tripTime + ' for ' + routeId + ' ' + direction.id);
       return -1;
     }
 
-    const speed = (metersToMiles(Number.parseFloat(dist)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
+    // sanity check for stop to stop distance vs full route distance.
+    // console.log(route.id + ': tripDistance ' + tripDistance + ' vs ' + direction.distance );
+
+    const speed =
+      (metersToMiles(Number.parseFloat(tripDistance)) / tripTime) * 60.0; // initial units are meters per minute, final are mph
 
     return {
       speed,
@@ -366,15 +362,13 @@ function getSpeedAndVariabilityForRoute(
  * @param {any} routes
  * @param {any} allDistances
  */
-export function getAllSpeeds(tripTimesCache, graphParams, routes) {
+export function getAllSpeeds(tripTimes, routes) {
   let allSpeeds = null;
   if (routes) {
     allSpeeds = filterRoutes(routes).map(route => {
       const speedAndVariability = getSpeedAndVariabilityForRoute(
-        tripTimesCache,
-        graphParams,
-        routes,
-        route.id,
+        tripTimes,
+        route,
       );
       return {
         routeId: route.id,
@@ -394,31 +388,22 @@ export function getAllSpeeds(tripTimesCache, graphParams, routes) {
 }
 
 /**
- * Grade computation.
+ * Score computation.
  *
  * TODO: refactor with Info.jsx's computation of grades once we add in probability
  * of long wait and travel variability to RouteSummary.
  */
-export function computeGrades(
+export function computeScores(
   medianWait,
   longWaitProbability,
   speed,
   variability,
 ) {
-  //
-  // grade and score for median wait
-  //
-
   const medianWaitScoreScale = d3
     .scaleLinear()
     .domain([5, 10])
     .rangeRound([100, 0])
     .clamp(true);
-
-  const medianWaitGradeScale = d3
-    .scaleThreshold()
-    .domain([5, 7.5, 10])
-    .range(['A', 'B', 'C', 'D']);
 
   const longWaitScoreScale = d3
     .scaleLinear()
@@ -426,24 +411,14 @@ export function computeGrades(
     .rangeRound([100, 0])
     .clamp(true);
 
-  // grade and score for travel speed
-
   const speedScoreScale = d3
     .scaleLinear()
     .domain([5, 10])
     .rangeRound([0, 100])
     .clamp(true);
 
-  const speedGradeScale = d3
-    .scaleThreshold()
-    .domain([5, 7.5, 10])
-    .range(['D', 'C', 'B', 'A']);
-
-  //
-  // grade score for travel time variability
-  //
+  // score for travel time variability
   // where variability is half of (90th percentile time minus 10th percentile)
-  //
 
   const variabilityScoreScale = d3
     .scaleLinear()
@@ -451,55 +426,28 @@ export function computeGrades(
     .rangeRound([100, 0])
     .clamp(true);
 
-  const totalGradeScale = d3
-    .scaleThreshold()
-    .domain([25, 50, 75])
-    .range(['D', 'C', 'B', 'A']);
+  const medianWaitScore =
+    medianWait != null ? medianWaitScoreScale(medianWait) : 0;
+  const longWaitScore =
+    longWaitProbability != null ? longWaitScoreScale(longWaitProbability) : 0;
+  const speedScore = speed != null ? speedScoreScale(speed) : 0;
+  const travelVarianceScore =
+    variability != null ? variabilityScoreScale(variability) : 0;
 
-  let medianWaitScore = 0;
-  let medianWaitGrade = '';
-  let longWaitScore = 0;
-  let speedScore = 0;
-  let speedGrade = '';
-  let travelVarianceScore = 0;
-  let totalScore = 0;
-  let totalGrade = '';
-
-  if (medianWait != null) {
-    medianWaitScore = medianWaitScoreScale(medianWait);
-    medianWaitGrade = medianWaitGradeScale(medianWait);
-  }
-
-  if (longWaitProbability != null) {
-    longWaitScore = longWaitScoreScale(longWaitProbability);
-  }
-
-  if (speed != null) {
-    speedScore = speedScoreScale(speed);
-    speedGrade = speedGradeScale(speed);
-  }
-
-  if (variability != null) {
-    travelVarianceScore = variabilityScoreScale(variability);
-  }
-
-  totalScore = Math.round(
+  const totalScore = Math.round(
     (medianWaitScore + longWaitScore + speedScore + travelVarianceScore) / 4.0,
   );
-  totalGrade = totalGradeScale(totalScore);
 
   return {
     medianWaitScore,
-    medianWaitGrade,
     longWaitScore,
     speedScore,
-    speedGrade,
     travelVarianceScore,
     totalScore,
-    totalGrade,
-    highestPossibleScore: 100,
   };
 }
+
+export const HighestPossibleScore = 100;
 
 /**
  * Computes scores of all routes.
@@ -514,20 +462,13 @@ export function getAllScores(routes, waits, speeds) {
     const speedObj = speeds.find(speed => speed.routeId === route.id);
     const waitObj = waits.find(wait => wait.routeId === route.id);
     if (waitObj && speedObj) {
-      const grades = computeGrades(
+      const scores = computeScores(
         waitObj.wait,
         waitObj.longWait,
         speedObj.speed,
         speedObj.variability,
       );
-      allScores.push({
-        routeId: route.id,
-        totalScore: grades.totalScore,
-        medianWaitScore: grades.medianWaitScore,
-        longWaitScore: grades.longWaitScore,
-        speedScore: grades.speedScore,
-        travelVarianceScore: grades.travelVarianceScore,
-      });
+      allScores.push(Object.assign({ routeId: route.id }, scores));
     }
   });
 
@@ -535,26 +476,32 @@ export function getAllScores(routes, waits, speeds) {
     return b.totalScore - a.totalScore;
   });
 
-  // console.log(JSON.stringify(allScores));
-
   return allScores;
 }
 
-export const quartileBackgroundColor = d3
+const backgroundColorScale = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
-  .range([red[300], yellow[300], lightGreen[800], green[900]]);
+  .range([red[300], yellow[300], lightGreen[700], green[900]]);
 
-export const quartileContrastColor = d3
-  .scaleThreshold()
-  .domain([0.25, 0.5, 0.75])
-  .range(['black', 'black', 'white', 'white']);
+export const scoreBackgroundColor = score => {
+  if (score == null || Number.isNaN(score)) {
+    return null;
+  }
+  return backgroundColorScale(score / HighestPossibleScore);
+};
 
-// for coloring the route table's white columns, to emphasize low scoring cells
-export const quartileTextColor = d3
+const contrastColorScale = d3
   .scaleThreshold()
   .domain([0.25, 0.5, 0.75])
-  .range(['black', 'black', '#8a8a8a', '#8a8a8a']);
+  .range(['rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)', 'white', 'white']);
+
+export const scoreContrastColor = score => {
+  if (score == null || Number.isNaN(score)) {
+    return null;
+  }
+  return contrastColorScale(score / HighestPossibleScore);
+};
 
 /**
  * Haversine formula for calcuating distance between two coordinates in lat lon

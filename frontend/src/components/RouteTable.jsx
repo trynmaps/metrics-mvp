@@ -1,7 +1,8 @@
-import React, { useEffect, useState, Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
-import { lighten, makeStyles } from '@material-ui/core/styles';
+import { lighten, makeStyles, createMuiTheme } from '@material-ui/core/styles';
+import Chip from '@material-ui/core/Chip';
 import Popover from '@material-ui/core/Popover';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -13,60 +14,30 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
-import { createMuiTheme } from '@material-ui/core/styles';
+
 import FilterListIcon from '@material-ui/icons/FilterList';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
 import {
   filterRoutes,
-  getAllWaits,
-  getAllSpeeds,
-  getAllScores,
-  quartileBackgroundColor,
-  quartileContrastColor,
-  quartileTextColor,
+  scoreBackgroundColor,
+  scoreContrastColor,
 } from '../helpers/routeCalculations';
 
-import { handleGraphParams, fetchPrecomputedWaitAndTripData } from '../actions';
-
-function desc(a, b, orderBy) {
-  // Treat NaN as infinity, so that it goes to the bottom of the table in an ascending sort.
-  // NaN needs special handling because NaN < 3 is false as is Nan > 3.
-
-  if (Number.isNaN(a[orderBy]) && Number.isNaN(b[orderBy])) {
-    return 0;
-  }
-  if (Number.isNaN(a[orderBy])) {
-    return -1;
-  }
-  if (Number.isNaN(b[orderBy])) {
-    return 1;
-  }
-
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
 /**
- * Sorts the given array using a comparator.  Equal values are ordered by array index.
+ * Sorts the given array by an object property.  Equal values are ordered by array index.
  *
  * Sorting by title is a special case because the original order of the routes array is
  * better than sorting route title alphabetically.  For example, 1 should be followed by
  * 1AX rather than 10 and 12.
  *
  * @param {Array} array      Array to sort
- * @param {Function} cmp     Comparator to use
  * @param {String} sortOrder Either 'desc' or 'asc'
- * @param {String} orderBy   Column to sort by
+ * @param {String} orderBy   Property to sort by
  * @returns {Array}          The sorted array
  */
-function stableSort(array, cmp, sortOrder, orderBy) {
+function stableSort(array, sortOrder, orderBy) {
   // special case for title sorting that short circuits the use of the comparator
 
   if (orderBy === 'title') {
@@ -77,6 +48,8 @@ function stableSort(array, cmp, sortOrder, orderBy) {
     return array;
   }
 
+  const cmp = getComparisonFunction(sortOrder, orderBy);
+
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);
@@ -86,28 +59,49 @@ function stableSort(array, cmp, sortOrder, orderBy) {
   return stabilizedThis.map(el => el[0]);
 }
 
-function getSorting(order, orderBy) {
-  return order === 'desc'
-    ? (a, b) => desc(a, b, orderBy)
-    : (a, b) => -desc(a, b, orderBy);
+function getComparisonFunction(order, orderBy) {
+  // Sort null values to bottom regardless of ascending/descending
+  const factor = order === 'desc' ? 1 : -1;
+  return (a, b) => {
+    const aValue = a[orderBy];
+    const bValue = b[orderBy];
+
+    if (aValue == null && bValue == null) {
+      return 0;
+    }
+    if (aValue == null) {
+      return 1;
+    }
+    if (bValue == null) {
+      return -1;
+    }
+
+    if (bValue < aValue) {
+      return -factor;
+    }
+    if (bValue > aValue) {
+      return factor;
+    }
+    return 0;
+  };
 }
 
 const headRows = [
-  { id: 'title', numeric: false, disablePadding: false, label: 'Name' },
-  { id: 'totalScore', numeric: true, disablePadding: false, label: 'Score' },
-  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait (min)' },
+  { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
+  { id: 'totalScore', numeric: true, disablePadding: true, label: 'Score' },
+  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait' },
   {
     id: 'longWait',
     numeric: true,
     disablePadding: true,
     label: 'Long Wait %',
   },
-  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed (mph)' },
+  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed' },
   {
     id: 'variability',
     numeric: true,
     disablePadding: true,
-    label: 'Travel Time Variability (min)',
+    label: 'Travel Time Variability',
   },
 ];
 
@@ -125,6 +119,7 @@ function EnhancedTableHead(props) {
             key={row.id}
             align={row.numeric ? 'right' : 'left'}
             padding={row.disablePadding ? 'none' : 'default'}
+            style={{ paddingRight: 12 }}
             sortDirection={orderBy === row.id ? order : false}
           >
             <TableSortLabel
@@ -180,7 +175,7 @@ const useToolbarStyles = makeStyles(theme => ({
 const EnhancedTableToolbar = props => {
   const classes = useToolbarStyles();
   const { numSelected } = props;
-  
+
   const [anchorEl, setAnchorEl] = useState(null);
 
   function handleClick(event) {
@@ -189,7 +184,7 @@ const EnhancedTableToolbar = props => {
 
   function handleClose() {
     setAnchorEl(null);
-  }  
+  }
 
   return (
     <Toolbar
@@ -205,9 +200,9 @@ const EnhancedTableToolbar = props => {
         ) : (
           <Typography variant="h6" id="tableTitle">
             Routes
-                  <IconButton size="small" onClick={handleClick}>
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
+            <IconButton size="small" onClick={handleClick}>
+              <InfoIcon fontSize="small" />
+            </IconButton>
           </Typography>
         )}
       </div>
@@ -233,25 +228,26 @@ const EnhancedTableToolbar = props => {
           horizontal: 'center',
         }}
       >
-        <div className={classes.popover}><b>Score</b> is the average of subscores (0-100) for median wait,
-          long wait probability, average speed, and travel time variability.  Click on a route to see its metrics
-          and explanations of how the subscores are calculated.
-          <p/>
-          <b>Median Wait</b> is the 50th percentile (typical) wait time for a rider arriving
-          randomly at a stop while the route is running.
-          <p/>
-          <b>Long wait probability</b> is the chance a rider has of a wait of twenty minutes
-          or longer after arriving randomly at a stop. 
-          <p/>
-          <b>Average speed</b> is the speed of the 50th percentile (typical) end to end trip, averaged
-          for all directions.
-          <p/>
-          <b>Travel time variability</b> is the 90th percentile end to end travel time minus the 10th percentile
-          travel time.  This measures how much extra travel time is needed for some trips.
-          
+        <div className={classes.popover}>
+          <b>Score</b> is the average of subscores (0-100) for median wait, long
+          wait probability, average speed, and travel time variability. Click on
+          a route to see its metrics and explanations of how the subscores are
+          calculated.
+          <p />
+          <b>Median Wait</b> is the 50th percentile (typical) wait time for a
+          rider arriving randomly at a stop while the route is running.
+          <p />
+          <b>Long wait probability</b> is the chance a rider has of a wait of
+          twenty minutes or longer after arriving randomly at a stop.
+          <p />
+          <b>Average speed</b> is the speed of the 50th percentile (typical) end
+          to end trip, averaged for all directions.
+          <p />
+          <b>Travel time variability</b> is the 90th percentile end to end
+          travel time minus the 10th percentile travel time. This measures how
+          much extra travel time is needed for some trips.
         </div>
       </Popover>
-
     </Toolbar>
   );
 };
@@ -277,13 +273,7 @@ function RouteTable(props) {
   const dense = true;
   const theme = createMuiTheme();
 
-  const { graphParams, myFetchPrecomputedWaitAndTripData } = props;
-
-  useEffect(() => {
-    if (graphParams.agencyId && graphParams.date) {
-      myFetchPrecomputedWaitAndTripData(graphParams);
-    }
-  }, [graphParams, myFetchPrecomputedWaitAndTripData]); // like componentDidMount, this runs only on first render
+  const { routeStats } = props;
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -292,172 +282,203 @@ function RouteTable(props) {
   }
 
   let routes = props.routes ? filterRoutes(props.routes) : [];
-  const spiderSelection = props.spiderSelection;
+  const spiderStops = props.spiderSelection.stops;
 
   // filter the route list down to the spider routes if needed
 
-  if (spiderSelection && spiderSelection.length > 0) {
-    const spiderRouteIds = spiderSelection.map(spider => spider.routeId);
+  if (spiderStops && spiderStops.length > 0) {
+    const spiderRouteIds = spiderStops.map(spider => spider.routeId);
     routes = routes.filter(myRoute => spiderRouteIds.includes(myRoute.id));
   }
 
-  const allWaits = getAllWaits(props.waitTimesCache, props.graphParams, routes);
-  const allSpeeds = getAllSpeeds(
-    props.tripTimesCache,
-    props.graphParams,
-    routes,
-  );
-  const allScores = getAllScores(routes, allWaits, allSpeeds);
-
-  routes = routes.map(route => {
-    const waitObj = allWaits.find(
-      thisWaitObj => thisWaitObj.routeId === route.id,
-    );
-    const speedObj = allSpeeds.find(
-      thisSpeedObj => thisSpeedObj.routeId === route.id,
-    );
-    const scoreObj = allScores.find(
-      thisScoreObj => thisScoreObj.routeId === route.id,
-    );
-
+  const displayedRouteStats = routes.map(route => {
     return {
-      ...route,
-      wait: waitObj ? waitObj.wait : NaN,
-      longWait: waitObj ? waitObj.longWait : NaN,
-      speed: speedObj ? speedObj.speed : NaN,
-      variability: speedObj ? speedObj.variability : NaN,
-      totalScore: scoreObj ? scoreObj.totalScore : NaN,
-      medianWaitScore: scoreObj ? scoreObj.medianWaitScore : NaN,
-      longWaitScore: scoreObj ? scoreObj.longWaitScore : NaN,
-      speedScore: scoreObj ? scoreObj.speedScore : NaN,
-      travelVarianceScore: scoreObj ? scoreObj.travelVarianceScore : NaN,
+      route,
+      ...(routeStats[route.id] || {}),
     };
   });
 
   return (
     <div>
-        <EnhancedTableToolbar numSelected={0} />
-        <div className={classes.tableWrapper}>
-          <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
-            <EnhancedTableHead
-              order={order}
-              orderBy={orderBy}
-              onRequestSort={handleRequestSort}
-              rowCount={routes.length}
-            />
-            <TableBody>
-              {stableSort(
-                routes,
-                getSorting(order, orderBy),
-                order,
-                orderBy,
-              ).map((row, index) => {
+      <EnhancedTableToolbar numSelected={0} />
+      <div className={classes.tableWrapper}>
+        <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
+          <EnhancedTableHead
+            order={order}
+            orderBy={orderBy}
+            onRequestSort={handleRequestSort}
+            rowCount={displayedRouteStats.length}
+          />
+          <TableBody>
+            {stableSort(displayedRouteStats, order, orderBy).map(
+              (row, index) => {
                 const labelId = `enhanced-table-checkbox-${index}`;
 
                 return (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                  <TableRow
+                    hover
+                    role="checkbox"
+                    tabIndex={-1}
+                    key={row.route.id}
+                  >
                     <TableCell
                       component="th"
                       id={labelId}
                       scope="row"
                       padding="none"
+                      style={{
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
+                      }}
                     >
                       <Navlink
-                        style={{color: theme.palette.primary.dark, textDecoration: 'none'}}
+                        style={{
+                          color: theme.palette.primary.dark,
+                          textDecoration: 'none',
+                        }}
                         to={{
                           type: 'ROUTESCREEN',
                           payload: {
-                            agencyId: row.agencyId,
-                            routeId: row.id,
-                            directionId: null,
-                            startStopId: null,
-                            endStopId: null,
+                            agencyId: row.route.agencyId,
+                            routeId: row.route.id,
                           },
+                          query: props.query,
                         }}
                       >
-                        {row.title}
+                        {row.route.title}
                       </Navlink>
                     </TableCell>
                     <TableCell
                       align="right"
+                      padding="none"
                       style={{
-                        color: quartileContrastColor(row.totalScore / 100),
-                        backgroundColor: quartileBackgroundColor(
-                          row.totalScore / 100,
-                        ),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
                     >
-                      {Number.isNaN(row.totalScore) ? '--' : row.totalScore}
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.totalScore),
+                          backgroundColor: scoreBackgroundColor(row.totalScore),
+                        }}
+                        label={row.totalScore == null ? '--' : row.totalScore}
+                      />
                     </TableCell>
                     <TableCell
                       align="right"
                       padding="none"
                       style={{
-                        color: quartileTextColor(row.medianWaitScore / 100),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
                     >
-                      {Number.isNaN(row.wait) ? '--' : row.wait.toFixed(0)}
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.medianWaitScore),
+                          backgroundColor: scoreBackgroundColor(
+                            row.medianWaitScore,
+                          ),
+                        }}
+                        label={
+                          row.wait == null ? '--' : `${row.wait.toFixed(0)} min`
+                        }
+                      />
+                    </TableCell>
+
+                    <TableCell
+                      align="right"
+                      style={{ border: 'none' }}
+                      padding="none"
+                    >
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.longWaitScore),
+                          backgroundColor: scoreBackgroundColor(
+                            row.longWaitScore,
+                          ),
+                        }}
+                        label={
+                          row.longWait == null ? (
+                            '--'
+                          ) : (
+                            <Fragment>
+                              {(row.longWait * 100).toFixed(0)}
+                              {'%'}
+                            </Fragment>
+                          )
+                        }
+                      />
                     </TableCell>
                     <TableCell
                       align="right"
                       padding="none"
                       style={{
-                        color: quartileTextColor(row.longWaitScore / 100),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
                     >
-                      {Number.isNaN(row.longWait)
-                        ? '--'
-                        : <Fragment>
-                            {(row.longWait * 100).toFixed(0)}<font style={{color:"#8a8a8a"}}>%</font>
-                          </Fragment>
-                      }
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.speedScore),
+                          backgroundColor: scoreBackgroundColor(row.speedScore),
+                        }}
+                        label={
+                          row.speed == null
+                            ? '--'
+                            : `${row.speed.toFixed(0)} mph`
+                        }
+                      />
                     </TableCell>
                     <TableCell
                       align="right"
                       padding="none"
                       style={{
-                        color: quartileTextColor(row.speedScore / 100),
+                        border: 'none',
+                        paddingTop: 6,
+                        paddingBottom: 6,
                       }}
                     >
-                      {Number.isNaN(row.speed) ? '--' : row.speed.toFixed(0)}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      padding="none"
-                      style={{
-                        color: quartileTextColor(row.travelVarianceScore / 100),
-                      }}
-                    >
-                      {Number.isNaN(row.variability)
-                        ? '--'
-                        : <Fragment>
-                            <font style={{color:"#8a8a8a"}}>{'\u00b1'} </font>{row.variability.toFixed(0)}
-                          </Fragment>
-                      }
+                      <Chip
+                        style={{
+                          color: scoreContrastColor(row.travelVarianceScore),
+                          backgroundColor: scoreBackgroundColor(
+                            row.travelVarianceScore,
+                          ),
+                        }}
+                        label={
+                          row.variability == null ? (
+                            '--'
+                          ) : (
+                            <Fragment>
+                              {'\u00b1'} {row.variability.toFixed(0)} min
+                            </Fragment>
+                          )
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+              },
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
 
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
-  spiderSelection: state.routes.spiderSelection,
-  waitTimesCache: state.routes.waitTimesCache,
-  tripTimesCache: state.routes.tripTimesCache,
+  spiderSelection: state.spiderSelection,
+  routeStats: state.routeStats,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {
-  return {
-    myFetchPrecomputedWaitAndTripData: params =>
-      dispatch(fetchPrecomputedWaitAndTripData(params)),
-    handleGraphParams: params => dispatch(handleGraphParams(params)),
-  };
+  return {};
 };
 
 export default connect(

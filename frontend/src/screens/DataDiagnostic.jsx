@@ -12,7 +12,7 @@ import QuadrantChart from '../components/QuadrantChart';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
-import { fetchRoutes, fetchPrecomputedWaitAndTripData, handleGraphParams } from '../actions';
+import { fetchRoutes, handleGraphParams } from '../actions';
 
 const useStyles = makeStyles({
   title: {
@@ -25,24 +25,18 @@ const useStyles = makeStyles({
  * for all routes.  Access via /dataDiagnostic.
  */
 function DataDiagnostic(props) {
-  const {
-    graphParams,
-    routes,
-    myFetchRoutes,
-    myFetchPrecomputedWaitAndTripData,
-    myHandleGraphParams,
-  } = props;
+  const { graphParams, routes } = props;
 
   const agency = Agencies[0];
+  const myFetchRoutes = props.fetchRoutes;
+  const myHandleGraphParams = props.handleGraphParams;
 
   useEffect(() => {
-    myHandleGraphParams({agencyId: agency.id});
-
+    myHandleGraphParams({});
     if (!routes) {
-      myFetchRoutes({agencyId: agency.id});
+      myFetchRoutes();
     }
-    myFetchPrecomputedWaitAndTripData(graphParams);
-  }, [routes, myFetchRoutes, myFetchPrecomputedWaitAndTripData, graphParams, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
+  }, [routes, myFetchRoutes, graphParams, myHandleGraphParams]); // like componentDidMount, this runs only on first render
 
   const classes = useStyles();
 
@@ -81,17 +75,13 @@ function DataDiagnostic(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
-  graphParams: state.routes.graphParams,
-  waitTimesCache: state.routes.waitTimesCache,
-  tripTimesCache: state.routes.tripTimesCache,
+  routes: state.routes.data,
+  graphParams: state.graphParams,
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: props => dispatch(fetchRoutes(props)),
-  myFetchPrecomputedWaitAndTripData: params =>
-    dispatch(fetchPrecomputedWaitAndTripData(params)),
-  myHandleGraphParams: props => dispatch(handleGraphParams(props)),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
+  handleGraphParams: params => dispatch(handleGraphParams(params)),
 });
 
 export default connect(

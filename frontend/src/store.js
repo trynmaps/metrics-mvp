@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { createStore, applyMiddleware, combineReducers, compose } from 'redux';
 import { connectRoutes } from 'redux-first-router';
+import qs from 'qs';
 import thunk from 'redux-thunk';
 
 import routesMap from './routesMap';
@@ -13,7 +14,9 @@ const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
   : compose;
 
 export default function configureStore(preloadedState) {
-  const { reducer, middleware, enhancer } = connectRoutes(routesMap);
+  const { reducer, middleware, enhancer } = connectRoutes(routesMap, {
+    querySerializer: qs,
+  });
 
   const rootReducer = combineReducers({ ...reducers, location: reducer });
   const middlewares = applyMiddleware(thunk, middleware);

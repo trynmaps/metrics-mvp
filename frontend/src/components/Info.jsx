@@ -10,6 +10,7 @@ import {
   Crosshair,
 } from 'react-vis';
 import { AppBar, Box, Tab, Tabs, Typography } from '@material-ui/core';
+import InfoByDay from './InfoByDay';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import InfoTripSummary from './InfoTripSummary';
 import { CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
@@ -19,23 +20,22 @@ function Info(props) {
   const [tabValue, setTabValue] = React.useState(0);
 
   const {
-    graphData,
-    graphData2,
-    graphError,
+    tripMetrics,
+    tripMetricsError,
+    tripMetricsLoading,
     graphParams,
-    intervalData,
-    intervalData2,
-    intervalError,
     routes,
   } = props;
 
-  const headways = graphData && graphData.headways;
-  const waitTimes = graphData && graphData.waitTimes;
-  const tripTimes = graphData && graphData.tripTimes;
-  const headways2 = graphData2 && graphData2.headways;
-  const waitTimes2 = graphData2 && graphData2.waitTimes;
-  const tripTimes2 = graphData2 && graphData2.tripTimes;
-
+  const headways = tripMetrics ? tripMetrics.interval.headways : null;
+  const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
+  const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
+  const byDayData = tripMetrics ? tripMetrics.byDay : null;
+  
+  const headways2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2.headways : null;
+  const waitTimes2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2.waitTimes : null;
+  const tripTimes2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2.tripTimes : null;
+  // By day data is not requested for the second date range.
 
   const headwayData =
     headways && headways.histogram
@@ -129,10 +129,11 @@ function Info(props) {
   }
 
   const SUMMARY = 0;
-  const TIME_OF_DAY = 1;
-  const HEADWAYS = 2;
-  const WAITS = 3;
-  const TRIPS = 4;
+  const BY_DAY = 1;
+  const TIME_OF_DAY = 2;
+  const HEADWAYS = 3;
+  const WAITS = 4;
+  const TRIPS = 5;
 
   return (
     <div>
@@ -150,9 +151,10 @@ function Info(props) {
             label="Summary"
             {...a11yProps(SUMMARY)}
           />
+          <Tab style={{ minWidth: 72 }} label="By Day" {...a11yProps(BY_DAY)} />
           <Tab
             style={{ minWidth: 72 }}
-            label="Time of Day"
+            label="By Time of Day"
             {...a11yProps(TIME_OF_DAY)}
           />
           <Tab
@@ -177,8 +179,20 @@ function Info(props) {
         <div>
           <Box p={2} hidden={tabValue !== SUMMARY}>
             <InfoTripSummary
-              graphData={graphData}
-              graphData2={graphData2}
+              tripMetrics={tripMetrics}
+              graphParams={graphParams}
+              routes={routes}
+            />
+          </Box>
+
+          <Box p={2} hidden={tabValue !== BY_DAY}>
+            <Typography variant="h5" display="inline">
+              Performance by Day
+            </Typography>
+
+
+            <InfoByDay
+              byDayData={byDayData /* consider switching to trip metrics here for consistency */}
               graphParams={graphParams}
               routes={routes}
             />
@@ -189,11 +203,7 @@ function Info(props) {
               Performance by Time of Day
             </Typography>
 
-            <InfoIntervalsOfDay
-              intervalData={intervalData}
-              intervalData2={intervalData2}
-              intervalError={intervalError}
-            />
+            <InfoIntervalsOfDay tripMetrics={tripMetrics} />
           </Box>
 
           <Box p={2} hidden={tabValue !== HEADWAYS}>
@@ -276,8 +286,8 @@ function Info(props) {
             Wait Times
           </Typography>
           <p>
-            median wait time {Math.round(waitTimes.median)} minutes, max wait time{' '}
-            {Math.round(waitTimes.max)} minutes
+            median wait time {Math.round(waitTimes.median)} minutes, max wait
+            time {Math.round(waitTimes.max)} minutes
           </p>
           <XYPlot
             xDomain={[0, Math.max(60, Math.round(waitTimes.max) + 5)]}
@@ -417,11 +427,12 @@ function Info(props) {
         </Box>
       ) : null}
 
-      {graphError ? (
+      {tripMetricsError ? (
         <Box p={2}>
-          <code>{graphError}</code>
+          <code>Error: {tripMetricsError}</code>
         </Box>
       ) : null}
+      {tripMetricsLoading ? <Box p={2}>Loading...</Box> : null}
     </div>
   );
 }

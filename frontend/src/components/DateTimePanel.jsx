@@ -2,23 +2,24 @@ import React, { useState, Fragment } from 'react';
 import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
-import CircularProgress from '@material-ui/core/CircularProgress';      
+import CircularProgress from '@material-ui/core/CircularProgress';
+import Popover from '@material-ui/core/Popover';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
-import Popover from '@material-ui/core/Popover';
 import { connect } from 'react-redux';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
 import DateTimePopover from './DateTimePopover';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
-
 import {
-  TIME_RANGES, TIME_RANGE_ALL_DAY,
+  TIME_RANGES,
+  TIME_RANGE_ALL_DAY,
 } from '../UIConstants';
+import { typeForPage } from '../reducers/page';
+import { fullQueryFromParams } from '../routesMap';
 import { isLoadingRequest } from '../reducers/loadingReducer';
-import { handleGraphParams } from '../actions';
 import { getDaysOfTheWeekLabel } from '../helpers/dateTime';
 
 const useStyles = makeStyles(theme => ({
@@ -38,8 +39,9 @@ const useStyles = makeStyles(theme => ({
   column: {
     flexGrow: '1',
   },
-  nowrap: {
+  dateTime: {
     whiteSpace: 'nowrap',
+    display: 'flex',
   },
   root: {
     display: 'flex',
@@ -49,7 +51,6 @@ const useStyles = makeStyles(theme => ({
     padding: theme.spacing(2),
     maxWidth: 400,
   },
-  
 }));
 
 /**
@@ -63,7 +64,7 @@ const useStyles = makeStyles(theme => ({
  * @param {any} props
  */
 function DateTimePanel(props) {
-  const { graphParams, onGraphParams, dateRangeSupported } = props;
+  const { graphParams, dateRangeSupported } = props;
 
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -80,10 +81,22 @@ function DateTimePanel(props) {
   function handleInfoClose() {
     setInfoAnchorEl(null);
   }
-  
+
+  /**
+   * Remove second date range params and dispatch.
+   */  
   function handleRemove() {
-    onGraphParams({ secondDateRange: null });
-  }
+    const newGraphParams = Object.assign({}, graphParams);
+    newGraphParams.secondDateRange = null;
+
+    const currentType = typeForPage(props.currentPage);
+    
+    props.dispatch({
+      type: currentType,
+      payload: graphParams, // not affected by date changes
+      query: fullQueryFromParams(newGraphParams),
+    });
+  }    
 
   /**
    * convert yyyy/mm/dd to mm/dd/yyyy
@@ -96,7 +109,7 @@ function DateTimePanel(props) {
   const secondOpen = Boolean(anchorEl) && anchorEl.id === 'secondDateRange';
 
   let rangeInfo = null;
-  
+
   //
   // If a date range is set, either update the date label to the full
   // range if we support it, or else show an info icon that explains
@@ -108,7 +121,7 @@ function DateTimePanel(props) {
       
     if (!dateRangeSupported) {
       
-      rangeInfo =
+      rangeInfo = (
         <Fragment>
           <IconButton size="small" color="inherit" onClick={handleInfoClick}>
             <InfoIcon fontSize="small" />
@@ -126,11 +139,14 @@ function DateTimePanel(props) {
               horizontal: 'center',
             }}
           >
-            <div className={classes.popover}>Date ranges are implemented for
-            Dashboard statistics when a route, direction, and stops are selected.
-            Currently showing data for one day.</div>
-          </Popover>          
+            <div className={classes.popover}>
+              Date ranges are implemented for Dashboard statistics when a route,
+              direction, and stops are selected. Currently showing data for one
+              day.
+            </div>
+          </Popover>
         </Fragment>
+      );
     }
   }
 
@@ -194,14 +210,17 @@ function DateTimePanel(props) {
         onClick={handleClick}
         id={target}
       >
-        <div className={classes.nowrap}>
-          <Typography className={classes.heading} display="inline">
-            {dateLabel}&nbsp;
-          </Typography>
-          <Typography className={classes.secondaryHeading} display="inline">
-            {smallLabel}
-            { (target==="firstDateRange" && firstOpen) || (target==="secondDateRange" && secondOpen) ? <ExpandLessIcon /> : <ExpandMoreIcon /> } 
-          </Typography>
+        <div className={classes.dateTime}>
+          <span>
+            <Typography className={classes.heading} display="inline">
+              {dateLabel}&nbsp;
+            </Typography>
+            <Typography className={classes.secondaryHeading} display="inline">
+              {smallLabel}
+            </Typography>
+            </span>
+            { (target==="firstDateRange" && firstOpen) || (target==="secondDateRange" && secondOpen) ?
+               <ExpandLessIcon /> : <ExpandMoreIcon /> } 
         </div>
       </Button>
       { (target==="secondDateRange")
@@ -220,8 +239,7 @@ function DateTimePanel(props) {
   const secondButton = DatePanelButton({ target: 'secondDateRange' });
   
   return (
-    
-    
+
     <div className={classes.root}>
 
       { props.isLoading
@@ -249,13 +267,14 @@ function DateTimePanel(props) {
 }
 
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
-  isLoading: isLoadingRequest(state), 
+  graphParams: state.graphParams,
+  isLoading: isLoadingRequest(state),
+  currentPage: state.page,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    onGraphParams: params => dispatch(handleGraphParams(params)),
+    dispatch,
   };
 };
 

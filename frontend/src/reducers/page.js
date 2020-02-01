@@ -1,11 +1,11 @@
 import { NOT_FOUND } from 'redux-first-router';
 
-const components = {
+export const components = {
   ABOUT: 'About',
   ISOCHRONE: 'Isochrone',
   LANDING: 'Landing',
   DASHBOARD: 'Dashboard',
-  ROUTESCREEN: 'Route',
+  ROUTESCREEN: 'RouteScreen',
   DATADIAGNOSTIC: 'DataDiagnostic',
   [NOT_FOUND]: 'NotFound',
 };

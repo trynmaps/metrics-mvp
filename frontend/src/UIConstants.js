@@ -2,16 +2,18 @@
  * Constants for the UI that allow for reconfiguration.
  */
 
+import deepPurple from '@material-ui/core/colors/deepPurple';
 import grey from '@material-ui/core/colors/grey';
 import indigo from '@material-ui/core/colors/indigo';
-import purple from '@material-ui/core/colors/purple';
 
 // Colors definition:
 // This section its should be use to declare an object color
 // that contain the colors used in the application
 export const Colors = {
-  GRAY: grey[500],
-  PURPLE: purple[300],
+  GRAY: grey[400],
+  GRAY_DARK: grey[600],
+  PURPLE: deepPurple[200],
+  PURPLE_DARK: deepPurple[400],
   BLUE: 'blue',
   RED: 'red',
   GREEN: 'green',
@@ -19,7 +21,12 @@ export const Colors = {
 };
 
 // placeholder colors: gray and purple from nyc busstats
-export const CHART_COLORS = [Colors.GRAY, Colors.PURPLE, grey[300], purple[200]];
+export const CHART_COLORS = [
+  Colors.GRAY,
+  Colors.PURPLE,
+  Colors.GRAY_DARK,
+  Colors.PURPLE_DARK,
+];
 
 // use this percentile (e.g. 90th) for waits/travel times
 // for planning purposes the idea here is to filter out

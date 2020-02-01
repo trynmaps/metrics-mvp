@@ -9,6 +9,10 @@ export const MetricsBaseURL = process.env.REACT_APP_METRICS_BASE_URL;
 // index.html loads script tag from /api/js_config before React scripts, which sets window.OpentransitConfig object
 const config = window.OpentransitConfig;
 
+if (!config) {
+  throw new Error(`OpentransitConfig not defined (may be a server error)`);
+}
+
 export const S3Bucket = config.S3Bucket;
 export const Agencies = config.Agencies;
 export const WaitTimesVersion = config.WaitTimesVersion;
@@ -18,9 +22,9 @@ export const ArrivalsVersion = config.ArrivalsVersion;
 
 const agenciesMap = {};
 Agencies.forEach(agency => {
-    agenciesMap[agency.id] = agency;
+  agenciesMap[agency.id] = agency;
 });
 
 export function getAgency(agencyId) {
-   return agenciesMap[agencyId];
+  return agenciesMap[agencyId];
 }

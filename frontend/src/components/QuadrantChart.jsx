@@ -20,14 +20,9 @@ import { getAllWaits, getAllSpeeds } from '../helpers/routeCalculations';
  * @param {any} props
  */
 function QuadrantChart(props) {
-  const allWaits = getAllWaits(
-    props.waitTimesCache,
-    props.graphParams,
-    props.routes,
-  );
+  const allWaits = getAllWaits(props.precomputedStats.waitTimes, props.routes);
   const allSpeeds = getAllSpeeds(
-    props.tripTimesCache,
-    props.graphParams,
+    props.precomputedStats.tripTimes,
     props.routes,
   );
 
@@ -90,10 +85,9 @@ function QuadrantChart(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
-  graphParams: state.routes.graphParams,
-  waitTimesCache: state.routes.waitTimesCache,
-  tripTimesCache: state.routes.tripTimesCache,
+  routes: state.routes.data,
+  precomputedStats: state.precomputedStats,
+  graphParams: state.graphParams,
 });
 
 export default connect(mapStateToProps)(QuadrantChart);

@@ -100,20 +100,21 @@ class InfoIntervalsOfDay extends Component {
   }
 
   render() {
-    const { intervalData, intervalData2, intervalError } = this.props;
+    const { tripMetrics } = this.props;
 
-    const intervals = intervalData;
+    const intervals = tripMetrics.timeRanges;
+    const intervals2 = tripMetrics.timeRanges2;
     this.waitData = intervals
       ? intervals.map(this.mapInterval('waitTimes'))
       : null;
     this.tripData = intervals
       ? intervals.map(this.mapInterval('tripTimes'))
       : null;
-    this.waitData2 = intervalData2
-      ? intervalData2.map(this.mapInterval('waitTimes'))
+    this.waitData2 = intervals2
+      ? intervals2.map(this.mapInterval('waitTimes'))
       : null;
-    this.tripData2 = intervalData2
-      ? intervalData2.map(this.mapInterval('tripTimes'))
+    this.tripData2 = intervals2
+      ? intervals2.map(this.mapInterval('tripTimes'))
       : null;
 
     const legendItems = [
@@ -235,11 +236,9 @@ class InfoIntervalsOfDay extends Component {
             />
           </div>
         ) : null}
-        <code>{intervalError || ''}</code>
       </div>
     );
   }
 }
-
 
 export default InfoIntervalsOfDay;
