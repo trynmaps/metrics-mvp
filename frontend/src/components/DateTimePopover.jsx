@@ -20,11 +20,16 @@ import FormLabel from '@material-ui/core/FormLabel';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import {
-  TIME_RANGES, TIME_RANGE_ALL_DAY, DATE_RANGES,
-  MAX_DATE_RANGE, WEEKDAYS, WEEKENDS
+  TIME_RANGES,
+  TIME_RANGE_ALL_DAY,
+  DATE_RANGES,
+  MAX_DATE_RANGE,
+  WEEKDAYS,
+  WEEKENDS
 } from '../UIConstants';
-import { initialState } from '../reducers/routesReducer';
-import { handleGraphParams } from '../actions';
+import { typeForPage } from '../reducers/page';
+import { initialGraphParams } from '../reducers';
+import { fullQueryFromParams } from '../routesMap';
 import { allTrue, allFalse } from '../helpers/dateTime';
 
 const useStyles = makeStyles(theme => ({
@@ -32,9 +37,6 @@ const useStyles = makeStyles(theme => ({
     fontSize: theme.typography.pxToRem(12),
     color: theme.palette.text.secondary,
     textAlign: 'left',
-  },
-  nowrap: {
-    whiteSpace: 'nowrap',
   },
   formControl: {
     leftMargin: theme.spacing(1),
@@ -44,6 +46,7 @@ const useStyles = makeStyles(theme => ({
   closeButton: {
     position: 'absolute',
     right: theme.spacing(1),
+    top: theme.spacing(1),
     color: theme.palette.grey[500],
   },
 }));
@@ -62,15 +65,15 @@ function DateTimePopover(props) {
   const { graphParams, anchorEl, setAnchorEl } = props;
   const targetRange = anchorEl ? anchorEl.id : 'firstDateRange';
   
-  // Initialize our dateRangeParams state to the appropriate date range object.
+  // Initialize our local data range parameters state to the appropriate date range object.
   
-  const [ dateRangeParams, setDateRangeParams ] = useState(graphParams[targetRange] ||
-    initialState.graphParams.firstDateRange);
+  const [ localDateRangeParams, setLocalDateRangeParams ] = useState(graphParams[targetRange] ||
+    initialGraphParams.firstDateRange);
 
   // Whenever targetRange changes, we need to resync our local state with Redux
    
   useEffect(() => {
-    setDateRangeParams(graphParams[targetRange] || initialState.graphParams.firstDateRange);    
+    setLocalDateRangeParams(graphParams[targetRange] || initialGraphParams.firstDateRange);    
   }, [targetRange, graphParams])
 
 
@@ -81,28 +84,40 @@ function DateTimePopover(props) {
    * On close, we apply to local changes to the Redux state.
    */
   function handleClose() {
-    
-    const payload = {};
-    payload[targetRange] = dateRangeParams;
-    props.handleGraphParams(payload);
-    
+    applyGraphParams();    
     setAnchorEl(null);
   }
 
-  function handleDateRangeParams(datePayload) {
-    const newDateRangeParams = {...dateRangeParams, ...datePayload };
-    setDateRangeParams(newDateRangeParams);
+  /**
+   * Compute and dispatch new graph params.
+   */
+  function applyGraphParams() {
+
+    const newGraphParams = Object.assign({}, graphParams);
+    newGraphParams[targetRange] = localDateRangeParams;
+
+    const currentType = typeForPage(props.currentPage);
+    
+    props.dispatch({
+      type: currentType,
+      payload: graphParams, // not affected by date changes
+      query: fullQueryFromParams(newGraphParams),
+    });
   }
 
   function handleReset() {
-    const initialParams = initialState.graphParams.firstDateRange;
-    handleDateRangeParams(initialParams);
+    setLocalDateRangeParams(initialGraphParams.firstDateRange);
+  }
+
+  function updateLocalDateRangeParams(datePayload) {
+    const newLocalDateRangeParams = {...localDateRangeParams, ...datePayload };
+    setLocalDateRangeParams(newLocalDateRangeParams);
   }
 
   // convert the state's current time range to a string or the sentinel value
   const timeRange =
-    dateRangeParams.startTime && dateRangeParams.endTime
-      ? `${dateRangeParams.startTime}-${dateRangeParams.endTime}`
+    localDateRangeParams.startTime && localDateRangeParams.endTime
+      ? `${localDateRangeParams.startTime}-${localDateRangeParams.endTime}`
       : TIME_RANGE_ALL_DAY;
 
   /**
@@ -113,10 +128,10 @@ function DateTimePopover(props) {
    */
   const setTimeRange = myTimeRange => {
     if (myTimeRange.target.value === TIME_RANGE_ALL_DAY) {
-      handleDateRangeParams({ startTime: null, endTime: null });
+      updateLocalDateRangeParams({ startTime: null, endTime: null });
     } else {
       const timeRangeParts = myTimeRange.target.value.split('-');
-      handleDateRangeParams({
+      updateLocalDateRangeParams({
         startTime: timeRangeParts[0],
         endTime: timeRangeParts[1],
       });
@@ -150,7 +165,7 @@ function DateTimePopover(props) {
     if (!newDate) {
       // ignore empty date and leave at current value
     } else {
-      const startMoment = Moment(dateRangeParams.startDate);
+      const startMoment = Moment(localDateRangeParams.startDate);
       let newMoment = normalizedMoment(newDate);
 
       const payload = {
@@ -164,7 +179,7 @@ function DateTimePopover(props) {
         // end date cannot be more than 90 from start, so adjust the start 
         payload.startDate = newMoment.subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD');
       }
-      handleDateRangeParams(payload);
+      updateLocalDateRangeParams(payload);
     }
   };  
 
@@ -178,7 +193,7 @@ function DateTimePopover(props) {
       // ignore empty date and leave at current value
     } else {
       const startMoment = normalizedMoment(myDate.target.value); 
-      handleDateRangeParams({
+      updateLocalDateRangeParams({
         startDate: startMoment.format('YYYY-MM-DD'),
       });
     }
@@ -186,11 +201,11 @@ function DateTimePopover(props) {
 
   const setDateRange = daysBack => {
 
-    const initialParams = initialState.graphParams.firstDateRange;
+    const initialParams = initialGraphParams.firstDateRange;
     const date = initialParams.date;
     const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
 
-    handleDateRangeParams({
+    updateLocalDateRangeParams({
       date: date,
       startDate: startMoment.format('YYYY-MM-DD'),
     });
@@ -198,9 +213,9 @@ function DateTimePopover(props) {
 
   const handleDayChange = event => {
     const day = event.target.value;
-    const newDaysOfTheWeek = { ...dateRangeParams.daysOfTheWeek };
+    const newDaysOfTheWeek = { ...localDateRangeParams.daysOfTheWeek };
     newDaysOfTheWeek[day] = event.target.checked;
-    handleDateRangeParams({
+    updateLocalDateRangeParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
   };
@@ -211,7 +226,7 @@ function DateTimePopover(props) {
   const toggleDays = event => {
     const what = event.target.value === 'weekdays' ? WEEKDAYS : WEEKENDS;
 
-    const newDaysOfTheWeek = { ...dateRangeParams.daysOfTheWeek };
+    const newDaysOfTheWeek = { ...localDateRangeParams.daysOfTheWeek };
 
     // If all false -> set all to true; some false/true -> set all true; all true -> set all false;
     // That is, if all true, set to all false, otherwise set to all true.
@@ -222,7 +237,7 @@ function DateTimePopover(props) {
       newDaysOfTheWeek[what[i].value] = newValue;
     }
 
-    handleDateRangeParams({
+    updateLocalDateRangeParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
   }
@@ -262,11 +277,11 @@ function DateTimePopover(props) {
                 id="startDate"
                 label="Start Date"
                 type="date"
-                value={dateRangeParams.startDate}
+                value={localDateRangeParams.startDate}
                 InputProps={{
                   inputProps: {
-                    max: dateRangeParams.date,
-                    min: Moment(dateRangeParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
+                    max: localDateRangeParams.date,
+                    min: Moment(localDateRangeParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
                   },
                 }}
                 className={classes.textField}
@@ -284,7 +299,7 @@ function DateTimePopover(props) {
                 id="date"
                 label="End Date"
                 type="date"
-                value={dateRangeParams.date}
+                value={localDateRangeParams.date}
                 InputProps={{
                   inputProps: {
                     max: maxDate,
@@ -325,9 +340,9 @@ function DateTimePopover(props) {
                   <FormGroup>
                     <FormControlLabel
                       control={<Checkbox value="weekdays"
-                        checked={!allFalse(dateRangeParams.daysOfTheWeek, WEEKDAYS)}
-                        indeterminate={!allFalse(dateRangeParams.daysOfTheWeek, WEEKDAYS) &&
-                          !allTrue(dateRangeParams.daysOfTheWeek, WEEKDAYS)}
+                        checked={!allFalse(localDateRangeParams.daysOfTheWeek, WEEKDAYS)}
+                        indeterminate={!allFalse(localDateRangeParams.daysOfTheWeek, WEEKDAYS) &&
+                          !allTrue(localDateRangeParams.daysOfTheWeek, WEEKDAYS)}
                         onChange={toggleDays} />}
                       label="Weekdays"
                     />
@@ -336,7 +351,7 @@ function DateTimePopover(props) {
 
                     {WEEKDAYS.map(day =>
                       <FormControlLabel
-                        control={<Checkbox checked={dateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
+                        control={<Checkbox checked={localDateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
                         key={day.value}
                         label={day.label}
                       />)}
@@ -347,9 +362,9 @@ function DateTimePopover(props) {
 
                     <FormControlLabel
                       control={<Checkbox value="weekends"
-                        checked={!allFalse(dateRangeParams.daysOfTheWeek, WEEKENDS)}
-                        indeterminate={!allFalse(dateRangeParams.daysOfTheWeek, WEEKENDS) &&
-                          !allTrue(dateRangeParams.daysOfTheWeek, WEEKENDS)}
+                        checked={!allFalse(localDateRangeParams.daysOfTheWeek, WEEKENDS)}
+                        indeterminate={!allFalse(localDateRangeParams.daysOfTheWeek, WEEKENDS) &&
+                          !allTrue(localDateRangeParams.daysOfTheWeek, WEEKENDS)}
                         onChange={toggleDays} />}
                       label="Weekends"
                     />
@@ -358,7 +373,7 @@ function DateTimePopover(props) {
                     
                     {WEEKENDS.map(day =>
                       <FormControlLabel
-                        control={<Checkbox checked={dateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
+                        control={<Checkbox checked={localDateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
                         key={day.value}
                         label={day.label}
                       />)}
@@ -396,13 +411,13 @@ function DateTimePopover(props) {
 }
 
 const mapStateToProps = state => ({
-  graphParams: state.routes.graphParams,
+  graphParams: state.graphParams,
+  currentPage: state.page,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    handleGraphParams: params => dispatch(handleGraphParams(params)),
- /* todo isLoading: isLoadingRequest(state),*/     
+    dispatch,
   };
 };
 

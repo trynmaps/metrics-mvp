@@ -143,11 +143,11 @@ function InfoByDay(props) {
     tripData &&
     tripData.length > 0 &&
     tripData.reduce((accum, value) => accum + value.y, 0) / tripData.length;
-  const meanWaitData = [
+  const meanWaitData =  waitData && [
     { x: waitData[0].x, y: meanWait },
     { x: waitData[waitData.length - 1].x, y: meanWait },
   ];
-  const meanTripData = [
+  const meanTripData = tripData && [
     { x: tripData[0].x, y: meanWait + meanTrip },
     { x: tripData[tripData.length - 1].x, y: meanWait + meanTrip },
   ];
@@ -197,7 +197,7 @@ function InfoByDay(props) {
 
   // 5th chart: score
 
-  const scoreData = byDayData.map((day, index) => {
+  const scoreData = byDayData && byDayData.map((day, index) => {
     const grades = computeScores(
       waitData[index].y,
       longWaitData[index].y,
@@ -219,9 +219,20 @@ function InfoByDay(props) {
 
   const chartMargins = { left: 40, right: 10, top: 10, bottom: 60 };
 
+  // Currently not showing by day data for date range comparisons.
+
+  if (graphParams.secondDateRange) {
+    return (
+      <div>
+        <p />
+        Performance by day is not available when comparing date ranges.  Remove the second date range to see performance by day.
+      </div>
+    );
+  }
+
   // Show a prompt to choose a date range if a date range is not selected.
 
-  if (graphParams.date === graphParams.startDate) {
+  if (graphParams.firstDateRange.date === graphParams.firstDateRange.startDate) {
     return (
       <div>
         <p />

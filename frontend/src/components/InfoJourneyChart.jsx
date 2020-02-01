@@ -33,16 +33,13 @@ function InfoJourneyChart(props) {
   };
 
   /**
-   * Event handler for onNearestX.
-   * @param {Object} value Selected value.
-   * @param {index} index Index of the value in the data array.
+   * Event handler for onValueMouseOver.
+   * @param {Object} value Data point hovered over..
    * @private
    */
-  const onNearestX = (value, event) => {
-    console.log(value);
+  const onValue = (value) => {
     setCrosshairValues([value]);
   };
-
 
   const { firstWaits, secondWaits, firstTravels, secondTravels } = props;
 
@@ -76,7 +73,7 @@ function InfoJourneyChart(props) {
               <VerticalBarSeries
                 cluster="first"
                 color={CHART_COLORS[0]}
-                onValueMouseOver={onNearestX}
+                onValueMouseOver={onValue}
                 data={[
                   {x: 'Typical', y: firstWaits[0]},
                   {x: 'Planning', y: firstWaits[1]},
@@ -86,7 +83,7 @@ function InfoJourneyChart(props) {
               <VerticalBarSeries
                 cluster="first"
                 color={CHART_COLORS[1]}
-                onValueMouseOver={onNearestX}
+                onValueMouseOver={onValue}
                 data={[
                   {x: 'Typical', y: firstTravels[0]},
                   {x: 'Planning', y: firstTravels[1]},
@@ -96,7 +93,7 @@ function InfoJourneyChart(props) {
               <VerticalBarSeries
                 cluster="second"
                 color={CHART_COLORS[2]}
-                onValueMouseOver={onNearestX}
+                onValueMouseOver={onValue}
                 data={[
                   {x: 'Typical', y: secondWaits[0]},
                   {x: 'Planning', y: secondWaits[1]},
@@ -106,7 +103,7 @@ function InfoJourneyChart(props) {
               <VerticalBarSeries
                 cluster="second"
                 color={CHART_COLORS[3]}
-                onValueMouseOver={onNearestX}
+                onValueMouseOver={onValue}
                 data={[
                   {x: 'Typical', y: secondTravels[0]},
                   {x: 'Planning', y: secondTravels[1]},
