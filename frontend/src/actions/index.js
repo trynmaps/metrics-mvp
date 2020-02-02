@@ -169,6 +169,32 @@ export function resetTripMetrics() {
   };
 }
 
+export function fetchRoutes(params) {
+  return function(dispatch, getState) {
+    const agencyId = Agencies[0].id;
+
+    if (agencyId !== getState().routes.agencyId) {
+      dispatch({ type: 'REQUEST_ROUTES', agencyId });
+      axios
+        .get(generateRoutesURL(agencyId))
+        .then(response => {
+          const routes = response.data.routes;
+          routes.forEach(route => {
+            route.agencyId = agencyId;
+          });
+          dispatch({
+            type: 'RECEIVED_ROUTES',
+            data: routes,
+            agencyId,
+          });
+        })
+        .catch(err => {
+          dispatch({ type: 'ERROR_ROUTES', error: err });
+        });
+    }
+  };
+}
+
 export function fetchRouteMetrics(params) {
   const dates = computeDates(params);
 
@@ -242,32 +268,6 @@ export function fetchRouteMetrics(params) {
               ? err.response.data.errors[0].message
               : err.message;
           dispatch({ type: 'ERROR_ROUTE_METRICS', error: errStr });
-        });
-    }
-  };
-}
-
-export function fetchRoutes(params) {
-  return function(dispatch, getState) {
-    const agencyId = Agencies[0].id;
-
-    if (agencyId !== getState().routes.agencyId) {
-      dispatch({ type: 'REQUEST_ROUTES', agencyId });
-      axios
-        .get(generateRoutesURL(agencyId))
-        .then(response => {
-          const routes = response.data.routes;
-          routes.forEach(route => {
-            route.agencyId = agencyId;
-          });
-          dispatch({
-            type: 'RECEIVED_ROUTES',
-            data: routes,
-            agencyId,
-          });
-        })
-        .catch(err => {
-          dispatch({ type: 'ERROR_ROUTES', error: err });
         });
     }
   };
