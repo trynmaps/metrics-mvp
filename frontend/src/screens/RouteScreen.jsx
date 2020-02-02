@@ -221,7 +221,7 @@ const mapStateToProps = state => ({
   tripMetricsLoading: state.loading.TRIP_METRICS,
   routes: state.routes.data,
   graphParams: state.graphParams,
-  query: state.location.query,  
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => ({

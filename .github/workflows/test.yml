@@ -11,3 +11,7 @@ jobs:
       run: docker build --target flask -t opentransit/flask:latest .
     - name: Run tests
       run: docker run opentransit/flask:latest python -m unittest discover -s tests
+    - name: Build Docker react-dev image
+      run: docker build --target react-dev -t opentransit/react-dev:latest .
+    - name: Run lint
+      run: docker run opentransit/react-dev:latest npm run lint
