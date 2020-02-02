@@ -427,8 +427,8 @@ function handleReposition(
       () => {
         allowTransition.current = false;
         // textRef.current becomes null after going to the dashboard
-        // and scrolling there triggers this event handler. 
-        if (textRef.current) { 
+        // and scrolling there triggers this event handler.
+        if (textRef.current) {
           setTextFieldDOMRect(textRef.current.getBoundingClientRect());
         }
       },

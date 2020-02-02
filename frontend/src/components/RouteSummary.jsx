@@ -95,11 +95,13 @@ function RouteSummary(props) {
       </Fragment>
     ) : null;
 
-
   const popoverContentOnTimeRate =
     stats.onTimeRate != null ? (
       <Fragment>
-        On-time percentage is .... Probability of{' '}
+        The on-time percentage is the percentage of scheduled departure times
+        where a vehicle departed less than 5 minutes after the scheduled
+        departure time or less than 1 minute before the scheduled departure
+        time. Probability of{' '}
         {(stats.onTimeRate * 100).toFixed(1) /* be more precise than card */}%
         gets a score of {stats.onTimeRateScore}.
       </Fragment>

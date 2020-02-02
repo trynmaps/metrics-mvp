@@ -151,9 +151,7 @@ function RouteScreen(props) {
           </NavLink>
           <div className="page-title">{agency ? agency.title : null}</div>
           <div style={{ flexGrow: 1 }} />
-          <DateTimePanel
-            dateRangeSupported
-          />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
       <Paper className={breadCrumbsWrapper}>

@@ -194,6 +194,9 @@ export default function InfoTripSummary(props) {
 
   const popoverContentOnTimeRate = (
     <Fragment>
+      The on-time percentage is the percentage of scheduled departure times
+      where a vehicle departed less than 5 minutes after the scheduled departure
+      time or less than 1 minute before the scheduled departure time.
       Probability of{' '}
       {(onTimeRate * 100).toFixed(1) /* be more precise than card */}% gets a
       score of {scores.onTimeRateScore}.
