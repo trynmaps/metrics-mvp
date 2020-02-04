@@ -14,14 +14,14 @@ export default function MapShield(props) {
 
   if (routeText.endsWith('R') || routeText.endsWith('X')) {
     html =
-      `<div style="width:30px; height:${r * 2}px; ` +
+      `<div style="width:${r * 3}px; height:${r * 2}px; ` +
       `border-radius:${routeText.endsWith('X') ? r : 0}px; `;
   } else {
     // all other routes get circular shields
 
     html =
-      `<div style="width:${r * 2}px; height:${r * 2}px; ` +
-      `border-radius: ${r+1}px; `;
+      `<div style="width:${r * 3}px; height:${r * 2}px; ` +
+      `border-radius: ${r + 1}px; `;
   }
 
   html +=
@@ -29,8 +29,7 @@ export default function MapShield(props) {
       'border-style:solid; border-color:'}${color}; ` +
     `border-width: ${waitScaled / 1.5 + 1.0}px;` +
     `background-color:white;` +
-    `font-size:${75 + waitScaled * 15}%; font-weight: ${400 +
-     waitScaled * 75};
+    `font-size:${75 + waitScaled * 15}%; font-weight: ${400 + waitScaled * 75};
      display:flex; align-items: center;
      justify-content: center;">${routeText}</div>`;
 
