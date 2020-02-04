@@ -53,12 +53,10 @@ export default function InfoScoreCard(props) {
     setAnchorEl(null);
   }
 
-  const cardStyle = score => {
-    return {
-      background: score != null ? scoreBackgroundColor(score) : 'gray',
-      color: score != null ? scoreContrastColor(score) : 'black',
-      margin: 4,
-    };
+  const cardStyle = {
+    background: score != null ? scoreBackgroundColor(score) : 'gray',
+    color: score != null ? scoreContrastColor(score) : 'black',
+    margin: 4,
   };
 
   const rating =
@@ -66,7 +64,7 @@ export default function InfoScoreCard(props) {
 
   return (
     <Fragment>
-      <Grid item xs component={Paper} style={cardStyle(score)}>
+      <Grid item xs component={Paper} style={cardStyle}>
         <Box
           display="flex"
           flexDirection="column"

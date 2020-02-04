@@ -18,15 +18,6 @@ import {
 
 import { getAgency } from '../config';
 
-/**
- * Given an array of routes, return only the routes we want to show.
- */
-export function filterRoutes(routes) {
-  return routes.filter(route => {
-    return !isIgnoredRoute(route);
-  });
-}
-
 export function isIgnoredRoute(route) {
   const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
   return (
@@ -34,6 +25,15 @@ export function isIgnoredRoute(route) {
     routeHeuristics[route.id] &&
     routeHeuristics[route.id].ignoreRoute
   );
+}
+
+/**
+ * Given an array of routes, return only the routes we want to show.
+ */
+export function filterRoutes(routes) {
+  return routes.filter(route => {
+    return !isIgnoredRoute(route);
+  });
 }
 
 /**
@@ -191,16 +191,16 @@ export function getEndToEndTripTime(
   // if there is no trip time to the last stop, then use the highest trip time actually observed
 
   if (!tripTime) {
-    const tripTimes = getTripTimeStat(tripTimesForFirstStop, statIndex);
-    const stopIds = Object.keys(tripTimes);
+    const tripTimesMap = getTripTimeStat(tripTimesForFirstStop, statIndex);
+    const stopIds = Object.keys(tripTimesMap);
     tripTime = 0;
 
     for (let i = 0; i < stopIds.length; i++) {
       if (
-        tripTimes[stopIds[i]] > tripTime &&
+        tripTimesMap[stopIds[i]] > tripTime &&
         directionInfo.stop_geometry[stopIds[i]]
       ) {
-        tripTime = tripTimes[stopIds[i]];
+        tripTime = tripTimesMap[stopIds[i]];
         tripDistance =
           directionInfo.stop_geometry[stopIds[i]].distance - firstStopDistance;
       }

@@ -314,11 +314,4 @@ const mapStateToProps = state => ({
   routeStats: state.routeStats,
 });
 
-const mapDispatchToProps = dispatch => {
-  return {};
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(RouteSummary);
+export default connect(mapStateToProps)(RouteSummary);

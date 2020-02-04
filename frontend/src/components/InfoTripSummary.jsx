@@ -205,8 +205,8 @@ export default function InfoTripSummary(props) {
   const popoverContentLongWait = (
     <Fragment>
       Long wait probability is the chance a rider has of a wait of twenty
-      minutes or longer after arriving randomly at the "from" stop. Probability
-      of{' '}
+      minutes or longer after arriving randomly at the &quot;from&quot; stop.
+      Probability of{' '}
       {(longWaitProbability * 100).toFixed(1) /* be more precise than card */}%
       gets a score of {scores.longWaitScore}.
       <Box pt={2}>

@@ -293,6 +293,24 @@ function DateTimePanel(props) {
     });
   };
 
+  const allFalse = (dictionary, array) => {
+    for (let i = 0; i < array.length; i++) {
+      if (dictionary[array[i].value]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const allTrue = (dictionary, array) => {
+    for (let i = 0; i < array.length; i++) {
+      if (!dictionary[array[i].value]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   /**
    * Bulk toggle.
    */
@@ -313,24 +331,6 @@ function DateTimePanel(props) {
     applyGraphParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
-  };
-
-  const allFalse = (dictionary, array) => {
-    for (let i = 0; i < array.length; i++) {
-      if (dictionary[array[i].value]) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const allTrue = (dictionary, array) => {
-    for (let i = 0; i < array.length; i++) {
-      if (!dictionary[array[i].value]) {
-        return false;
-      }
-    }
-    return true;
   };
 
   const open = Boolean(anchorEl);

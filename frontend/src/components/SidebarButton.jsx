@@ -14,7 +14,7 @@ import TimelineRoundedIcon from '@material-ui/icons/TimelineRounded';
 import CodeRoundedIcon from '@material-ui/icons/CodeRounded';
 import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
 import Divider from '@material-ui/core/Divider';
-import { components } from '../reducers/page.js';
+import { components } from '../reducers/page';
 
 function SidebarButton(props) {
   const currentPage = props.currentPage;

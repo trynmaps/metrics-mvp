@@ -81,7 +81,7 @@ function RouteScreen(props) {
         // return paths with non null values
         return !!path;
       })
-      .map((path, index, paths) => {
+      .map((path, index) => {
         const hasNextValue = paths[index + 1];
         const param = params[index];
         const payload = {};
