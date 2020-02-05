@@ -25,7 +25,7 @@ import { metersToMiles } from '../helpers/routeCalculations';
 export function getTripDataSeries(routeMetrics, route, directionId) {
   const dirMetrics = routeMetrics
     ? routeMetrics.interval.directions.find(
-        dirMetrics => dirMetrics.directionId === directionId,
+        dm => dm.directionId === directionId,
       )
     : null;
 

@@ -136,34 +136,6 @@ export function spiderSelection(state = initialSpiderSelection, action) {
   }
 }
 
-const initialAgencyMetrics = {
-  variablesJson: null,
-  data: null,
-  statsByRouteId: {},
-};
-
-export function agencyMetrics(state = initialAgencyMetrics, action) {
-  switch (action.type) {
-    case 'RECEIVED_AGENCY_METRICS':
-      const agencyMetrics = action.data;
-      return {
-        ...state,
-        variablesJson: action.variablesJson,
-        data: agencyMetrics,
-        statsByRouteId: makeStatsByRouteId(agencyMetrics),
-      };
-    case 'REQUEST_AGENCY_METRICS':
-      return {
-        ...state,
-        variablesJson: action.variablesJson,
-        data: null,
-        statsByRouteId: {},
-      };
-    default:
-      return state;
-  }
-}
-
 function addAveragesForAllDirections(routeStats, property) {
   routeStats.forEach(function(stats) {
     let total = 0;
@@ -191,11 +163,14 @@ function addScores(stats) {
   );
 }
 
-function makeStatsByRouteId(agencyMetrics) {
-  const routeStats = agencyMetrics ? agencyMetrics.interval.routes : [];
+function makeStatsByRouteId(agencyMetricsData) {
+  const routeStats = agencyMetricsData ? agencyMetricsData.interval.routes : [];
   const rankedRouteStats = routeStats.filter(
     stats =>
-      !isIgnoredRoute({ agencyId: agencyMetrics.agencyId, id: stats.routeId }),
+      !isIgnoredRoute({
+        agencyId: agencyMetricsData.agencyId,
+        id: stats.routeId,
+      }),
   );
 
   addAveragesForAllDirections(routeStats, 'medianWaitTime');
@@ -231,6 +206,47 @@ function makeStatsByRouteId(agencyMetrics) {
   return statsByRouteId;
 }
 
+const initialAgencyMetrics = {
+  variablesJson: null,
+  data: null,
+  statsByRouteId: {},
+};
+
+export function agencyMetrics(state = initialAgencyMetrics, action) {
+  switch (action.type) {
+    case 'RECEIVED_AGENCY_METRICS':
+      return {
+        ...state,
+        variablesJson: action.variablesJson,
+        data: action.data,
+        statsByRouteId: makeStatsByRouteId(action.data),
+      };
+    case 'REQUEST_AGENCY_METRICS':
+      return {
+        ...state,
+        variablesJson: action.variablesJson,
+        data: null,
+        statsByRouteId: {},
+      };
+    default:
+      return state;
+  }
+}
+
+function makeSegmentsMap(routeMetricsData) {
+  const segmentsMap = {};
+
+  routeMetricsData.interval.directions.forEach(function(dirMetrics) {
+    const dirSegmentsMap = {};
+    dirMetrics.segments.forEach(function(segment) {
+      dirSegmentsMap[segment.fromStopId] = segment;
+    });
+
+    segmentsMap[dirMetrics.directionId] = dirSegmentsMap;
+  });
+  return segmentsMap;
+}
+
 const initialRouteMetrics = {
   variablesJson: null,
   data: null,
@@ -240,22 +256,11 @@ const initialRouteMetrics = {
 export function routeMetrics(state = initialRouteMetrics, action) {
   switch (action.type) {
     case 'RECEIVED_ROUTE_METRICS':
-      const segmentsMap = {};
-
-      action.data.interval.directions.forEach(function(dirMetrics) {
-        const dirSegmentsMap = {};
-        dirMetrics.segments.forEach(function(segment) {
-          dirSegmentsMap[segment.fromStopId] = segment;
-        });
-
-        segmentsMap[dirMetrics.directionId] = dirSegmentsMap;
-      });
-
       return {
         ...state,
         variablesJson: action.variablesJson,
         data: action.data,
-        segmentsMap,
+        segmentsMap: makeSegmentsMap(action.data),
       };
     case 'REQUEST_ROUTE_METRICS':
       return {
