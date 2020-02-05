@@ -61,6 +61,14 @@ then you'll see a guide to get in.
 
 To get started, see the Issues page. You may want to [identify good first issues](https://github.com/trynmaps/metrics-mvp/labels/Good%20First%20Issue).
 
+### Code Style
+
+This repository uses eslint to enforce a consistent style for frontend JavaScript code.
+
+Before committing, run `dev/docker-lint.sh` (Mac/Linux) or `dev\docker-lint.bat` (Windows) to check for style errors and automatically fix formatting issues. (You will need to run `docker-compose up` or `docker-compose build` at least once before the docker-lint script will work.)
+
+GitHub automatically runs tests for each push to check for eslint errors. If eslint reports any style errors, pull requests will show a failing check.
+
 ### Deploying to Heroku
 
 When you make a Pull Request, we would suggest you deploy your branch to Heroku so that other
