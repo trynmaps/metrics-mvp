@@ -36,6 +36,8 @@ function InfoByDay(props) {
   const [selectedOption, setSelectedOption] = useState(AVERAGE_TIME); // radio button starts on average time
   const [crosshairValues, setCrosshairValues] = useState([]); // tooltip starts out empty
 
+  const { byDayData, routes, graphParams } = props;
+
   /**
    * Event handler for radio buttons
    * @param {changeEvent} The change event on the radio buttons.
@@ -51,21 +53,6 @@ function InfoByDay(props) {
    */
   const onMouseLeave = () => {
     setCrosshairValues([]);
-  };
-
-  /**
-   * Event handler for onNearestX.
-   * @param {Object} value Selected value.
-   * @param {index} index Index of the value in the data array.
-   * @private
-   */
-  const onNearestX = (_value, { index }) => {
-    setCrosshairValues([waitData[index], tripData[index]]);
-  };
-
-  const onNearestXGeneric = (_value, { index }) => {
-    // TODO: need to make only one chart's crosshair visible at a time,
-    // this currently makes it appear on all charts: setCrosshairValues([_value]);
   };
 
   const computeDistance = (myGraphParams, myRoutes) => {
@@ -137,8 +124,6 @@ function InfoByDay(props) {
       };
     };
   };
-
-  const { byDayData, routes, graphParams } = props;
 
   const waitData =
     byDayData && byDayData.map(mapDays('waitTimes', selectedOption));
@@ -237,6 +222,21 @@ function InfoByDay(props) {
       </div>
     );
   }
+
+  /**
+   * Event handler for onNearestX.
+   * @param {Object} value Selected value.
+   * @param {index} index Index of the value in the data array.
+   * @private
+   */
+  const onNearestX = (_value, { index }) => {
+    setCrosshairValues([waitData[index], tripData[index]]);
+  };
+
+  const onNearestXGeneric = (/* _value, { index } */) => {
+    // TODO: need to make only one chart's crosshair visible at a time,
+    // this currently makes it appear on all charts: setCrosshairValues([_value]);
+  };
 
   return (
     <div>

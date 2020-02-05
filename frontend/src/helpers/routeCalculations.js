@@ -13,15 +13,6 @@ import lightGreen from '@material-ui/core/colors/lightGreen';
 
 import { getAgency } from '../config';
 
-/**
- * Given an array of routes, return only the routes we want to show.
- */
-export function filterRoutes(routes) {
-  return routes.filter(route => {
-    return !isIgnoredRoute(route);
-  });
-}
-
 export function isIgnoredRoute(route) {
   const routeHeuristics = getAgency(route.agencyId).routeHeuristics;
   return (
@@ -29,6 +20,15 @@ export function isIgnoredRoute(route) {
     routeHeuristics[route.id] &&
     routeHeuristics[route.id].ignoreRoute
   );
+}
+
+/**
+ * Given an array of routes, return only the routes we want to show.
+ */
+export function filterRoutes(routes) {
+  return routes.filter(route => {
+    return !isIgnoredRoute(route);
+  });
 }
 
 /**

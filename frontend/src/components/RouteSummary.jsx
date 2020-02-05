@@ -314,11 +314,4 @@ const mapStateToProps = state => ({
   statsByRouteId: state.agencyMetrics.statsByRouteId,
 });
 
-const mapDispatchToProps = dispatch => {
-  return {};
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(RouteSummary);
+export default connect(mapStateToProps)(RouteSummary);

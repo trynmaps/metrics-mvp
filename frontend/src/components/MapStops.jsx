@@ -89,11 +89,10 @@ class MapStops extends Component {
         html:
           `<svg viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
           // First we draw a white circle
-
           `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
           // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
-
-          `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
+          `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round"
+            stroke="${Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
           `</g>` +
           `</svg>`,
       });
@@ -121,10 +120,10 @@ class MapStops extends Component {
    * @returns {Number} The angle in degrees (where 0 is east, 90 is south)
    */
   angleFromTo = (fromPoint, toPoint) => {
-    const delta_x = toPoint.lon - fromPoint.lon;
+    const deltaX = toPoint.lon - fromPoint.lon;
     // Note that y is reversed due to latitude's postive direction being reverse of screen y
-    const delta_y = fromPoint.lat - toPoint.lat;
-    const rotation = Math.round((Math.atan2(delta_y, delta_x) * 180) / Math.PI);
+    const deltaY = fromPoint.lat - toPoint.lat;
+    const rotation = Math.round((Math.atan2(deltaY, deltaX) * 180) / Math.PI);
     return rotation;
   };
 
@@ -453,7 +452,7 @@ class MapStops extends Component {
       selectedRoute = routes.find(route => route.id === graphParams.routeId);
 
       if (selectedRoute) {
-        selectedRoute.directions.forEach((direction, index) => {
+        selectedRoute.directions.forEach(direction => {
           // plot only the selected direction if we have one, or else all directions
 
           if (
@@ -474,13 +473,20 @@ class MapStops extends Component {
       }
     }
 
-    const mapInstruction = !graphParams.directionId
-      ? 'Select a direction to see stops in that direction.'
-      : !graphParams.startStopId
-      ? 'Click an origin stop.'
-      : !graphParams.endStopId
-      ? 'Click a destination stop.'
-      : '';
+    function getMapInstruction() {
+      if (!graphParams.directionId) {
+        return 'Select a direction to see stops in that direction.';
+      }
+      if (!graphParams.startStopId) {
+        return 'Click an origin stop.';
+      }
+      if (!graphParams.endStopId) {
+        return 'Click a destination stop.';
+      }
+      return '';
+    }
+
+    const mapInstruction = getMapInstruction();
 
     return (
       <Map

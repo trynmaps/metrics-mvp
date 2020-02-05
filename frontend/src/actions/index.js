@@ -169,7 +169,7 @@ export function resetTripMetrics() {
   };
 }
 
-export function fetchRoutes(params) {
+export function fetchRoutes() {
   return function(dispatch, getState) {
     const agencyId = Agencies[0].id;
 
@@ -367,9 +367,8 @@ export function fetchArrivals(params) {
             url: s3Url,
           });
         })
-        .catch(err => {
+        .catch(() => {
           dispatch({ type: 'ERROR_ARRIVALS', error: 'No data.' });
-          console.error(err);
         });
     }
   };

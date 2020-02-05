@@ -141,6 +141,7 @@ export function getDistanceInMiles(
     }
     return miles;
   }
+  return null;
 }
 
 /**
