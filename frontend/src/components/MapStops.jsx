@@ -407,6 +407,7 @@ class MapStops extends Component {
         startStopId,
         endStopId,
       },
+      query: this.props.query,
     });
   };
 
@@ -517,6 +518,7 @@ class MapStops extends Component {
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
   precomputedStats: state.precomputedStats,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {
