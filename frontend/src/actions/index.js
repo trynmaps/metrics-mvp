@@ -201,7 +201,68 @@ export function resetTripMetrics() {
   };
 }
 
-export function fetchRoutes(params) {
+export function resetRouteStats() {
+  return function(dispatch) {
+    dispatch({ type: 'COMPUTED_ROUTE_STATS', stats: {} });
+  };
+}
+
+export function computeRouteStats() {
+  return function(dispatch, getState) {
+    const state = getState();
+    const routes = state.routes.data;
+    const { precomputedStats } = state;
+    if (routes) {
+      const routeStats = {};
+
+      filterRoutes(routes).forEach(function(route) {
+        routeStats[route.id] = {};
+      });
+
+      const allWaits = getAllWaits(precomputedStats.waitTimes, routes);
+      const waitRankCount = allWaits.length;
+      allWaits.forEach(function(waitObj, index) {
+        const routeId = waitObj.routeId;
+        const stats = routeStats[routeId];
+        if (stats) {
+          Object.assign(stats, waitObj);
+          stats.waitRank = index + 1;
+          stats.waitRankCount = waitRankCount;
+        }
+      });
+
+      const allSpeeds = getAllSpeeds(precomputedStats.tripTimes, routes);
+      const speedRankCount = allSpeeds.length;
+      allSpeeds.forEach(function(speedObj, index) {
+        const routeId = speedObj.routeId;
+        const stats = routeStats[routeId];
+        if (stats) {
+          Object.assign(stats, speedObj);
+          stats.speedRank = index + 1;
+          stats.speedRankCount = speedRankCount;
+        }
+      });
+
+      const allScores = getAllScores(routes, allWaits, allSpeeds);
+      const scoreRankCount = allScores.length;
+      allScores.forEach(function(scoreObj, index) {
+        const routeId = scoreObj.routeId;
+        const stats = routeStats[routeId];
+        if (stats) {
+          Object.assign(stats, scoreObj);
+          stats.scoreRank = index + 1;
+          stats.scoreRankCount = scoreRankCount;
+        }
+      });
+
+      dispatch({ type: 'COMPUTED_ROUTE_STATS', stats: routeStats });
+    } else {
+      dispatch(resetRouteStats());
+    }
+  };
+}
+
+export function fetchRoutes() {
   return function(dispatch) {
     const agencyId = Agencies[0].id;
     dispatch({ type: 'REQUEST_ROUTES' });
@@ -330,9 +391,8 @@ export function fetchArrivals(params) {
             url: s3Url,
           });
         })
-        .catch(err => {
+        .catch(() => {
           dispatch({ type: 'ERROR_ARRIVALS', error: 'No data.' });
-          console.error(err);
         });
     }
   };
@@ -397,67 +457,6 @@ export function handleGraphParams(params) {
       // when we don't have all params, clear graph data
 
       dispatch(resetTripMetrics());
-    }
-  };
-}
-
-export function resetRouteStats(params) {
-  return function(dispatch) {
-    dispatch({ type: 'COMPUTED_ROUTE_STATS', stats: {} });
-  };
-}
-
-export function computeRouteStats(params) {
-  return function(dispatch, getState) {
-    const state = getState();
-    const routes = state.routes.data;
-    const { precomputedStats } = state;
-    if (routes) {
-      const routeStats = {};
-
-      filterRoutes(routes).forEach(function(route) {
-        routeStats[route.id] = {};
-      });
-
-      const allWaits = getAllWaits(precomputedStats.waitTimes, routes);
-      const waitRankCount = allWaits.length;
-      allWaits.forEach(function(waitObj, index) {
-        const routeId = waitObj.routeId;
-        const stats = routeStats[routeId];
-        if (stats) {
-          Object.assign(stats, waitObj);
-          stats.waitRank = index + 1;
-          stats.waitRankCount = waitRankCount;
-        }
-      });
-
-      const allSpeeds = getAllSpeeds(precomputedStats.tripTimes, routes);
-      const speedRankCount = allSpeeds.length;
-      allSpeeds.forEach(function(speedObj, index) {
-        const routeId = speedObj.routeId;
-        const stats = routeStats[routeId];
-        if (stats) {
-          Object.assign(stats, speedObj);
-          stats.speedRank = index + 1;
-          stats.speedRankCount = speedRankCount;
-        }
-      });
-
-      const allScores = getAllScores(routes, allWaits, allSpeeds);
-      const scoreRankCount = allScores.length;
-      allScores.forEach(function(scoreObj, index) {
-        const routeId = scoreObj.routeId;
-        const stats = routeStats[routeId];
-        if (stats) {
-          Object.assign(stats, scoreObj);
-          stats.scoreRank = index + 1;
-          stats.scoreRankCount = scoreRankCount;
-        }
-      });
-
-      dispatch({ type: 'COMPUTED_ROUTE_STATS', stats: routeStats });
-    } else {
-      dispatch(resetRouteStats());
     }
   };
 }

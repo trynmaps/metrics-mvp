@@ -121,7 +121,9 @@ function ControlPanel(props) {
    * Handle mouseout event on Select TO & From dropdown list item.
    */
   function handleItemMouseOut(node) {
-    node && node.classList.remove('on-hover');
+    if (node) {
+      node.classList.remove('on-hover');
+    }
   }
   /**
    * Handle Select component close

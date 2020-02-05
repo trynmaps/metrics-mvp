@@ -25,6 +25,33 @@ import {
   scoreContrastColor,
 } from '../helpers/routeCalculations';
 
+function getComparisonFunction(order, orderBy) {
+  // Sort null values to bottom regardless of ascending/descending
+  const factor = order === 'desc' ? 1 : -1;
+  return (a, b) => {
+    const aValue = a[orderBy];
+    const bValue = b[orderBy];
+
+    if (aValue == null && bValue == null) {
+      return 0;
+    }
+    if (aValue == null) {
+      return 1;
+    }
+    if (bValue == null) {
+      return -1;
+    }
+
+    if (bValue < aValue) {
+      return -factor;
+    }
+    if (bValue > aValue) {
+      return factor;
+    }
+    return 0;
+  };
+}
+
 /**
  * Sorts the given array by an object property.  Equal values are ordered by array index.
  *
@@ -57,33 +84,6 @@ function stableSort(array, sortOrder, orderBy) {
     return a[1] - b[1];
   });
   return stabilizedThis.map(el => el[0]);
-}
-
-function getComparisonFunction(order, orderBy) {
-  // Sort null values to bottom regardless of ascending/descending
-  const factor = order === 'desc' ? 1 : -1;
-  return (a, b) => {
-    const aValue = a[orderBy];
-    const bValue = b[orderBy];
-
-    if (aValue == null && bValue == null) {
-      return 0;
-    }
-    if (aValue == null) {
-      return 1;
-    }
-    if (bValue == null) {
-      return -1;
-    }
-
-    if (bValue < aValue) {
-      return -factor;
-    }
-    if (bValue > aValue) {
-      return factor;
-    }
-    return 0;
-  };
 }
 
 const headRows = [
@@ -477,11 +477,4 @@ const mapStateToProps = state => ({
   query: state.location.query,
 });
 
-const mapDispatchToProps = dispatch => {
-  return {};
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(RouteTable);
+export default connect(mapStateToProps)(RouteTable);
