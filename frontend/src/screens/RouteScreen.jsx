@@ -65,6 +65,7 @@ function RouteScreen(props) {
 
     let link = {
       type: 'ROUTESCREEN',
+      query: props.query,
     };
     const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
     const labels = (param, title) => {

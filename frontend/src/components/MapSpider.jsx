@@ -129,6 +129,7 @@ class MapSpider extends Component {
               startStopId: startMarker.stopId,
               endStopId: lastStop.stopId,
             },
+            query: this.props.query,
           });
         }}
       ></Marker>
@@ -293,6 +294,7 @@ class MapSpider extends Component {
               startStopId: startMarker.stopId,
               endStopId: downstreamStops[i + 1].id,
             },
+            query: this.props.query,
           });
         }}
       >
@@ -528,6 +530,7 @@ const mapStateToProps = state => ({
   routeStats: state.routeStats,
   graphParams: state.graphParams,
   spiderSelection: state.spiderSelection,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {
