@@ -405,6 +405,7 @@ class MapStops extends Component {
         startStopId,
         endStopId,
       },
+      query: this.props.query,
     });
   };
 
@@ -515,6 +516,7 @@ class MapStops extends Component {
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
   segmentMetricsMap: state.routeMetrics.segmentsMap,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {
