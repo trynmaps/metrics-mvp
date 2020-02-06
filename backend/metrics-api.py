@@ -22,7 +22,9 @@ CORS(app)
 def ping():
     return "pong"
 
-app.add_url_rule('/api/graphql', view_func = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = True))
+app.add_url_rule('/api/graphiql', view_func = GraphQLView.as_view('graphiql', schema = schema.metrics_api, graphiql = True))
+
+app.add_url_rule('/api/graphql', view_func = GraphQLView.as_view('graphql', schema = schema.metrics_api, graphiql = False))
 
 def make_error_response(params, error, status):
     data = {

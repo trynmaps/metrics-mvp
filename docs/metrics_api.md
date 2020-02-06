@@ -32,6 +32,9 @@ Queries can also be sent via POST, with the Content-Type `application/json`, and
 }
 ```
 
+For ease of testing the GraphQL API, there is another endpoint, `/api/graphiql`, that provides a web user interface for making GraphQL queries from your browser.
+In a development environment, the URL is http://localhost:5000/api/graphiql .
+
 For more information about calling GraphQL APIs over HTTP, see https://graphql.org/learn/serving-over-http/ . For more information about GraphQL in general, see https://graphql.org/learn/ .
 
 # Structure of a GraphQL Query
