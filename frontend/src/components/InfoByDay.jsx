@@ -334,7 +334,7 @@ function InfoByDay(props) {
             width={300}
             items={legendItems}
           />
-          On Time %
+          On-Time %
           <XYPlot
             xType="ordinal"
             height={300}

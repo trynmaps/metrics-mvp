@@ -345,7 +345,7 @@ export default function InfoTripSummary(props) {
               />
               <InfoScoreCard
                 score={scores.onTimeRateScore}
-                title="On Time %"
+                title="On-Time %"
                 largeValue={Math.round(onTimeRate * 100)}
                 smallValue="%"
                 bottomContent={
