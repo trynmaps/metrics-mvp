@@ -440,6 +440,8 @@ The root query object for the API.
 
 ### AgencyMetrics
 
+Metrics for a particular transit agency.
+
 | Field Name | Type | Description |
 | --- | --- | --- |
 | `agencyId` | `String` | ID of the transit agency. |
@@ -491,7 +493,7 @@ Note: If the interval spans multiple dates, the `medianWaitTime`, `averageSpeed`
 #### Parameters for `averageSpeed`
 
 | Parameter Name | Type | Default | Description |
-| --- | --- | --- |
+| --- | --- | --- | --- |
 | `units` | `String!` | mph | Units for speed (km/h or mph). |
 
 ### SegmentIntervalMetrics
