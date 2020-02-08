@@ -90,9 +90,7 @@ function QuadrantChart(props) {
 }
 
 const mapStateToProps = state => ({
-  // routes: state.routes.data,
   statsByRouteId: state.agencyMetrics.statsByRouteId,
-  // graphParams: state.graphParams,
 });
 
 export default connect(mapStateToProps)(QuadrantChart);

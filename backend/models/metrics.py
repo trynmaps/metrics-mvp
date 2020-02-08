@@ -260,94 +260,6 @@ class RouteMetrics:
     def get_route_config(self):
         return self.agency_metrics.get_route_config(self.route_id)
 
-    def get_segment_stats(self, direction_id, rng: Range):
-        route_config = self.agency_metrics.get_route_config(self.route_id)
-
-        dir_info = route_config.get_direction_info(direction_id)
-        if dir_info is None:
-            return None
-
-        stop_ids = dir_info.get_stop_ids()
-
-        segment_stats = []
-
-        for index in range(len(stop_ids) - 1):
-            next_index = index + 1
-            from_stop_id = stop_ids[index]
-            to_stop_id = stop_ids[next_index]
-
-            median_trip_time = self.agency_metrics.get_median_trip_time(
-                self.route_id,
-                direction_id,
-                from_stop_id,
-                to_stop_id,
-                rng
-            )
-
-            num_trips = self.agency_metrics.get_num_trips(
-                self.route_id,
-                direction_id,
-                from_stop_id,
-                to_stop_id,
-                rng
-            )
-
-            segment_stats.append({
-                'from_stop_id': from_stop_id,
-                'to_stop_id': to_stop_id,
-                'median_trip_time': median_trip_time,
-                'num_trips': num_trips,
-            })
-
-        return segment_stats
-
-    def get_cumulative_segment_stats(self, direction_id, rng: Range):
-        agency_metrics = self.agency_metrics
-        route_config = agency_metrics.get_route_config(self.route_id)
-
-        dir_info = route_config.get_direction_info(direction_id)
-        if dir_info is None:
-            return None
-
-        stop_ids = dir_info.get_stop_ids()
-
-        segment_stats = []
-
-        from_stop_id, end_stop_id = dir_info.get_endpoint_stop_ids()
-
-        from_stop_index = stop_ids.index(from_stop_id)
-
-        for index in range(from_stop_index + 1, len(stop_ids)):
-            to_stop_id = stop_ids[index]
-
-            median_trip_time = self.agency_metrics.get_median_trip_time(
-                self.route_id,
-                direction_id,
-                from_stop_id,
-                to_stop_id,
-                rng
-            )
-
-            num_trips = self.agency_metrics.get_num_trips(
-                self.route_id,
-                direction_id,
-                from_stop_id,
-                to_stop_id,
-                rng
-            )
-
-            segment_stats.append({
-                'from_stop_id': from_stop_id,
-                'to_stop_id': to_stop_id,
-                'median_trip_time': median_trip_time,
-                'num_trips': num_trips,
-            })
-
-            if to_stop_id == end_stop_id:
-                break
-
-        return segment_stats
-
     def get_scheduled_trip_times(self, direction_id, start_stop_id, end_stop_id, rng: Range):
         return self._get_trip_times(direction_id, start_stop_id, end_stop_id, rng, self.get_timetable_data_frame)
 
@@ -435,6 +347,33 @@ class RouteMetrics:
         else:
             return np.concatenate(headway_min_arr)
 
+class SegmentIntervalMetrics:
+    def __init__(self, agency_metrics, route_id, direction_id, from_stop_id, to_stop_id, rng):
+        self.agency_metrics = agency_metrics
+        self.route_id = route_id
+        self.direction_id = direction_id
+        self.from_stop_id = from_stop_id
+        self.to_stop_id = to_stop_id
+        self.rng = rng
+
+    def get_median_trip_time(self):
+        return self.agency_metrics.get_median_trip_time(
+            self.route_id,
+            self.direction_id,
+            self.from_stop_id,
+            self.to_stop_id,
+            self.rng
+        )
+
+    def get_num_trips(self):
+        return self.agency_metrics.get_num_trips(
+            self.route_id,
+            self.direction_id,
+            self.from_stop_id,
+            self.to_stop_id,
+            self.rng
+        )
+
 class AgencyMetrics:
     def __init__(self, agency_id):
         self.agency_id = agency_id
@@ -470,6 +409,49 @@ class AgencyMetrics:
 
     def get_route_ids(self):
         return self.get_route_configs().keys()
+
+    def get_segment_interval_metrics(self, route_id, direction_id, rng: Range):
+        route_config = self.get_route_config(route_id)
+
+        dir_info = route_config.get_direction_info(direction_id)
+        if dir_info is None:
+            return None
+
+        stop_ids = dir_info.get_stop_ids()
+
+        segment_metrics_arr = []
+
+        for index in range(len(stop_ids) - 1):
+            next_index = index + 1
+            from_stop_id = stop_ids[index]
+            to_stop_id = stop_ids[next_index]
+            segment_metrics_arr.append(SegmentIntervalMetrics(self, route_id, direction_id, from_stop_id, to_stop_id, rng))
+
+        return segment_metrics_arr
+
+    def get_cumulative_segment_interval_metrics(self, route_id, direction_id, rng: Range):
+        route_config = self.get_route_config(route_id)
+
+        dir_info = route_config.get_direction_info(direction_id)
+        if dir_info is None:
+            return None
+
+        stop_ids = dir_info.get_stop_ids()
+
+        segment_metrics_arr = []
+
+        from_stop_id, end_stop_id = dir_info.get_endpoint_stop_ids()
+
+        from_stop_index = stop_ids.index(from_stop_id)
+
+        for index in range(from_stop_index + 1, len(stop_ids)):
+            to_stop_id = stop_ids[index]
+            segment_metrics_arr.append(SegmentIntervalMetrics(self, route_id, direction_id, from_stop_id, to_stop_id, rng))
+
+            if to_stop_id == end_stop_id:
+                break
+
+        return segment_metrics_arr
 
     def get_median_trip_time(self, route_id, direction_id, start_stop_id, end_stop_id, rng: Range):
         all_trip_times = []

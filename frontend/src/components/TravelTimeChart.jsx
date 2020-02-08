@@ -139,11 +139,6 @@ function TravelTimeChart(props) {
         : '?'}{' '}
       mph
       <br />
-      Distance:{' '}
-      {distanceForDirection != null ? distanceForDirection.toFixed(1) : '?'} mi
-      &nbsp;&nbsp; Stops: {numStops > 0 ? numStops : '?'} &nbsp;&nbsp; Completed
-      trips: {numTrips != null ? numTrips : '0'}
-      <br />
       {/* set the y domain to start at zero and end at highest value (which is not always
          the end to end travel time due to spikes in the data) */}
       <XYPlot
@@ -224,6 +219,10 @@ function TravelTimeChart(props) {
         width={300}
         items={legendItems}
       />
+      Distance:{' '}
+      {distanceForDirection != null ? distanceForDirection.toFixed(1) : '?'} mi
+      &nbsp;&nbsp; Stops: {numStops > 0 ? numStops : '?'} &nbsp;&nbsp; Completed
+      trips: {numTrips != null ? numTrips : '0'}
     </Fragment>
   ) : (
     <Fragment>Select a direction to see the travel time chart.</Fragment>

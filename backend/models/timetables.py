@@ -132,95 +132,105 @@ def match_schedule_to_actual_times(scheduled_times, actual_times, early_sec=60, 
     #
     # It is possible that some actual arrival/departure times may not match any scheduled arrival/departure times.
 
-    actual_headways = np.r_[np.nan, metrics.compute_headway_minutes(actual_times)]
+    if len(actual_times) > 0:
+        actual_headways = np.r_[np.nan, metrics.compute_headway_minutes(actual_times)]
 
-    # determine the next actual arrival time after each scheduled arrival time
-    next_actual_time_indices = np.searchsorted(actual_times, scheduled_times)
-    actual_times_padded = np.r_[actual_times, np.nan]
-    actual_headways_padded = np.r_[actual_headways, np.nan]
-    next_actual_times = actual_times_padded[next_actual_time_indices]
+        # determine the next actual arrival time after each scheduled arrival time
+        next_actual_time_indices = np.searchsorted(actual_times, scheduled_times)
+        actual_times_padded = np.r_[actual_times, np.nan]
+        actual_headways_padded = np.r_[actual_headways, np.nan]
+        next_actual_times = actual_times_padded[next_actual_time_indices]
 
-    next_actual_headways = actual_headways_padded[next_actual_time_indices]
+        next_actual_headways = actual_headways_padded[next_actual_time_indices]
 
-    next_actual_deltas = next_actual_times - scheduled_times
-    np.place(next_actual_deltas, pd.isnull(next_actual_deltas), np.inf)
+        next_actual_deltas = next_actual_times - scheduled_times
+        np.place(next_actual_deltas, pd.isnull(next_actual_deltas), np.inf)
 
-    # determine the previous actual arrival time before each scheduled arrival time
-    prev_actual_times = np.r_[np.nan, actual_times][next_actual_time_indices]
+        # determine the previous actual arrival time before each scheduled arrival time
+        prev_actual_times = np.r_[np.nan, actual_times][next_actual_time_indices]
 
-    prev_actual_headways = np.r_[np.nan, actual_headways][next_actual_time_indices]
+        prev_actual_headways = np.r_[np.nan, actual_headways][next_actual_time_indices]
 
-    prev_actual_deltas = prev_actual_times - scheduled_times
-    np.place(prev_actual_deltas, pd.isnull(prev_actual_deltas), -np.inf)
+        prev_actual_deltas = prev_actual_times - scheduled_times
+        np.place(prev_actual_deltas, pd.isnull(prev_actual_deltas), -np.inf)
 
-    # determine the 'closest' actual arrival/departure time, either the next or previous.
-    # however, if either the previous or next actual arrival/departure time (but not both) are within the on-time interval,
-    # then use the one that is within the on-time interval, even if it is not necessarily the closest to the scheduled time
+        # determine the 'closest' actual arrival/departure time, either the next or previous.
+        # however, if either the previous or next actual arrival/departure time (but not both) are within the on-time interval,
+        # then use the one that is within the on-time interval, even if it is not necessarily the closest to the scheduled time
 
-    is_next_closer = (next_actual_deltas <= -prev_actual_deltas)
-    prev_on_time = (prev_actual_deltas >= -early_sec)
-    next_on_time = (next_actual_deltas <= late_sec)
+        is_next_closer = (next_actual_deltas <= -prev_actual_deltas)
+        prev_on_time = (prev_actual_deltas >= -early_sec)
+        next_on_time = (next_actual_deltas <= late_sec)
 
-    next_is_best = (((prev_on_time & next_on_time) | (~prev_on_time & ~next_on_time)) & is_next_closer) | (~prev_on_time & next_on_time)
+        next_is_best = (((prev_on_time & next_on_time) | (~prev_on_time & ~next_on_time)) & is_next_closer) | (~prev_on_time & next_on_time)
 
-    closest_actual_times = np.where(next_is_best, next_actual_times, prev_actual_times)
-    closest_actual_headways = np.where(next_is_best, next_actual_headways, prev_actual_headways)
-    closest_actual_deltas = closest_actual_times - scheduled_times
+        closest_actual_times = np.where(next_is_best, next_actual_times, prev_actual_times)
+        closest_actual_headways = np.where(next_is_best, next_actual_headways, prev_actual_headways)
+        closest_actual_deltas = closest_actual_times - scheduled_times
 
-    # it's possible that one actual arrival may be the closest arrival to multiple scheduled arrival times,
-    # for example if some scheduled trips didn't actually occur.
-    # find consecutive scheduled times with the same actual arrival time, and ignore all duplicate actual arrival times
-    # except the one that is closest to the scheduled time.
+        # it's possible that one actual arrival may be the closest arrival to multiple scheduled arrival times,
+        # for example if some scheduled trips didn't actually occur.
+        # find consecutive scheduled times with the same actual arrival time, and ignore all duplicate actual arrival times
+        # except the one that is closest to the scheduled time.
 
-    is_new_closest_actual_time = np.diff(closest_actual_times, prepend=-999999) != 0
-    is_next_new_closest_actual_time = np.r_[is_new_closest_actual_time[1:], True]
+        is_new_closest_actual_time = np.diff(closest_actual_times, prepend=-999999) != 0
+        is_next_new_closest_actual_time = np.r_[is_new_closest_actual_time[1:], True]
 
-    next_closest_actual_deltas = np.r_[closest_actual_deltas[1:], 999999]
-    prev_closest_actual_deltas = np.r_[999999, closest_actual_deltas[:-1]]
+        next_closest_actual_deltas = np.r_[closest_actual_deltas[1:], 999999]
+        prev_closest_actual_deltas = np.r_[999999, closest_actual_deltas[:-1]]
 
-    abs_closest_actual_deltas = np.abs(closest_actual_deltas)
-    abs_next_closest_actual_deltas = np.abs(next_closest_actual_deltas)
-    abs_prev_closest_actual_deltas = np.abs(prev_closest_actual_deltas)
+        abs_closest_actual_deltas = np.abs(closest_actual_deltas)
+        abs_next_closest_actual_deltas = np.abs(next_closest_actual_deltas)
+        abs_prev_closest_actual_deltas = np.abs(prev_closest_actual_deltas)
 
-    with np.errstate(invalid="ignore"):
-        closer_than_next = is_next_new_closest_actual_time | (abs_closest_actual_deltas <= abs_next_closest_actual_deltas)
-        closer_than_prev = (abs_closest_actual_deltas < abs_prev_closest_actual_deltas)
+        with np.errstate(invalid="ignore"):
+            closer_than_next = is_next_new_closest_actual_time | (abs_closest_actual_deltas <= abs_next_closest_actual_deltas)
+            closer_than_prev = (abs_closest_actual_deltas < abs_prev_closest_actual_deltas)
 
-    is_match = (is_new_closest_actual_time & closer_than_next) | (~is_new_closest_actual_time & closer_than_prev & closer_than_next)
-    no_match = ~is_match
-
-    matching_actual_times = np.where(no_match, np.nan, closest_actual_times)
-    matching_actual_headways = np.where(no_match, np.nan, closest_actual_headways)
-    matching_actual_deltas = np.where(no_match, np.inf, closest_actual_deltas)
-
-    # in some situations, a particular actual arrival time may not be the closest arrival time to any scheduled arrival time,
-    # so matching_actual_times will have np.nan in that position even though the scheduled trip did actually occur.
-    # to handle this case, determine if the previous or next actual arrival time didn't match the previous or next scheduled arrival time.
-    # if this is the case, use this time to replace np.nan in matching_actual_times.
-
-    if len(scheduled_times):
-        prev_matching_arrivals = np.r_[np.nan, matching_actual_times[:-1]]
-        next_matching_arrivals = np.r_[matching_actual_times[1:], np.nan]
-
-        prev_is_unmatched = no_match & np.greater(prev_actual_times, prev_matching_arrivals, where=(np.isfinite(prev_actual_times) & np.isfinite(prev_matching_arrivals)))
-        next_is_unmatched = no_match & ~prev_is_unmatched & np.less(next_actual_times, next_matching_arrivals, where=(np.isfinite(next_actual_times) & np.isfinite(next_matching_arrivals)))
-
-        matching_actual_times = np.where(prev_is_unmatched, prev_actual_times, matching_actual_times)
-        matching_actual_headways = np.where(prev_is_unmatched, prev_actual_headways, matching_actual_headways)
-        matching_actual_deltas = np.where(prev_is_unmatched, prev_actual_deltas, matching_actual_deltas)
-
-        matching_actual_times = np.where(next_is_unmatched, next_actual_times, matching_actual_times)
-        matching_actual_headways = np.where(next_is_unmatched, next_actual_headways, matching_actual_headways)
-        matching_actual_deltas = np.where(next_is_unmatched, next_actual_deltas, matching_actual_deltas)
-
-        is_match = is_match | prev_is_unmatched | next_is_unmatched
+        is_match = (is_new_closest_actual_time & closer_than_next) | (~is_new_closest_actual_time & closer_than_prev & closer_than_next)
         no_match = ~is_match
 
-    with np.errstate(invalid="ignore"):
-        early = is_match & (matching_actual_deltas < -early_sec)
-        late = is_match & (matching_actual_deltas > late_sec)
+        matching_actual_times = np.where(no_match, np.nan, closest_actual_times)
+        matching_actual_headways = np.where(no_match, np.nan, closest_actual_headways)
+        matching_actual_deltas = np.where(no_match, np.inf, closest_actual_deltas)
 
-    on_time = is_match & ~early & ~late
+        # in some situations, a particular actual arrival time may not be the closest arrival time to any scheduled arrival time,
+        # so matching_actual_times will have np.nan in that position even though the scheduled trip did actually occur.
+        # to handle this case, determine if the previous or next actual arrival time didn't match the previous or next scheduled arrival time.
+        # if this is the case, use this time to replace np.nan in matching_actual_times.
+
+        if len(scheduled_times):
+            prev_matching_arrivals = np.r_[np.nan, matching_actual_times[:-1]]
+            next_matching_arrivals = np.r_[matching_actual_times[1:], np.nan]
+
+            prev_is_unmatched = no_match & np.greater(prev_actual_times, prev_matching_arrivals, where=(np.isfinite(prev_actual_times) & np.isfinite(prev_matching_arrivals)))
+            next_is_unmatched = no_match & ~prev_is_unmatched & np.less(next_actual_times, next_matching_arrivals, where=(np.isfinite(next_actual_times) & np.isfinite(next_matching_arrivals)))
+
+            matching_actual_times = np.where(prev_is_unmatched, prev_actual_times, matching_actual_times)
+            matching_actual_headways = np.where(prev_is_unmatched, prev_actual_headways, matching_actual_headways)
+            matching_actual_deltas = np.where(prev_is_unmatched, prev_actual_deltas, matching_actual_deltas)
+
+            matching_actual_times = np.where(next_is_unmatched, next_actual_times, matching_actual_times)
+            matching_actual_headways = np.where(next_is_unmatched, next_actual_headways, matching_actual_headways)
+            matching_actual_deltas = np.where(next_is_unmatched, next_actual_deltas, matching_actual_deltas)
+
+            is_match = is_match | prev_is_unmatched | next_is_unmatched
+            no_match = ~is_match
+
+        with np.errstate(invalid="ignore"):
+            early = is_match & (matching_actual_deltas < -early_sec)
+            late = is_match & (matching_actual_deltas > late_sec)
+
+        on_time = is_match & ~early & ~late
+    else: # no actual times
+        num_scheduled = len(scheduled_times)
+        early = late = on_time = np.full(num_scheduled, False)
+        no_match = np.full(num_scheduled, True)
+
+        matching_actual_headways = matching_actual_deltas = matching_actual_times = \
+            closest_actual_headways = closest_actual_deltas = closest_actual_times = \
+            next_actual_headways = next_actual_deltas = next_actual_times = \
+            prev_actual_headways = prev_actual_deltas = prev_actual_times = np.full(num_scheduled, np.nan)
 
     return pd.DataFrame({
         'prev_actual_time': prev_actual_times,

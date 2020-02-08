@@ -99,7 +99,7 @@ const headRows = [
     id: 'onTimeRate',
     numeric: true,
     disablePadding: true,
-    label: 'On Time %',
+    label: 'On-Time %',
   },
   {
     id: 'averageSpeed',

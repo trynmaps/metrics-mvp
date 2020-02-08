@@ -56,7 +56,7 @@ function RouteSummary(props) {
                 <TableCell align="right">{stats.medianWaitScore}</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>On-time rate</TableCell>
+                <TableCell>On-Time rate</TableCell>
                 <TableCell align="right">{stats.onTimeRateScore}</TableCell>
               </TableRow>
               <TableRow>
@@ -165,8 +165,6 @@ function RouteSummary(props) {
   const TRAVEL_TIME = 1;
   const MAREY_CHART = 2;
 
-  const mareyChartSupported = graphParams.date === graphParams.startDate;
-
   return (
     <Fragment>
       <br />
@@ -188,13 +186,11 @@ function RouteSummary(props) {
             label="Travel Time"
             {...a11yProps(TRAVEL_TIME)}
           />
-          {mareyChartSupported ? (
-            <Tab
-              style={{ minWidth: 72 }}
-              label="Marey Chart"
-              {...a11yProps(MAREY_CHART)}
-            />
-          ) : null}
+          <Tab
+            style={{ minWidth: 72 }}
+            label="Marey Chart"
+            {...a11yProps(MAREY_CHART)}
+          />
         </Tabs>
       </AppBar>
 
@@ -235,7 +231,7 @@ function RouteSummary(props) {
 
             <InfoScoreCard
               score={stats.onTimeRateScore}
-              title="On Time %"
+              title="On-Time %"
               largeValue={
                 stats.onTimeRate != null
                   ? (stats.onTimeRate * 100).toFixed(0)
@@ -295,15 +291,13 @@ function RouteSummary(props) {
       >
         <TravelTimeChart />
       </Box>
-      {mareyChartSupported ? (
-        <Box
-          p={2}
-          hidden={tabValue !== MAREY_CHART}
-          style={{ overflowX: 'auto' }}
-        >
-          <MareyChart hidden={tabValue !== MAREY_CHART} />
-        </Box>
-      ) : null}
+      <Box
+        p={2}
+        hidden={tabValue !== MAREY_CHART}
+        style={{ overflowX: 'auto' }}
+      >
+        <MareyChart hidden={tabValue !== MAREY_CHART} />
+      </Box>
     </Fragment>
   );
 }

@@ -505,7 +505,27 @@ class TripMetrics(ObjectType):
             for date in dates
         ]
 
-class DirectionIntervalStats(ObjectType):
+class SegmentIntervalMetrics(ObjectType):
+    fromStopId = String()
+    toStopId = String()
+    medianTripTime = Float()
+    numTrips = Int()
+
+    # parent is a metrics.SegmentIntervalMetrics object
+
+    def resolve_fromStopId(segment_metrics, info):
+        return segment_metrics.from_stop_id
+
+    def resolve_toStopId(segment_metrics, info):
+        return segment_metrics.to_stop_id
+
+    def resolve_medianTripTime(segment_metrics, info):
+        return segment_metrics.get_median_trip_time()
+
+    def resolve_numTrips(segment_metrics, info):
+        return segment_metrics.get_num_trips()
+
+class DirectionIntervalMetrics(ObjectType):
     directionId = String()
     medianWaitTime = Float() # minutes
     averageSpeed = Float(
@@ -514,6 +534,9 @@ class DirectionIntervalStats(ObjectType):
     travelTimeVariability = Float() # minutes, 90th percentile - 10th percentile trip time
     onTimeRate = Float()
     numCompletedTrips = Int()
+
+    segments = List(SegmentIntervalMetrics)
+    cumulativeSegments = List(SegmentIntervalMetrics)
 
     def resolve_directionId(parent, info):
         return parent["direction_id"]
@@ -533,9 +556,15 @@ class DirectionIntervalStats(ObjectType):
     def resolve_numCompletedTrips(parent, info):
         return parent["agency_metrics"].get_num_completed_trips(parent["route_id"], parent["direction_id"], parent["range"])
 
-class RouteIntervalStats(ObjectType):
+    def resolve_segments(parent, info):
+        return parent["agency_metrics"].get_segment_interval_metrics(parent["route_id"], parent["direction_id"], parent["range"])
+
+    def resolve_cumulativeSegments(parent, info):
+        return parent["agency_metrics"].get_cumulative_segment_interval_metrics(parent["route_id"], parent["direction_id"], parent["range"])
+
+class RouteIntervalMetrics(ObjectType):
     routeId = String()
-    directions = List(DirectionIntervalStats)
+    directions = List(DirectionIntervalMetrics)
 
     def resolve_routeId(parent, info):
         return parent["route_id"]
@@ -550,7 +579,7 @@ class RouteIntervalStats(ObjectType):
         ]
 
 class AgencyIntervalMetrics(ObjectType):
-    routes = List(RouteIntervalStats)
+    routes = List(RouteIntervalMetrics)
 
     def resolve_routes(parent, info):
         route_ids = parent["agency_metrics"].get_route_ids()
@@ -561,51 +590,6 @@ class AgencyIntervalMetrics(ObjectType):
                 **parent,
             }
             for route_id in route_ids
-        ]
-
-class SegmentStats(ObjectType):
-    fromStopId = String()
-    toStopId = String()
-    medianTripTime = Float()
-    numTrips = Int()
-
-    def resolve_fromStopId(parent, info):
-        return parent['from_stop_id']
-
-    def resolve_toStopId(parent, info):
-        return parent['to_stop_id']
-
-    def resolve_medianTripTime(parent, info):
-        return parent['median_trip_time']
-
-    def resolve_numTrips(parent, info):
-        return parent['num_trips']
-
-class DirectionIntervalMetrics(ObjectType):
-    directionId = String()
-    segments = List(SegmentStats)
-    cumulativeSegments = List(SegmentStats)
-
-    def resolve_directionId(parent, info):
-        return parent["direction_id"]
-
-    def resolve_segments(parent, info):
-        return parent["route_metrics"].get_segment_stats(parent["direction_id"], parent["range"])
-
-    def resolve_cumulativeSegments(parent, info):
-        return parent["route_metrics"].get_cumulative_segment_stats(parent["direction_id"], parent["range"])
-
-
-class RouteIntervalMetrics(ObjectType):
-    directions = List(DirectionIntervalMetrics)
-
-    def resolve_directions(parent, info):
-        route_config = parent["route_metrics"].get_route_config()
-
-        return [{
-                **parent,
-                "direction_id": direction_id,
-            } for direction_id in route_config.get_direction_ids()
         ]
 
 class RouteMetrics(ObjectType):
@@ -645,7 +629,9 @@ class RouteMetrics(ObjectType):
 
         return {
             "range": rng,
-            "route_metrics": route_metrics,
+            "agency_metrics": route_metrics.agency_metrics,
+            "route_id": route_metrics.route_id,
+            #"route_metrics": route_metrics,
         }
 
 class AgencyMetrics(ObjectType):
