@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { ThemeProvider } from '@material-ui/styles';
 import { connect } from 'react-redux';
 import { Map, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet';
 import * as d3 from 'd3';
@@ -6,6 +7,7 @@ import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
+import { withTheme } from '@material-ui/core/styles';
 import ReactDOMServer from 'react-dom/server';
 
 import { handleGraphParams } from '../actions';
@@ -67,11 +69,17 @@ class MapStops extends Component {
             // this is a larger white circle
 
             `<circle cx="-5" cy="-5" r="4.5" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
-            // this is the passed in icon, which we ask React to render as html (becomes an svg object)
+            // This is the passed in icon, which we ask React to render as html (becomes an svg object)
+            // We need to pass in our custom theme here, or else the page will get the default theme css
+            // injected into page, conflicting with our custom theme.
 
-            `</svg><div style="position:relative; top: -26px; left:2px">`}${ReactDOMServer.renderToString(
-            <IconType style={{ color: Colors.INDIGO }} fontSize="small" />,
-          )}</div>` +
+            `</svg><div style="position:relative; top: -26px; left:2px">`}
+              ${ReactDOMServer.renderToString(
+                <ThemeProvider theme={this.props.theme}>
+                </ThemeProvider>
+              )
+          }
+          </div>` +
           // this is the stop title with a text shadow to outline it in white
 
           `<div style="position:relative; top:-50px; left:25px; font-weight:bold; color:${Colors.INDIGO}; ` +
@@ -531,4 +539,4 @@ const mapDispatchToProps = dispatch => {
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
-)(MapStops);
+)(withTheme(MapStops));

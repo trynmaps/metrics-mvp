@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 
 import { makeStyles } from '@material-ui/core/styles';
 import { Agencies } from '../config';
+import AppBarLogo from '../components/AppBarLogo';
 import TravelTimeChart from '../components/TravelTimeChart';
 import QuadrantChart from '../components/QuadrantChart';
 import SidebarButton from '../components/SidebarButton';
@@ -60,6 +61,7 @@ function DataDiagnostic(props) {
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
+          <AppBarLogo />
           <div className={classes.title}>{agency.title}</div>
           <DateTimePanel />
         </Toolbar>

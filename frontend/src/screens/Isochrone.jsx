@@ -16,6 +16,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
+import AppBarLogo from '../components/AppBarLogo';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
@@ -643,6 +644,7 @@ class Isochrone extends React.Component {
         <AppBar position="relative">
           <Toolbar>
             <SidebarButton />
+            <AppBarLogo />
             <div className="page-title">Isochrone</div>
             <DateTimePanel />
           </Toolbar>
