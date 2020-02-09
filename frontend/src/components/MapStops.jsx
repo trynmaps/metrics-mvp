@@ -76,6 +76,7 @@ class MapStops extends Component {
             `</svg><div style="position:relative; top: -26px; left:2px">`}
               ${ReactDOMServer.renderToString(
                 <ThemeProvider theme={this.props.theme}>
+                  <IconType color="primary" fontSize="small" />
                 </ThemeProvider>
               )
           }
