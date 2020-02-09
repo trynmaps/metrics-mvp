@@ -21,7 +21,7 @@ function SidebarButton(props) {
   const currentPage = props.currentPage;
   const [drawerOpen, setDrawer] = React.useState(false);
   const theme = useTheme();
-  
+
   function toggleDrawer() {
     setDrawer(!drawerOpen);
   }

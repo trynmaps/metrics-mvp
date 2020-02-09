@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { ThemeProvider } from '@material-ui/styles';
 import { connect } from 'react-redux';
 import { Map, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet';
 import * as d3 from 'd3';
@@ -8,6 +7,7 @@ import Control from 'react-leaflet-control';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { withTheme } from '@material-ui/core/styles';
+import { ThemeProvider } from '@material-ui/styles';
 import ReactDOMServer from 'react-dom/server';
 
 import { handleGraphParams } from '../actions';
@@ -77,9 +77,8 @@ class MapStops extends Component {
               ${ReactDOMServer.renderToString(
                 <ThemeProvider theme={this.props.theme}>
                   <IconType color="primary" fontSize="small" />
-                </ThemeProvider>
-              )
-          }
+                </ThemeProvider>,
+              )}
           </div>` +
           // this is the stop title with a text shadow to outline it in white
 
