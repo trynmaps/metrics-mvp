@@ -101,7 +101,8 @@ function RouteSummary(props) {
         The on-time percentage is the percentage of scheduled departure times
         where a vehicle departed less than 5 minutes after the scheduled
         departure time or less than 1 minute before the scheduled departure
-        time. Probability of{' '}
+        time. The on-time percentage for the entire route is the median of the
+        on-time percentage for each stop along the route. Probability of{' '}
         {(stats.onTimeRate * 100).toFixed(1) /* be more precise than card */}%
         gets a score of {stats.onTimeRateScore}.
       </Fragment>
