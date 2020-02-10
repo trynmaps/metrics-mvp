@@ -26,8 +26,7 @@ let waitTimesCache = {};
 // todo: support multiple agencies on one map
 const agencyId = thisUrl.searchParams.get('agency_id');
 
-const WaitTimesVersion = thisUrl.searchParams.get('wait_times_version');
-const TripTimesVersion = thisUrl.searchParams.get('trip_times_version');
+const PrecomputedStatsVersion = thisUrl.searchParams.get('precomputed_stats_version');
 const RoutesVersion = thisUrl.searchParams.get('routes_version');
 const BaseUrl = thisUrl.searchParams.get('base');
 const S3Bucket = thisUrl.searchParams.get('s3_bucket');
@@ -125,19 +124,18 @@ function getTimePath(timeStr)
     return timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_').replace(/\+/g,'%2B')) : '';
 }
 
-async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId, dateStr, timeStr, stat)
+async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId, dateStr, timeStr)
 {
-    const cacheKey = agencyId + dateStr + timeStr + stat;
+    const cacheKey = agencyId + dateStr + timeStr;
     let tripTimes = tripTimesCache[cacheKey];
 
     if (!tripTimes)
     {
         let timePath = getTimePath(timeStr);
-        let statPath = getStatPath(stat);
 
-        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/trip-times/'+TripTimesVersion+'/'+agencyId+'/'+
+        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/precomputed-stats/'+PrecomputedStatsVersion+'/'+agencyId+'/'+
             dateStr.replace(/\-/g, '/')+
-            '/trip-times_'+TripTimesVersion+'_'+agencyId+'_'+dateStr+'_'+statPath+timePath+'.json.gz';
+            '/precomputed-stats_'+PrecomputedStatsVersion+'_'+agencyId+'_median-trip-times_'+dateStr+timePath+'.json.gz';
 
         tripTimes = tripTimesCache[cacheKey] = await loadJson(s3Url).catch(function(e) {
             e.message = 'error loading trip times: ' + e.message;
@@ -146,77 +144,39 @@ async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId,
         });
     }
 
-    let routeTripTimes = tripTimes.routes[routeId];
-    if (!routeTripTimes)
+    let routeStats = tripTimes.routes[routeId];
+    if (!routeStats)
     {
         return null;
     }
-    let directionTripTimes = routeTripTimes[directionId];
-    if (!directionTripTimes)
-    {
-        return null;
-    }
-    let tripTimeValues = directionTripTimes[startStopId];
-
-    if (stat === 'median')
-    {
-        return tripTimeValues;
-    }
-    if (stat === 'p10')
-    {
-        return getTripTimeStat(tripTimeValues, 0);
-    }
-    if (stat === 'p90')
-    {
-        return getTripTimeStat(tripTimeValues, 2);
-    }
-}
-
-function getTripTimeStat(tripTimeValues, index)
-{
-    if (!tripTimeValues)
+    let directionStats = routeStats.directions[directionId];
+    if (!directionStats)
     {
         return null;
     }
 
-    const statValues = {};
-    for (let endStopId in tripTimeValues)
+    let medianTripTimes = directionStats.medianTripTimes;
+    if (!medianTripTimes)
     {
-        statValues[endStopId] = tripTimeValues[endStopId][index];
+        return null;
     }
-    return statValues;
+
+    return medianTripTimes[startStopId];
 }
 
-function getStatPath(stat)
+async function getWaitTimeAtStop(agencyId, routeId, directionId, stopId, dateStr, timeStr)
 {
-    switch (stat)
-    {
-        case 'median':
-            return 'median';
-        case 'p10':
-        case 'p90':
-            return 'p10-median-p90';
-        default:
-            throw new Error('unknown stat ' + stat);
-    }
-}
-
-async function getWaitTimeAtStop(agencyId, routeId, directionId, stopId, dateStr, timeStr, stat)
-{
-    const cacheKey = dateStr + timeStr + stat;
+    const cacheKey = dateStr + timeStr;
 
     let waitTimes = waitTimesCache[cacheKey];
 
     if (!waitTimes)
     {
         var timePath = getTimePath(timeStr);
-        let statPath = getStatPath(stat);
 
-        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/wait-times/'+WaitTimesVersion+'/'+agencyId+'/'+
+        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/precomputed-stats/'+PrecomputedStatsVersion+'/'+agencyId+'/'+
             dateStr.replace(/\-/g, '/')+
-            '/wait-times_'+WaitTimesVersion+'_'+agencyId+'_'+dateStr+'_'+statPath+timePath+'.json.gz';
-
-        //console.log(s3Url);
+            '/precomputed-stats_'+PrecomputedStatsVersion+'_'+agencyId+'_combined_'+dateStr+timePath+'.json.gz';
 
         waitTimes = waitTimesCache[cacheKey] = await loadJson(s3Url).catch(function(e) {
             e.message = 'error loading wait times: ' + e.message;
@@ -225,34 +185,27 @@ async function getWaitTimeAtStop(agencyId, routeId, directionId, stopId, dateStr
         });
     }
 
-    let routeWaitTimes = waitTimes.routes[routeId];
-    if (!routeWaitTimes)
+    let routeStats = waitTimes.routes[routeId];
+    if (!routeStats)
     {
         return null;
     }
 
-    let directionWaitTimes = routeWaitTimes[directionId];
-    if (!directionWaitTimes)
+    let directionStats = routeStats.directions[directionId];
+    if (!directionStats)
     {
         return null;
     }
-    let waitTimeValues = directionWaitTimes[stopId];
+    let medianWaitTimes = directionStats.medianWaitTimes;
+    if (!medianWaitTimes)
+    {
+        return null;
+    }
 
-    if (stat === 'median')
-    {
-        return waitTimeValues;
-    }
-    if (stat === 'p10')
-    {
-        return waitTimeValues ? waitTimeValues[0] : null;
-    }
-    if (stat === 'p90')
-    {
-        return waitTimeValues ? waitTimeValues[2] : null;
-    }
+    return medianWaitTimes[stopId];
 }
 
-function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, stat, computeId)
+function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, computeId)
 {
     curComputeId = computeId;
 
@@ -344,7 +297,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
 
             let stopInfo = routeInfo.stops[stopId];
 
-            let waitMin = await getWaitTimeAtStop(agencyId, routeInfo.id, direction.id, stopId, dateStr, timeStr, stat);
+            let waitMin = await getWaitTimeAtStop(agencyId, routeInfo.id, direction.id, stopId, dateStr, timeStr);
             if (!waitMin)
             {
                 return;
@@ -352,7 +305,7 @@ function computeIsochrones(latlng, tripMins, enabledRoutes, dateStr, timeStr, st
 
             let departureMin = tripMin + waitMin;
 
-            let tripTimes = await getTripTimesFromStop(agencyId, routeInfo.id, direction.id, stopId, dateStr, timeStr, stat);
+            let tripTimes = await getTripTimesFromStop(agencyId, routeInfo.id, direction.id, stopId, dateStr, timeStr);
             if (!tripTimes)
             {
                 return;
@@ -622,7 +575,7 @@ async function init()
 
         if (data && data.action === 'computeIsochrones')
         {
-            computeIsochrones(data.latlng, data.tripMins, data.routes, data.dateStr, data.timeStr, data.stat, data.computeId);
+            computeIsochrones(data.latlng, data.tripMins, data.routes, data.dateStr, data.timeStr, data.computeId);
         }
         else
         {

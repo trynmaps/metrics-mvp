@@ -16,10 +16,65 @@ import '../../node_modules/react-vis/dist/style.css';
 import { connect } from 'react-redux';
 
 import Typography from '@material-ui/core/Typography';
-import {
-  getEndToEndTripTime,
-  getTripDataSeries,
-} from '../helpers/routeCalculations';
+import { metersToMiles } from '../helpers/routeCalculations';
+
+/**
+ * Returns an array of {x: stop index, y: time} objects for
+ * plotting on a chart.
+ */
+export function getTripDataSeries(routeMetrics, route, directionId) {
+  const dirMetrics = routeMetrics
+    ? routeMetrics.interval.directions.find(
+        dm => dm.directionId === directionId,
+      )
+    : null;
+
+  let firstStopId = null;
+  const segmentsMap = {};
+  if (dirMetrics) {
+    dirMetrics.cumulativeSegments.forEach(function(segment) {
+      segmentsMap[segment.toStopId] = segment;
+      firstStopId = segment.fromStopId;
+    });
+  }
+
+  const dataSeries = [];
+
+  const directionInfo = route
+    ? route.directions.find(direction => direction.id === directionId)
+    : null;
+  if (directionInfo) {
+    const firstStopGeometry = directionInfo.stop_geometry[firstStopId];
+    const firstStopDistance = firstStopGeometry
+      ? firstStopGeometry.distance
+      : 0;
+
+    directionInfo.stops.forEach((stop, index) => {
+      const stopGeometry = directionInfo.stop_geometry[stop];
+      const title = route.stops[stop].title;
+      const segment = segmentsMap[stop];
+      if (stop === firstStopId) {
+        dataSeries.push({
+          x: 0,
+          y: 0,
+          title,
+          stopIndex: index,
+        });
+      } else if (segment && segment.medianTripTime != null && stopGeometry) {
+        // Drop trip data points with no data.
+        dataSeries.push({
+          x: metersToMiles(stopGeometry.distance - firstStopDistance),
+          y: segment.medianTripTime,
+          title,
+          stopIndex: index,
+          numTrips: segment.numTrips,
+        });
+      }
+    });
+  }
+
+  return dataSeries;
+}
 
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.
@@ -28,7 +83,7 @@ import {
  */
 function TravelTimeChart(props) {
   const [crosshairValues, setCrosshairValues] = useState([]);
-  const { graphParams, precomputedStats, routes } = props;
+  const { graphParams, routeMetrics, routes } = props;
 
   /**
    * Event handler for onMouseLeave.
@@ -49,37 +104,23 @@ function TravelTimeChart(props) {
     setCrosshairValues([value /* future:  how to add scheduleData[index] ? */]);
   };
 
-  let tripData = null;
-  let directionId = null;
+  let tripData = [];
   let tripTimeForDirection = null;
+  let distanceForDirection = null;
+  let numStops = null;
+  let numTrips = null;
 
-  const routeId = props.routeId || graphParams.routeId; // take route id from props if given, else use redux graphParams
+  const { routeId, directionId } = graphParams;
 
   if (routes && routeId) {
-    directionId = props.directionId || graphParams.directionId; // also take direction_id from props if given
-
     const route = routes.find(thisRoute => thisRoute.id === routeId);
 
-    if (directionId != null) {
-      tripTimeForDirection = getEndToEndTripTime(
-        precomputedStats.tripTimes,
-        route,
-        directionId,
-      ).tripTime;
+    tripData = getTripDataSeries(routeMetrics, route, directionId);
 
-      /* this is the end-to-end speed in the selected direction, not currently used
-    if (dist <= 0 || Number.isNaN(tripTime)) { speed = "?"; } // something wrong with the data here
-    else {
-      speed = metersToMiles(Number.parseFloat(dist)) / tripTime * 60.0;  // initial units are meters per minute, final are mph
-      //console.log('speed: ' + speed + " tripTime: " + tripTime);
-    } */
-    }
-
-    tripData = getTripDataSeries(
-      precomputedStats.tripTimes,
-      route,
-      directionId,
-    );
+    numStops = tripData.length;
+    tripTimeForDirection = numStops > 0 ? tripData[numStops - 1].y : null;
+    distanceForDirection = numStops > 0 ? tripData[numStops - 1].x : null;
+    numTrips = numStops > 0 ? tripData[numStops - 1].numTrips : null;
   }
 
   const legendItems = [
@@ -90,10 +131,13 @@ function TravelTimeChart(props) {
   return directionId ? (
     <Fragment>
       <Typography variant="h5">Travel time along route</Typography>
-      Full travel time: {tripTimeForDirection} minutes &nbsp;&nbsp; Stops:{' '}
-      {tripData[tripData.length - 1]
-        ? tripData[tripData.length - 1].stopIndex + 1
-        : '?'}
+      Median travel time:{' '}
+      {tripTimeForDirection > 0 ? tripTimeForDirection.toFixed(1) : '?'} min
+      &nbsp;&nbsp; Average speed:{' '}
+      {tripTimeForDirection > 0
+        ? ((60 * distanceForDirection) / tripTimeForDirection).toFixed(1)
+        : '?'}{' '}
+      mph
       <br />
       {/* set the y domain to start at zero and end at highest value (which is not always
          the end to end travel time due to spikes in the data) */}
@@ -175,6 +219,10 @@ function TravelTimeChart(props) {
         width={300}
         items={legendItems}
       />
+      Distance:{' '}
+      {distanceForDirection != null ? distanceForDirection.toFixed(1) : '?'} mi
+      &nbsp;&nbsp; Stops: {numStops > 0 ? numStops : '?'} &nbsp;&nbsp; Completed
+      trips: {numTrips != null ? numTrips : '0'}
     </Fragment>
   ) : (
     <Fragment>Select a direction to see the travel time chart.</Fragment>
@@ -183,7 +231,7 @@ function TravelTimeChart(props) {
 
 const mapStateToProps = state => ({
   routes: state.routes.data,
-  precomputedStats: state.precomputedStats,
+  routeMetrics: state.routeMetrics.data,
   graphParams: state.graphParams,
 });
 

@@ -3,8 +3,9 @@ from flask import Flask, send_from_directory, request, Response
 from flask_cors import CORS
 import json
 import sys
-from models import schema, config, wait_times, trip_times, routeconfig, arrival_history
+from models import schema, config, wait_times, trip_times, routeconfig, arrival_history, precomputed_stats
 from flask_graphql import GraphQLView
+#import cProfile
 
 """
 This is the app's main file!
@@ -24,7 +25,17 @@ def ping():
 
 app.add_url_rule('/api/graphiql', view_func = GraphQLView.as_view('graphiql', schema = schema.metrics_api, graphiql = True))
 
-app.add_url_rule('/api/graphql', view_func = GraphQLView.as_view('graphql', schema = schema.metrics_api, graphiql = False))
+graphql_view = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = False)
+
+def graphql_wrapper():
+    #pr = cProfile.Profile()
+    #pr.enable()
+    res = graphql_view()
+    #pr.disable()
+    #pr.dump_stats('graphql.pstats')
+    return res
+
+app.add_url_rule('/api/graphql', view_func = graphql_wrapper)
 
 def make_error_response(params, error, status):
     data = {
@@ -42,8 +53,7 @@ def js_config():
     data = {
         'S3Bucket': config.s3_bucket,
         'ArrivalsVersion': arrival_history.DefaultVersion,
-        'WaitTimesVersion': wait_times.DefaultVersion,
-        'TripTimesVersion': trip_times.DefaultVersion,
+        'PrecomputedStatsVersion': precomputed_stats.DefaultVersion,
         'RoutesVersion': routeconfig.DefaultVersion,
         'Agencies': [
             {
@@ -56,7 +66,7 @@ def js_config():
 
     res = Response(f'var OpentransitConfig = {json.dumps(data)};', mimetype='text/javascript')
     if not DEBUG:
-        res.headers['Cache-Control'] = 'max-age=3600'
+        res.headers['Cache-Control'] = 'max-age=10'
     return res
 
 if os.environ.get('METRICS_ALL_IN_ONE') == '1':
