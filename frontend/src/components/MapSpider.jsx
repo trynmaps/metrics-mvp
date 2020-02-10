@@ -104,7 +104,7 @@ class MapSpider extends Component {
    * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
    */
   generateShield = (startMarker, waitScaled) => {
-    const { hoverRoute } = this.props;
+    const { hoverRoute } = this.props.spiderSelection;
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
@@ -186,7 +186,7 @@ class MapSpider extends Component {
     // One polyline for each start marker
     let items = null;
 
-    const selectedStops = props.spiderSelection.stops;
+    const selectedStops = props.stops;
 
     if (selectedStops) {
       items = this.getDownstreamLayers(selectedStops);
@@ -199,16 +199,16 @@ class MapSpider extends Component {
    * Rendering of polylines and markers of hovered table route
    */
   HoveredLine = () => {
-    const { hoverRoute, routes, spiderSelection } = this.props;
+    const { routes, spiderSelection } = this.props;
     let hoveredLayers = null;
 
-    if (hoverRoute) {
+    if (spiderSelection.hoverRoute) {
       // index from entire routes array required for proper route color
       const routeIndex = filterRoutes(routes).findIndex(
-        route => route.id === hoverRoute.id,
+        route => route.id === spiderSelection.hoverRoute.id,
       );
       let routeStops = this.populateStops(
-        hoverRoute,
+        spiderSelection.hoverRoute,
         routeIndex,
         spiderSelection.latLng,
       );
@@ -240,7 +240,10 @@ class MapSpider extends Component {
    * Get downstream markers and polylines for all given stops
    */
   getDownstreamLayers = selectedStops => {
-    const { routeStats, hoverRoute } = this.props;
+    const {
+      routeStats,
+      spiderSelection: { hoverRoute },
+    } = this.props;
     const items = selectedStops.map(startMarker => {
       const downstreamStops = startMarker.downstreamStops;
 
@@ -309,10 +312,14 @@ class MapSpider extends Component {
    * Creates a line between two stops.
    */
   generatePolyline = (startMarker, waitScaled, i) => {
-    const { hoverRoute, spiderSelection } = this.props;
+    const { spiderSelection } = this.props;
     const downstreamStops = startMarker.downstreamStops;
 
-    const opacity = hoverRoute ? (spiderSelection.latLng ? 0.65 : 0.5) : 0.5;
+    const opacity = spiderSelection.hoverRoute
+      ? spiderSelection.latLng
+        ? 0.65
+        : 0.5
+      : 0.5;
     const computedWeight = waitScaled * 1.5 + 3;
 
     const routeColor = this.routeColor(startMarker.routeIndex % 10);
@@ -569,7 +576,8 @@ class MapSpider extends Component {
           {/* see http://maps.stamen.com for details */}
           <this.HoveredLine />
           <this.DownstreamLines
-            spiderSelection={spiderSelection}
+            latLng={spiderSelection.latLng}
+            stops={spiderSelection.stops}
             routeStats={routeStats}
           />
           {startMarkers}

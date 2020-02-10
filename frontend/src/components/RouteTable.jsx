@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState, Fragment, useEffect } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles, createMuiTheme } from '@material-ui/core/styles';
@@ -24,6 +24,7 @@ import {
   scoreBackgroundColor,
   scoreContrastColor,
 } from '../helpers/routeCalculations';
+import { handleRouteTableHover } from '../actions';
 
 /**
  * Sorts the given array by an object property.  Equal values are ordered by array index.
@@ -266,6 +267,8 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+let hoverDispatchDebounce;
+
 function RouteTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
@@ -273,7 +276,14 @@ function RouteTable(props) {
   const dense = true;
   const theme = createMuiTheme();
 
-  const { routeStats, setHoverRoute } = props;
+  const { routeStats, onRowHover } = props;
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(hoverDispatchDebounce);
+      onRowHover(null);
+    };
+  }, [onRowHover]);
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -311,8 +321,8 @@ function RouteTable(props) {
           />
           <TableBody
             onMouseLeave={() => {
-              clearTimeout(global.hoverRoute);
-              setHoverRoute(null);
+              clearTimeout(hoverDispatchDebounce);
+              onRowHover(null);
             }}
           >
             {stableSort(displayedRouteStats, order, orderBy).map(
@@ -326,10 +336,10 @@ function RouteTable(props) {
                     tabIndex={-1}
                     key={row.route.id}
                     onMouseEnter={() => {
-                      clearTimeout(global.hoverRoute);
-                      global.hoverRoute = setTimeout(
-                        () => setHoverRoute(row.route),
-                        30,
+                      clearTimeout(hoverDispatchDebounce);
+                      hoverDispatchDebounce = setTimeout(
+                        () => onRowHover(row.route),
+                        80,
                       );
                     }}
                   >
@@ -487,9 +497,9 @@ const mapStateToProps = state => ({
   routeStats: state.routeStats,
 });
 
-const mapDispatchToProps = dispatch => {
-  return {};
-};
+const mapDispatchToProps = dispatch => ({
+  onRowHover: route => dispatch(handleRouteTableHover(route)),
+});
 
 export default connect(
   mapStateToProps,

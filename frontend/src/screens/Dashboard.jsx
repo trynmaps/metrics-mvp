@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
@@ -14,7 +14,6 @@ import { fetchRoutes, handleGraphParams } from '../actions';
 
 function Dashboard(props) {
   const { routes } = props;
-  const [hoverRoute, setHoverRoute] = useState(null);
   const myFetchRoutes = props.fetchRoutes;
   const myHandleGraphParams = props.handleGraphParams;
 
@@ -41,11 +40,11 @@ function Dashboard(props) {
         {/* Using spacing causes horizontal scrolling, see https://material-ui.com/components/grid/#negative-margin */}
         <Grid item xs={12} sm={6}>
           {/* map and table are both full width for 640px windows or smaller, else half width */}
-          <MapSpider hoverRoute={hoverRoute} />
+          <MapSpider />
         </Grid>
         <Grid item xs={12} sm={6} style={{ padding: 12 }}>
           {/* Doing the spacing between Grid items ourselves.  See previous comment. */}
-          <RouteTable routes={routes} setHoverRoute={setHoverRoute} />
+          <RouteTable routes={routes} />
         </Grid>
       </Grid>
     </div>
