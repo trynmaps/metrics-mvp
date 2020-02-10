@@ -196,9 +196,8 @@ function DateTimePanel(props) {
             }}
           >
             <div className={classes.popover}>
-              Date ranges are implemented for Dashboard statistics when a route,
-              direction, and stops are selected. Currently showing data for one
-              day.
+              Date ranges are not implemented for the current screen. Currently
+              showing data for one day.
             </div>
           </Popover>
         </Fragment>
