@@ -391,10 +391,9 @@ export default function InfoTripSummary(props) {
                 largeValue={
                   scores.totalScore != null ? scores.totalScore : '--'
                 }
-                smallValue={
-                  (waitTimes2 ? ' vs ' + scores2.totalScore : '') +
-                  `/${HighestPossibleScore}`
-                }
+                smallValue={`${
+                  waitTimes2 ? ` vs ${scores2.totalScore}` : ''
+                }/${HighestPossibleScore}`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTotalScore}
               />
@@ -403,10 +402,9 @@ export default function InfoTripSummary(props) {
                 title="Median Wait"
                 hideRating={waitTimes2}
                 largeValue={Math.round(waitTimes.median)}
-                smallValue={
-                  (waitTimes2 ? ' vs ' + Math.round(waitTimes2.median) : '') +
-                  '\u00a0min'
-                }
+                smallValue={`${
+                  waitTimes2 ? ` vs ${Math.round(waitTimes2.median)}` : ''
+                }\u00a0min`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentWait}
               />
@@ -415,10 +413,9 @@ export default function InfoTripSummary(props) {
                 title="On-Time %"
                 hideRating={waitTimes2}
                 largeValue={Math.round(onTimeRate * 100)}
-                smallValue={
-                  (waitTimes2 ? ' vs ' + Math.round(onTimeRate2 * 100) : '') +
-                  '%'
-                }
+                smallValue={`${
+                  waitTimes2 ? ` vs ${Math.round(onTimeRate2 * 100)}` : ''
+                }%`}
                 bottomContent={
                   scheduleAdherence
                     ? `${scheduleAdherence.onTimeCount} times out of ${scheduleAdherence.scheduledCount}`
@@ -431,9 +428,9 @@ export default function InfoTripSummary(props) {
                 title="Median Trip Speed"
                 hideRating={tripTimes2}
                 largeValue={speed.toFixed(0)}
-                smallValue={
-                  (tripTimes2 ? ' vs ' + speed2.toFixed(0) : '') + '\u00a0mph'
-                }
+                smallValue={`${
+                  tripTimes2 ? ` vs ${speed2.toFixed(0)}` : ''
+                }\u00a0mph`}
                 bottomContent={`${
                   distance != null ? distance.toFixed(1) : '--'
                 } miles`}
@@ -448,11 +445,11 @@ export default function InfoTripSummary(props) {
                     ? `\u00b1${(travelTimeVariability / 2).toFixed(0)}`
                     : '-'
                 }
-                smallValue={
-                  (tripTimes2
-                    ? ' vs \u00b1' + (travelTimeVariability2 / 2).toFixed(0)
-                    : '') + '\u00a0min'
-                }
+                smallValue={`${
+                  tripTimes2
+                    ? ` vs \u00b1${(travelTimeVariability2 / 2).toFixed(0)}`
+                    : ''
+                }\u00a0min`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTravelVariability}
               />

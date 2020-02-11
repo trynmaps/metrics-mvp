@@ -15,7 +15,6 @@ export const components = {
  * whose value matches the current page name.
  */
 export function typeForPage(page) {
-
   let currentType = null;
   const types = Object.keys(components);
   for (let i = 0; i < types.length; i++) {

@@ -25,7 +25,7 @@ import {
   DATE_RANGES,
   MAX_DATE_RANGE,
   WEEKDAYS,
-  WEEKENDS
+  WEEKENDS,
 } from '../UIConstants';
 import { typeForPage } from '../reducers/page';
 import { initialGraphParams } from '../reducers';
@@ -64,40 +64,33 @@ const useStyles = makeStyles(theme => ({
 function DateTimePopover(props) {
   const { graphParams, anchorEl, setAnchorEl } = props;
   const targetRange = anchorEl ? anchorEl.id : 'firstDateRange';
-  
+
   // Initialize our local data range parameters state to the appropriate date range object.
-  
-  const [ localDateRangeParams, setLocalDateRangeParams ] = useState(graphParams[targetRange] ||
-    initialGraphParams.firstDateRange);
+
+  const [localDateRangeParams, setLocalDateRangeParams] = useState(
+    graphParams[targetRange] || initialGraphParams.firstDateRange,
+  );
 
   // Whenever targetRange changes, we need to resync our local state with Redux
-   
-  useEffect(() => {
-    setLocalDateRangeParams(graphParams[targetRange] || initialGraphParams.firstDateRange);    
-  }, [targetRange, graphParams])
 
+  useEffect(() => {
+    setLocalDateRangeParams(
+      graphParams[targetRange] || initialGraphParams.firstDateRange,
+    );
+  }, [targetRange, graphParams]);
 
   const classes = useStyles();
   const maxDate = Moment(Date.now()).format('YYYY-MM-DD');
 
   /**
-   * On close, we apply to local changes to the Redux state.
-   */
-  function handleClose() {
-    applyGraphParams();    
-    setAnchorEl(null);
-  }
-
-  /**
    * Compute and dispatch new graph params.
    */
   function applyGraphParams() {
-
     const newGraphParams = Object.assign({}, graphParams);
     newGraphParams[targetRange] = localDateRangeParams;
 
     const currentType = typeForPage(props.currentPage);
-    
+
     props.dispatch({
       type: currentType,
       payload: graphParams, // not affected by date changes
@@ -105,12 +98,20 @@ function DateTimePopover(props) {
     });
   }
 
+  /**
+   * On close, we apply to local changes to the Redux state.
+   */
+  function handleClose() {
+    applyGraphParams();
+    setAnchorEl(null);
+  }
+
   function handleReset() {
     setLocalDateRangeParams(initialGraphParams.firstDateRange);
   }
 
   function updateLocalDateRangeParams(datePayload) {
-    const newLocalDateRangeParams = {...localDateRangeParams, ...datePayload };
+    const newLocalDateRangeParams = { ...localDateRangeParams, ...datePayload };
     setLocalDateRangeParams(newLocalDateRangeParams);
   }
 
@@ -141,11 +142,11 @@ function DateTimePopover(props) {
   /**
    * Normalizes date input strings.  Keeps them to the past and today.
    *
-   * @param {String} date 
+   * @param {String} date
    * @returns {Object} Moment object
    */
   const normalizedMoment = date => {
-    const maxMoment = Moment(Date.now()); 
+    const maxMoment = Moment(Date.now());
     let moment = Moment(date);
 
     // end date cannot be later than now, so set to now
@@ -153,8 +154,8 @@ function DateTimePopover(props) {
       moment = maxMoment;
     }
     return moment;
-  }
-  
+  };
+
   /**
    * Handler that updates the end date in the state.
    *
@@ -166,22 +167,24 @@ function DateTimePopover(props) {
       // ignore empty date and leave at current value
     } else {
       const startMoment = Moment(localDateRangeParams.startDate);
-      let newMoment = normalizedMoment(newDate);
+      const newMoment = normalizedMoment(newDate);
 
       const payload = {
         date: newMoment.format('YYYY-MM-DD'),
-      };      
+      };
 
       if (newMoment.isBefore(startMoment)) {
         // end date cannot before start, so adjust the start
-        payload.startDate = newDate; 
+        payload.startDate = newDate;
       } else if (newMoment.diff(startMoment, 'days') > MAX_DATE_RANGE) {
-        // end date cannot be more than 90 from start, so adjust the start 
-        payload.startDate = newMoment.subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD');
+        // end date cannot be more than 90 from start, so adjust the start
+        payload.startDate = newMoment
+          .subtract(MAX_DATE_RANGE, 'days')
+          .format('YYYY-MM-DD');
       }
       updateLocalDateRangeParams(payload);
     }
-  };  
+  };
 
   /**
    * Handler that updates the start date in the state.
@@ -192,7 +195,7 @@ function DateTimePopover(props) {
     if (!myDate.target.value) {
       // ignore empty date and leave at current value
     } else {
-      const startMoment = normalizedMoment(myDate.target.value); 
+      const startMoment = normalizedMoment(myDate.target.value);
       updateLocalDateRangeParams({
         startDate: startMoment.format('YYYY-MM-DD'),
       });
@@ -200,13 +203,12 @@ function DateTimePopover(props) {
   };
 
   const setDateRange = daysBack => {
-
     const initialParams = initialGraphParams.firstDateRange;
     const date = initialParams.date;
     const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
 
     updateLocalDateRangeParams({
-      date: date,
+      date,
       startDate: startMoment.format('YYYY-MM-DD'),
     });
   };
@@ -240,173 +242,225 @@ function DateTimePopover(props) {
     updateLocalDateRangeParams({
       daysOfTheWeek: newDaysOfTheWeek,
     });
-  }
+  };
 
   const open = Boolean(anchorEl);
   const id = open ? 'simple-popover' : undefined;
 
   return (
-      <Popover
-        id={id}
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
+    <Popover
+      id={id}
+      open={open}
+      anchorEl={anchorEl}
+      onClose={handleClose}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'right',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+    >
+      <IconButton
+        size="small"
+        aria-label="close"
+        className={classes.closeButton}
+        onClick={handleClose}
       >
-        <IconButton
-          size="small"
-          aria-label="close"
-          className={classes.closeButton}
-          onClick={handleClose}
-        >
-          <CloseIcon />
-        </IconButton>
+        <CloseIcon />
+      </IconButton>
 
-        <List style={{ color: 'black', marginTop: 32 }}>
+      <List style={{ color: 'black', marginTop: 32 }}>
+        <ListItem>
+          <FormControl className={classes.formControl}>
+            <TextField
+              id="startDate"
+              label="Start Date"
+              type="date"
+              value={localDateRangeParams.startDate}
+              InputProps={{
+                inputProps: {
+                  max: localDateRangeParams.date,
+                  min: Moment(localDateRangeParams.date)
+                    .subtract(MAX_DATE_RANGE, 'days')
+                    .format('YYYY-MM-DD'),
+                },
+              }}
+              className={classes.textField}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              onChange={setStartDate}
+            />
+          </FormControl>
+        </ListItem>
 
-          <ListItem>
-            <FormControl className={classes.formControl}>
-              <TextField
-                id="startDate"
-                label="Start Date"
-                type="date"
-                value={localDateRangeParams.startDate}
-                InputProps={{
-                  inputProps: {
-                    max: localDateRangeParams.date,
-                    min: Moment(localDateRangeParams.date).subtract(MAX_DATE_RANGE, 'days').format('YYYY-MM-DD'),
-                  },
-                }}
-                className={classes.textField}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                onChange={setStartDate}
-              />
-            </FormControl>
-          </ListItem>
+        <ListItem>
+          <FormControl className={classes.formControl}>
+            <TextField
+              id="date"
+              label="End Date"
+              type="date"
+              value={localDateRangeParams.date}
+              InputProps={{
+                inputProps: {
+                  max: maxDate,
+                },
+              }}
+              className={classes.textField}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              onChange={setEndDate}
+            />
+          </FormControl>
+        </ListItem>
 
-          <ListItem>
-            <FormControl className={classes.formControl}>
-              <TextField
-                id="date"
-                label="End Date"
-                type="date"
-                value={localDateRangeParams.date}
-                InputProps={{
-                  inputProps: {
-                    max: maxDate,
-                  },
-                }}
-                className={classes.textField}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                onChange={setEndDate}
-              />
-            </FormControl>
-          </ListItem>
-
-          <ListItem>
-            <Grid container style={{maxWidth:250}}>
-                {DATE_RANGES.map(range => (
-
-                  <Grid item xs={6} key = {range.value}>
-                  <Button
-                    key={range.value}
-                    onClick={ () => { setDateRange(range.value) } }
-                  >
+        <ListItem>
+          <Grid container style={{ maxWidth: 250 }}>
+            {DATE_RANGES.map(range => (
+              <Grid item xs={6} key={range.value}>
+                <Button
+                  key={range.value}
+                  onClick={() => {
+                    setDateRange(range.value);
+                  }}
+                >
                   {range.label}
-                  </Button>
-                  </Grid>
-
-                ))}
-            </Grid>
-          </ListItem>
-
-          <ListItem>
-            <FormControl component="fieldset" className={classes.formControl}>
-              <FormLabel component="legend" className={classes.secondaryHeading}>Days of the Week</FormLabel>
-
-              <Grid container>
-                <Grid item>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={<Checkbox value="weekdays"
-                        checked={!allFalse(localDateRangeParams.daysOfTheWeek, WEEKDAYS)}
-                        indeterminate={!allFalse(localDateRangeParams.daysOfTheWeek, WEEKDAYS) &&
-                          !allTrue(localDateRangeParams.daysOfTheWeek, WEEKDAYS)}
-                        onChange={toggleDays} />}
-                      label="Weekdays"
-                    />
-
-                    <Divider variant="middle" style={{ marginLeft: 0 } /* divider with a right margin */}/>
-
-                    {WEEKDAYS.map(day =>
-                      <FormControlLabel
-                        control={<Checkbox checked={localDateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
-                        key={day.value}
-                        label={day.label}
-                      />)}
-                  </FormGroup>
-                </Grid>
-                <Grid item>
-                  <FormGroup>
-
-                    <FormControlLabel
-                      control={<Checkbox value="weekends"
-                        checked={!allFalse(localDateRangeParams.daysOfTheWeek, WEEKENDS)}
-                        indeterminate={!allFalse(localDateRangeParams.daysOfTheWeek, WEEKENDS) &&
-                          !allTrue(localDateRangeParams.daysOfTheWeek, WEEKENDS)}
-                        onChange={toggleDays} />}
-                      label="Weekends"
-                    />
-
-                    <Divider variant="middle" style={{ marginLeft: 0 } /* divider with a right margin */}/>
-                    
-                    {WEEKENDS.map(day =>
-                      <FormControlLabel
-                        control={<Checkbox checked={localDateRangeParams.daysOfTheWeek[day.value]} onChange={handleDayChange} value={day.value} />}
-                        key={day.value}
-                        label={day.label}
-                      />)}
-                  </FormGroup>
-
-                </Grid>
+                </Button>
               </Grid>
-            </FormControl>
+            ))}
+          </Grid>
+        </ListItem>
 
-          </ListItem>
+        <ListItem>
+          <FormControl component="fieldset" className={classes.formControl}>
+            <FormLabel component="legend" className={classes.secondaryHeading}>
+              Days of the Week
+            </FormLabel>
 
-          <ListItem>
-            <FormControl className={classes.formControl}>
-              <InputLabel htmlFor="time-helper">Time Range</InputLabel>
-              <Select
-                value={timeRange}
-                onChange={setTimeRange}
-                input={<Input name="time_range" id="time_range" />}
-              >
-                {TIME_RANGES.map(range => (
-                  <MenuItem value={range.value} key={range.value}>
-                    {range.shortLabel}
-                    {range.restOfLabel}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </ListItem>
-          <ListItem>
-            <Button onClick={handleReset}>Reset</Button>
-          </ListItem>
-        </List>
-      </Popover>
+            <Grid container>
+              <Grid item>
+                <FormGroup>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        value="weekdays"
+                        checked={
+                          !allFalse(
+                            localDateRangeParams.daysOfTheWeek,
+                            WEEKDAYS,
+                          )
+                        }
+                        indeterminate={
+                          !allFalse(
+                            localDateRangeParams.daysOfTheWeek,
+                            WEEKDAYS,
+                          ) &&
+                          !allTrue(localDateRangeParams.daysOfTheWeek, WEEKDAYS)
+                        }
+                        onChange={toggleDays}
+                      />
+                    }
+                    label="Weekdays"
+                  />
+
+                  <Divider
+                    variant="middle"
+                    style={{ marginLeft: 0 } /* divider with a right margin */}
+                  />
+
+                  {WEEKDAYS.map(day => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={
+                            localDateRangeParams.daysOfTheWeek[day.value]
+                          }
+                          onChange={handleDayChange}
+                          value={day.value}
+                        />
+                      }
+                      key={day.value}
+                      label={day.label}
+                    />
+                  ))}
+                </FormGroup>
+              </Grid>
+              <Grid item>
+                <FormGroup>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        value="weekends"
+                        checked={
+                          !allFalse(
+                            localDateRangeParams.daysOfTheWeek,
+                            WEEKENDS,
+                          )
+                        }
+                        indeterminate={
+                          !allFalse(
+                            localDateRangeParams.daysOfTheWeek,
+                            WEEKENDS,
+                          ) &&
+                          !allTrue(localDateRangeParams.daysOfTheWeek, WEEKENDS)
+                        }
+                        onChange={toggleDays}
+                      />
+                    }
+                    label="Weekends"
+                  />
+
+                  <Divider
+                    variant="middle"
+                    style={{ marginLeft: 0 } /* divider with a right margin */}
+                  />
+
+                  {WEEKENDS.map(day => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={
+                            localDateRangeParams.daysOfTheWeek[day.value]
+                          }
+                          onChange={handleDayChange}
+                          value={day.value}
+                        />
+                      }
+                      key={day.value}
+                      label={day.label}
+                    />
+                  ))}
+                </FormGroup>
+              </Grid>
+            </Grid>
+          </FormControl>
+        </ListItem>
+
+        <ListItem>
+          <FormControl className={classes.formControl}>
+            <InputLabel htmlFor="time-helper">Time Range</InputLabel>
+            <Select
+              value={timeRange}
+              onChange={setTimeRange}
+              input={<Input name="time_range" id="time_range" />}
+            >
+              {TIME_RANGES.map(range => (
+                <MenuItem value={range.value} key={range.value}>
+                  {range.shortLabel}
+                  {range.restOfLabel}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </ListItem>
+        <ListItem>
+          <Button onClick={handleReset}>Reset</Button>
+        </ListItem>
+      </List>
+    </Popover>
   );
 }
 

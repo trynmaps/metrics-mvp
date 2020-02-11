@@ -11,8 +11,8 @@ import { connect } from 'react-redux';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
-import DateTimePopover from './DateTimePopover';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
+import DateTimePopover from './DateTimePopover';
 import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
 import { typeForPage } from '../reducers/page';
 import { fullQueryFromParams } from '../routesMap';
@@ -150,11 +150,11 @@ function DateTimePanel(props) {
   }
 
   /**
-   * @param {Object} props Object including a "target" indicating which field
+   * @param {Object} buttonProps Object including a "target" indicating which field
    *   in graphParams this is for.
    */
-  function DatePanelButton(props) {
-    const target = props.target;
+  function DatePanelButton(buttonProps) {
+    const target = buttonProps.target;
 
     // short circuit to a placeholder button if second range is null
 
@@ -181,11 +181,11 @@ function DateTimePanel(props) {
     let smallLabel = '';
 
     if (dateRangeParams.startDate !== dateRangeParams.date) {
-      dateLabel = convertDate(dateRangeParams.startDate) + ' - ' + dateLabel;
+      dateLabel = `${convertDate(dateRangeParams.startDate)} - ${dateLabel}`;
 
       // generate a days of the week label
 
-      smallLabel = getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek) + ', ';
+      smallLabel = `${getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek)}, `;
     }
 
     // convert the state's current time range to a string or the sentinel value

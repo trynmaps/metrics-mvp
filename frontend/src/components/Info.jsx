@@ -31,10 +31,19 @@ function Info(props) {
   const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
   const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
   const byDayData = tripMetrics ? tripMetrics.byDay : null;
-  
-  const headways2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2.headways : null;
-  const waitTimes2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2.waitTimes : null;
-  const tripTimes2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2.tripTimes : null;
+
+  const headways2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.headways
+      : null;
+  const waitTimes2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.waitTimes
+      : null;
+  const tripTimes2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.tripTimes
+      : null;
   // By day data is not requested for the second date range.
 
   const headwayData =
@@ -190,9 +199,10 @@ function Info(props) {
               Performance by Day
             </Typography>
 
-
             <InfoByDay
-              byDayData={byDayData /* consider switching to trip metrics here for consistency */}
+              byDayData={
+                byDayData /* consider switching to trip metrics here for consistency */
+              }
               graphParams={graphParams}
               routes={routes}
             />
@@ -233,17 +243,16 @@ function Info(props) {
                 fill={CHART_COLORS[0]}
                 style={{ strokeWidth: 2 }}
               />
-              { headwayData2 ? 
-              <VerticalBarSeries
-                cluster="second"
-                data={headwayData2}
-                onNearestX={onNearestXHeadway}
-                stroke="white"
-                fill={CHART_COLORS[2]}
-                style={{ strokeWidth: 2 }}
-              />
-              : null
-              }
+              {headwayData2 ? (
+                <VerticalBarSeries
+                  cluster="second"
+                  data={headwayData2}
+                  onNearestX={onNearestXHeadway}
+                  stroke="white"
+                  fill={CHART_COLORS[2]}
+                  style={{ strokeWidth: 2 }}
+                />
+              ) : null}
 
               <ChartLabel
                 text="arrivals"
@@ -307,7 +316,7 @@ function Info(props) {
               fill={CHART_COLORS[0]}
               style={{ strokeWidth: 2 }}
             />
-            { waitData2 ? 
+            {waitData2 ? (
               <VerticalBarSeries
                 cluster="second"
                 data={waitData2}
@@ -316,9 +325,7 @@ function Info(props) {
                 fill={CHART_COLORS[2]}
                 style={{ strokeWidth: 2 }}
               />
-              : null
-            }
-
+            ) : null}
 
             <ChartLabel
               text="chance"
@@ -380,7 +387,7 @@ function Info(props) {
               fill={CHART_COLORS[1]}
               style={{ strokeWidth: 2 }}
             />
-            { tripData2 ? 
+            {tripData2 ? (
               <VerticalBarSeries
                 cluster="second"
                 data={tripData2}
@@ -389,9 +396,7 @@ function Info(props) {
                 fill={CHART_COLORS[3]}
                 style={{ strokeWidth: 2 }}
               />
-              : null
-            }
-            
+            ) : null}
 
             <ChartLabel
               text="trips"

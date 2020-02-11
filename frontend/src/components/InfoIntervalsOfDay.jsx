@@ -184,21 +184,21 @@ class InfoIntervalsOfDay extends Component {
                 data={this.tripData}
                 color={CHART_COLORS[1]}
               />
-              { this.waitData2 ? 
-              <VerticalBarSeries
-                cluster="second"
-                data={this.waitData2}
-                color={CHART_COLORS[2]}
-                onNearestX={this.onNearestX}
-              /> : null }
-              { this.waitData2 ? 
-              <VerticalBarSeries
-                cluster="second"
-                data={this.tripData2}
-                color={CHART_COLORS[3]}
-              />
-               : null
-              }
+              {this.waitData2 ? (
+                <VerticalBarSeries
+                  cluster="second"
+                  data={this.waitData2}
+                  color={CHART_COLORS[2]}
+                  onNearestX={this.onNearestX}
+                />
+              ) : null}
+              {this.waitData2 ? (
+                <VerticalBarSeries
+                  cluster="second"
+                  data={this.tripData2}
+                  color={CHART_COLORS[3]}
+                />
+              ) : null}
 
               <ChartLabel
                 text="minutes"
@@ -212,7 +212,8 @@ class InfoIntervalsOfDay extends Component {
                 }}
               />
 
-              {this.state.crosshairValues.length > 0 && ( /* TODO: add second cluster values */
+              {this.state.crosshairValues.length >
+                0 /* TODO: add second cluster values */ && (
                 <Crosshair
                   values={this.state.crosshairValues}
                   style={REACT_VIS_CROSSHAIR_NO_LINE}

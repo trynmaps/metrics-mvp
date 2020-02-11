@@ -9,50 +9,18 @@ export const END_TIME = 'endTime';
 export const DAYS_OF_THE_WEEK = 'daysOfTheWeek';
 
 /**
- * Gets the string values from the query into an object that can be used as graphParams
- * if the route does not provide any values, or merged into graphParams if the route does
- * provide values.
- *
- * @param getState
- * @returns The new graphParams.
- */
-function processQuery(getState) {
-  const { location } = getState();
-
-  // Assume defaults
-  let firstDateRangeParams = initialGraphParams.firstDateRange;
-  let secondDateRangeParams = null;
-
-  // Then if there is a date range object in the query, use that.
-  if (location.query) {
-    firstDateRangeParams = processDateRangeQuery(location.query.firstDateRange);
-    secondDateRangeParams = processDateRangeQuery(location.query.secondDateRange);
-  }
-
-  const newParams = {
-    agencyId: Agencies[0].id, // todo: add agency to path to support multiple agencies
-    firstDateRange: firstDateRangeParams,
-    secondDateRange: secondDateRangeParams,
-  };
-
-  return newParams;
-}
-
-/**
  * Gets the string values from a date range object within a query string.
  *
  * @param dateRangeQuery A query subobject representing a date range.
  * @returns A graphParams subobject representing a date range.
  */
 function processDateRangeQuery(dateRangeQuery) {
-
   const initialDateRangeParams = initialGraphParams.firstDateRange;
 
   if (!dateRangeQuery) {
     return null;
   }
-  const { date, startDate, startTime, endTime, daysOfTheWeek } =
-    dateRangeQuery;
+  const { date, startDate, startTime, endTime, daysOfTheWeek } = dateRangeQuery;
 
   // If the values are missing, we must use the defaults, in case the user is changing
   // from a nondefault to default value.
@@ -84,6 +52,38 @@ function processDateRangeQuery(dateRangeQuery) {
     newDateRangeParams.daysOfTheWeek = initialDateRangeParams.daysOfTheWeek;
   }
   return newDateRangeParams;
+}
+
+/**
+ * Gets the string values from the query into an object that can be used as graphParams
+ * if the route does not provide any values, or merged into graphParams if the route does
+ * provide values.
+ *
+ * @param getState
+ * @returns The new graphParams.
+ */
+function processQuery(getState) {
+  const { location } = getState();
+
+  // Assume defaults
+  let firstDateRangeParams = initialGraphParams.firstDateRange;
+  let secondDateRangeParams = null;
+
+  // Then if there is a date range object in the query, use that.
+  if (location.query) {
+    firstDateRangeParams = processDateRangeQuery(location.query.firstDateRange);
+    secondDateRangeParams = processDateRangeQuery(
+      location.query.secondDateRange,
+    );
+  }
+
+  const newParams = {
+    agencyId: Agencies[0].id, // todo: add agency to path to support multiple agencies
+    firstDateRange: firstDateRangeParams,
+    secondDateRange: secondDateRangeParams,
+  };
+
+  return newParams;
 }
 
 /**

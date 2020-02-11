@@ -41,33 +41,38 @@ export function getDaysOfTheWeekLabel(daysOfTheWeek) {
 
   if (weekdays && weekends) {
     return 'Every day';
-  } else if (weekdays && noWeekends) {
+  }
+  if (weekdays && noWeekends) {
     return 'Weekdays';
-  } else if (noWeekdays && weekends) {
+  }
+  if (noWeekdays && weekends) {
     return 'Weekends';
   }
 
   // Look at all the checked days
 
   const allDays = WEEKDAYS.concat(WEEKENDS);
-  const checkedDays = allDays.filter(currentValue => daysOfTheWeek[currentValue.value]);
+  const checkedDays = allDays.filter(
+    currentValue => daysOfTheWeek[currentValue.value],
+  );
 
-  if (checkedDays.length === 0) { // no days checked
+  if (checkedDays.length === 0) {
+    // no days checked
 
     return 'No days';
-
-  } if (checkedDays.length === allDays.length - 1) { // just one unchecked day
-
-    const uncheckedDay = allDays.filter(currentValue => !daysOfTheWeek[currentValue.value]);
-    return 'Except ' + uncheckedDay[0].shortLabel;
-
-  } else { // more than one unchecked
-
-    const checkedLabels = checkedDays.reduce((accumulator, currentValue) => {
-    accumulator.push(currentValue.shortLabel); return accumulator; }, []);
-    return checkedLabels.join();
   }
+  if (checkedDays.length === allDays.length - 1) {
+    // just one unchecked day
+
+    const uncheckedDay = allDays.filter(
+      currentValue => !daysOfTheWeek[currentValue.value],
+    );
+    return `Except ${uncheckedDay[0].shortLabel}`;
+  } // more than one unchecked
+
+  const checkedLabels = checkedDays.reduce((accumulator, currentValue) => {
+    accumulator.push(currentValue.shortLabel);
+    return accumulator;
+  }, []);
+  return checkedLabels.join();
 }
-
-
-
