@@ -240,26 +240,181 @@ js_properties:
           ignoreLastStop: '14530', # use Embarcadero and Stockton as inbound end terminal until ~Oct 2020.
         }
       },
+      J: {
+        '0': {
+          ignoreFirstStop: true,
+        },
+        '1': {
+          ignoreLastStop: true,
+        },
+      },
+      L: {
+        '0': {
+          ignoreFirstStop: true,
+        },
+        '1': {
+          ignoreLastStop: true,
+        },
+      },
+      M: {
+        '0': {
+          ignoreFirstStop: true,
+        },
+        '1': {
+          ignoreLastStop: true,
+        },
+      },
       N: {
         '0': {
           ignoreFirstStop: true, # 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
+          ignoreLastStop: true,
         },
       },
       S: {
         ignoreRoute: true,
       },
-      '9': {
-        '1': {
-          ignoreFirstStop: '17227', # use Bayshore and Visitacion as actual first stop (daytime)
+      '1': {
+        '0': {
+          ignoreLastStop: true,
         },
+      },
+      '7X': {
+        '0': {
+          ignoreFirstStop: true,
+        },
+      },
+      '9': {
         '0': {
           ignoreLastStop: '13783', # use Bayshore and Leland as actual terminal (daytime)
         },
+        '1': {
+          ignoreFirstStop: '13793',
+        },
+      },
+      '10': {
+        '0': {
+          ignoreFirstStop: '15851',
+        },
+        '1': {
+          ignoreLastStop: '15850',
+        },
+      },
+      '12': {
+        '0': {
+          ignoreLastStop: '13486',
+        },
+      },
+      '14': {
+        '1': {
+          ignoreFirstStop: true,
+        },
+      },
+      '14X': {
+        '1': {
+          ignoreFirstStop: true,
+          ignoreLastStop: '15693',
+        },
+      },
+      '18': {
+        '0': {
+          ignoreFirstStop: '15261',
+          ignoreLastStop: true,
+        },
+      },
+      '21': {
+        '0': {
+          ignoreFirstStop: '15669',
+        },
+        '1': {
+          ignoreFirstStop: '14988',
+        }
+      },
+      '22': {
+        '0': {
+          ignoreFirstStop: '14610',
+        },
+      },
+      '23': {
+        '0': {
+          ignoreLastStop: true,
+        },
+        '1': {
+          ignoreFirstStop: true,
+        }
+      },
+      '28R': {
+        '0': {
+          ignoreFirstStop: true,
+        }
       },
       '29': {
         '1': {
           ignoreFirstStop: '14783', # use Gilman and 3rd St as first inbound stop, almost doubling back
+          ignoreLastStop: true
         }
+      },
+      '30': {
+        '0': {
+          ignoreLastStop: true,
+        }
+      },
+      '30X': {
+        '0': {
+          ignoreLastStop: true,
+        }
+      },
+      '31': {
+        '0': {
+          ignoreFirstStop: true,
+        }
+      },
+      '31AX': {
+        '1': {
+          ignoreFirstStop: true,
+        }
+      },
+      '36': {
+        '1': {
+          ignoreFirstStop: true,
+        }
+      },
+      '38': {
+        '0-32nd': {
+          ignoreLastStop: '14273',
+        }
+      },
+      '44': {
+        '0': {
+          ignoreFirstStop: true,
+        }
+      },
+      '49': {
+        '1': {
+          ignoreLastStop: '16806',
+        }
+      },
+      '54': {
+        '0': {
+          ignoreFirstStop: true,
+        }
+      },
+      '55': {
+        '0': {
+          ignoreLastStop: true,
+        },
+        '1': {
+          ignoreLastStop: true,
+        }
+      },
+      '57': {
+        '0': {
+          ignoreLastStop: true,
+        },
+      },
+      '76X': {
+        '1': {
+          ignoreLastStop: '13815',
+        },
       },
       '90': {
         ignoreRoute: true,
@@ -297,7 +452,7 @@ js_properties:
       },
       C: {
         '1': {
-          ignoreLastStop: true, # long time to California & Drumm (probably in holding area)
+          ignoreLastStop: '13857', # long time to California & Drumm (probably in holding area)
         },
       },
     }

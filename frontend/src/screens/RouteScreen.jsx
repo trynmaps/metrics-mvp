@@ -65,6 +65,7 @@ function RouteScreen(props) {
 
     let link = {
       type: 'ROUTESCREEN',
+      query: props.query,
     };
     const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
     const labels = (param, title) => {
@@ -81,7 +82,7 @@ function RouteScreen(props) {
         // return paths with non null values
         return !!path;
       })
-      .map((path, index, paths) => {
+      .map((path, index) => {
         const hasNextValue = paths[index + 1];
         const param = params[index];
         const payload = {};
@@ -151,11 +152,7 @@ function RouteScreen(props) {
           </NavLink>
           <div className="page-title">{agency ? agency.title : null}</div>
           <div style={{ flexGrow: 1 }} />
-          <DateTimePanel
-            dateRangeSupported={
-              tripMetrics || tripMetricsError || tripMetricsLoading
-            }
-          />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
       <Paper className={breadCrumbsWrapper}>
@@ -221,7 +218,7 @@ const mapStateToProps = state => ({
   tripMetricsLoading: state.loading.TRIP_METRICS,
   routes: state.routes.data,
   graphParams: state.graphParams,
-  query: state.location.query,  
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => ({

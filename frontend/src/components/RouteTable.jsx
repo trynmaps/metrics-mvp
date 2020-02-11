@@ -25,6 +25,33 @@ import {
   scoreContrastColor,
 } from '../helpers/routeCalculations';
 
+function getComparisonFunction(order, orderBy) {
+  // Sort null values to bottom regardless of ascending/descending
+  const factor = order === 'desc' ? 1 : -1;
+  return (a, b) => {
+    const aValue = a[orderBy];
+    const bValue = b[orderBy];
+
+    if (aValue == null && bValue == null) {
+      return 0;
+    }
+    if (aValue == null) {
+      return 1;
+    }
+    if (bValue == null) {
+      return -1;
+    }
+
+    if (bValue < aValue) {
+      return -factor;
+    }
+    if (bValue > aValue) {
+      return factor;
+    }
+    return 0;
+  };
+}
+
 /**
  * Sorts the given array by an object property.  Equal values are ordered by array index.
  *
@@ -59,46 +86,29 @@ function stableSort(array, sortOrder, orderBy) {
   return stabilizedThis.map(el => el[0]);
 }
 
-function getComparisonFunction(order, orderBy) {
-  // Sort null values to bottom regardless of ascending/descending
-  const factor = order === 'desc' ? 1 : -1;
-  return (a, b) => {
-    const aValue = a[orderBy];
-    const bValue = b[orderBy];
-
-    if (aValue == null && bValue == null) {
-      return 0;
-    }
-    if (aValue == null) {
-      return 1;
-    }
-    if (bValue == null) {
-      return -1;
-    }
-
-    if (bValue < aValue) {
-      return -factor;
-    }
-    if (bValue > aValue) {
-      return factor;
-    }
-    return 0;
-  };
-}
-
 const headRows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
   { id: 'totalScore', numeric: true, disablePadding: true, label: 'Score' },
-  { id: 'wait', numeric: true, disablePadding: true, label: 'Median Wait' },
   {
-    id: 'longWait',
+    id: 'medianWaitTime',
     numeric: true,
     disablePadding: true,
-    label: 'Long Wait %',
+    label: 'Median Wait',
   },
-  { id: 'speed', numeric: true, disablePadding: true, label: 'Average Speed' },
   {
-    id: 'variability',
+    id: 'onTimeRate',
+    numeric: true,
+    disablePadding: true,
+    label: 'On-Time %',
+  },
+  {
+    id: 'averageSpeed',
+    numeric: true,
+    disablePadding: true,
+    label: 'Average Speed',
+  },
+  {
+    id: 'travelTimeVariability',
     numeric: true,
     disablePadding: true,
     label: 'Travel Time Variability',
@@ -273,7 +283,7 @@ function RouteTable(props) {
   const dense = true;
   const theme = createMuiTheme();
 
-  const { routeStats } = props;
+  const { statsByRouteId } = props;
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -294,7 +304,7 @@ function RouteTable(props) {
   const displayedRouteStats = routes.map(route => {
     return {
       route,
-      ...(routeStats[route.id] || {}),
+      ...(statsByRouteId[route.id] || {}),
     };
   });
 
@@ -383,7 +393,9 @@ function RouteTable(props) {
                           ),
                         }}
                         label={
-                          row.wait == null ? '--' : `${row.wait.toFixed(0)} min`
+                          row.medianWaitTime == null
+                            ? '--'
+                            : `${row.medianWaitTime.toFixed(0)} min`
                         }
                       />
                     </TableCell>
@@ -395,17 +407,17 @@ function RouteTable(props) {
                     >
                       <Chip
                         style={{
-                          color: scoreContrastColor(row.longWaitScore),
+                          color: scoreContrastColor(row.onTimeRateScore),
                           backgroundColor: scoreBackgroundColor(
-                            row.longWaitScore,
+                            row.onTimeRateScore,
                           ),
                         }}
                         label={
-                          row.longWait == null ? (
+                          row.onTimeRate == null ? (
                             '--'
                           ) : (
                             <Fragment>
-                              {(row.longWait * 100).toFixed(0)}
+                              {(row.onTimeRate * 100).toFixed(0)}
                               {'%'}
                             </Fragment>
                           )
@@ -427,9 +439,9 @@ function RouteTable(props) {
                           backgroundColor: scoreBackgroundColor(row.speedScore),
                         }}
                         label={
-                          row.speed == null
+                          row.averageSpeed == null
                             ? '--'
-                            : `${row.speed.toFixed(0)} mph`
+                            : `${row.averageSpeed.toFixed(0)} mph`
                         }
                       />
                     </TableCell>
@@ -450,11 +462,12 @@ function RouteTable(props) {
                           ),
                         }}
                         label={
-                          row.variability == null ? (
+                          row.travelTimeVariability == null ? (
                             '--'
                           ) : (
                             <Fragment>
-                              {'\u00b1'} {row.variability.toFixed(0)} min
+                              {'\u00b1'}{' '}
+                              {(row.travelTimeVariability / 2).toFixed(0)} min
                             </Fragment>
                           )
                         }
@@ -473,15 +486,8 @@ function RouteTable(props) {
 
 const mapStateToProps = state => ({
   spiderSelection: state.spiderSelection,
-  routeStats: state.routeStats,
+  statsByRouteId: state.agencyMetrics.statsByRouteId,
   query: state.location.query,
 });
 
-const mapDispatchToProps = dispatch => {
-  return {};
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(RouteTable);
+export default connect(mapStateToProps)(RouteTable);

@@ -1,5 +1,4 @@
 import React, { useEffect, Fragment } from 'react';
-import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 
@@ -7,7 +6,6 @@ import { connect } from 'react-redux';
 
 import { makeStyles } from '@material-ui/core/styles';
 import { Agencies } from '../config';
-import TravelTimeChart from '../components/TravelTimeChart';
 import QuadrantChart from '../components/QuadrantChart';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
@@ -40,36 +38,19 @@ function DataDiagnostic(props) {
 
   const classes = useStyles();
 
-  let charts = null;
-
-  if (routes) {
-    charts = routes.map(route =>
-      route.directions.map(direction => {
-        return (
-          <Grid item key={route.id + direction.id}>
-            Route: {route.id} Direction: {direction.id}
-            <TravelTimeChart routeId={route.id} directionId={direction.id} />
-          </Grid>
-        );
-      }),
-    );
-  }
-
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
           <div className={classes.title}>{agency.title}</div>
-          <DateTimePanel />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
-      Date: {graphParams.firstDateRange.date} Time: {graphParams.firstDateRage.startTime} -{' '}
+      xxx still need this? Date: {graphParams.firstDateRange.date} Time:{' '}
+      {graphParams.firstDateRage.startTime} -{' '}
       {graphParams.firstDateRange.endTime}
       <QuadrantChart />
-      <Grid container spacing={0}>
-        {charts}
-      </Grid>
     </Fragment>
   );
 }

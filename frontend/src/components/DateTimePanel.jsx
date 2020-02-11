@@ -13,10 +13,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
 import DateTimePopover from './DateTimePopover';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
-import {
-  TIME_RANGES,
-  TIME_RANGE_ALL_DAY,
-} from '../UIConstants';
+import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
 import { typeForPage } from '../reducers/page';
 import { fullQueryFromParams } from '../routesMap';
 import { isLoadingRequest } from '../reducers/loadingReducer';
@@ -73,7 +70,7 @@ function DateTimePanel(props) {
   function handleClick(event) {
     setAnchorEl(event.currentTarget);
   }
-  
+
   function handleInfoClick(event) {
     setInfoAnchorEl(event.currentTarget);
   }
@@ -84,19 +81,20 @@ function DateTimePanel(props) {
 
   /**
    * Remove second date range params and dispatch.
-   */  
+   */
+
   function handleRemove() {
     const newGraphParams = Object.assign({}, graphParams);
     newGraphParams.secondDateRange = null;
 
     const currentType = typeForPage(props.currentPage);
-    
+
     props.dispatch({
       type: currentType,
       payload: graphParams, // not affected by date changes
       query: fullQueryFromParams(newGraphParams),
     });
-  }    
+  }
 
   /**
    * convert yyyy/mm/dd to mm/dd/yyyy
@@ -104,7 +102,7 @@ function DateTimePanel(props) {
   function convertDate(ymdString) {
     return Moment(ymdString).format('MM/DD/YYYY');
   }
-  
+
   const firstOpen = Boolean(anchorEl) && anchorEl.id === 'firstDateRange';
   const secondOpen = Boolean(anchorEl) && anchorEl.id === 'secondDateRange';
 
@@ -115,12 +113,14 @@ function DateTimePanel(props) {
   // range if we support it, or else show an info icon that explains
   // that we are only showing one day's data.
   //
-  
-  if ((graphParams.firstDateRange.startDate !== graphParams.firstDateRange.date) ||
-      (graphParams.secondDateRange && graphParams.secondDateRange.startDate !== graphParams.secondDateRange.date)) {
-      
+
+  if (
+    graphParams.firstDateRange.startDate !== graphParams.firstDateRange.date ||
+    (graphParams.secondDateRange &&
+      graphParams.secondDateRange.startDate !==
+        graphParams.secondDateRange.date)
+  ) {
     if (!dateRangeSupported) {
-      
       rangeInfo = (
         <Fragment>
           <IconButton size="small" color="inherit" onClick={handleInfoClick}>
@@ -140,9 +140,8 @@ function DateTimePanel(props) {
             }}
           >
             <div className={classes.popover}>
-              Date ranges are implemented for Dashboard statistics when a route,
-              direction, and stops are selected. Currently showing data for one
-              day.
+              Date ranges are not implemented for the current screen. Currently
+              showing data for one day.
             </div>
           </Popover>
         </Fragment>
@@ -152,15 +151,14 @@ function DateTimePanel(props) {
 
   /**
    * @param {Object} props Object including a "target" indicating which field
-   *   in graphParams this is for. 
+   *   in graphParams this is for.
    */
   function DatePanelButton(props) {
     const target = props.target;
-    
 
     // short circuit to a placeholder button if second range is null
-    
-    if (target === "secondDateRange" && graphParams.secondDateRange === null) {
+
+    if (target === 'secondDateRange' && graphParams.secondDateRange === null) {
       return (
         <Button
           variant="contained"
@@ -169,29 +167,27 @@ function DateTimePanel(props) {
           id={target}
         >
           <Typography className={classes.secondaryHeading}>
-             Compare Dates
+            Compare Dates
           </Typography>
-          { secondOpen ? <ExpandLessIcon /> : <ExpandMoreIcon /> } 
+          {secondOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         </Button>
-      )
+      );
     }
-    
+
     const dateRangeParams = graphParams[target];
 
     // these are the read-only representations of the date and time range
     let dateLabel = convertDate(dateRangeParams.date);
     let smallLabel = '';
-    
+
     if (dateRangeParams.startDate !== dateRangeParams.date) {
       dateLabel = convertDate(dateRangeParams.startDate) + ' - ' + dateLabel;
-      
-      // generate a days of the week label
-    
-      smallLabel = getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek) + ', ';      
-    }
-      
 
-    
+      // generate a days of the week label
+
+      smallLabel = getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek) + ', ';
+    }
+
     // convert the state's current time range to a string or the sentinel value
     const timeRange =
       dateRangeParams.startTime && dateRangeParams.endTime
@@ -203,65 +199,67 @@ function DateTimePanel(props) {
 
     return (
       <Fragment>
-
-      <Button
-        variant="contained"
-        className={classes.button}
-        onClick={handleClick}
-        id={target}
-      >
-        <div className={classes.dateTime}>
-          <span>
-            <Typography className={classes.heading} display="inline">
-              {dateLabel}&nbsp;
-            </Typography>
-            <Typography className={classes.secondaryHeading} display="inline">
-              {smallLabel}
-            </Typography>
+        <Button
+          variant="contained"
+          className={classes.button}
+          onClick={handleClick}
+          id={target}
+        >
+          <div className={classes.dateTime}>
+            <span>
+              <Typography className={classes.heading} display="inline">
+                {dateLabel}&nbsp;
+              </Typography>
+              <Typography className={classes.secondaryHeading} display="inline">
+                {smallLabel}
+              </Typography>
             </span>
-            { (target==="firstDateRange" && firstOpen) || (target==="secondDateRange" && secondOpen) ?
-               <ExpandLessIcon /> : <ExpandMoreIcon /> } 
-        </div>
-      </Button>
-      { (target==="secondDateRange")
-         ? <IconButton color="inherit" size="small" onClick={ handleRemove } aria-label="Remove"><RemoveCircleOutlineIcon/></IconButton>
-         : null
-      }
-      </Fragment> 
+            {(target === 'firstDateRange' && firstOpen) ||
+            (target === 'secondDateRange' && secondOpen) ? (
+              <ExpandLessIcon />
+            ) : (
+              <ExpandMoreIcon />
+            )}
+          </div>
+        </Button>
+        {target === 'secondDateRange' ? (
+          <IconButton
+            color="inherit"
+            size="small"
+            onClick={handleRemove}
+            aria-label="Remove"
+          >
+            <RemoveCircleOutlineIcon />
+          </IconButton>
+        ) : null}
+      </Fragment>
     );
   }
-  
-   // For some reason, invoking this as a component causes anchorEl not to have a bounding box
-   // and thus the popover appears at the upper left corner of the window.  So invoking it as
-   // just a plain old function instead.
-   
+
+  // For some reason, invoking this as a component causes anchorEl not to have a bounding box
+  // and thus the popover appears at the upper left corner of the window.  So invoking it as
+  // just a plain old function instead.
+
   const firstButton = DatePanelButton({ target: 'firstDateRange' });
   const secondButton = DatePanelButton({ target: 'secondDateRange' });
-  
+
   return (
-
     <div className={classes.root}>
-
-      { props.isLoading
-        ?
-          <Box p={1}>
-            <CircularProgress
-              variant='indeterminate'
-              disableShrink
-              style={{color: 'white'}}
-              size={24}
-            />
-          </Box>
-        : null
-      }      
-
-      { rangeInfo }
-
-      { firstButton }
+      {props.isLoading ? (
+        <Box p={1}>
+          <CircularProgress
+            variant="indeterminate"
+            disableShrink
+            style={{ color: 'white' }}
+            size={24}
+          />
+        </Box>
+      ) : null}
+      {rangeInfo}
+      {firstButton}
       &nbsp;
-      { secondButton }
-
-      <DateTimePopover anchorEl={anchorEl} setAnchorEl={setAnchorEl}/>
+      {secondButton}
+      <DateTimePopover anchorEl={anchorEl} setAnchorEl={setAnchorEl} />
     </div>
   );
 }

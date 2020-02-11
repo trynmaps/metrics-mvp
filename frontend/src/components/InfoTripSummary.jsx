@@ -59,8 +59,21 @@ export default function InfoTripSummary(props) {
   const { tripMetrics, graphParams, routes } = props;
   const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
   const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
-  const waitTimes2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2.waitTimes : null;
-  const tripTimes2 = tripMetrics && tripMetrics.interval2 ? tripMetrics.interval2.tripTimes : null;
+  const scheduleAdherence = tripMetrics
+    ? tripMetrics.interval.departureScheduleAdherence
+    : null;
+  const waitTimes2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.waitTimes
+      : null;
+  const tripTimes2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.tripTimes
+      : null;
+  const scheduleAdherence2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.departureScheduleAdherence
+      : null;
 
   const computeDistance = (myGraphParams, myRoutes) => {
     if (myGraphParams && myGraphParams.endStopId) {
@@ -91,57 +104,48 @@ export default function InfoTripSummary(props) {
       ? distance / (tripTimes2.avg / 60.0)
       : 0; // convert avg trip time to hours for mph
 
-      
-  let longWaitProbability = 0;
-  let longWaitProbability2 = 0;  
-  if (waitTimes && waitTimes.histogram) {
-    const reducer = (accumulator, currentValue) => {
-      const LONG_WAIT = 20; // histogram bins are in minutes
-      return currentValue.binStart >= LONG_WAIT
-        ? accumulator + currentValue.count
-        : accumulator;
-    };
+  const onTimeRate =
+    scheduleAdherence && scheduleAdherence.scheduledCount > 0
+      ? scheduleAdherence.onTimeCount / scheduleAdherence.scheduledCount
+      : null;
+  const onTimeRate2 =
+    scheduleAdherence2 && scheduleAdherence2.scheduledCount > 0
+      ? scheduleAdherence2.onTimeCount / scheduleAdherence2.scheduledCount
+      : null;
 
-    longWaitProbability = waitTimes.histogram.reduce(reducer, 0) / 100;
-    longWaitProbability2 = waitTimes2 && waitTimes2.histogram.reduce(reducer, 0) / 100;
-  }
-
-  let travelVariabilityTime = 0;
+  let travelTimeVariability = null;
   if (tripTimes) {
-    travelVariabilityTime =
-      (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
-        getPercentileValue(tripTimes, TENTH_PERCENTILE)) /
-      2.0;
+    travelTimeVariability =
+      getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
+      getPercentileValue(tripTimes, TENTH_PERCENTILE);
   }
-  let travelVariabilityTime2 = 0;
+  let travelTimeVariability2 = 0;
   if (tripTimes2) {
-    travelVariabilityTime2 =
-      (getPercentileValue(tripTimes2, PLANNING_PERCENTILE) -
-        getPercentileValue(tripTimes2, TENTH_PERCENTILE)) /
-      2.0;
+    travelTimeVariability2 =
+      getPercentileValue(tripTimes2, PLANNING_PERCENTILE) -
+      getPercentileValue(tripTimes2, TENTH_PERCENTILE);
   }
 
   const scores =
     speed && waitTimes.median
       ? computeScores(
           waitTimes.median,
-          longWaitProbability,
+          onTimeRate,
           speed,
-          travelVariabilityTime,
+          travelTimeVariability,
         )
       : null;
-          
+
   const scores2 =
     speed2 && waitTimes2.median
       ? computeScores(
           waitTimes2.median,
-          longWaitProbability2,
+          onTimeRate2,
           speed2,
-          travelVariabilityTime2,
+          travelTimeVariability2,
         )
       : {};
 
-          
   let whyNoData = null;
   if (!distance) {
     whyNoData = 'Unable to determine distance between selected stops.';
@@ -171,22 +175,12 @@ export default function InfoTripSummary(props) {
   const planningTravel = Math.round(
     getPercentileValue(tripTimes, PLANNING_PERCENTILE),
   );
-  const travelVariability = Math.round(
-    (getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
-      getPercentileValue(tripTimes, TENTH_PERCENTILE)) /
-      2.0,
-  );
-  const planningWait2 = waitTimes2 ? Math.round(
-    getPercentileValue(waitTimes2, PLANNING_PERCENTILE)
-  ) : null;
-  const planningTravel2 = tripTimes2 ? Math.round(
-    getPercentileValue(tripTimes2, PLANNING_PERCENTILE)
-  ) : null;
-  const travelVariability2 = tripTimes2 ? Math.round(
-    (getPercentileValue(tripTimes2, PLANNING_PERCENTILE) -
-      getPercentileValue(tripTimes2, TENTH_PERCENTILE)) /
-      2.0,
-  ) : null;
+  const planningWait2 = waitTimes2
+    ? Math.round(getPercentileValue(waitTimes2, PLANNING_PERCENTILE))
+    : null;
+  const planningTravel2 = tripTimes2
+    ? Math.round(getPercentileValue(tripTimes2, PLANNING_PERCENTILE))
+    : null;
 
   const typicalWait = Math.round(waitTimes.median);
   const typicalTravel = Math.round(tripTimes.median); // note: can have NaN issues here due to lack of trip data between stops
@@ -243,24 +237,14 @@ export default function InfoTripSummary(props) {
     </Fragment>
   );
 
-  const popoverContentLongWait = (
+  const popoverContentOnTimeRate = (
     <Fragment>
-      Long wait probability is the chance a rider has of a wait of twenty
-      minutes or longer after arriving randomly at the "from" stop. Probability
-      of{' '}
-      {(longWaitProbability * 100).toFixed(1) /* be more precise than card */}%
-      gets a score of {scores.longWaitScore}.
-      <Box pt={2}>
-        <InfoScoreLegend
-          rows={[
-            { label: '10% or less', value: 100 },
-            { label: '15.75%', value: 75 },
-            { label: '21.5%', value: 50 },
-            { label: '27.25%', value: 25 },
-            { label: '33% or more', value: 0 },
-          ]}
-        />
-      </Box>
+      The on-time percentage is the percentage of scheduled departure times
+      where a vehicle departed less than 5 minutes after the scheduled departure
+      time or less than 1 minute before the scheduled departure time.
+      Probability of{' '}
+      {(onTimeRate * 100).toFixed(1) /* be more precise than card */}% gets a
+      score of {scores.onTimeRateScore}.
     </Fragment>
   );
 
@@ -284,10 +268,10 @@ export default function InfoTripSummary(props) {
 
   const popoverContentTravelVariability = (
     <Fragment>
-      Travel time variability is the 90th percentile travel time minus the 10th
-      percentile travel time. This measures how much extra travel time is needed
-      for some trips. Variability of{' '}
-      {`\u00b1${travelVariabilityTime.toFixed(1)}`} min gets a score of{' '}
+      Travel time variability is the difference between the 90th percentile
+      travel time and the 10th percentile travel time. This measures how much
+      extra travel time is needed for some trips. Variability of{' '}
+      {`\u00b1${(travelTimeVariability / 2).toFixed(1)}`} min gets a score of{' '}
       {scores.travelVarianceScore}.
       <Box pt={2}>
         <InfoScoreLegend
@@ -308,14 +292,14 @@ export default function InfoTripSummary(props) {
       <Grid item xs component={Paper} className={classes.uncolored}>
         <Typography variant="overline">Typical journey</Typography>
         <br />
-    
+
         <Typography variant="h3" display="inline">
           {typicalWait + typicalTravel}
         </Typography>
         <Typography variant="h5" display="inline">
           &nbsp;min
         </Typography>
-    
+
         <Box
           display="flex"
           justifyContent="space-between"
@@ -325,34 +309,32 @@ export default function InfoTripSummary(props) {
           <Typography variant="body1">
             <WatchLaterOutlinedIcon
               fontSize="small"
-              style={{verticalAlign: 'sub'}}
-            />&nbsp;
+              style={{ verticalAlign: 'sub' }}
+            />
+            &nbsp;
             {typicalWait} min
             <br />
-            <StartStopIcon
-              fontSize="small"
-              style={{verticalAlign: 'sub'}}
-            />
+            <StartStopIcon fontSize="small" style={{ verticalAlign: 'sub' }} />
             &nbsp;
             {typicalTravel} min
           </Typography>
           <IconButton size="small" onClick={handleTypicalClick}>
             <InfoIcon fontSize="small" />
           </IconButton>
-         </Box>
+        </Box>
       </Grid>
-      
+
       <Grid item xs component={Paper} className={classes.uncolored}>
         <Typography variant="overline">Journey planning</Typography>
         <br />
-      
+
         <Typography variant="h3" display="inline">
           {planningWait + planningTravel}
         </Typography>
         <Typography variant="h5" display="inline">
           &nbsp;min
         </Typography>
-      
+
         <Box
           display="flex"
           justifyContent="space-between"
@@ -360,10 +342,15 @@ export default function InfoTripSummary(props) {
           pt={2}
         >
           <Typography variant="body1">
-            <WatchLaterOutlinedIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+            <WatchLaterOutlinedIcon
+              fontSize="small"
+              style={{ verticalAlign: 'sub' }}
+            />
+            &nbsp;
             {planningWait} min
-            <br/> 
-            <StartStopIcon fontSize="small" style={{verticalAlign: 'sub'}} />&nbsp;
+            <br />
+            <StartStopIcon fontSize="small" style={{ verticalAlign: 'sub' }} />
+            &nbsp;
             {planningTravel} min
           </Typography>
           <IconButton size="small" onClick={handlePlanningClick}>
@@ -377,14 +364,14 @@ export default function InfoTripSummary(props) {
   const infoChartCard = () => (
     <Fragment>
       <Grid item xs component={Paper} className={classes.uncolored}>
-      <Typography variant="overline">Journey Times</Typography>
-      <br />
-      <InfoJourneyChart
-        firstWaits={[ typicalWait, planningWait]}
-        secondWaits={[ typicalWait2, planningWait2]}
-        firstTravels={[ typicalTravel, planningTravel]}
-        secondTravels={[ typicalTravel2, planningTravel2]}
-      />
+        <Typography variant="overline">Journey Times</Typography>
+        <br />
+        <InfoJourneyChart
+          firstWaits={[typicalWait, planningWait]}
+          secondWaits={[typicalWait2, planningWait2]}
+          firstTravels={[typicalTravel, planningTravel]}
+          secondTravels={[typicalTravel2, planningTravel2]}
+        />
       </Grid>
     </Fragment>
   );
@@ -396,7 +383,7 @@ export default function InfoTripSummary(props) {
           <Fragment>
             <Grid container spacing={4}>
               {/* spacing doesn't work exactly right here, just pads the Papers */}
-              { waitTimes2 ? infoChartCard() : infoTripCards() }
+              {waitTimes2 ? infoChartCard() : infoTripCards()}
               <InfoScoreCard
                 score={scores.totalScore}
                 title="Trip Score"
@@ -404,7 +391,10 @@ export default function InfoTripSummary(props) {
                 largeValue={
                   scores.totalScore != null ? scores.totalScore : '--'
                 }
-                smallValue={(waitTimes2 ? ' vs ' + scores2.totalScore : '') + `/${HighestPossibleScore}`}
+                smallValue={
+                  (waitTimes2 ? ' vs ' + scores2.totalScore : '') +
+                  `/${HighestPossibleScore}`
+                }
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTotalScore}
               />
@@ -413,29 +403,37 @@ export default function InfoTripSummary(props) {
                 title="Median Wait"
                 hideRating={waitTimes2}
                 largeValue={Math.round(waitTimes.median)}
-                smallValue={ (waitTimes2 ? ' vs ' + Math.round(waitTimes2.median) : '') + '\u00a0min'} 
+                smallValue={
+                  (waitTimes2 ? ' vs ' + Math.round(waitTimes2.median) : '') +
+                  '\u00a0min'
+                }
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentWait}
               />
               <InfoScoreCard
-                score={scores.longWaitScore}
-                title="Long Wait&nbsp;%"
+                score={scores.onTimeRateScore}
+                title="On-Time %"
                 hideRating={waitTimes2}
-                largeValue={Math.round(longWaitProbability * 100)}
-                smallValue={ (waitTimes2 ? ' vs ' + Math.round(longWaitProbability2 * 100) : '') + '%'}
-                bottomContent={
-                  longWaitProbability > 0
-                    ? `1 time out of ${Math.round(1 / longWaitProbability)}`
-                    : ''
+                largeValue={Math.round(onTimeRate * 100)}
+                smallValue={
+                  (waitTimes2 ? ' vs ' + Math.round(onTimeRate2 * 100) : '') +
+                  '%'
                 }
-                popoverContent={popoverContentLongWait}
+                bottomContent={
+                  scheduleAdherence
+                    ? `${scheduleAdherence.onTimeCount} times out of ${scheduleAdherence.scheduledCount}`
+                    : null
+                }
+                popoverContent={popoverContentOnTimeRate}
               />
               <InfoScoreCard
                 score={scores.speedScore}
                 title="Median Trip Speed"
                 hideRating={tripTimes2}
                 largeValue={speed.toFixed(0)}
-                smallValue={ (tripTimes2 ? ' vs ' + speed2.toFixed(0) : '') + '\u00a0mph'}
+                smallValue={
+                  (tripTimes2 ? ' vs ' + speed2.toFixed(0) : '') + '\u00a0mph'
+                }
                 bottomContent={`${
                   distance != null ? distance.toFixed(1) : '--'
                 } miles`}
@@ -445,8 +443,16 @@ export default function InfoTripSummary(props) {
                 score={scores.travelVarianceScore}
                 title="Travel Time Variability"
                 hideRating={tripTimes2}
-                largeValue={`\u00b1${travelVariability}`}
-                smallValue={ (tripTimes2 ? ' vs \u00b1' + Math.round(travelVariability2) : '') +  '\u00a0min'}
+                largeValue={
+                  travelTimeVariability != null
+                    ? `\u00b1${(travelTimeVariability / 2).toFixed(0)}`
+                    : '-'
+                }
+                smallValue={
+                  (tripTimes2
+                    ? ' vs \u00b1' + (travelTimeVariability2 / 2).toFixed(0)
+                    : '') + '\u00a0min'
+                }
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTravelVariability}
               />

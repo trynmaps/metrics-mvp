@@ -55,6 +55,7 @@
     "eject": "react-scripts eject",
     "heroku-postbuild": "npm build",
     "lint": "eslint src --fix --ext .jsx,.js",
+    "lint:check": "eslint src --ext .jsx,.js",
     "lint:all": "eslint --fix --ext src/**/*.{js,jsx}"
   },
   "eslintConfig": {

@@ -7,9 +7,7 @@ import Control from 'react-leaflet-control';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import ReactDOMServer from 'react-dom/server';
-
 import { handleGraphParams } from '../actions';
-import { getTripTimesFromStop } from '../helpers/precomputed';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { Colors } from '../UIConstants';
 import { Agencies } from '../config';
@@ -91,11 +89,10 @@ class MapStops extends Component {
         html:
           `<svg viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
           // First we draw a white circle
-
           `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
           // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
-
-          `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round" stroke="${Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
+          `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round"
+            stroke="${Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
           `</g>` +
           `</svg>`,
       });
@@ -123,10 +120,10 @@ class MapStops extends Component {
    * @returns {Number} The angle in degrees (where 0 is east, 90 is south)
    */
   angleFromTo = (fromPoint, toPoint) => {
-    const delta_x = toPoint.lon - fromPoint.lon;
+    const deltaX = toPoint.lon - fromPoint.lon;
     // Note that y is reversed due to latitude's postive direction being reverse of screen y
-    const delta_y = fromPoint.lat - toPoint.lat;
-    const rotation = Math.round((Math.atan2(delta_y, delta_x) * 180) / Math.PI);
+    const deltaY = fromPoint.lat - toPoint.lat;
+    const rotation = Math.round((Math.atan2(deltaY, deltaX) * 180) / Math.PI);
     return rotation;
   };
 
@@ -286,21 +283,21 @@ class MapStops extends Component {
   };
 
   getSpeed = (routeInfo, direction, firstStopId, nextStopId) => {
-    const routeId = routeInfo.id;
+    const segmentMetricsMap = this.props.segmentMetricsMap;
 
-    const tripTimesFromStop = getTripTimesFromStop(
-      this.props.precomputedStats.tripTimes,
-      routeId,
-      direction.id,
-      firstStopId,
-    );
+    const directionMetrics = segmentMetricsMap
+      ? segmentMetricsMap[direction.id]
+      : null;
 
-    let time = null;
-    if (tripTimesFromStop && tripTimesFromStop[nextStopId]) {
-      time = tripTimesFromStop[nextStopId];
-    } else {
-      return -1; // speed not available;
+    const segmentMetrics = directionMetrics
+      ? directionMetrics[firstStopId]
+      : null;
+
+    if (!segmentMetrics || segmentMetrics.toStopId !== nextStopId) {
+      return -1;
     }
+
+    const time = segmentMetrics.medianTripTime;
 
     const distance = getDistanceInMiles(
       routeInfo,
@@ -309,7 +306,7 @@ class MapStops extends Component {
       nextStopId,
     );
 
-    return (distance / time) * 60; // miles per minute -> mph
+    return time > 0 ? (distance / time) * 60 : -1; // miles per minute -> mph
   };
 
   SpeedLegend = () => {
@@ -408,6 +405,7 @@ class MapStops extends Component {
         startStopId,
         endStopId,
       },
+      query: this.props.query,
     });
   };
 
@@ -455,7 +453,7 @@ class MapStops extends Component {
       selectedRoute = routes.find(route => route.id === graphParams.routeId);
 
       if (selectedRoute) {
-        selectedRoute.directions.forEach((direction, index) => {
+        selectedRoute.directions.forEach(direction => {
           // plot only the selected direction if we have one, or else all directions
 
           if (
@@ -476,13 +474,20 @@ class MapStops extends Component {
       }
     }
 
-    const mapInstruction = !graphParams.directionId
-      ? 'Select a direction to see stops in that direction.'
-      : !graphParams.startStopId
-      ? 'Click an origin stop.'
-      : !graphParams.endStopId
-      ? 'Click a destination stop.'
-      : '';
+    function getMapInstruction() {
+      if (!graphParams.directionId) {
+        return 'Select a direction to see stops in that direction.';
+      }
+      if (!graphParams.startStopId) {
+        return 'Click an origin stop.';
+      }
+      if (!graphParams.endStopId) {
+        return 'Click a destination stop.';
+      }
+      return '';
+    }
+
+    const mapInstruction = getMapInstruction();
 
     return (
       <Map
@@ -510,7 +515,8 @@ class MapStops extends Component {
 
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
-  precomputedStats: state.precomputedStats,
+  segmentMetricsMap: state.routeMetrics.segmentsMap,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {

@@ -150,7 +150,13 @@ export default {
       dispatch(handleGraphParams(newParams));
     },
   },
-  DATADIAGNOSTIC: '/dataDiagnostic',
+  DATADIAGNOSTIC: {
+    path: '/dataDiagnostic',
+    thunk: async (dispatch, getState) => {
+      const newParams = processQuery(getState);
+      dispatch(handleGraphParams(newParams));
+    },
+  },
   ROUTESCREEN: {
     /*
     Redux first router path syntax

@@ -26,6 +26,7 @@ services:
       OPENTRANSIT_AGENCY_IDS: muni
   react-dev:
     container_name: metrics-react-dev
+    image: metrics-mvp_react-dev:latest
     build:
       context: .
       dockerfile: Dockerfile

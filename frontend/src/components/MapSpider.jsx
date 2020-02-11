@@ -15,15 +15,14 @@ import Control from 'react-leaflet-control';
 import * as d3 from 'd3';
 import { Snackbar } from '@material-ui/core';
 import {
-  getDownstreamStopIds
+  getDownstreamStopIds,
+  getTripPoints,
+  isInServiceArea,
 } from '../helpers/mapGeometry';
-import {
-  filterRoutes,
-  milesBetween,
-} from '../helpers/routeCalculations';
+import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
-import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
+
 import MapShield from './MapShield';
 
 const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
@@ -128,8 +127,9 @@ class MapSpider extends Component {
               routeId: startMarker.routeId,
               directionId: startMarker.direction.id,
               startStopId: startMarker.stopId,
-              endStopId: lastStop.stopId
-            }
+              endStopId: lastStop.stopId,
+            },
+            query: this.props.query,
           });
         }}
       ></Marker>
@@ -144,10 +144,9 @@ class MapSpider extends Component {
 
     /* eslint-disable react/no-array-index-key */
 
-    var selectedStops = this.props.spiderSelection.stops;
+    const selectedStops = this.props.spiderSelection.stops;
 
     if (selectedStops) {
-
       items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
         const routeColor = this.routeColor(startMarker.routeIndex % 10);
@@ -181,7 +180,7 @@ class MapSpider extends Component {
    * Rendering of route from nearest stop to terminal.
    */
   DownstreamLines = () => {
-    const routeStats = this.props.routeStats;
+    const statsByRouteId = this.props.statsByRouteId;
 
     // One polyline for each start marker
 
@@ -198,9 +197,11 @@ class MapSpider extends Component {
         // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
         // when selecting a line.
 
-        const stats = routeStats[startMarker.routeId] || {};
+        const stats = statsByRouteId[startMarker.routeId] || {};
 
-        let waitScaled = stats.waitRankCount ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3) : 0;
+        const waitScaled = stats.waitRankCount
+          ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
+          : 0;
 
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           // for each stop
@@ -291,8 +292,9 @@ class MapSpider extends Component {
               routeId: startMarker.routeId,
               directionId: startMarker.direction.id,
               startStopId: startMarker.stopId,
-              endStopId: downstreamStops[i + 1].id
-            }
+              endStopId: downstreamStops[i + 1].id,
+            },
+            query: this.props.query,
           });
         }}
       >
@@ -393,7 +395,7 @@ class MapSpider extends Component {
     const stopIds = getDownstreamStopIds(
       routeInfo,
       targetStop.direction,
-      targetStop.stopId
+      targetStop.stopId,
     );
     stopIds.unshift(targetStop.stopId);
 
@@ -524,10 +526,10 @@ class MapSpider extends Component {
 
 const mapStateToProps = state => ({
   routes: state.routes.data,
-  precomputedStats: state.precomputedStats,
-  routeStats: state.routeStats,
+  statsByRouteId: state.agencyMetrics.statsByRouteId,
   graphParams: state.graphParams,
   spiderSelection: state.spiderSelection,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => {

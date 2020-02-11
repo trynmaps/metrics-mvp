@@ -19,6 +19,7 @@ import {
   REACT_VIS_CROSSHAIR_NO_LINE,
 } from '../UIConstants';
 import { computeScores } from '../helpers/routeCalculations';
+import { getPercentileValue } from '../helpers/graphData';
 import { getDistanceInMiles } from '../helpers/mapGeometry';
 import '../../node_modules/react-vis/dist/style.css';
 
@@ -28,12 +29,14 @@ import '../../node_modules/react-vis/dist/style.css';
 function InfoByDay(props) {
   const AVERAGE_TIME = 'average_time';
   const PLANNING_TIME = 'planning_time';
-  const LONG_WAIT = 'long_wait';
+  const ON_TIME_RATE = 'on_time_rate';
   const SPEED = 'speed';
   const TRAVEL_VARIABILITY = 'travel_variability';
 
   const [selectedOption, setSelectedOption] = useState(AVERAGE_TIME); // radio button starts on average time
   const [crosshairValues, setCrosshairValues] = useState([]); // tooltip starts out empty
+
+  const { byDayData, routes, graphParams } = props;
 
   /**
    * Event handler for radio buttons
@@ -50,21 +53,6 @@ function InfoByDay(props) {
    */
   const onMouseLeave = () => {
     setCrosshairValues([]);
-  };
-
-  /**
-   * Event handler for onNearestX.
-   * @param {Object} value Selected value.
-   * @param {index} index Index of the value in the data array.
-   * @private
-   */
-  const onNearestX = (_value, { index }) => {
-    setCrosshairValues([waitData[index], tripData[index]]);
-  };
-
-  const onNearestXGeneric = (_value, { index }) => {
-    // TODO: need to make only one chart's crosshair visible at a time,
-    // this currently makes it appear on all charts: setCrosshairValues([_value]);
   };
 
   const computeDistance = (myGraphParams, myRoutes) => {
@@ -108,13 +96,21 @@ function InfoByDay(props) {
         if (attribute === AVERAGE_TIME) {
           y = day[field].median;
         } else if (attribute === PLANNING_TIME) {
-          y = day[field].p90;
-        } else if (attribute === LONG_WAIT) {
-          y = Math.round((1 - day[field].probabilityLessThan) * 100); // the p less than is 20 min
+          y = getPercentileValue(day[field], 90);
+        } else if (attribute === ON_TIME_RATE) {
+          const scheduleAdherence = day[field];
+          y =
+            scheduleAdherence && scheduleAdherence.scheduledCount > 0
+              ? (100 * scheduleAdherence.onTimeCount) /
+                scheduleAdherence.scheduledCount
+              : null;
         } else if (attribute === SPEED) {
           y = distance ? distance / (day[field].median / 60.0) : 0; // convert avg trip time to hours for mph
         } else if (attribute === TRAVEL_VARIABILITY) {
-          y = (day[field].p90 - day[field].p10) / 2;
+          y =
+            (getPercentileValue(day[field], 90) -
+              getPercentileValue(day[field], 10)) /
+            2;
         }
       }
 
@@ -129,12 +125,12 @@ function InfoByDay(props) {
     };
   };
 
-  const { byDayData, routes, graphParams } = props;
-
   const waitData =
     byDayData && byDayData.map(mapDays('waitTimes', selectedOption));
+
   const tripData =
     byDayData && byDayData.map(mapDays('tripTimes', selectedOption));
+
   const meanWait =
     waitData &&
     waitData.length > 0 &&
@@ -166,14 +162,11 @@ function InfoByDay(props) {
     { title: 'Wait time', color: CHART_COLORS[0], strokeWidth: 10 },
   ];
 
-  // 2nd chart: long wait %
+  // 2nd chart: on time %
 
-  const longWaitData =
-    byDayData && byDayData.map(mapDays('waitTimes', LONG_WAIT));
-  const maxLongWait =
-    longWaitData &&
-    longWaitData.length > 0 &&
-    longWaitData.reduce((max, value) => (max > value.y ? max : value.y), 0);
+  const onTimeRateData =
+    byDayData &&
+    byDayData.map(mapDays('departureScheduleAdherence', ON_TIME_RATE));
 
   // 3rd chart: speed
 
@@ -200,7 +193,7 @@ function InfoByDay(props) {
   const scoreData = byDayData && byDayData.map((day, index) => {
     const grades = computeScores(
       waitData[index].y,
-      longWaitData[index].y,
+      onTimeRateData[index].y / 100,
       speedData[index].y,
       travelVariabilityData[index].y,
     );
@@ -240,6 +233,21 @@ function InfoByDay(props) {
       </div>
     );
   }
+
+  /**
+   * Event handler for onNearestX.
+   * @param {Object} value Selected value.
+   * @param {index} index Index of the value in the data array.
+   * @private
+   */
+  const onNearestX = (_value, { index }) => {
+    setCrosshairValues([waitData[index], tripData[index]]);
+  };
+
+  const onNearestXGeneric = (/* _value, { index } */) => {
+    // TODO: need to make only one chart's crosshair visible at a time,
+    // this currently makes it appear on all charts: setCrosshairValues([_value]);
+  };
 
   return (
     <div>
@@ -337,13 +345,13 @@ function InfoByDay(props) {
             width={300}
             items={legendItems}
           />
-          Long Wait %
+          On-Time %
           <XYPlot
             xType="ordinal"
             height={300}
             width={400}
             margin={chartMargins}
-            yDomain={[0, maxLongWait]}
+            yDomain={[0, 100]}
             onMouseLeave={onMouseLeave}
           >
             <HorizontalGridLines />
@@ -351,7 +359,7 @@ function InfoByDay(props) {
             <YAxis hideLine />
 
             <LineMarkSeries
-              data={longWaitData}
+              data={onTimeRateData}
               color={CHART_COLORS[0]}
               onNearestX={onNearestXGeneric}
               stack
