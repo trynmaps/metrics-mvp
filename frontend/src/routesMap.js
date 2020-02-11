@@ -72,6 +72,11 @@ function processQuery(getState) {
   // Then if there is a date range object in the query, use that.
   if (location.query) {
     firstDateRangeParams = processDateRangeQuery(location.query.firstDateRange);
+    if (!firstDateRangeParams) {
+      // If there is a query but no first date range values, then
+      // use defaults.
+      firstDateRangeParams = initialGraphParams.firstDateRange;
+    }
     secondDateRangeParams = processDateRangeQuery(
       location.query.secondDateRange,
     );
