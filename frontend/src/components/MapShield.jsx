@@ -14,13 +14,13 @@ export default function MapShield(props) {
 
   if (routeText.endsWith('R') || routeText.endsWith('X')) {
     html =
-      `<div style="width:${r * 3}px; height:${r * 2}px; ` +
+      `<div style="width:30px; height:${r * 2}px; ` +
       `border-radius:${routeText.endsWith('X') ? r : 0}px; `;
   } else {
     // all other routes get circular shields
 
     html =
-      `<div style="width:${r * 3}px; height:${r * 2}px; ` +
+      `<div style="width:${r * 2}px; height:${r * 2}px; ` +
       `border-radius: ${r + 1}px; `;
   }
 

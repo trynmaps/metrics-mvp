@@ -146,17 +146,23 @@ class MapSpider extends Component {
   /**
    * Rendering of stops nearest to click or current location
    */
-  getStartMarkers = (selectedStops, radius = '8', opacity = 0.2) => {
+  getStartMarkers = (selectedStops, opacity = 0.2, radius = 8, color) => {
     let items = null;
 
     if (selectedStops) {
       items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
-        const routeColor = this.routeColor(startMarker.routeIndex % 10);
+        let routeColor = this.routeColor(startMarker.routeIndex % 10);
+        let outlineKey = '';
+        // Used by white outline of hovered route
+        if (color) {
+          routeColor = color;
+          outlineKey = '-outline';
+        }
 
         return (
           <CircleMarker
-            key={`startMarker-${index}`}
+            key={`startMarker-${index}${outlineKey}`}
             center={position}
             radius={radius}
             fillColor={routeColor}
@@ -200,7 +206,7 @@ class MapSpider extends Component {
    */
   HoveredLine = () => {
     const { routes, spiderSelection } = this.props;
-    let hoveredLayers = null;
+    const hoveredLayers = [];
 
     if (spiderSelection.hoverRoute) {
       // index from entire routes array required for proper route color
@@ -227,11 +233,11 @@ class MapSpider extends Component {
       routeStops.forEach(stop => {
         this.addDownstreamStops(stop);
       });
-      hoveredLayers = this.getDownstreamLayers(routeStops);
       if (spiderSelection.latLng) {
-        const startMarkers = this.getStartMarkers(routeStops, '10', 1);
-        hoveredLayers.push(...startMarkers);
+        hoveredLayers.push(this.getStartMarkers(routeStops, 1, 9, '#ffffff'));
+        hoveredLayers.push(this.getStartMarkers(routeStops));
       }
+      hoveredLayers.push(this.getDownstreamLayers(routeStops));
     }
     return hoveredLayers;
   };
@@ -254,19 +260,21 @@ class MapSpider extends Component {
 
       const stats = routeStats[startMarker.routeId] || {};
 
-      let waitScaled;
+      const waitScaled = stats.waitRankCount
+        ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
+        : 0;
+
+      // Add white polylines under other layers of hovered route
       if (hoverRoute) {
-        const zoom = this.mapRef.current.leafletElement.getZoom();
-        // Adds to scale based on zoom level
-        const zoomScaled = zoom < 16 ? 2 : 3;
-        // Make hover route scale bigger than the highest ordinary scale
-        waitScaled = stats.waitRankCount
-          ? Math.trunc((1 - 1 / stats.waitRankCount) * 3) + zoomScaled
-          : 2 + zoomScaled;
-      } else {
-        waitScaled = stats.waitRankCount
-          ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
-          : 0;
+        // Scale for outline; 1 greater than the maximum waitScale
+        const outlineScale = stats.waitRankCount
+          ? Math.trunc((1 - 1 / stats.waitRankCount) * 3) + 1
+          : 3;
+        for (let i = 0; i < downstreamStops.length - 1; i++) {
+          polylines.push(
+            this.generatePolyline(startMarker, outlineScale, i, '#ffffff'),
+          );
+        }
       }
 
       for (let i = 0; i < downstreamStops.length - 1; i++) {
@@ -311,22 +319,25 @@ class MapSpider extends Component {
   /**
    * Creates a line between two stops.
    */
-  generatePolyline = (startMarker, waitScaled, i) => {
-    const { spiderSelection } = this.props;
+  generatePolyline = (startMarker, waitScaled, i, color) => {
     const downstreamStops = startMarker.downstreamStops;
 
-    const opacity = spiderSelection.hoverRoute
-      ? spiderSelection.latLng
-        ? 0.65
-        : 0.5
-      : 0.5;
     const computedWeight = waitScaled * 1.5 + 3;
 
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+    let routeColor = this.routeColor(startMarker.routeIndex % 10);
+
+    let opacity = 0.5;
+    let outlineKey = '';
+    // Used by white outline polylines of hovered route
+    if (color) {
+      routeColor = color;
+      opacity = 1;
+      outlineKey = '-outline';
+    }
 
     return (
       <Polyline
-        key={`poly-${startMarker.routeId}-${downstreamStops[i].id}`}
+        key={`poly-${startMarker.routeId}-${downstreamStops[i].id}${outlineKey}`}
         positions={getTripPoints(
           startMarker.routeInfo,
           startMarker.direction,
