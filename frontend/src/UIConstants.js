@@ -16,7 +16,6 @@ export const Colors = {
   BLUE: 'blue',
   RED: 'red',
   GREEN: 'green',
-  INDIGO: '#0177BF', // use the primary main color
 };
 
 // placeholder colors: gray and purple from nyc busstats

@@ -11,7 +11,7 @@ export default function AppBarLogo(props) {
     <Fragment>
       <NavLink to={{ type: 'DASHBOARD', query: props.query }} exact strict>
         <img
-          src={`${process.env.PUBLIC_URL}/images/logo-large.png`}
+          src={`${process.env.PUBLIC_URL}/images/OpenTransit.png`}
           style={logoStyle}
           alt="logo"
         />
