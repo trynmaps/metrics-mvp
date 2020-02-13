@@ -267,8 +267,6 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-let hoverDispatchDebounce;
-
 function RouteTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
@@ -279,10 +277,7 @@ function RouteTable(props) {
   const { routeStats, onRowHover } = props;
 
   useEffect(() => {
-    return () => {
-      clearTimeout(hoverDispatchDebounce);
-      onRowHover(null);
-    };
+    return () => onRowHover(null);
   }, [onRowHover]);
 
   function handleRequestSort(event, property) {
@@ -319,12 +314,7 @@ function RouteTable(props) {
             onRequestSort={handleRequestSort}
             rowCount={displayedRouteStats.length}
           />
-          <TableBody
-            onMouseLeave={() => {
-              clearTimeout(hoverDispatchDebounce);
-              onRowHover(null);
-            }}
-          >
+          <TableBody onMouseLeave={() => onRowHover(null)}>
             {stableSort(displayedRouteStats, order, orderBy).map(
               (row, index) => {
                 const labelId = `enhanced-table-checkbox-${index}`;
@@ -335,13 +325,7 @@ function RouteTable(props) {
                     role="checkbox"
                     tabIndex={-1}
                     key={row.route.id}
-                    onMouseEnter={() => {
-                      clearTimeout(hoverDispatchDebounce);
-                      hoverDispatchDebounce = setTimeout(
-                        () => onRowHover(row.route),
-                        80,
-                      );
-                    }}
+                    onMouseEnter={() => onRowHover(row.route)}
                   >
                     <TableCell
                       component="th"
