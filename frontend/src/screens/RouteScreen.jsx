@@ -9,7 +9,6 @@ import IconButton from '@material-ui/core/IconButton';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import Link, { NavLink } from 'redux-first-router-link';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
-import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Typography from '@material-ui/core/Typography';
 
