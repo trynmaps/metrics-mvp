@@ -42,10 +42,12 @@ class MapSpider extends Component {
    * A function that returns one of ten colors given a route index.
    * (index modulo 10).
    */
+
   routeColor = d3.scaleQuantize([0, 9], d3.schemeCategory10);
 
   constructor(props) {
     super(props);
+    console.log(props);
 
     // for now, only supports 1 agency at a time.
     // todo: support multiple agencies on one map
@@ -54,7 +56,7 @@ class MapSpider extends Component {
     this.state = {
       // Should be true by default, so that we don't display the snackbar
       isValidLocation: true,
-      height: this.computeHeight(),
+      height: this.computeHeight()
     };
 
     this.mapRef = createRef(); // used for geolocating
@@ -102,7 +104,8 @@ class MapSpider extends Component {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+    
+    const routeColor = startMarker.routeInfo.color ? `#${startMarker.routeInfo.color}` : this.routeColor(startMarker.routeIndex % 10);
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
@@ -149,7 +152,7 @@ class MapSpider extends Component {
     if (selectedStops) {
       items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
-        const routeColor = this.routeColor(startMarker.routeIndex % 10);
+        const routeColor = startMarker.routeInfo.color ? `#${startMarker.routeInfo.color}` : this.routeColor(startMarker.routeIndex % 10);
 
         return (
           <CircleMarker
@@ -230,7 +233,7 @@ class MapSpider extends Component {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const terminalPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+    const routeColor = startMarker.routeInfo.color ? `#${startMarker.routeInfo.color}` : this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <CircleMarker
@@ -464,6 +467,9 @@ class MapSpider extends Component {
    * Main React render method.
    */
   render() {
+
+console.log('this.props', this.props)
+
     const { position, zoom, spiderSelection } = this.props;
     const { isValidLocation } = this.state;
     const mapClass = { width: '100%', height: this.state.height };
@@ -524,13 +530,15 @@ class MapSpider extends Component {
   } // end render
 } // end class
 
-const mapStateToProps = state => ({
+const mapStateToProps = state => {
+  console.log('state', state)
+  return {
   routes: state.routes.data,
   statsByRouteId: state.agencyMetrics.statsByRouteId,
   graphParams: state.graphParams,
   spiderSelection: state.spiderSelection,
   query: state.location.query,
-});
+}};
 
 const mapDispatchToProps = dispatch => {
   return {
