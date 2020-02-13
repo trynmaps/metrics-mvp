@@ -255,7 +255,7 @@ class MapSpider extends Component {
 
     const computedWeight = waitScaled * 1.5 + 3;
 
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
+    const routeColor = startMarker.routeInfo.color ? `#${startMarker.routeInfo.color}` : this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <Polyline
