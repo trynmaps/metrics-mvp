@@ -461,7 +461,7 @@ Metrics for a particular transit agency.
 
 | Parameter Name | Type | Description |
 | --- | --- | --- |
-| `dates` | `[String!]` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
+| `dates` | `[String]!` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
 | `startTime` | `String` | Start time for each date to return metrics data from. Times use `HH:MM` format with an optional suffix "+1" to indicate times after midnight that are associated with the previous day;  e.g. `00:00`, `23:59`, `03:00+1`. |
 | `endTime` | `String` | End time for each date to return metrics data from. |
 
