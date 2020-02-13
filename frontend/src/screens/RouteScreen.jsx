@@ -9,6 +9,7 @@ import IconButton from '@material-ui/core/IconButton';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import Link, { NavLink } from 'redux-first-router-link';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
+import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Typography from '@material-ui/core/Typography';
 
@@ -36,6 +37,15 @@ const useStyles = makeStyles(theme => ({
     padding: '1%',
     paddingRight: '0',
   },
+  externalLink: {
+    color: 'rgba(0, 0, 0, 0.54)',
+    marginLeft: '5px',
+    display: 'inline-block',
+  },
+  externalLinkIcon: {
+    position: 'relative',
+    top: '5px',
+  },
 }));
 
 function RouteScreen(props) {
@@ -61,7 +71,12 @@ function RouteScreen(props) {
   const backArrowStyle = { color: '#ffffff' };
 
   const breadCrumbs = (paths, classes) => {
-    const { breadCrumbStyling, darkLinks } = classes;
+    const {
+      breadCrumbStyling,
+      darkLinks,
+      externalLink,
+      externalLinkIcon,
+    } = classes;
 
     let link = {
       type: 'ROUTESCREEN',
@@ -90,28 +105,45 @@ function RouteScreen(props) {
         const updatedPayload = Object.assign({ ...link.payload }, payload);
         link = Object.assign({ ...link }, { payload: updatedPayload });
         const { label, specialLabel } = labels(param, path.title);
-        return hasNextValue ? (
-          <Typography
-            variant="subtitle1"
-            key={label}
-            className={`${breadCrumbStyling} ${darkLinks}`}
-          >
-            {' '}
-            {specialLabel}{' '}
-            <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
-              {' '}
-              {label}{' '}
-            </Link>{' '}
-          </Typography>
-        ) : (
-          <Typography
-            variant="subtitle1"
-            key={label}
-            className={breadCrumbStyling}
-          >
-            {' '}
-            {specialLabel} {label}{' '}
-          </Typography>
+
+        const officialInfoUrl = path.url;
+
+        return (
+          <>
+            {hasNextValue ? (
+              <Typography
+                variant="subtitle1"
+                key={label}
+                className={`${breadCrumbStyling} ${darkLinks}`}
+              >
+                {' '}
+                {specialLabel}{' '}
+                <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
+                  {' '}
+                  {label}{' '}
+                </Link>{' '}
+              </Typography>
+            ) : (
+              <Typography
+                variant="subtitle1"
+                key={label}
+                className={breadCrumbStyling}
+              >
+                {' '}
+                {specialLabel} {label}{' '}
+              </Typography>
+            )}
+            {officialInfoUrl && (
+              <a
+                href={officialInfoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={externalLink}
+              >
+                <OpenInNewIcon className={externalLinkIcon} />
+              </a>
+            )}
+          </>
         );
       });
   };
@@ -225,7 +257,4 @@ const mapDispatchToProps = dispatch => ({
   fetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(RouteScreen);
+export default connect(mapStateToProps, mapDispatchToProps)(RouteScreen);
