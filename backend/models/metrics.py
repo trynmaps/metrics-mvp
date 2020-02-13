@@ -157,8 +157,10 @@ class RouteMetrics:
         return count
 
     def get_departure_schedule_adherence(self, direction_id, stop_id, early_sec, late_sec, rng: Range):
-        return self._get_schedule_adherence(direction_id, stop_id, early_sec, late_sec, rng, 'DEPARTURE_TIME')
-
+        try:
+            return self._get_schedule_adherence(direction_id, stop_id, early_sec, late_sec, rng, 'DEPARTURE_TIME')
+        except:
+            pass
     def get_arrival_schedule_adherence(self, direction_id, stop_id, early_sec, late_sec, rng: Range):
         return self._get_schedule_adherence(direction_id, stop_id, early_sec, late_sec, rng, 'TIME')
 
@@ -315,7 +317,10 @@ class RouteMetrics:
         if len(completed_trips_arr) == 1:
             return completed_trips_arr[0]
         else:
-            return np.concatenate(completed_trips_arr)
+            try:
+                return np.concatenate(completed_trips_arr)
+            except:
+                pass
 
     def get_headways(self, direction_id, stop_id, rng: Range):
         return self._get_headways(direction_id, stop_id, rng, self.get_history_data_frame)
@@ -345,7 +350,10 @@ class RouteMetrics:
         if len(headway_min_arr) == 1:
             return headway_min_arr[0]
         else:
-            return np.concatenate(headway_min_arr)
+            try:
+                return np.concatenate(headway_min_arr)
+            except:
+                pass
 
 class SegmentIntervalMetrics:
     def __init__(self, agency_metrics, route_id, direction_id, from_stop_id, to_stop_id, rng):
