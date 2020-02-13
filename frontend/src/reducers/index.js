@@ -1,10 +1,6 @@
 import Moment from 'moment';
 import { WEEKDAYS, WEEKENDS } from '../UIConstants';
-import {
-  isIgnoredRoute,
-  addRanks,
-  computeScores,
-} from '../helpers/routeCalculations';
+import { addAveragesForAllDirections } from '../helpers/routeCalculations';
 
 export { default as loading } from './loadingReducer';
 export { default as page } from './page';
@@ -17,6 +13,7 @@ export const initialGraphParams = {
   directionId: null,
   startStopId: null,
   endStopId: null,
+
   firstDateRange: {
     startTime: null,
     endTime: null,
@@ -122,7 +119,7 @@ export function arrivals(state = initialArrivals, action) {
 }
 
 const initialSpiderSelection = {
-  stops: [],
+  nearbyLines: [],
   latLng: null,
 };
 
@@ -131,7 +128,7 @@ export function spiderSelection(state = initialSpiderSelection, action) {
     case 'RECEIVED_SPIDER_MAP_CLICK':
       return {
         ...state,
-        stops: action.stops,
+        nearbyLines: action.nearbyLines,
         latLng: action.latLng,
       };
     default:
@@ -139,71 +136,26 @@ export function spiderSelection(state = initialSpiderSelection, action) {
   }
 }
 
-function addAveragesForAllDirections(routeStats, property) {
-  routeStats.forEach(function(stats) {
-    let total = 0;
-    let count = 0;
-    stats.directions.forEach(function(direction) {
-      const directionValue = direction[property];
-      if (directionValue != null) {
-        total += directionValue;
-        count += 1;
-      }
-    });
-    stats[property] = count > 0 ? total / count : null;
-  });
-}
-
-function addScores(stats) {
-  Object.assign(
-    stats,
-    computeScores(
-      stats.medianWaitTime,
-      stats.onTimeRate,
-      stats.averageSpeed,
-      stats.travelTimeVariability,
-    ),
-  );
-}
-
 function makeStatsByRouteId(agencyMetricsData) {
-  const routeStats = agencyMetricsData ? agencyMetricsData.interval.routes : [];
-  const rankedRouteStats = routeStats.filter(
-    stats =>
-      !isIgnoredRoute({
-        agencyId: agencyMetricsData.agencyId,
-        id: stats.routeId,
-      }),
-  );
+  const routesStats = agencyMetricsData
+    ? agencyMetricsData.interval.routes
+    : [];
 
-  addAveragesForAllDirections(routeStats, 'medianWaitTime');
-  addAveragesForAllDirections(routeStats, 'averageSpeed');
-  addAveragesForAllDirections(routeStats, 'onTimeRate');
-  addAveragesForAllDirections(routeStats, 'travelTimeVariability');
-
-  addRanks(rankedRouteStats, 'medianWaitTime', 1, 'waitRank', 'waitRankCount');
-  addRanks(rankedRouteStats, 'averageSpeed', -1, 'speedRank', 'speedRankCount');
-  addRanks(rankedRouteStats, 'onTimeRate', -1, 'onTimeRank', 'onTimeRankCount');
-  addRanks(
-    rankedRouteStats,
-    'travelTimeVariability',
-    1,
-    'variabilityRank',
-    'variabilityRankCount',
-  );
-
-  routeStats.forEach(function(stats) {
-    addScores(stats);
-    stats.directions.forEach(function(dirStats) {
-      addScores(dirStats);
+  const averagedProperties = [
+    'medianWaitTime',
+    'averageSpeed',
+    'onTimeRate',
+    'medianHeadway',
+  ];
+  routesStats.forEach(function(routeStats) {
+    averagedProperties.forEach(function(property) {
+      addAveragesForAllDirections(routeStats, property);
     });
   });
-
-  addRanks(rankedRouteStats, 'totalScore', -1, 'scoreRank', 'scoreRankCount');
 
   const statsByRouteId = {};
-  routeStats.forEach(stats => {
-    statsByRouteId[stats.routeId] = stats;
+  routesStats.forEach(routeStats => {
+    statsByRouteId[routeStats.routeId] = routeStats;
   });
 
   return statsByRouteId;
@@ -259,6 +211,19 @@ const initialRouteMetrics = {
 export function routeMetrics(state = initialRouteMetrics, action) {
   switch (action.type) {
     case 'RECEIVED_ROUTE_METRICS':
+      addAveragesForAllDirections(
+        action.data.interval,
+        'scheduledMedianWaitTime',
+      );
+      addAveragesForAllDirections(
+        action.data.interval,
+        'scheduledMedianHeadway',
+      );
+      addAveragesForAllDirections(
+        action.data.interval,
+        'scheduledAverageSpeed',
+      );
+
       return {
         ...state,
         variablesJson: action.variablesJson,

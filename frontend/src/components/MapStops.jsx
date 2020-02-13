@@ -95,9 +95,9 @@ class MapStops extends Component {
         iconSize: [20, 20],
         iconAnchor: [10, 10], // centers icon over position, with text to the right
         html:
-          `<svg viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
+          `<svg opacity="0.7" viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
           // First we draw a white circle
-          `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${stopColor.dark}" stroke-width="0.75"/>` +
+          `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${stopColor.dark}" stroke-width="0.5"/>` +
           // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
           `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round"
             stroke="${stopColor.dark}" stroke-width="0.6" fill="none"/>` +
@@ -347,6 +347,8 @@ class MapStops extends Component {
           style={{
             backgroundColor: 'white',
             padding: '5px',
+            opacity: 0.9,
+            borderRadius: '5px',
           }}
         >
           Speed (mph)
@@ -427,11 +429,9 @@ class MapStops extends Component {
   //
 
   computeHeight() {
-    return (
-      (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
-      64 /* blue app bar */ -
-      50 /* breadcrumb paper */
-    );
+    return window.innerWidth >= 600
+      ? window.innerHeight - 48 - 64
+      : window.innerHeight * 0.65;
   }
 
   updateDimensions() {
@@ -448,17 +448,33 @@ class MapStops extends Component {
   }
 
   render() {
-    const { position, zoom } = this.props;
+    const { position, zoom, routes, graphParams } = this.props;
 
-    const mapClass = { width: '100%', height: this.state.height };
-
-    const { routes, graphParams } = this.props;
+    const mapStyle = { width: '100%', height: this.state.height };
 
     let selectedRoute = null;
-    const populatedRoutes = [];
+    const items = [];
 
     if (routes && graphParams) {
       selectedRoute = routes.find(route => route.id === graphParams.routeId);
+
+      /*
+      const otherRoutes = filterRoutes(routes).map(route => {
+        if (route.id != graphParams.routeId) {
+            const direction = route.directions[0];
+            return <Polyline
+                key={`poly-${route.id}-${direction.id}`}
+                positions={getTripPoints(route, direction)}
+                color="#0177BF"
+                opacity={0.2}
+                weight={1}
+              >
+              </Polyline>;
+        }
+      });
+
+        items.push(otherRoutes);
+        */
 
       if (selectedRoute) {
         selectedRoute.directions.forEach(direction => {
@@ -470,52 +486,46 @@ class MapStops extends Component {
           ) {
             // add white lines and speed color lines
 
-            populatedRoutes.push(this.populateStops(selectedRoute, direction));
+            items.push(this.populateStops(selectedRoute, direction));
 
             // draw stop markers on top of lines for all directions
 
-            populatedRoutes.unshift(
-              this.populateSpeed(selectedRoute, direction),
-            );
+            items.push(this.populateSpeed(selectedRoute, direction));
           }
         });
       }
     }
 
+    /*
     function getMapInstruction() {
       if (!graphParams.directionId) {
-        return 'Select a direction to see stops in that direction.';
+        return 'Select a direction to show stops in that direction.';
       }
       if (!graphParams.startStopId) {
-        return 'Click an origin stop.';
+        return 'Select origin and destination stops to show statistics for a particular trip.';
       }
       if (!graphParams.endStopId) {
-        return 'Click a destination stop.';
+        return 'Select a destination stop to show statistics for a particular trip.';
       }
       return '';
-    }
+    }  */
 
-    const mapInstruction = getMapInstruction();
+    // const mapInstruction = getMapInstruction();
 
     return (
       <Map
         center={position || this.agency.initialMapCenter}
         bounds={selectedRoute ? selectedRoute.bounds : null}
         zoom={zoom || this.agency.initialMapZoom}
-        style={mapClass}
+        style={mapStyle}
       >
         <TileLayer
           attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
           url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
-          opacity={0.3}
+          opacity={0.6}
         />
-        {populatedRoutes}
+        {items}
         <this.SpeedLegend />
-        <Control position="topright">
-          {!graphParams.startStopId || !graphParams.endStopId ? (
-            <div className="map-instructions">{mapInstruction}</div>
-          ) : null}
-        </Control>
       </Map>
     );
   }
@@ -523,6 +533,7 @@ class MapStops extends Component {
 
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
+  routes: state.routes.data,
   segmentMetricsMap: state.routeMetrics.segmentsMap,
   query: state.location.query,
 });

@@ -23,6 +23,35 @@ export function getDownstreamStopIds(routeInfo, dirInfo, stopId) {
 }
 
 /**
+ * Returns an array of stops along the route between two stops, including the endpoints.
+ *
+ *  @param routeInfo route from nextbus route config list
+ *  @param dirInfo direction object from route config
+ *  @param fromStop stop id
+ *  @param toStop stop id
+ */
+export function getTripStops(routeInfo, dirInfo, fromStop, toStop) {
+  const stopIds = dirInfo.stops;
+  const fromStopIndex = stopIds.indexOf(fromStop);
+  const toStopIndex = stopIds.indexOf(toStop);
+  const tripStops = [];
+  if (fromStopIndex !== -1 && toStopIndex !== -1) {
+    let startIndex = fromStopIndex;
+    if (dirInfo.loop && toStopIndex <= fromStopIndex) {
+      for (let i = startIndex; i < stopIds.length; i++) {
+        tripStops.push(routeInfo.stops[stopIds[i]]);
+      }
+      startIndex = 0;
+    }
+
+    for (let i = startIndex; i <= toStopIndex; i++) {
+      tripStops.push(routeInfo.stops[stopIds[i]]);
+    }
+  }
+  return tripStops;
+}
+
+/**
  * Gets coordinates that can be consumed by a Leaflet Polyline.  Uses
  * the GTFS stop geometry if possible, otherwise just stop to stop.
  *
@@ -42,9 +71,10 @@ export function getTripPoints(
 
   const fromStopGeometry = dirInfo.stop_geometry[fromStop];
   const toStopGeometry = dirInfo.stop_geometry[toStop];
-  const tripPoints = [];
 
   if (fromStopGeometry && toStopGeometry) {
+    const tripPoints = [];
+
     tripPoints.push(fromStopInfo);
 
     const coords = dirInfo.coords;
@@ -66,27 +96,10 @@ export function getTripPoints(
     }
 
     tripPoints.push(toStopInfo);
+    return tripPoints;
   } // if unknown geometry, draw straight lines between stops
-  else {
-    const stopIds = dirInfo.stops;
 
-    const fromStopIndex = stopIds.indexOf(fromStop);
-    const toStopIndex = stopIds.indexOf(toStop);
-    if (fromStopIndex !== -1 && toStopIndex !== -1) {
-      let startIndex = fromStopIndex;
-      if (dirInfo.loop && toStopIndex <= fromStopIndex) {
-        for (let i = startIndex; i < stopIds.length; i++) {
-          tripPoints.push(routeInfo.stops[stopIds[i]]);
-        }
-        startIndex = 0;
-      }
-
-      for (let i = startIndex; i <= toStopIndex; i++) {
-        tripPoints.push(routeInfo.stops[stopIds[i]]);
-      }
-    }
-  }
-  return tripPoints;
+  return getTripStops(routeInfo, dirInfo, fromStop, toStop);
 }
 
 /**

@@ -61,7 +61,7 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
   return `https://${S3Bucket}.s3.amazonaws.com/arrivals/${ArrivalsVersion}/${agencyId}/${dateStr.replace(
     /-/g,
     '/',
-  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?ai`;
+  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?aj`;
 }
 
 /**
@@ -81,13 +81,25 @@ export function fetchTripMetrics(params) {
     route(routeId:$routeId) {
       trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
         interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
+          departures
+          scheduledDepartures
+          arrivals
+          scheduledArrivals
           headways {
+            count median max
+            histogram { binStart binEnd count }
+          }
+          scheduledHeadways {
+            count median max
+            histogram { binStart binEnd count }
+          }
+          tripTimes {
             count median max
             percentiles(percentiles:[90]) { percentile value }
             histogram { binStart binEnd count }
           }
-          tripTimes {
-            count median avg max
+          scheduledTripTimes {
+            count median max
             percentiles(percentiles:[90]) { percentile value }
             histogram { binStart binEnd count }
           }
@@ -96,7 +108,16 @@ export function fetchTripMetrics(params) {
             percentiles(percentiles:[90]) { percentile value }
             histogram { binStart binEnd count }
           }
+          scheduledWaitTimes {
+            median max
+            percentiles(percentiles:[90]) { percentile value }
+            histogram { binStart binEnd count }
+          }
           departureScheduleAdherence {
+            onTimeCount
+            scheduledCount
+          }
+          arrivalScheduleAdherence {
             onTimeCount
             scheduledCount
           }
@@ -302,6 +323,11 @@ export function fetchRouteMetrics(params) {
       interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
         directions {
           directionId
+          scheduledMedianHeadway
+          scheduledMedianWaitTime
+          scheduledAverageSpeed(units:"mph")
+          completedTrips
+          scheduledCompletedTrips
           segments {
             fromStopId
             toStopId
@@ -312,7 +338,9 @@ export function fetchRouteMetrics(params) {
             fromStopId
             toStopId
             medianTripTime
+            scheduledMedianTripTime
             trips
+            scheduledTrips
           }
         }
       }
@@ -382,9 +410,9 @@ export function fetchAgencyMetrics(params) {
         routeId
         directions {
           directionId
+          medianHeadway
           medianWaitTime
           averageSpeed(units:"mph")
-          travelTimeVariability
           onTimeRate
         }
       }
@@ -480,9 +508,9 @@ export function resetArrivals() {
   };
 }
 
-export function handleSpiderMapClick(stops, latLng) {
+export function handleSpiderMapClick(nearbyLines, latLng) {
   return function(dispatch) {
-    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', stops, latLng });
+    dispatch({ type: 'RECEIVED_SPIDER_MAP_CLICK', nearbyLines, latLng });
   };
 }
 

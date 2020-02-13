@@ -4,18 +4,30 @@ import { createMuiTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
 
 import './App.css';
-import About from './components/About';
-import Landing from './components/Landing';
-import NotFound from './components/NotFound';
-import Dashboard from './screens/Dashboard';
-import RouteScreen from './screens/RouteScreen';
-import DataDiagnostic from './screens/DataDiagnostic';
-import Isochrone from './screens/Isochrone';
 
-const Components = {
+import Toolbar from '@material-ui/core/Toolbar';
+import AppBar from '@material-ui/core/AppBar';
+import { Tab, Tabs } from '@material-ui/core';
+import PollIcon from '@material-ui/icons/Poll';
+import PersonPinCircleIcon from '@material-ui/icons/PersonPinCircle';
+import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
+import AppBarLogo from './components/AppBarLogo';
+import LoadingIndicator from './components/LoadingIndicator';
+
+import NotFound from './screens/NotFound';
+import Isochrone from './screens/Isochrone';
+import DataDiagnostic from './screens/DataDiagnostic';
+import RouteScreen from './screens/RouteScreen';
+import Dashboard from './screens/Dashboard';
+import About from './screens/About';
+import Home from './screens/Home';
+
+import { Agencies } from './config';
+
+const Screens = {
   About,
+  Home,
   Isochrone,
-  Landing,
   Dashboard,
   RouteScreen,
   DataDiagnostic,
@@ -23,6 +35,11 @@ const Components = {
 };
 
 const theme = createMuiTheme({
+  breakpoints: {
+    values: {
+      md: 1050,
+    },
+  },
   palette: {
     primary: {
       main: '#0177BF',
@@ -32,15 +49,85 @@ const theme = createMuiTheme({
     },
   },
 });
-const App = ({ page }) => {
-  const Component = Components[page];
+
+const App = props => {
+  const { page, dispatch, type } = props;
+  const Screen = Screens[page];
+
+  const agency = Agencies[0];
+
+  let tabValue = type;
+  if (tabValue === 'ROUTESCREEN') {
+    tabValue = 'DASHBOARD';
+  }
+
+  const handleTabChange = (event, newValue) => {
+    dispatch({
+      type: newValue,
+      query: props.query,
+    });
+  };
+
   return (
     <ThemeProvider theme={theme}>
-      <Component />
+      <div>
+        <AppBar position="fixed">
+          <Toolbar variant="dense" disableGutters>
+            <AppBarLogo />
+            <div className="page-title">{agency.title}</div>
+            <LoadingIndicator />
+            <div className="flex-spacing"></div>
+            <Tabs value={tabValue} onChange={handleTabChange}>
+              <Tab
+                label={
+                  <div>
+                    <PollIcon style={{ verticalAlign: '-6px' }} />
+                    <span className="app-tab-text"> Metrics</span>
+                  </div>
+                }
+                value="DASHBOARD"
+              />
+              <Tab
+                label={
+                  <div>
+                    <PersonPinCircleIcon style={{ verticalAlign: '-6px' }} />
+                    <span className="app-tab-text"> Isochrone</span>
+                  </div>
+                }
+                value="ISOCHRONE"
+              />
+              <Tab
+                label={
+                  <div>
+                    <InfoRoundedIcon style={{ verticalAlign: '-6px' }} />
+                    <span className="app-tab-text"> About</span>
+                  </div>
+                }
+                value="ABOUT"
+              />
+            </Tabs>
+          </Toolbar>
+        </AppBar>
+        <div style={{ height: 48 }}>&nbsp;</div>
+        <Screen />
+      </div>
     </ThemeProvider>
   );
 };
 
-const mapStateToProps = ({ page }) => ({ page });
+const mapStateToProps = state => ({
+  page: state.page,
+  query: state.location.query,
+  type: state.location.type,
+});
 
-export default connect(mapStateToProps)(App);
+const mapDispatchToProps = dispatch => {
+  return {
+    dispatch,
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(App);

@@ -19,7 +19,6 @@ import '../../node_modules/react-vis/dist/style.css';
 
 import { connect } from 'react-redux';
 
-import Typography from '@material-ui/core/Typography';
 import { Radio, FormControl, FormControlLabel } from '@material-ui/core';
 
 import Moment from 'moment';
@@ -253,7 +252,7 @@ function MareyChart(props) {
 
   if (!mareyChartSupported) {
     return (
-      <div>The Marey chart is only available when viewing a single date.</div>
+      <div>The trip chart is only available when viewing a single date.</div>
     );
   }
 
@@ -364,7 +363,6 @@ function MareyChart(props) {
 
   return processedArrivals ? (
     <Fragment>
-      <Typography variant="h5">Marey chart</Typography>
       Vehicle runs: {series.length} <br />
       <FormControl>
         <div className="controls">

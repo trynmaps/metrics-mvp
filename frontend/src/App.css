@@ -43,8 +43,15 @@
 
 .page-title
 {
-    flex-grow:1;
     font-size:18px;
+    padding-left:14px;
+    display:none;
+    padding-right:7px;
+}
+
+.flex-spacing
+{
+    flex-grow:1;
 }
 
 .flex-screen
@@ -64,6 +71,53 @@
     opacity:1.0;
 }
 
+.app-tab-text {
+    display:none;
+}
+
+@media (min-width: 1050px)
+{
+    .map-fixed-half {
+        position:fixed !important;
+        top:48px;
+        width:50%;
+    }
+}
+
+.MuiFormControl-root.inline-form-control {
+    margin:8px 8px 8px 0px;
+}
+
+.MuiFormControl-root.inline-form-control label {
+    white-space: nowrap;
+}
+
+.MuiCheckbox-root
+{
+    padding:4px !important;
+}
+
+.app-logo {
+    max-height: 38px;
+    padding-top: 5px;
+    padding-left: 10px;
+    display:inline;
+}
+
+@media (min-width: 700px)
+{
+    .page-title {
+       display:inline;
+    }
+}
+
+@media (min-width: 900px)
+{
+    .app-tab-text {
+        display:inline;
+    }
+}
+
 .on-hover > svg {
   transform: scale(1.6);
 }
@@ -79,4 +133,17 @@
   color: #0177bf; /* this needs to match the theme's main primary color */
   text-shadow: -1px 1px 0 #fff, 1px 1px 0 #fff, 1px -1px 0 #fff,
     -1px -1px 0 #fff;
+}
+
+.rv-xy-plot__axis__title text {
+    font-size:16px !important;
+}
+
+text.rv-xy-plot__axis__tick__text {
+    font-size:14px;
+}
+
+.rv-discrete-color-legend-item__title
+{
+    font-size:14px;
 }

@@ -40,71 +40,6 @@ export function metersToMiles(meters) {
   return meters / 1609.344;
 }
 
-/**
- * Score computation.
- *
- * TODO: refactor with Info.jsx's computation of grades once we add in probability
- * of long wait and travel variability to RouteSummary.
- */
-export function computeScores(medianWait, onTimeRate, speed, variability) {
-  const medianWaitScoreScale = d3
-    .scaleLinear()
-    .domain([5, 10])
-    .rangeRound([100, 0])
-    .clamp(true);
-
-  const onTimeRateScoreScale = d3
-    .scaleLinear()
-    .domain([1, 0])
-    .rangeRound([100, 0])
-    .clamp(true);
-
-  const speedScoreScale = d3
-    .scaleLinear()
-    .domain([5, 10])
-    .rangeRound([0, 100])
-    .clamp(true);
-
-  // score for travel time variability
-  // where variability is 90th percentile trip time minus 10th percentile trip time
-
-  const variabilityScoreScale = d3
-    .scaleLinear()
-    .domain([10, 20])
-    .rangeRound([100, 0])
-    .clamp(true);
-
-  const medianWaitScore =
-    medianWait != null ? medianWaitScoreScale(medianWait) : null;
-  const onTimeRateScore =
-    onTimeRate != null ? onTimeRateScoreScale(onTimeRate) : null;
-  const speedScore = speed != null ? speedScoreScale(speed) : null;
-  const travelVarianceScore =
-    variability != null ? variabilityScoreScale(variability) : null;
-
-  const totalScore =
-    medianWaitScore != null &&
-    onTimeRateScore != null &&
-    speedScore != null &&
-    travelVarianceScore != null
-      ? Math.round(
-          (medianWaitScore +
-            onTimeRateScore +
-            speedScore +
-            travelVarianceScore) /
-            4.0,
-        )
-      : null;
-
-  return {
-    medianWaitScore,
-    onTimeRateScore,
-    speedScore,
-    travelVarianceScore,
-    totalScore,
-  };
-}
-
 export const HighestPossibleScore = 100;
 
 const backgroundColorScale = d3
@@ -169,21 +104,15 @@ export function milesBetween(p1, p2) {
   return metersToMiles(meters);
 }
 
-export function addRanks(
-  statsArr,
-  property,
-  sortFactor,
-  rankProperty,
-  rankCountProperty,
-) {
-  const rankedStats = statsArr.filter(stats => stats[property] != null);
-  rankedStats.sort((a, b) => {
-    return (a[property] - b[property]) * sortFactor;
+export function addAveragesForAllDirections(routeStats, property) {
+  let total = 0;
+  let count = 0;
+  routeStats.directions.forEach(function(direction) {
+    const directionValue = direction[property];
+    if (directionValue != null) {
+      total += directionValue;
+      count += 1;
+    }
   });
-
-  const rankCount = rankedStats.length;
-  rankedStats.forEach(function(stats, index) {
-    stats[rankProperty] = index + 1;
-    stats[rankCountProperty] = rankCount;
-  });
+  routeStats[property] = count > 0 ? total / count : null;
 }

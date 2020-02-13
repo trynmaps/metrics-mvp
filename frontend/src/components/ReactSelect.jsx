@@ -344,19 +344,18 @@ function Option(props) {
     innerProps,
     isFocused,
     isSelected,
-    data: {
-      label,
-      value: { icon },
-    },
-    selectProps: { handleItemMouseOver, handleItemMouseOut },
+    data: { value },
+    selectProps: { onItemMouseOver, onItemMouseOut },
   } = props;
   const focusedStyle = {};
 
   if (isFocused) {
-    handleItemMouseOver(icon, label);
+    if (onItemMouseOver) {
+      onItemMouseOver(value);
+    }
     if (!isSelected) focusedStyle.backgroundColor = theme.palette.action.hover;
-  } else {
-    handleItemMouseOut(icon);
+  } else if (onItemMouseOut) {
+    onItemMouseOut(value);
   }
 
   return (
@@ -383,7 +382,9 @@ function handleMenuOpen(
     allowTransition.current = true;
     setMenuIsOpenTransition(true);
     setMenuIsOpen(true);
-    onOpen();
+    if (onOpen) {
+      onOpen();
+    }
   };
 }
 
@@ -400,12 +401,11 @@ function handleMenuClose(
     document.activeElement.blur();
     setMenuIsOpenTransition(false);
     setTimeout(() => setMenuIsOpen(false), transitionDuration);
-    onClose();
-  };
-}
 
-function filterValue(stopId) {
-  return option => option.value.stopId === stopId;
+    if (onClose) {
+      onClose();
+    }
+  };
 }
 
 const reposition = {};
@@ -432,6 +432,10 @@ function handleReposition(
   };
 
   return reposition[`${inputId}${eventType}`];
+}
+
+function filterValue(value) {
+  return option => option.value === value;
 }
 
 export default function ReactSelect(props) {
@@ -526,11 +530,10 @@ export default function ReactSelect(props) {
         setMenuIsOpen,
         props.onClose,
       )}
-      placeholder="Type here to search..."
       ref={selectRef}
       styles={selectStyles}
-      value={props.options.filter(filterValue(props.stopId))}
       {...props}
+      value={props.options.filter(filterValue(props.value))}
       // other props accessed via selectProps object of child props
       focusedOptionRef={focusedOptionRef}
       labelRef={labelRef}

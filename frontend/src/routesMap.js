@@ -150,8 +150,8 @@ export function fullQueryFromParams(params) {
 }
 
 export default {
+  HOME: '/',
   ABOUT: '/about',
-  LANDING: '/landing',
   ISOCHRONE: {
     path: '/isochrone',
     thunk: async (dispatch, getState) => {
@@ -160,7 +160,7 @@ export default {
     },
   },
   DASHBOARD: {
-    path: '/',
+    path: '/metrics',
     thunk: async (dispatch, getState) => {
       const newParams = processQuery(getState);
       dispatch(handleGraphParams(newParams));

@@ -21,7 +21,7 @@ import '../../node_modules/react-vis/dist/style.css';
 /**
  * Bar chart of average and planning percentile wait and time across the day.
  */
-class InfoIntervalsOfDay extends Component {
+class TripTimesByTimeChart extends Component {
   static AVERAGE_TIME = 'average_time';
 
   static PLANNING_TIME = 'planning_time';
@@ -30,7 +30,7 @@ class InfoIntervalsOfDay extends Component {
     super(props);
 
     this.state = {
-      selectedOption: InfoIntervalsOfDay.AVERAGE_TIME, // radio button starts on average time
+      selectedOption: TripTimesByTimeChart.AVERAGE_TIME, // radio button starts on average time
       crosshairValues: [], // tooltip starts out empty
     };
   }
@@ -81,7 +81,7 @@ class InfoIntervalsOfDay extends Component {
       let y = 0;
 
       if (interval[intervalField] != null) {
-        if (this.state.selectedOption === InfoIntervalsOfDay.AVERAGE_TIME) {
+        if (this.state.selectedOption === TripTimesByTimeChart.AVERAGE_TIME) {
           y = getPercentileValue(interval[intervalField], 50);
         } else {
           y = getPercentileValue(interval[intervalField], PLANNING_PERCENTILE);
@@ -133,10 +133,10 @@ class InfoIntervalsOfDay extends Component {
                     <Radio
                       id="average_time"
                       type="radio"
-                      value={InfoIntervalsOfDay.AVERAGE_TIME}
+                      value={TripTimesByTimeChart.AVERAGE_TIME}
                       checked={
                         this.state.selectedOption ===
-                        InfoIntervalsOfDay.AVERAGE_TIME
+                        TripTimesByTimeChart.AVERAGE_TIME
                       }
                       onChange={this.handleOptionChange}
                     />
@@ -149,10 +149,10 @@ class InfoIntervalsOfDay extends Component {
                     <Radio
                       id="planning_time"
                       type="radio"
-                      value={InfoIntervalsOfDay.PLANNING_TIME}
+                      value={TripTimesByTimeChart.PLANNING_TIME}
                       checked={
                         this.state.selectedOption ===
-                        InfoIntervalsOfDay.PLANNING_TIME
+                        TripTimesByTimeChart.PLANNING_TIME
                       }
                       onChange={this.handleOptionChange}
                     />
@@ -165,7 +165,7 @@ class InfoIntervalsOfDay extends Component {
             <XYPlot
               xType="ordinal"
               height={300}
-              width={400}
+              width={500}
               stackBy="y"
               onMouseLeave={this.onMouseLeave}
             >
@@ -242,4 +242,4 @@ class InfoIntervalsOfDay extends Component {
   }
 }
 
-export default InfoIntervalsOfDay;
+export default TripTimesByTimeChart;
