@@ -47,7 +47,6 @@ class MapSpider extends Component {
 
   constructor(props) {
     super(props);
-    console.log(props);
 
     // for now, only supports 1 agency at a time.
     // todo: support multiple agencies on one map
@@ -468,8 +467,6 @@ class MapSpider extends Component {
    */
   render() {
 
-console.log('this.props', this.props)
-
     const { position, zoom, spiderSelection } = this.props;
     const { isValidLocation } = this.state;
     const mapClass = { width: '100%', height: this.state.height };
@@ -531,7 +528,6 @@ console.log('this.props', this.props)
 } // end class
 
 const mapStateToProps = state => {
-  console.log('state', state)
   return {
   routes: state.routes.data,
   statsByRouteId: state.agencyMetrics.statsByRouteId,
