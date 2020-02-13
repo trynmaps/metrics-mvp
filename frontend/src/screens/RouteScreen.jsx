@@ -16,11 +16,10 @@ import { connect } from 'react-redux';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
 import DateTimePanel from '../components/DateTimePanel';
-
+import Share from '../components/Share';
 import { getAgency } from '../config';
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
-
 import { fetchRoutes } from '../actions';
 
 const useStyles = makeStyles(theme => ({
@@ -141,6 +140,7 @@ function RouteScreen(props) {
 
   const classes = useStyles();
   const { breadCrumbStyling, breadCrumbsWrapper } = classes;
+  debugger;
   return (
     <Fragment>
       <AppBar position="relative">
@@ -152,7 +152,12 @@ function RouteScreen(props) {
           </NavLink>
           <div className="page-title">{agency ? agency.title : null}</div>
           <div style={{ flexGrow: 1 }} />
-          <DateTimePanel dateRangeSupported />
+          <div style={{paddingRight: '2rem'}}>
+              <Share />
+            </div>
+            <div>
+              <DateTimePanel dateRangeSupported />
+            </div>
         </Toolbar>
       </AppBar>
       <Paper className={breadCrumbsWrapper}>
