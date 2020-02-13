@@ -114,6 +114,7 @@ const initialSpiderSelection = {
   stops: [],
   latLng: null,
   hoverRoute: null,
+  segmentRouteId: null,
 };
 
 export function spiderSelection(state = initialSpiderSelection, action) {
@@ -128,6 +129,11 @@ export function spiderSelection(state = initialSpiderSelection, action) {
       return {
         ...state,
         hoverRoute: action.hoverRoute,
+      };
+    case 'RECEIVED_SEGMENT_HOVER':
+      return {
+        ...state,
+        segmentRouteId: action.segmentRouteId,
       };
     default:
       return state;

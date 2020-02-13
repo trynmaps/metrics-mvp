@@ -344,6 +344,12 @@ export function handleRouteTableHover(hoverRoute) {
   };
 }
 
+export function handleSegmentHover(segmentRouteId) {
+  return function(dispatch) {
+    dispatch({ type: 'RECEIVED_SEGMENT_HOVER', segmentRouteId })
+  };
+}
+
 export function handleGraphParams(params) {
   return function(dispatch, getState) {
     const oldParams = getState().graphParams;

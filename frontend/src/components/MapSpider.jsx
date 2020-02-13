@@ -24,7 +24,7 @@ import {
   milesBetween,
   HighestPossibleScore,
 } from '../helpers/routeCalculations';
-import { handleSpiderMapClick } from '../actions';
+import { handleSpiderMapClick, handleSegmentHover } from '../actions';
 import { Agencies } from '../config';
 
 import MapShield from './MapShield';
@@ -320,6 +320,7 @@ class MapSpider extends Component {
    * Creates a line between two stops.
    */
   generatePolyline = (startMarker, waitScaled, i, color) => {
+    const { onSegmentHover } = this.props;
     const downstreamStops = startMarker.downstreamStops;
 
     const computedWeight = waitScaled * 1.5 + 3;
@@ -350,6 +351,7 @@ class MapSpider extends Component {
         onMouseOver={e => {
           // on hover, draw segment wider
           e.target.setStyle({ opacity: 1, weight: computedWeight + 4 });
+          onSegmentHover(startMarker.routeId);
           return true;
         }}
         onFocus={e => {
@@ -357,6 +359,7 @@ class MapSpider extends Component {
         }}
         onMouseOut={e => {
           e.target.setStyle({ opacity: 0.5, weight: computedWeight });
+          onSegmentHover(null);
           return true;
         }}
         onBlur={e => {
@@ -638,6 +641,8 @@ const mapDispatchToProps = dispatch => {
   return {
     onSpiderMapClick: (stops, latLng) =>
       dispatch(handleSpiderMapClick(stops, latLng)),
+    onSegmentHover: segmentRouteId =>
+      dispatch(handleSegmentHover(segmentRouteId)),
     dispatch,
   };
 };

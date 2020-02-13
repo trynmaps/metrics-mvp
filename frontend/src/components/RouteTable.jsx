@@ -262,6 +262,9 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     marginTop: theme.spacing(3),
   },
+  artificialHover: {
+    backgroundColor: 'rgba(0, 0, 0, 0.07)',
+  },
   tableWrapper: {
     overflowX: 'auto',
   },
@@ -274,7 +277,11 @@ function RouteTable(props) {
   const dense = true;
   const theme = createMuiTheme();
 
-  const { routeStats, onRowHover } = props;
+  const {
+    routeStats,
+    onRowHover,
+    spiderSelection: { segmentRouteId },
+  } = props;
 
   useEffect(() => {
     return () => onRowHover(null);
@@ -318,6 +325,10 @@ function RouteTable(props) {
             {stableSort(displayedRouteStats, order, orderBy).map(
               (row, index) => {
                 const labelId = `enhanced-table-checkbox-${index}`;
+                let hover;
+                if (row.route.id === segmentRouteId) {
+                  hover = classes.artificialHover;
+                }
 
                 return (
                   <TableRow
@@ -326,6 +337,7 @@ function RouteTable(props) {
                     tabIndex={-1}
                     key={row.route.id}
                     onMouseEnter={() => onRowHover(row.route)}
+                    classes={{ root: hover }}
                   >
                     <TableCell
                       component="th"
