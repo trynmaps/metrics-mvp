@@ -3,7 +3,7 @@ import { NavLink } from 'redux-first-router-link';
 
 export default function AppBarLogo(props) {
   const logoStyle = {
-    maxHeight: '64px',
+    maxHeight: '48px',
     paddingRight: '8px',
   };
 
