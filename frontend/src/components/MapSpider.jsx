@@ -55,7 +55,7 @@ class MapSpider extends Component {
     this.state = {
       // Should be true by default, so that we don't display the snackbar
       isValidLocation: true,
-      height: this.computeHeight()
+      height: this.computeHeight(),
     };
 
     this.mapRef = createRef(); // used for geolocating
@@ -103,8 +103,10 @@ class MapSpider extends Component {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
-    
-    const routeColor = startMarker.routeInfo.color ? `#${startMarker.routeInfo.color}` : this.routeColor(startMarker.routeIndex % 10);
+
+    const routeColor = startMarker.routeInfo.color
+      ? `#${startMarker.routeInfo.color}`
+      : this.routeColor(startMarker.routeIndex % 10);
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
@@ -151,7 +153,9 @@ class MapSpider extends Component {
     if (selectedStops) {
       items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
-        const routeColor = startMarker.routeInfo.color ? `#${startMarker.routeInfo.color}` : this.routeColor(startMarker.routeIndex % 10);
+        const routeColor = startMarker.routeInfo.color
+          ? `#${startMarker.routeInfo.color}`
+          : this.routeColor(startMarker.routeIndex % 10);
 
         return (
           <CircleMarker
@@ -232,7 +236,9 @@ class MapSpider extends Component {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const terminalPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = startMarker.routeInfo.color ? `#${startMarker.routeInfo.color}` : this.routeColor(startMarker.routeIndex % 10);
+    const routeColor = startMarker.routeInfo.color
+      ? `#${startMarker.routeInfo.color}`
+      : this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <CircleMarker
@@ -254,7 +260,9 @@ class MapSpider extends Component {
 
     const computedWeight = waitScaled * 1.5 + 3;
 
-    const routeColor = startMarker.routeInfo.color ? `#${startMarker.routeInfo.color}` : this.routeColor(startMarker.routeIndex % 10);
+    const routeColor = startMarker.routeInfo.color
+      ? `#${startMarker.routeInfo.color}`
+      : this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <Polyline
@@ -466,7 +474,6 @@ class MapSpider extends Component {
    * Main React render method.
    */
   render() {
-
     const { position, zoom, spiderSelection } = this.props;
     const { isValidLocation } = this.state;
     const mapClass = { width: '100%', height: this.state.height };
@@ -529,12 +536,13 @@ class MapSpider extends Component {
 
 const mapStateToProps = state => {
   return {
-  routes: state.routes.data,
-  statsByRouteId: state.agencyMetrics.statsByRouteId,
-  graphParams: state.graphParams,
-  spiderSelection: state.spiderSelection,
-  query: state.location.query,
-}};
+    routes: state.routes.data,
+    statsByRouteId: state.agencyMetrics.statsByRouteId,
+    graphParams: state.graphParams,
+    spiderSelection: state.spiderSelection,
+    query: state.location.query,
+  };
+};
 
 const mapDispatchToProps = dispatch => {
   return {
