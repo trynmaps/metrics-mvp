@@ -35,16 +35,15 @@ const useStyles = makeStyles(theme => ({
   },
   breadCrumbsWrapper: {
     padding: '1%',
-    paddingRight: '0',
+    display: 'flex',
+    justifyContent: 'space-between',
   },
   externalLink: {
     color: 'rgba(0, 0, 0, 0.54)',
-    marginLeft: '5px',
-    display: 'inline-block',
   },
-  externalLinkIcon: {
-    position: 'relative',
-    top: '5px',
+  officialLink: {
+    display: 'flex',
+    alignItems: 'center',
   },
 }));
 
@@ -71,12 +70,7 @@ function RouteScreen(props) {
   const backArrowStyle = { color: '#ffffff' };
 
   const breadCrumbs = (paths, classes) => {
-    const {
-      breadCrumbStyling,
-      darkLinks,
-      externalLink,
-      externalLinkIcon,
-    } = classes;
+    const { breadCrumbStyling, darkLinks } = classes;
 
     let link = {
       type: 'ROUTESCREEN',
@@ -105,45 +99,28 @@ function RouteScreen(props) {
         const updatedPayload = Object.assign({ ...link.payload }, payload);
         link = Object.assign({ ...link }, { payload: updatedPayload });
         const { label, specialLabel } = labels(param, path.title);
-
-        const officialInfoUrl = path.url;
-
-        return (
-          <>
-            {hasNextValue ? (
-              <Typography
-                variant="subtitle1"
-                key={label}
-                className={`${breadCrumbStyling} ${darkLinks}`}
-              >
-                {' '}
-                {specialLabel}{' '}
-                <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
-                  {' '}
-                  {label}{' '}
-                </Link>{' '}
-              </Typography>
-            ) : (
-              <Typography
-                variant="subtitle1"
-                key={label}
-                className={breadCrumbStyling}
-              >
-                {' '}
-                {specialLabel} {label}{' '}
-              </Typography>
-            )}
-            {officialInfoUrl && (
-              <a
-                href={officialInfoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={externalLink}
-              >
-                <OpenInNewIcon className={externalLinkIcon} />
-              </a>
-            )}
-          </>
+        return hasNextValue ? (
+          <Typography
+            variant="subtitle1"
+            key={label}
+            className={`${breadCrumbStyling} ${darkLinks}`}
+          >
+            {' '}
+            {specialLabel}{' '}
+            <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
+              {' '}
+              {label}{' '}
+            </Link>{' '}
+          </Typography>
+        ) : (
+          <Typography
+            variant="subtitle1"
+            key={label}
+            className={breadCrumbStyling}
+          >
+            {' '}
+            {specialLabel} {label}{' '}
+          </Typography>
         );
       });
   };
@@ -172,7 +149,14 @@ function RouteScreen(props) {
       : null;
 
   const classes = useStyles();
-  const { breadCrumbStyling, breadCrumbsWrapper } = classes;
+  const {
+    breadCrumbStyling,
+    breadCrumbsWrapper,
+    externalLink,
+    officialLink,
+  } = classes;
+  const officialInfoUrl = selectedRoute && selectedRoute.url;
+
   return (
     <Fragment>
       <AppBar position="relative">
@@ -216,6 +200,18 @@ function RouteScreen(props) {
             classes,
           )}
         </Breadcrumbs>
+        {officialInfoUrl && (
+          <div className={officialLink}>
+            <a
+              href={officialInfoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={externalLink}
+            >
+              Official Site
+            </a>
+          </div>
+        )}
       </Paper>
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
