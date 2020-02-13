@@ -1,5 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { createMuiTheme } from '@material-ui/core/styles';
+import { ThemeProvider } from '@material-ui/styles';
 
 import './App.css';
 import About from './components/About';
@@ -20,9 +22,23 @@ const Components = {
   NotFound,
 };
 
+const theme = createMuiTheme({
+  palette: {
+    primary: {
+      main: '#0177BF',
+    },
+    secondary: {
+      main: '#D02143',
+    },
+  },
+});
 const App = ({ page }) => {
   const Component = Components[page];
-  return <Component />;
+  return (
+    <ThemeProvider theme={theme}>
+      <Component />
+    </ThemeProvider>
+  );
 };
 
 const mapStateToProps = ({ page }) => ({ page });

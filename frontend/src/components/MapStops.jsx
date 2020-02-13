@@ -6,10 +6,11 @@ import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
+import { withTheme } from '@material-ui/core/styles';
+import { ThemeProvider } from '@material-ui/styles';
 import ReactDOMServer from 'react-dom/server';
 import { handleGraphParams } from '../actions';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
-import { Colors } from '../UIConstants';
 import { Agencies } from '../config';
 
 class MapStops extends Component {
@@ -51,6 +52,7 @@ class MapStops extends Component {
     tooltip,
   ) => {
     let icon = null;
+    const stopColor = this.props.theme.palette.primary;
 
     if (IconType) {
       // Given an IconType indicates start or end stop.  This is a white circle with a black icon,
@@ -64,15 +66,21 @@ class MapStops extends Component {
           `${`<svg width="24" height="24" viewBox="-10 -10 10 10">` +
             // this is a larger white circle
 
-            `<circle cx="-5" cy="-5" r="4.5" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
-            // this is the passed in icon, which we ask React to render as html (becomes an svg object)
+            `<circle cx="-5" cy="-5" r="4.5" fill="white" stroke="${stopColor.main}" stroke-width="0.75"/>` +
+            // This is the passed in icon, which we ask React to render as html (becomes an svg object)
+            // We need to pass in our custom theme here, or else the page will get the default theme css
+            // injected into page, conflicting with our custom theme.
 
-            `</svg><div style="position:relative; top: -26px; left:2px">`}${ReactDOMServer.renderToString(
-            <IconType style={{ color: Colors.INDIGO }} fontSize="small" />,
-          )}</div>` +
+            `</svg><div style="position:relative; top: -26px; left:2px">`}
+              ${ReactDOMServer.renderToString(
+                <ThemeProvider theme={this.props.theme}>
+                  <IconType color="primary" fontSize="small" />
+                </ThemeProvider>,
+              )}
+          </div>` +
           // this is the stop title with a text shadow to outline it in white
 
-          `<div style="position:relative; top:-50px; left:25px; font-weight:bold; color:${Colors.INDIGO}; ` +
+          `<div style="position:relative; top:-50px; left:25px; font-weight:bold; color:${stopColor.main}; ` +
           `text-shadow: -1px 1px 0 #fff,` +
           `1px 1px 0 #fff,` +
           `1px -1px 0 #fff,` +
@@ -89,10 +97,10 @@ class MapStops extends Component {
         html:
           `<svg viewBox="-10 -10 10 10"><g transform="rotate(${rotation} -5 -5)">` +
           // First we draw a white circle
-          `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${Colors.INDIGO}" stroke-width="0.75"/>` +
+          `<circle cx="-5" cy="-5" r="3" fill="white" stroke="${stopColor.dark}" stroke-width="0.75"/>` +
           // Then the "v" shape point to zero degrees (east).  The entire parent svg is rotated.
           `<polyline points="-5.5,-6 -4,-5 -5.5,-4" stroke-linecap="round" stroke-linejoin="round"
-            stroke="${Colors.INDIGO}" stroke-width="0.6" fill="none"/>` +
+            stroke="${stopColor.dark}" stroke-width="0.6" fill="none"/>` +
           `</g>` +
           `</svg>`,
       });
@@ -230,7 +238,7 @@ class MapStops extends Component {
             ? i >= startStopIndex || i < endStopIndex
             : i >= startStopIndex && i < endStopIndex
         ) {
-          color = Colors.INDIGO;
+          color = this.props.theme.palette.primary.main;
           weight = 14;
         }
       }
@@ -529,4 +537,4 @@ const mapDispatchToProps = dispatch => {
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
-)(MapStops);
+)(withTheme(MapStops));

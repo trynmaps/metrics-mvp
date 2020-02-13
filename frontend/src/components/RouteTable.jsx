@@ -1,7 +1,7 @@
 import React, { useState, Fragment } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
-import { lighten, makeStyles, createMuiTheme } from '@material-ui/core/styles';
+import { lighten, makeStyles, useTheme } from '@material-ui/core/styles';
 import Chip from '@material-ui/core/Chip';
 import Popover from '@material-ui/core/Popover';
 import Table from '@material-ui/core/Table';
@@ -281,7 +281,7 @@ function RouteTable(props) {
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
   const dense = true;
-  const theme = createMuiTheme();
+  const theme = useTheme();
 
   const { statsByRouteId } = props;
 
