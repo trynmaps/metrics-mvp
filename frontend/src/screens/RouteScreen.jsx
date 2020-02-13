@@ -154,11 +154,7 @@ function RouteScreen(props) {
           <AppBarLogo />
           <div className="page-title">{agency ? agency.title : null}</div>
           <div style={{ flexGrow: 1 }} />
-          <DateTimePanel
-            dateRangeSupported={
-              tripMetrics || tripMetricsError || tripMetricsLoading
-            }
-          />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
       <Paper className={breadCrumbsWrapper}>

@@ -73,14 +73,16 @@ function MareyChart(props) {
   const agency = getAgency(graphParams.agencyId);
   const timezoneId = agency ? agency.timezoneId : 'UTC';
 
+  const mareyChartSupported = graphParams.date === graphParams.startDate;
+
   // Request missing arrival data lazily, only when this chart is tabbed into view.
   // This makes the app more responsive to route and date changes if we are hidden.
 
   useEffect(() => {
-    if (!arrivals && graphParams.routeId && !hidden) {
+    if (!arrivals && graphParams.routeId && !hidden && mareyChartSupported) {
       myFetchArrivals(graphParams);
     }
-  }, [graphParams, myFetchArrivals, arrivals, hidden]);
+  }, [graphParams, myFetchArrivals, arrivals, hidden, mareyChartSupported]);
 
   // When both the raw arrival history and route configs have loaded, first
   // rebucket the data by trip ID.  Then create react-vis Series objects for
@@ -248,6 +250,12 @@ function MareyChart(props) {
       setProcessedArrivals(null);
     }
   }, [arrivals, routes, timezoneId]);
+
+  if (!mareyChartSupported) {
+    return (
+      <div>The Marey chart is only available when viewing a single date.</div>
+    );
+  }
 
   /**
    * This is a render-time helper function.

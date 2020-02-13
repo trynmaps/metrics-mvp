@@ -35,7 +35,7 @@ function Dashboard(props) {
           <SidebarButton />
           <AppBarLogo />
           <div className="page-title">{agency.title}</div>
-          <DateTimePanel />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
       <Grid container spacing={0}>
