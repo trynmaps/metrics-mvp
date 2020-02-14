@@ -193,7 +193,6 @@ class Isochrone extends React.Component {
 
   getUserLocation() {
     return new Promise(resolve => {
-      console.log('inside getUserLocation');
       navigator.geolocation.getCurrentPosition(position => {
         resolve({
           lat: position.coords.latitude,
@@ -202,7 +201,6 @@ class Isochrone extends React.Component {
       });
     })
       .then(latlng => {
-        console.log('latlng', latlng);
         this.computeIsochrones(latlng, null);
       })
       .catch();
@@ -213,7 +211,6 @@ class Isochrone extends React.Component {
       return;
     }
     this.resetMap();
-    console.log(event.latlng);
     this.computeIsochrones(event.latlng, null);
   }
 
