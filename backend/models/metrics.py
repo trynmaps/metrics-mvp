@@ -1,9 +1,8 @@
-import math
 import pytz
 import sys
 import time
 from datetime import date
-from . import wait_times, util, arrival_history, trip_times, errors, constants, timetables, routeconfig, config, precomputed_stats
+from . import wait_times, util, arrival_history, trip_times, constants, timetables, routeconfig, config, precomputed_stats
 
 import pandas as pd
 import numpy as np

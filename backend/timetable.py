@@ -1,12 +1,10 @@
-import json
 from datetime import datetime, date
 import argparse
 
 import pandas as pd
 import numpy as np
-import partridge as ptg
 
-from models import metrics, timetables, arrival_history, util, constants, errors, config
+from models import metrics, timetables, arrival_history, util, config
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Get the timetable for stops on a given route")

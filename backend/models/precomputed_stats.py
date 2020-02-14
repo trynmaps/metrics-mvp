@@ -1,6 +1,5 @@
 from . import util, config
 from datetime import date
-import sys
 import re
 import requests
 from pathlib import Path

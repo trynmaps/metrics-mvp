@@ -1,7 +1,5 @@
-from . import nextbus, constants, metrics, util, wait_times, trip_times, config
-from graphene import ObjectType, String, Int, Float, List, Field, Boolean, Schema
-from datetime import date
-import sys
+from . import constants, metrics, util, config
+from graphene import ObjectType, String, Int, Float, List, Field, Schema
 import numpy as np
 import math
 

@@ -1,10 +1,5 @@
-from models import metrics, eclipses, config, util, arrival_history
-import json
+from models import config
 import argparse
-from datetime import datetime, date
-import pytz
-import pandas as pd
-import numpy as np
 
 if __name__ == '__main__':
 
