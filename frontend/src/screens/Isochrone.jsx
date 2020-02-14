@@ -20,7 +20,13 @@ import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { fetchRoutes } from '../actions';
-import { S3Bucket, MetricsBaseURL, Agencies, PrecomputedStatsVersion, RoutesVersion } from '../config';
+import {
+  S3Bucket,
+  MetricsBaseURL,
+  Agencies,
+  PrecomputedStatsVersion,
+  RoutesVersion,
+} from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
 
 import './Isochrone.css';
@@ -97,7 +103,9 @@ class Isochrone extends React.Component {
     workerUrl += `&s3_bucket=${encodeURIComponent(S3Bucket)}`;
     workerUrl += `&agency_id=${encodeURIComponent(this.agencyId)}`;
     workerUrl += `&routes_version=${encodeURIComponent(RoutesVersion)}`;
-    workerUrl += `&precomputed_stats_version=${encodeURIComponent(PrecomputedStatsVersion)}`;
+    workerUrl += `&precomputed_stats_version=${encodeURIComponent(
+      PrecomputedStatsVersion,
+    )}`;
 
     const isochroneWorker = new Worker(workerUrl);
 
@@ -133,11 +141,11 @@ class Isochrone extends React.Component {
   refContainer = element => {
     this.container = element;
     if (element) {
-      DomEvent
-        .disableClickPropagation(this.container)
-        .disableScrollPropagation(this.container)
+      DomEvent.disableClickPropagation(this.container).disableScrollPropagation(
+        this.container,
+      );
     }
-  }
+  };
 
   componentDidMount() {
     if (!this.props.routes) {
@@ -146,6 +154,7 @@ class Isochrone extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
+    if (prevProps.routes !== this.props.routes) this.getUserLocation();
     if (
       this.props.date !== prevProps.date ||
       this.props.startTime !== prevProps.startTime ||
@@ -165,11 +174,11 @@ class Isochrone extends React.Component {
       if (computeId === this.state.computeId) {
         this.addReachableLocationsLayer(data);
       }
-      this.setState({noData: false});
+      this.setState({ noData: false });
     } else if (data.type === 'error') {
       if (data.error.status >= 400 && data.error.status < 500) {
         // there is no JSON data for this day
-        this.setState({noData: true});
+        this.setState({ noData: true });
       } else {
         this.showError(data.error.message);
       }
@@ -182,11 +191,29 @@ class Isochrone extends React.Component {
     alert(message);
   }
 
+  getUserLocation() {
+    return new Promise(resolve => {
+      console.log('inside getUserLocation');
+      navigator.geolocation.getCurrentPosition(position => {
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      });
+    })
+      .then(latlng => {
+        console.log('latlng', latlng);
+        this.computeIsochrones(latlng, null);
+      })
+      .catch();
+  }
+
   handleMapClick(event) {
     if (this.state.computeId) {
       return;
     }
     this.resetMap();
+    console.log(event.latlng);
     this.computeIsochrones(event.latlng, null);
   }
 
@@ -654,45 +681,39 @@ class Isochrone extends React.Component {
           {/* see http://maps.stamen.com for details */}
           <Control position="topleft" className="">
             <div ref={this.refContainer}>
-            <Grid container
-              className="isochrone-controls"
-              direction="column">
-              <Grid item>
-                <Typography variant="subtitle1">Max Trip Time</Typography>
-              </Grid>
-              <Grid item>
-                <Select
-                  value={this.state.maxTripMin}
-                  onChange={this.handleMaxTripMinChange}
-                >
-                  {tripMins.map(tripMin => (
-                    <MenuItem key={tripMin} value={tripMin}>
-                      {tripMin} minutes
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Grid>
-            </Grid>
-            <Grid container
-              className="isochrone-controls"
-              direction="column">
-              <Grid item>
-                <Typography variant="subtitle1">Routes</Typography>
-              </Grid>
-              <Grid container item
-                direction="row"
-                alignItems="flex-start">
+              <Grid container className="isochrone-controls" direction="column">
                 <Grid item>
-                  <Button onClick={this.selectAllRoutesClicked}>all</Button>
-                  <Button onClick={this.selectNoRoutesClicked}>none</Button>
+                  <Typography variant="subtitle1">Max Trip Time</Typography>
+                </Grid>
+                <Grid item>
+                  <Select
+                    value={this.state.maxTripMin}
+                    onChange={this.handleMaxTripMinChange}
+                  >
+                    {tripMins.map(tripMin => (
+                      <MenuItem key={tripMin} value={tripMin}>
+                        {tripMin} minutes
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </Grid>
               </Grid>
-              <Grid item>
-                <List className="isochrone-routes">
-                  {(routes || []).map(route => this.makeRouteToggle(route))}
-                </List>
+              <Grid container className="isochrone-controls" direction="column">
+                <Grid item>
+                  <Typography variant="subtitle1">Routes</Typography>
+                </Grid>
+                <Grid container item direction="row" alignItems="flex-start">
+                  <Grid item>
+                    <Button onClick={this.selectAllRoutesClicked}>all</Button>
+                    <Button onClick={this.selectNoRoutesClicked}>none</Button>
+                  </Grid>
+                </Grid>
+                <Grid item>
+                  <List className="isochrone-routes">
+                    {(routes || []).map(route => this.makeRouteToggle(route))}
+                  </List>
+                </Grid>
               </Grid>
-            </Grid>
             </div>
           </Control>
           <Control position="topright">
@@ -719,13 +740,13 @@ class Isochrone extends React.Component {
             </div>
           </Control>
           <Control position="bottomleft">
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={this.resetMapClicked}
-              >
-                Clear map
-              </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={this.resetMapClicked}
+            >
+              Clear map
+            </Button>
             <br />
             <br />
           </Control>
