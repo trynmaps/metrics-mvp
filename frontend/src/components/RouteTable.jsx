@@ -415,36 +415,32 @@ function RouteTable(props) {
             columns={columns}
           />
           <TableBody>
-            {stableSort(displayedRouteStats, order, orderBy).map(
-              (row, index) => {
-                const labelId = `enhanced-table-checkbox-${index}`;
-
-                return (
-                  <TableRow
-                    hover
-                    role="checkbox"
-                    tabIndex={-1}
-                    key={row.route.id}
-                  >
-                    {columns.map(column => {
-                      return (
-                        <TableCell
-                          align={column.numeric ? 'right' : 'left'}
-                          padding="none"
-                          style={{
-                            border: 'none',
-                            paddingTop: 6,
-                            paddingBottom: 6,
-                          }}
-                        >
-                          {column.rowValue(row)}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                );
-              },
-            )}
+            {stableSort(displayedRouteStats, order, orderBy).map(row => {
+              return (
+                <TableRow
+                  hover
+                  role="checkbox"
+                  tabIndex={-1}
+                  key={row.route.id}
+                >
+                  {columns.map(column => {
+                    return (
+                      <TableCell
+                        align={column.numeric ? 'right' : 'left'}
+                        padding="none"
+                        style={{
+                          border: 'none',
+                          paddingTop: 6,
+                          paddingBottom: 6,
+                        }}
+                      >
+                        {column.rowValue(row)}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
