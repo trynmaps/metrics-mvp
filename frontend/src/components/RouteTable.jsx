@@ -281,7 +281,6 @@ function RouteTable(props) {
     {
       id: 'title',
       numeric: false,
-      disablePadding: true,
       label: 'Name',
       rowValue: row => {
         return (
