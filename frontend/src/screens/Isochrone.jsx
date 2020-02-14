@@ -192,18 +192,15 @@ class Isochrone extends React.Component {
   }
 
   getUserLocation() {
-    return new Promise(resolve => {
-      navigator.geolocation.getCurrentPosition(position => {
-        resolve({
+    navigator.geolocation.getCurrentPosition(position => {
+      this.computeIsochrones(
+        {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        });
-      });
-    })
-      .then(latlng => {
-        this.computeIsochrones(latlng, null);
-      })
-      .catch();
+        },
+        null,
+      );
+    });
   }
 
   handleMapClick(event) {
