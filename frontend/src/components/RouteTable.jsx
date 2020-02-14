@@ -395,8 +395,9 @@ function RouteTable(props) {
       },
       helpContent: (
         <Fragment>
-          <b>Average Speed</b> is the speed of the 50th percentile (typical) end
-          to end trip, averaged for all directions.
+          <b>Travel time variability</b> is the 90th percentile end to end
+          travel time minus the 10th percentile travel time. This measures how
+          much extra travel time is needed for some trips.
         </Fragment>
       ),
     },
