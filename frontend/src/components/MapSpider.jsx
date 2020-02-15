@@ -54,7 +54,6 @@ class MapSpider extends Component {
     // for now, only supports 1 agency at a time.
     // todo: support multiple agencies on one map
     this.agency = Agencies[0];
-    this.getDownstreamLayers = this.getDownstreamLayers.bind(this);
 
     this.state = {
       // Should be true by default, so that we don't display the snackbar
@@ -146,43 +145,36 @@ class MapSpider extends Component {
   /**
    * Rendering of stops nearest to click or current location
    */
-  getStartMarkers = (selectedStops, opacity = 0.2, radius = 8, color) => {
-    let items = null;
-
-    if (selectedStops) {
-      items = selectedStops.map((startMarker, index) => {
-        const position = [startMarker.stop.lat, startMarker.stop.lon];
-        let routeColor = this.routeColor(startMarker.routeIndex % 10);
-        let outlineKey = '';
-        // Used by white outline of hovered route
-        if (color) {
-          routeColor = color;
-          outlineKey = '-outline';
-        }
-
-        return (
-          <CircleMarker
-            key={`startMarker-${index}${outlineKey}`}
-            center={position}
-            radius={radius}
-            fillColor={routeColor}
-            fillOpacity={opacity}
-            stroke={false}
-          >
-            <Tooltip>
-              {startMarker.routeTitle}
-              <br />
-              {startMarker.direction.title}
-              <br />
-              {startMarker.stop.title}
-              <br />
-              {Math.round(startMarker.miles * 5280)} feet
-            </Tooltip>
-          </CircleMarker>
-        );
-      });
+  getStartMarkers = (startMarker, index, radius = 8, opacity = 0.2, color) => {
+    const position = [startMarker.stop.lat, startMarker.stop.lon];
+    let routeColor = this.routeColor(startMarker.routeIndex % 10);
+    let outlineKey = '';
+    // Used by white outline of hovered route
+    if (color) {
+      routeColor = color;
+      outlineKey = '-outline';
     }
-    return items;
+
+    return (
+      <CircleMarker
+        key={`startMarker-${index}${outlineKey}`}
+        center={position}
+        radius={radius}
+        fillColor={routeColor}
+        fillOpacity={opacity}
+        stroke={false}
+      >
+        <Tooltip>
+          {startMarker.routeTitle}
+          <br />
+          {startMarker.direction.title}
+          <br />
+          {startMarker.stop.title}
+          <br />
+          {Math.round(startMarker.miles * 5280)} feet
+        </Tooltip>
+      </CircleMarker>
+    );
   };
 
   /**
@@ -234,12 +226,20 @@ class MapSpider extends Component {
         this.addDownstreamStops(stop);
       });
       if (spiderSelection.latLng) {
-        hoveredLayers.push(this.getStartMarkers(routeStops, 1, 9, '#ffffff'));
-        hoveredLayers.push(this.getStartMarkers(routeStops));
+        routeStops.forEach((startMarker, index) => {
+          const waitScaled = this.getWaitScale(startMarker);
+          // 7 + wait scale replaces the default radius of 8 so it better suits the weight of the polyline
+          const radius = 7 + waitScaled + this.getZoomScale(waitScaled);
+          // White start marker outline
+          hoveredLayers.push(
+            this.getStartMarkers(startMarker, index, radius + 2, 1, '#ffffff'),
+          );
+          hoveredLayers.push(this.getStartMarkers(startMarker, index, radius));
+        });
       }
       hoveredLayers.push(this.getDownstreamLayers(routeStops));
     }
-    return hoveredLayers;
+    return <Fragment>{hoveredLayers}</Fragment>;
   };
 
   /**
@@ -247,7 +247,6 @@ class MapSpider extends Component {
    */
   getDownstreamLayers = selectedStops => {
     const {
-      routeStats,
       spiderSelection: { hoverRoute },
     } = this.props;
     const items = selectedStops.map(startMarker => {
@@ -255,21 +254,11 @@ class MapSpider extends Component {
 
       const polylines = [];
 
-      // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
-      // when selecting a line.
-
-      const stats = routeStats[startMarker.routeId] || {};
-
-      const waitScaled = stats.waitRankCount
-        ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
-        : 0;
+      const waitScaled = this.getWaitScale(startMarker);
 
       // Add white polylines under other layers of hovered route
       if (hoverRoute) {
-        // Scale for outline; 1 greater than the maximum waitScale
-        const outlineScale = stats.waitRankCount
-          ? Math.trunc((1 - 1 / stats.waitRankCount) * 3) + 1
-          : 3;
+        const outlineScale = waitScaled + this.getZoomScale(waitScaled) + 4;
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           polylines.push(
             this.generatePolyline(startMarker, outlineScale, i, '#ffffff'),
@@ -277,6 +266,8 @@ class MapSpider extends Component {
         }
       }
 
+      // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
+      // when selecting a line.
       for (let i = 0; i < downstreamStops.length - 1; i++) {
         // for each stop
         polylines.push(this.generatePolyline(startMarker, waitScaled, i));
@@ -293,6 +284,25 @@ class MapSpider extends Component {
       return polylines;
     });
     return items;
+  };
+
+  /**
+   * Get additional scale when near max zoom to account for increased periphery
+   */
+  getZoomScale = waitScaled => {
+    const zoom = this.mapRef.current.leafletElement.getZoom();
+    return zoom < 17 ? 0 : waitScaled > 0 ? 1 : 2;
+  };
+
+  /**
+   * Get scale for leaflet layers based on wait rank
+   */
+  getWaitScale = startMarker => {
+    const { routeStats } = this.props;
+    const stats = routeStats[startMarker.routeId] || {};
+    return stats.waitRankCount
+      ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
+      : 0;
   };
 
   /**
@@ -567,7 +577,9 @@ class MapSpider extends Component {
     const { position, zoom, spiderSelection, routeStats } = this.props;
     const { isValidLocation } = this.state;
     const mapClass = { width: '100%', height: this.state.height };
-    const startMarkers = this.getStartMarkers(spiderSelection.stops);
+    const startMarkers = spiderSelection.stops.map((startMarker, index) =>
+      this.getStartMarkers(startMarker, index),
+    );
 
     return (
       <div>
