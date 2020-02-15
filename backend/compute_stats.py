@@ -1,9 +1,7 @@
-from models import metrics, util, arrival_history, trip_times, constants, config, timetables, precomputed_stats, wait_times
+from models import util, arrival_history, trip_times, constants, config, timetables, precomputed_stats, wait_times
 import argparse
-from datetime import datetime, date
-import pytz
+from datetime import date
 import collections
-import pandas as pd
 import numpy as np
 import time
 

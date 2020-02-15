@@ -1,9 +1,8 @@
 import os
-from flask import Flask, send_from_directory, request, Response
+from flask import Flask, send_from_directory, Response
 from flask_cors import CORS
 import json
-import sys
-from models import schema, config, wait_times, trip_times, routeconfig, arrival_history, precomputed_stats
+from models import schema, config, routeconfig, arrival_history, precomputed_stats
 from flask_graphql import GraphQLView
 #import cProfile
 
