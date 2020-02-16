@@ -132,9 +132,9 @@ async function getTripTimes(agencyId, dateStr, timeStr)
     {
         let timePath = getTimePath(timeStr);
 
-        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/precomputed-stats/'+PrecomputedStatsVersion+'/'+agencyId+'/'+
+        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/observed-stats/'+PrecomputedStatsVersion+'/'+agencyId+'/'+
             dateStr.replace(/\-/g, '/')+
-            '/precomputed-stats_'+PrecomputedStatsVersion+'_'+agencyId+'_median-trip-times_'+dateStr+timePath+'.json.gz';
+            '/observed-stats_'+PrecomputedStatsVersion+'_'+agencyId+'_median-trip-times_'+dateStr+timePath+'.json.gz';
 
         tripTimes = tripTimesCache[cacheKey] = await loadJson(s3Url).catch(function(e) {
             e.message = 'error loading trip times: ' + e.message;
