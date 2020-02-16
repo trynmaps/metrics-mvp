@@ -67,7 +67,7 @@ export function getTripDataSeries(routeMetrics, route, directionId) {
           y: segment.medianTripTime,
           title,
           stopIndex: index,
-          numTrips: segment.numTrips,
+          numTrips: segment.trips,
         });
       }
     });
