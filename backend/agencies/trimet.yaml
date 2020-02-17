@@ -6,3 +6,142 @@ js_properties:
   title: TriMet
   initialMapCenter: { lat: 45.525, lng: -122.677 }
   initialMapZoom: 12
+  routeHeuristics: {
+    '12': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '15': {
+      '1': {
+        ignoreFirstStop: true,
+        ignoreLastStop: true,
+      },
+    },
+    '20': {
+      '0': {
+        ignoreFirstStop: true,
+      },
+    },
+    '20a': { # apparent duplicate of route 20 in GTFS feed
+      ignoreRoute: true,
+    },
+    '22': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '23': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '25': {
+      '0': {
+        ignoreLastStop: true,
+      },
+    },
+    '30': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '31': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '33': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '34': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '38': {
+      '0': {
+        ignoreLastStop: true,
+      },
+    },
+    '52': {
+      '0': {
+        ignoreLastStop: true,
+      },
+      '1': {
+        ignoreFirstStop: '8840',
+      },
+    },
+    '62': {
+      '0': {
+        ignoreLastStop: true,
+      },
+    },
+    '63': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '67': {
+      '0': {
+        ignoreLastStop: true,
+      },
+    },
+    '71': {
+      '0': {
+        ignoreLastStop: true,
+      },
+    },
+    '72': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '76a': { # apparent duplicate of route 76 in GTFS feed
+      ignoreRoute: true,
+    },
+    '77': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '79': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '78a': { # apparent duplicate of route 78 in GTFS feed
+      ignoreRoute: true,
+    },
+    '82': {
+      '0': {
+        ignoreFirstStop: true,
+      },
+    },
+    '88': {
+      '1': {
+        ignoreFirstStop: '265',
+      },
+    },
+    '152': {
+      '0': {
+        ignoreLastStop: true,
+      },
+    },
+    '155': {
+      '1': {
+        ignoreLastStop: true,
+      },
+    },
+    '203': { # WES Commuter rail
+      ignoreRoute: true,
+    },
+    '272': { # PDX Night Bus
+      ignoreRoute: true,
+    },
+    '291': { # Orange Night Bus
+      ignoreRoute: true,
+    },
+  }
