@@ -1,4 +1,5 @@
 from models import gtfs, config
+from compute_stats import compute_stats_for_dates
 import argparse
 
 # Downloads and parses the GTFS specification
@@ -39,8 +40,10 @@ if __name__ == '__main__':
     parser.add_argument('--agency', required=False, help='Agency ID')
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
     parser.add_argument('--timetables', dest='timetables', action='store_true', help='also save timetables')
+    parser.add_argument('--scheduled-stats', dest='scheduled_stats', action='store_true', help='also compute scheduled stats if the timetable has new dates (requires --timetables)')
     parser.set_defaults(s3=False)
     parser.set_defaults(timetables=False)
+    parser.set_defaults(scheduled_stats=False)
 
     args = parser.parse_args()
 
@@ -53,4 +56,8 @@ if __name__ == '__main__':
         scraper.save_routes(save_to_s3)
 
         if args.timetables:
-            scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)
+            updated_timetables = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)
+
+            if updated_timetables and args.scheduled_stats:
+                dates = sorted(scraper.get_services_by_date().keys())
+                compute_stats_for_dates(dates, agency, scheduled=True, save_to_s3=save_to_s3)
