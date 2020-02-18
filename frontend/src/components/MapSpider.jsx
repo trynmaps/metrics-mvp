@@ -99,20 +99,30 @@ class MapSpider extends Component {
    *
    * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
    */
+
+  getRouteColor = startMarker => {
+    const routeColor = startMarker.routeInfo.color
+      ? `#${startMarker.routeInfo.color}`
+      : this.routeColor(startMarker.routeIndex % 10);
+    console.log(routeColor);
+
+    return routeColor;
+  };
+
   generateShield = (startMarker, waitScaled) => {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
 
-    const routeColor = startMarker.routeInfo.color
-      ? `#${startMarker.routeInfo.color}`
-      : this.routeColor(startMarker.routeIndex % 10);
+    // const routeColor = startMarker.routeInfo.color
+    //   ? `#${startMarker.routeInfo.color}`
+    //   : this.routeColor(startMarker.routeIndex % 10);
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
       html: MapShield({
         waitScaled,
-        color: routeColor,
+        color: this.getRouteColor(startMarker),
         routeText: startMarker.routeId,
       }),
     });
@@ -153,16 +163,16 @@ class MapSpider extends Component {
     if (selectedStops) {
       items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
-        const routeColor = startMarker.routeInfo.color
-          ? `#${startMarker.routeInfo.color}`
-          : this.routeColor(startMarker.routeIndex % 10);
+        // const routeColor = startMarker.routeInfo.color
+        //   ? `#${startMarker.routeInfo.color}`
+        //   : this.routeColor(startMarker.routeIndex % 10);
 
         return (
           <CircleMarker
             key={`startMarker-${index}`}
             center={position}
             radius="8"
-            fillColor={routeColor}
+            fillColor={this.getRouteColor(startMarker)}
             fillOpacity={0.2}
             stroke={false}
           >
@@ -236,16 +246,16 @@ class MapSpider extends Component {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const terminalPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = startMarker.routeInfo.color
-      ? `#${startMarker.routeInfo.color}`
-      : this.routeColor(startMarker.routeIndex % 10);
+    // const routeColor = startMarker.routeInfo.color
+    //   ? `#${startMarker.routeInfo.color}`
+    //   : this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <CircleMarker
         key={`startMarker-${startMarker.routeId}-terminal-${lastStop.id}`}
         center={terminalPosition}
         radius={3.0 + waitScaled / 2.0}
-        fillColor={routeColor}
+        fillColor={this.getRouteColor(startMarker)}
         fillOpacity={0.75}
         stroke={false}
       ></CircleMarker>
@@ -260,9 +270,9 @@ class MapSpider extends Component {
 
     const computedWeight = waitScaled * 1.5 + 3;
 
-    const routeColor = startMarker.routeInfo.color
-      ? `#${startMarker.routeInfo.color}`
-      : this.routeColor(startMarker.routeIndex % 10);
+    // const routeColor = startMarker.routeInfo.color
+    //   ? `#${startMarker.routeInfo.color}`
+    //   : this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <Polyline
@@ -273,7 +283,7 @@ class MapSpider extends Component {
           downstreamStops[i].id,
           downstreamStops[i + 1].id,
         )}
-        color={routeColor}
+        color={this.getRouteColor(startMarker)}
         opacity={0.5}
         weight={computedWeight}
         onMouseOver={e => {
