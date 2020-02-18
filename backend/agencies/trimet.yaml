@@ -2,6 +2,85 @@ id: trimet
 gtfs_url: https://developer.trimet.org/schedule/gtfs.zip
 gtfs_agency_id: TRIMET
 timezone_id: America/Los_Angeles
+custom_directions:
+  '15':
+    - id: "0"
+      title: "To NW Yeon & 44th"
+      gtfs_direction_id: "0"
+      included_stop_ids: ["6470"]
+    - id: "0-T"
+      title: "To NW Thurman & 27th"
+      gtfs_direction_id: "0"
+      included_stop_ids: ["5836"]
+    - id: "1"
+      title: "From NW Yeon & 44th to Gateway Transit Center"
+      gtfs_direction_id: "1"
+      included_stop_ids: ["6470"]
+    - id: "1-T"
+      title: "From NW Thurman & 28th to Gateway Transit Center"
+      gtfs_direction_id: "1"
+      included_stop_ids: ["5837"]
+  '50':
+    - id: "0"
+      title: "Evening Loop"
+      gtfs_direction_id: "0"
+    - id: "1"
+      title: "Morning Loop"
+      gtfs_direction_id: "1"
+  '51':
+    - id: "0-CC"
+      title: "To Council Crest & Tualatin"
+      gtfs_direction_id: "0"
+      included_stop_ids: ["1218"]
+      excluded_stop_ids: ["2467"]
+    - id: "0-HD"
+      title: "To Hamilton & Dosch"
+      gtfs_direction_id: "0"
+      included_stop_ids: ["2467"]
+      excluded_stop_ids: ["1218"]
+    - id: "1-CC"
+      title: "From Council Crest to Portland City Center"
+      gtfs_direction_id: "1"
+      included_stop_ids: ["2467"]
+      excluded_stop_ids: ["1218"]
+    - id: "1-HD"
+      title: "From Hamilton & Dosch to Portland City Center"
+      gtfs_direction_id: "1"
+      included_stop_ids: ["1218"]
+      excluded_stop_ids: ["2467"]
+    - id: "1"
+      title: "From Council Crest to Portland City Center via Hamilton & Dosch"
+      gtfs_direction_id: "1"
+      included_stop_ids: ["1218","2467"]
+  '53':
+    - id: "0"
+      title: "Evening Loop"
+      gtfs_direction_id: "0"
+      included_stop_ids: ["9977"]
+    - id: "1"
+      title: "Morning Loop"
+      gtfs_direction_id: "1"
+      included_stop_ids: ["9977"]
+  '84':
+    - id: "0"
+      title: "Evening Loop"
+      gtfs_direction_id: "0"
+    - id: "1"
+      title: "Morning Loop"
+      gtfs_direction_id: "1"
+invalid_direction_times:
+  - start_time: null
+    end_time: "12:00" # directions that aren't scheduled in the morning
+    directions:
+      - ["50","0"]
+      - ["53","0"]
+      - ["84","0"]
+  - start_time: "12:00" # directions that aren't scheduled in the afternoon
+    end_time: null
+    directions:
+      - ["50","1"]
+      - ["53","1"]
+      - ["84","1"]
 js_properties:
   title: TriMet
   initialMapCenter: { lat: 45.525, lng: -122.677 }
