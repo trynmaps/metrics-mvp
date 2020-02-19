@@ -96,6 +96,7 @@ class MapSpider extends Component {
   /**
    * Gets color associated with route or one of routeColorOptions
    */
+
   getRouteColor = startMarker => {
     const routeColor = startMarker.routeInfo.color
       ? `#${startMarker.routeInfo.color}`
@@ -103,6 +104,7 @@ class MapSpider extends Component {
 
     return routeColor;
   };
+
   /**
    * Creates a clickable Marker with a custom svg icon (MapShield) for the route
    * represented by startMarker.
@@ -150,6 +152,7 @@ class MapSpider extends Component {
   /**
    * Rendering of stops nearest to click or current location
    */
+
   getStartMarkers = () => {
     let items = null;
 
@@ -186,9 +189,8 @@ class MapSpider extends Component {
     return items;
   };
 
-  /**
-   * Rendering of route from nearest stop to terminal.
-   */
+  // Rendering of route from nearest stop to terminal.
+
   DownstreamLines = () => {
     const statsByRouteId = this.props.statsByRouteId;
 
@@ -219,11 +221,9 @@ class MapSpider extends Component {
         }
 
         // Add a solid circle at the terminal stop.
-
         polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
 
         // Add a route shield next to the terminal stop.
-
         polylines.push(this.generateShield(startMarker, waitScaled));
 
         return polylines;
@@ -233,9 +233,8 @@ class MapSpider extends Component {
     return <Fragment>{items}</Fragment>;
   };
 
-  /**
-   * Creates a circle at the terminal of a route.
-   */
+  // Creates a circle at the terminal of a route.
+
   generateTerminalCircle = (startMarker, waitScaled) => {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
@@ -253,9 +252,8 @@ class MapSpider extends Component {
     );
   };
 
-  /**
-   * Creates a line between two stops.
-   */
+  // Creates a line between two stops.
+
   generatePolyline = (startMarker, waitScaled, i) => {
     const downstreamStops = startMarker.downstreamStops;
 
@@ -289,7 +287,6 @@ class MapSpider extends Component {
           this.onMouseOut(e);
         }}
         // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
-
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
