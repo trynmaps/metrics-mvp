@@ -43,7 +43,7 @@ class MapSpider extends Component {
    * (index modulo 10).
    */
 
-  routeColor = d3.scaleQuantize([0, 9], d3.schemeCategory10);
+  routeColorOptions = d3.scaleQuantize([0, 9], d3.schemeCategory10);
 
   constructor(props) {
     super(props);
@@ -94,29 +94,26 @@ class MapSpider extends Component {
   };
 
   /**
+   * Gets color associated with route or one of routeColorOptions
+   */
+  getRouteColor = startMarker => {
+    const routeColor = startMarker.routeInfo.color
+      ? `#${startMarker.routeInfo.color}`
+      : this.routeColorOptions(startMarker.routeIndex % 10);
+
+    return routeColor;
+  };
+  /**
    * Creates a clickable Marker with a custom svg icon (MapShield) for the route
    * represented by startMarker.
    *
    * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
    */
 
-  getRouteColor = startMarker => {
-    const routeColor = startMarker.routeInfo.color
-      ? `#${startMarker.routeInfo.color}`
-      : this.routeColor(startMarker.routeIndex % 10);
-    console.log(routeColor);
-
-    return routeColor;
-  };
-
   generateShield = (startMarker, waitScaled) => {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
-
-    // const routeColor = startMarker.routeInfo.color
-    //   ? `#${startMarker.routeInfo.color}`
-    //   : this.routeColor(startMarker.routeIndex % 10);
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
@@ -163,9 +160,6 @@ class MapSpider extends Component {
     if (selectedStops) {
       items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
-        // const routeColor = startMarker.routeInfo.color
-        //   ? `#${startMarker.routeInfo.color}`
-        //   : this.routeColor(startMarker.routeIndex % 10);
 
         return (
           <CircleMarker
@@ -246,9 +240,6 @@ class MapSpider extends Component {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const terminalPosition = [lastStop.lat, lastStop.lon];
-    // const routeColor = startMarker.routeInfo.color
-    //   ? `#${startMarker.routeInfo.color}`
-    //   : this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <CircleMarker
@@ -269,10 +260,6 @@ class MapSpider extends Component {
     const downstreamStops = startMarker.downstreamStops;
 
     const computedWeight = waitScaled * 1.5 + 3;
-
-    // const routeColor = startMarker.routeInfo.color
-    //   ? `#${startMarker.routeInfo.color}`
-    //   : this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <Polyline
