@@ -456,7 +456,7 @@ class AgencyMetrics:
         all_trip_times = []
 
         for d in rng.dates:
-            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            stats = self.get_precomputed_stats(precomputed_stats.StatIds.Combined, d, rng.start_time_str, rng.end_time_str)
             if stats is None:
                 continue
 
@@ -470,7 +470,7 @@ class AgencyMetrics:
         total_trips = None
 
         for d in rng.dates:
-            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            stats = self.get_precomputed_stats(precomputed_stats.StatIds.Combined, d, rng.start_time_str, rng.end_time_str)
             if stats is None:
                 continue
 
@@ -507,7 +507,7 @@ class AgencyMetrics:
 
         for d in rng.dates:
 
-            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            stats = self.get_precomputed_stats(precomputed_stats.StatIds.Combined, d, rng.start_time_str, rng.end_time_str)
             if stats is None:
                 continue
 
@@ -549,7 +549,7 @@ class AgencyMetrics:
             raise Exception(f'invalid distance {dist} between {first_stop_id} and {last_stop_id} in route_id {route_id} direction {direction_id}') # file=sys.stderr)
 
         for d in rng.dates:
-            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            stats = self.get_precomputed_stats(precomputed_stats.StatIds.Combined, d, rng.start_time_str, rng.end_time_str)
             if stats is None:
                 continue
 
@@ -560,33 +560,28 @@ class AgencyMetrics:
 
         return np.median(all_speeds) if len(all_speeds) > 0 else None
 
-    def get_median_wait_time(self, route_id, direction_id, stop_id, rng: Range):
-        all_wait_times = []
+    def _get_direction_stat_value(self, route_id, direction_id, rng: Range, stat_key: str):
+        all_values = []
 
         for d in rng.dates:
-            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
+            stats = self.get_precomputed_stats(precomputed_stats.StatIds.Combined, d, rng.start_time_str, rng.end_time_str)
             if stats is None:
                 continue
 
-            wait_time = stats.get_median_wait_time(route_id, direction_id, stop_id)
-            if wait_time is not None:
-                all_wait_times.append(wait_time)
+            stat_value = stats.get_direction_stat_value(route_id, direction_id, stat_key)
+            if stat_value is not None:
+                all_values.append(stat_value)
 
-        return np.median(all_wait_times) if len(all_wait_times) > 0 else None
+        return np.median(all_values) if len(all_values) > 0 else None
 
-    def get_on_time_rate(self, route_id, direction_id, stop_id, rng: Range):
-        all_on_time_rates = []
+    def get_median_wait_time(self, route_id, direction_id, rng: Range):
+        return self._get_direction_stat_value(route_id, direction_id, rng, 'medianWaitTime')
 
-        for d in rng.dates:
-            stats = self.get_precomputed_stats('combined', d, rng.start_time_str, rng.end_time_str)
-            if stats is None:
-                continue
+    def get_median_headway(self, route_id, direction_id, rng: Range):
+        return self._get_direction_stat_value(route_id, direction_id, rng, 'medianHeadway')
 
-            on_time_rate = stats.get_on_time_rate(route_id, direction_id, stop_id)
-            if on_time_rate is not None:
-                all_on_time_rates.append(on_time_rate)
-
-        return np.median(all_on_time_rates) if len(all_on_time_rates) > 0 else None
+    def get_on_time_rate(self, route_id, direction_id, rng: Range):
+        return self._get_direction_stat_value(route_id, direction_id, rng, 'onTimeRate')
 
 def compute_headway_minutes(time_values, start_time=None, end_time=None):
     if start_time is not None:

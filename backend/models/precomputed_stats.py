@@ -7,7 +7,11 @@ import json
 import boto3
 import gzip
 
-DefaultVersion = 'v1'
+DefaultVersion = 'v2'
+
+class StatIds:
+    Combined = 'combined'
+    MedianTripTimes = 'median-trip-times'
 
 class PrecomputedStats:
     def __init__(self, data):
@@ -23,16 +27,22 @@ class PrecomputedStats:
 
         return route_data['directions'].get(direction_id, None)
 
-    def get_trip_time_stats(self, route_id, direction_id, start_stop_id, end_stop_id):
+    def get_direction_stat_value(self, route_id, direction_id, stat_key):
         dir_stats = self.get_direction_stats(route_id, direction_id)
         if dir_stats is None:
             return None
 
-        trip_time_stats = dir_stats.get('tripTimes', None)
-        if trip_time_stats is None:
+        return dir_stats.get(stat_key, None)
+
+    def get_stop_stat_value(self, route_id, direction_id, stat_key, stop_id):
+        stops_map = self.get_direction_stat_value(route_id, direction_id, stat_key)
+        if stops_map is None:
             return None
 
-        start_stop_stats = trip_time_stats.get(start_stop_id, None)
+        return stops_map.get(stop_id, None)
+
+    def get_trip_time_stats(self, route_id, direction_id, start_stop_id, end_stop_id):
+        start_stop_stats = self.get_stop_stat_value(route_id, direction_id, 'tripTimes', start_stop_id)
         if start_stop_stats is None:
             return None
 
@@ -62,27 +72,14 @@ class PrecomputedStats:
             return None
         return trip_time_stats[3]
 
-    def get_median_wait_time(self, route_id, direction_id, stop_id):
-        dir_stats = self.get_direction_stats(route_id, direction_id)
-        if dir_stats is None:
-            return None
+    def get_median_wait_time(self, route_id, direction_id):
+        return self.get_direction_stat_value(route_id, direction_id, 'medianWaitTime')
 
-        median_wait_times = dir_stats.get('medianWaitTimes', None)
-        if median_wait_times is None:
-            return None
+    def get_median_headway(self, route_id, direction_id):
+        return self.get_direction_stat_value(route_id, direction_id, 'medianHeadway')
 
-        return median_wait_times.get(stop_id, None)
-
-    def get_on_time_rate(self, route_id, direction_id, stop_id):
-        dir_stats = self.get_direction_stats(route_id, direction_id)
-        if dir_stats is None:
-            return None
-
-        on_time_rates = dir_stats.get('onTimeRates', None)
-        if on_time_rates is None:
-            return None
-
-        return on_time_rates.get(stop_id, None)
+    def get_on_time_rate(self, route_id, direction_id):
+        return self.get_direction_stat_value(route_id, direction_id, 'onTimeRate')
 
 def get_precomputed_stats(agency_id, stat_id: str, d: date, start_time_str = None, end_time_str = None, version = DefaultVersion) -> PrecomputedStats:
     cache_path = get_cache_path(agency_id, stat_id, d, start_time_str, end_time_str, version)
