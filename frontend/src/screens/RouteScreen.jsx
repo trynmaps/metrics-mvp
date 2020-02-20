@@ -13,6 +13,7 @@ import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Typography from '@material-ui/core/Typography';
 
 import { connect } from 'react-redux';
+import AppBarLogo from '../components/AppBarLogo';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
 import DateTimePanel from '../components/DateTimePanel';
@@ -150,6 +151,7 @@ function RouteScreen(props) {
               <ArrowBackIcon style={backArrowStyle} />
             </IconButton>
           </NavLink>
+          <AppBarLogo />
           <div className="page-title">{agency ? agency.title : null}</div>
           <div style={{ flexGrow: 1 }} />
           <div style={{paddingRight: '2rem'}}>

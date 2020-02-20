@@ -1,7 +1,5 @@
-from . import nextbus, constants, metrics, util, wait_times, trip_times, config
-from graphene import ObjectType, String, Int, Float, List, Field, Boolean, Schema
-from datetime import date
-import sys
+from . import constants, metrics, util, config
+from graphene import ObjectType, String, Int, Float, List, Field, Schema
 import numpy as np
 import math
 
@@ -528,6 +526,7 @@ class SegmentIntervalMetrics(ObjectType):
 class DirectionIntervalMetrics(ObjectType):
     directionId = String()
     medianWaitTime = Float() # minutes
+    medianHeadway = Float()
     averageSpeed = Float(
         units = String(required=False),
     )
@@ -548,10 +547,13 @@ class DirectionIntervalMetrics(ObjectType):
         return round_or_none(parent["agency_metrics"].get_average_speed(parent["route_id"], parent["direction_id"], parent["range"], units))
 
     def resolve_medianWaitTime(parent, info):
-        return round_or_none(parent["agency_metrics"].get_median_wait_time(parent["route_id"], parent["direction_id"], "median", parent["range"]))
+        return round_or_none(parent["agency_metrics"].get_median_wait_time(parent["route_id"], parent["direction_id"], parent["range"]))
+
+    def resolve_medianHeadway(parent, info):
+        return round_or_none(parent["agency_metrics"].get_median_headway(parent["route_id"], parent["direction_id"], parent["range"]))
 
     def resolve_onTimeRate(parent, info):
-        return round_or_none(parent["agency_metrics"].get_on_time_rate(parent["route_id"], parent["direction_id"], "median", parent["range"]))
+        return round_or_none(parent["agency_metrics"].get_on_time_rate(parent["route_id"], parent["direction_id"], parent["range"]))
 
     def resolve_numCompletedTrips(parent, info):
         return parent["agency_metrics"].get_num_completed_trips(parent["route_id"], parent["direction_id"], parent["range"])

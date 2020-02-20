@@ -1,6 +1,5 @@
 import time
-from datetime import datetime, date, timedelta, timezone
-import pytz
+from datetime import date
 import pandas as pd
 import numpy as np
 from . import routeconfig, util, config

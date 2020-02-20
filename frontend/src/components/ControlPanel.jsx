@@ -13,7 +13,6 @@ import Grid from '@material-ui/core/Grid';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { getDownstreamStopIds } from '../helpers/mapGeometry';
-import { Colors } from '../UIConstants';
 import ReactSelect from './ReactSelect';
 
 const useStyles = makeStyles(theme => ({
@@ -194,7 +193,7 @@ function ControlPanel(props) {
           <Grid container>
             <Grid item xs>
               <Box ml={1}>
-                <StartStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
+                <StartStopIcon fontSize="small" color="primary" />
                 <FormControl className={classes.formControl}>
                   <ReactSelect
                     onChange={onSelectFirstStop}
@@ -228,7 +227,7 @@ function ControlPanel(props) {
             </Grid>
             <Grid item xs>
               <Box ml={1}>
-                <EndStopIcon fontSize="small" htmlColor={Colors.INDIGO} />
+                <EndStopIcon fontSize="small" color="primary" />
                 <FormControl className={classes.formControl}>
                   <ReactSelect
                     onChange={onSelectSecondStop}

@@ -1,15 +1,16 @@
-from models import metrics, util, arrival_history, trip_times, constants, config, timetables, precomputed_stats, wait_times
+from models import util, arrival_history, trip_times, constants, config, timetables, precomputed_stats, wait_times, metrics
 import argparse
-from datetime import datetime, date
-import pytz
+from datetime import date
 import collections
-import pandas as pd
 import numpy as np
 import time
 
+combined_stat_id = precomputed_stats.StatIds.Combined
+median_trip_times_stat_id = precomputed_stats.StatIds.MedianTripTimes
+
 all_stat_ids = [
-    'combined',
-    'median-trip-times',
+    combined_stat_id,
+    median_trip_times_stat_id,
 ]
 
 def filter_departures_by_interval(s1_trip_values, s1_departure_time_values, timestamp_intervals):
@@ -35,7 +36,7 @@ def filter_departures_by_interval(s1_trip_values, s1_departure_time_values, time
 
     return s1_trip_values_by_interval, s1_departure_time_values_by_interval
 
-def add_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df):
+def add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df):
     route_id = route_config.id
     history_df = history_df.sort_values('DEPARTURE_TIME', axis=0)
     sid_values = history_df['SID'].values
@@ -46,23 +47,35 @@ def add_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
         dir_id = dir_info.id
         stop_ids = dir_info.get_stop_ids()
 
+        all_median_headways = collections.defaultdict(list)
+        all_median_wait_times = collections.defaultdict(list)
+
         for i, stop_id in enumerate(stop_ids):
             stop_df = history_df[(sid_values == stop_id) & (did_values == dir_id)]
 
             all_time_values = stop_df['DEPARTURE_TIME'].values
 
             for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
+
+                dir_stats = all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]
+
+                headways = metrics.compute_headway_minutes(all_time_values, start_time, end_time)
+
+                if len(headways) > 0:
+                    all_median_headways[interval_index].append(np.median(headways))
+
                 wait_time_stats = wait_times.get_stats(all_time_values, start_time, end_time)
 
                 median_wait_time = wait_time_stats.get_quantile(0.5)
                 if median_wait_time is not None:
-                    dir_stats = all_stats['combined'][interval_index][route_id]['directions'][dir_id]
-                    dir_stats['medianWaitTimes'][stop_id] = round(median_wait_time, 1)
+                    all_median_wait_times[interval_index].append(median_wait_time)
+                    all_stats[median_trip_times_stat_id][interval_index][route_id]['directions'][dir_id]['medianWaitTimes'][stop_id] = round(median_wait_time, 1)
 
         for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
-            add_median_wait_time_stats_for_direction(
-                all_stats['combined'][interval_index][route_id]['directions'][dir_id]
-            )
+            dir_stats = all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]
+
+            dir_stats['medianWaitTime'] = get_median_or_none(all_median_wait_times[interval_index])
+            dir_stats['medianHeadway'] = get_median_or_none(all_median_headways[interval_index])
 
 def add_schedule_adherence_stats_for_route(all_stats, timestamp_intervals, route_config, history_df, timetable_df):
     route_id = route_config.id
@@ -80,6 +93,8 @@ def add_schedule_adherence_stats_for_route(all_stats, timestamp_intervals, route
 
         dir_id = dir_info.id
         stop_ids = dir_info.get_stop_ids()
+
+        all_on_time_rates = collections.defaultdict(list)
 
         for i, stop_id in enumerate(stop_ids):
             stop_history_df = history_df[(history_sid_values == stop_id) & (history_did_values == dir_id)]
@@ -109,28 +124,17 @@ def add_schedule_adherence_stats_for_route(all_stats, timestamp_intervals, route
 
                 if num_scheduled_departures > 0:
                     on_time_rate = round(np.sum(interval_comparison_df['on_time']) / num_scheduled_departures, 3)
-                    dir_stats = all_stats['combined'][interval_index][route_id]['directions'][dir_id]
-                    dir_stats['onTimeRates'][stop_id] = on_time_rate
+                    all_on_time_rates[interval_index].append(on_time_rate)
 
         for interval_index, _ in enumerate(timestamp_intervals):
-            add_median_schedule_adherence_stats_for_direction(
-                all_stats['combined'][interval_index][route_id]['directions'][dir_id]
-            )
+            dir_stats = all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]
+            dir_stats['onTimeRate'] = get_median_or_none(all_on_time_rates[interval_index], precision=3)
 
-def add_median_schedule_adherence_stats_for_direction(
-    dir_stats
-):
-    dir_stat_values = np.array([stat_value for _, stat_value in dir_stats['onTimeRates'].items()])
-
-    if len(dir_stat_values) > 0:
-        dir_stats['onTimeRates']["median"] = round(np.median(dir_stat_values), 3)
-
-def add_median_wait_time_stats_for_direction(
-    dir_stats
-):
-    dir_stat_values = np.array([stat_value for _, stat_value in dir_stats['medianWaitTimes'].items()])
-    if len(dir_stat_values) > 0:
-        dir_stats['medianWaitTimes']['median'] = round(np.median(dir_stat_values), 1)
+def get_median_or_none(values, precision=1):
+    if len(values) > 0:
+        return round(np.median(values), precision)
+    else:
+        return None
 
 def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df):
 
@@ -155,8 +159,8 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
         arrival_time_values_by_stop = {}
 
         for interval_index, _ in enumerate(timestamp_intervals):
-            all_stats['combined'][interval_index][route_id]['directions'][dir_id]['tripTimes'] = collections.defaultdict(dict)
-            all_stats['median-trip-times'][interval_index][route_id]['directions'][dir_id]['medianTripTimes'] = collections.defaultdict(dict)
+            all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]['tripTimes'] = collections.defaultdict(dict)
+            all_stats[median_trip_times_stat_id][interval_index][route_id]['directions'][dir_id]['medianTripTimes'] = collections.defaultdict(dict)
 
         for stop_id in stop_ids:
             stop_df = history_df[(sid_values == stop_id) & (did_values == dir_id)]
@@ -223,13 +227,13 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
                         median_trip_time = round(util.quantile_sorted(sorted_trip_min, 0.5), 1)
 
                         # save all pairs of stops in median-trip-times stat, used for the isochrone map
-                        all_stats['median-trip-times'][interval_index][route_id]['directions'][dir_id]['medianTripTimes'][s1][s2] = median_trip_time
+                        all_stats[median_trip_times_stat_id][interval_index][route_id]['directions'][dir_id]['medianTripTimes'][s1][s2] = median_trip_time
 
                         # only store median trip times for adjacent stops, or from the first three stops in combined stats
                         # to reduce file size and loading time, since the frontend only needs this for displaying segments
                         # and cumulative time along a route.
                         if (i <= 2) or (j == (i + 1) % num_stops) or s1 == start_stop_id:
-                            all_stats['combined'][interval_index][route_id]['directions'][dir_id]['tripTimes'][s1][s2] = [
+                            all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]['tripTimes'][s1][s2] = [
                                 round(util.quantile_sorted(sorted_trip_min, 0.1), 1),
                                 median_trip_time,
                                 round(util.quantile_sorted(sorted_trip_min, 0.9), 1),
@@ -298,7 +302,7 @@ def compute_stats(d: date, agency: config.Agency, routes, save_to_s3=True):
                     all_stats[stat_id][interval_index][route_id]['directions'][dir_id] = collections.defaultdict(dict)
 
         add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df)
-        add_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df)
+        add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df)
         add_schedule_adherence_stats_for_route(all_stats, timestamp_intervals, route_config, history_df, timetable_df)
 
         t2 = time.time()

@@ -1,12 +1,7 @@
 from models import arrival_history, util, trynapi, eclipses, config
-import json
-import math
 import argparse
 from datetime import datetime, date, timedelta
-import pytz
 import time
-import boto3
-import gzip
 
 def compute_arrivals_for_date_and_start_hour(d: date, start_hour: int,
                 agency: config.Agency, route_ids: list,

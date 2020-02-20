@@ -42,7 +42,8 @@ class MapSpider extends Component {
    * A function that returns one of ten colors given a route index.
    * (index modulo 10).
    */
-  routeColor = d3.scaleQuantize([0, 9], d3.schemeCategory10);
+
+  routeColorOptions = d3.scaleQuantize([0, 9], d3.schemeCategory10);
 
   constructor(props) {
     super(props);
@@ -93,22 +94,34 @@ class MapSpider extends Component {
   };
 
   /**
+   * Gets color associated with route or one of routeColorOptions
+   */
+
+  getRouteColor = startMarker => {
+    const routeColor = startMarker.routeInfo.color
+      ? `#${startMarker.routeInfo.color}`
+      : this.routeColorOptions(startMarker.routeIndex % 10);
+
+    return routeColor;
+  };
+
+  /**
    * Creates a clickable Marker with a custom svg icon (MapShield) for the route
    * represented by startMarker.
    *
    * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
    */
+
   generateShield = (startMarker, waitScaled) => {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
       html: MapShield({
         waitScaled,
-        color: routeColor,
+        color: this.getRouteColor(startMarker),
         routeText: startMarker.routeId,
       }),
     });
@@ -139,6 +152,7 @@ class MapSpider extends Component {
   /**
    * Rendering of stops nearest to click or current location
    */
+
   getStartMarkers = () => {
     let items = null;
 
@@ -149,14 +163,13 @@ class MapSpider extends Component {
     if (selectedStops) {
       items = selectedStops.map((startMarker, index) => {
         const position = [startMarker.stop.lat, startMarker.stop.lon];
-        const routeColor = this.routeColor(startMarker.routeIndex % 10);
 
         return (
           <CircleMarker
             key={`startMarker-${index}`}
             center={position}
             radius="8"
-            fillColor={routeColor}
+            fillColor={this.getRouteColor(startMarker)}
             fillOpacity={0.2}
             stroke={false}
           >
@@ -176,9 +189,8 @@ class MapSpider extends Component {
     return items;
   };
 
-  /**
-   * Rendering of route from nearest stop to terminal.
-   */
+  // Rendering of route from nearest stop to terminal.
+
   DownstreamLines = () => {
     const statsByRouteId = this.props.statsByRouteId;
 
@@ -209,11 +221,9 @@ class MapSpider extends Component {
         }
 
         // Add a solid circle at the terminal stop.
-
         polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
 
         // Add a route shield next to the terminal stop.
-
         polylines.push(this.generateShield(startMarker, waitScaled));
 
         return polylines;
@@ -223,36 +233,31 @@ class MapSpider extends Component {
     return <Fragment>{items}</Fragment>;
   };
 
-  /**
-   * Creates a circle at the terminal of a route.
-   */
+  // Creates a circle at the terminal of a route.
+
   generateTerminalCircle = (startMarker, waitScaled) => {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const terminalPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <CircleMarker
         key={`startMarker-${startMarker.routeId}-terminal-${lastStop.id}`}
         center={terminalPosition}
         radius={3.0 + waitScaled / 2.0}
-        fillColor={routeColor}
+        fillColor={this.getRouteColor(startMarker)}
         fillOpacity={0.75}
         stroke={false}
       ></CircleMarker>
     );
   };
 
-  /**
-   * Creates a line between two stops.
-   */
+  // Creates a line between two stops.
+
   generatePolyline = (startMarker, waitScaled, i) => {
     const downstreamStops = startMarker.downstreamStops;
 
     const computedWeight = waitScaled * 1.5 + 3;
-
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <Polyline
@@ -263,7 +268,7 @@ class MapSpider extends Component {
           downstreamStops[i].id,
           downstreamStops[i + 1].id,
         )}
-        color={routeColor}
+        color={this.getRouteColor(startMarker)}
         opacity={0.5}
         weight={computedWeight}
         onMouseOver={e => {
@@ -282,7 +287,6 @@ class MapSpider extends Component {
           this.onMouseOut(e);
         }}
         // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
-
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
@@ -524,13 +528,15 @@ class MapSpider extends Component {
   } // end render
 } // end class
 
-const mapStateToProps = state => ({
-  routes: state.routes.data,
-  statsByRouteId: state.agencyMetrics.statsByRouteId,
-  graphParams: state.graphParams,
-  spiderSelection: state.spiderSelection,
-  query: state.location.query,
-});
+const mapStateToProps = state => {
+  return {
+    routes: state.routes.data,
+    statsByRouteId: state.agencyMetrics.statsByRouteId,
+    graphParams: state.graphParams,
+    spiderSelection: state.spiderSelection,
+    query: state.location.query,
+  };
+};
 
 const mapDispatchToProps = dispatch => {
   return {

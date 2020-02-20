@@ -1,10 +1,5 @@
 from models import trynapi, util, config
-import json
 import argparse
-import re
-import pytz
-import os
-from datetime import datetime
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Download raw state data from tryn-api')

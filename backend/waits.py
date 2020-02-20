@@ -1,13 +1,9 @@
 import argparse
-import json
-import sys
-from datetime import datetime, timedelta, time
-import pytz
+from datetime import datetime
 
 import numpy as np
-import pandas as pd
 
-from models import config, arrival_history, util, metrics, wait_times, timetables
+from models import config, arrival_history, util, wait_times, timetables
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Compute wait times (in minutes) at a given stop in a given direction on a route, for one or more dates, optionally at particular times of day')
