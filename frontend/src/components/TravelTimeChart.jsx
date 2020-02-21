@@ -72,18 +72,17 @@ export function getTripDataSeries(routeMetrics, route, directionId) {
       }
     });
 
-    if (directionInfo.loop) {
-        const firstStopId = directionInfo.stops[0];
-        const segment = segmentsMap[firstStopId];
-        if (segment && segment.medianTripTime != null) {
-            dataSeries.push({
-              x: metersToMiles(directionInfo.distance),
-              y: segment.medianTripTime,
-              title: route.stops[firstStopId].title,
-              stopIndex: directionInfo.stops.length,
-              numTrips: segment.trips,
-            });
-        }
+    if (directionInfo.loop && firstStopId) {
+      const segment = segmentsMap[firstStopId];
+      if (segment && segment.medianTripTime != null) {
+        dataSeries.push({
+          x: metersToMiles(directionInfo.distance),
+          y: segment.medianTripTime,
+          title: route.stops[firstStopId].title,
+          stopIndex: directionInfo.stops.length,
+          numTrips: segment.trips,
+        });
+      }
     }
   }
 
