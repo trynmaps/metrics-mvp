@@ -287,7 +287,12 @@ def get_state_raw(agency_id, start_time, end_time, route_ids):
     print(params)
 
     query_url = f"{trynapi_url}/graphql?query={query}"
-    r = requests.get(query_url)
+    try:
+        r = requests.get(query_url)
+    except Exception as exc:
+        print(exc)
+        print('Ensure tryn-api is running and that you set the TRYNAPI_URL environment variable')
+        exit(1)
 
     print(f"   response length = {len(r.text)}")
 
