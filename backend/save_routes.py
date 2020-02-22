@@ -56,8 +56,8 @@ if __name__ == '__main__':
         scraper.save_routes(save_to_s3)
 
         if args.timetables:
-            updated_timetables = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)
+            timetables_updated = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)
 
-            if updated_timetables and args.scheduled_stats:
+            if timetables_updated and args.scheduled_stats:
                 dates = sorted(scraper.get_services_by_date().keys())
                 compute_stats_for_dates(dates, agency, scheduled=True, save_to_s3=save_to_s3)

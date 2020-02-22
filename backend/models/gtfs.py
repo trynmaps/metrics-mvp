@@ -243,6 +243,11 @@ class GtfsScraper:
         return dates_map
 
     def save_timetables(self, save_to_s3=False, skip_existing=False):
+        # If skip_existing is true, this will only save timetables if the GTFS feed contains any
+        # new dates for which timetables haven't already been saved.
+        #
+        # Returns true if any new timetables were saved, and false otherwise.
+
         agency_id = self.agency_id
 
         dates_map = self.get_services_by_date()
