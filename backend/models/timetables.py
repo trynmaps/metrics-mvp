@@ -308,7 +308,11 @@ def get_s3_path(agency_id, route_id, date_key, version=DefaultVersion):
 
 def get_date_key(agency_id, d: date, version = DefaultVersion):
     date_keys = get_date_keys(agency_id, version)
-    return date_keys[str(d)]
+
+    try:
+        return date_keys[str(d)]
+    except KeyError as ex:
+        raise KeyError(f"Date key not found for {d} on {agency_id}")
 
 def get_date_keys(agency_id, version = DefaultVersion):
     cache_path = get_date_keys_cache_path(agency_id, version)

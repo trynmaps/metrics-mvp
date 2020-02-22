@@ -243,6 +243,11 @@ class GtfsScraper:
         return dates_map
 
     def save_timetables(self, save_to_s3=False, skip_existing=False):
+        # If skip_existing is true, this will only save timetables if the GTFS feed contains any
+        # new dates for which timetables haven't already been saved.
+        #
+        # Returns true if any new timetables were saved, and false otherwise.
+
         agency_id = self.agency_id
 
         dates_map = self.get_services_by_date()
@@ -276,7 +281,7 @@ class GtfsScraper:
 
         if skip_existing and date_keys == old_date_keys:
             print("No new dates in GTFS feed, skipping")
-            return
+            return False
 
         trips_df = self.get_gtfs_trips()
 
@@ -383,6 +388,8 @@ class GtfsScraper:
                 ContentEncoding='gzip',
                 ACL='public-read'
             )
+
+        return True
 
     def get_custom_direction_id(self, custom_directions_arr, gtfs_direction_id, stop_ids):
 
@@ -495,6 +502,9 @@ class GtfsScraper:
         last_stop_id = stop_ids[0] + "-2"
 
         sort_key = lambda arr: arr['t']
+
+        if (first_stop_id not in direction_arrivals) or (last_stop_id not in direction_arrivals):
+            return
 
         first_stop_arrivals = sorted(direction_arrivals[first_stop_id], key=sort_key)
         last_stop_arrivals = sorted(direction_arrivals[last_stop_id], key=sort_key)

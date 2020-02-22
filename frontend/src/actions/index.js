@@ -209,13 +209,13 @@ export function fetchRouteMetrics(params) {
             fromStopId
             toStopId
             medianTripTime
-            numTrips
+            trips
           }
           cumulativeSegments {
             fromStopId
             toStopId
             medianTripTime
-            numTrips
+            trips
           }
         }
       }

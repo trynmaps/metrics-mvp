@@ -1,17 +1,11 @@
-from models import util, arrival_history, trip_times, constants, config, timetables, precomputed_stats, wait_times, metrics
+from models import arrival_history, trip_times, constants, config, timetables, wait_times, metrics, precomputed_stats, util, gtfs
 import argparse
 from datetime import date
 import collections
 import numpy as np
 import time
 
-combined_stat_id = precomputed_stats.StatIds.Combined
-median_trip_times_stat_id = precomputed_stats.StatIds.MedianTripTimes
-
-all_stat_ids = [
-    combined_stat_id,
-    median_trip_times_stat_id,
-]
+StatIds = precomputed_stats.StatIds
 
 def filter_departures_by_interval(s1_trip_values, s1_departure_time_values, timestamp_intervals):
     #
@@ -36,11 +30,11 @@ def filter_departures_by_interval(s1_trip_values, s1_departure_time_values, time
 
     return s1_trip_values_by_interval, s1_departure_time_values_by_interval
 
-def add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df):
+def add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, df):
     route_id = route_config.id
-    history_df = history_df.sort_values('DEPARTURE_TIME', axis=0)
-    sid_values = history_df['SID'].values
-    did_values = history_df['DID'].values
+    df = df.sort_values('DEPARTURE_TIME', axis=0)
+    sid_values = df['SID'].values
+    did_values = df['DID'].values
 
     for dir_info in route_config.get_direction_infos():
 
@@ -51,13 +45,13 @@ def add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, ro
         all_median_wait_times = collections.defaultdict(list)
 
         for i, stop_id in enumerate(stop_ids):
-            stop_df = history_df[(sid_values == stop_id) & (did_values == dir_id)]
+            stop_df = df[(sid_values == stop_id) & (did_values == dir_id)]
 
             all_time_values = stop_df['DEPARTURE_TIME'].values
 
             for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
 
-                dir_stats = all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]
+                dir_stats = all_stats[StatIds.Combined][interval_index][route_id]['directions'][dir_id]
 
                 headways = metrics.compute_headway_minutes(all_time_values, start_time, end_time)
 
@@ -69,10 +63,10 @@ def add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, ro
                 median_wait_time = wait_time_stats.get_quantile(0.5)
                 if median_wait_time is not None:
                     all_median_wait_times[interval_index].append(median_wait_time)
-                    all_stats[median_trip_times_stat_id][interval_index][route_id]['directions'][dir_id]['medianWaitTimes'][stop_id] = round(median_wait_time, 1)
+                    all_stats[StatIds.MedianTripTimes][interval_index][route_id]['directions'][dir_id]['medianWaitTimes'][stop_id] = round(median_wait_time, 1)
 
         for interval_index, (start_time, end_time) in enumerate(timestamp_intervals):
-            dir_stats = all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]
+            dir_stats = all_stats[StatIds.Combined][interval_index][route_id]['directions'][dir_id]
 
             dir_stats['medianWaitTime'] = get_median_or_none(all_median_wait_times[interval_index])
             dir_stats['medianHeadway'] = get_median_or_none(all_median_headways[interval_index])
@@ -127,7 +121,7 @@ def add_schedule_adherence_stats_for_route(all_stats, timestamp_intervals, route
                     all_on_time_rates[interval_index].append(on_time_rate)
 
         for interval_index, _ in enumerate(timestamp_intervals):
-            dir_stats = all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]
+            dir_stats = all_stats[StatIds.Combined][interval_index][route_id]['directions'][dir_id]
             dir_stats['onTimeRate'] = get_median_or_none(all_on_time_rates[interval_index], precision=3)
 
 def get_median_or_none(values, precision=1):
@@ -136,14 +130,14 @@ def get_median_or_none(values, precision=1):
     else:
         return None
 
-def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df):
+def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, df):
 
-    history_df = history_df.sort_values('TRIP', axis=0)
+    df = df.sort_values('TRIP', axis=0)
 
     route_id = route_config.id
 
-    sid_values = history_df['SID'].values
-    did_values = history_df['DID'].values
+    sid_values = df['SID'].values
+    did_values = df['DID'].values
 
     for dir_info in route_config.get_direction_infos():
         dir_id = dir_info.id
@@ -159,11 +153,11 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
         arrival_time_values_by_stop = {}
 
         for interval_index, _ in enumerate(timestamp_intervals):
-            all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]['tripTimes'] = collections.defaultdict(dict)
-            all_stats[median_trip_times_stat_id][interval_index][route_id]['directions'][dir_id]['medianTripTimes'] = collections.defaultdict(dict)
+            all_stats[StatIds.Combined][interval_index][route_id]['directions'][dir_id]['tripTimes'] = collections.defaultdict(dict)
+            all_stats[StatIds.MedianTripTimes][interval_index][route_id]['directions'][dir_id]['medianTripTimes'] = collections.defaultdict(dict)
 
         for stop_id in stop_ids:
-            stop_df = history_df[(sid_values == stop_id) & (did_values == dir_id)]
+            stop_df = df[(sid_values == stop_id) & (did_values == dir_id)]
 
             trip_values = stop_df['TRIP'].values
             departure_time_values = stop_df['DEPARTURE_TIME'].values
@@ -227,26 +221,25 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
                         median_trip_time = round(util.quantile_sorted(sorted_trip_min, 0.5), 1)
 
                         # save all pairs of stops in median-trip-times stat, used for the isochrone map
-                        all_stats[median_trip_times_stat_id][interval_index][route_id]['directions'][dir_id]['medianTripTimes'][s1][s2] = median_trip_time
+                        all_stats[StatIds.MedianTripTimes][interval_index][route_id]['directions'][dir_id]['medianTripTimes'][s1][s2] = median_trip_time
 
                         # only store median trip times for adjacent stops, or from the first three stops in combined stats
                         # to reduce file size and loading time, since the frontend only needs this for displaying segments
                         # and cumulative time along a route.
                         if (i <= 2) or (j == (i + 1) % num_stops) or s1 == start_stop_id:
-                            all_stats[combined_stat_id][interval_index][route_id]['directions'][dir_id]['tripTimes'][s1][s2] = [
+                            all_stats[StatIds.Combined][interval_index][route_id]['directions'][dir_id]['tripTimes'][s1][s2] = [
                                 round(util.quantile_sorted(sorted_trip_min, 0.1), 1),
                                 median_trip_time,
                                 round(util.quantile_sorted(sorted_trip_min, 0.9), 1),
                                 len(trip_min)
                             ]
 
-
-def compute_stats(d: date, agency: config.Agency, routes, save_to_s3=True):
+def compute_stats(d: date, agency: config.Agency, routes, scheduled=False, save_to_s3=True):
 
     tz = agency.tz
-    stat_ids = all_stat_ids
+    stat_ids = precomputed_stats.AllStatIds
 
-    print(d)
+    print(f"{d} {'(scheduled)' if scheduled else '(observed)'}")
 
     time_str_intervals = constants.DEFAULT_TIME_STR_INTERVALS.copy()
     time_str_intervals.append(('07:00','19:00'))
@@ -276,21 +269,22 @@ def compute_stats(d: date, agency: config.Agency, routes, save_to_s3=True):
 
         route_config = agency.get_route_config(route_id)
 
-        try:
-            history = arrival_history.get_by_date(agency.id, route_id, d)
-        except FileNotFoundError as ex:
-            print(ex)
-            continue
+        if not scheduled:
+            try:
+                history = arrival_history.get_by_date(agency.id, route_id, d)
+            except FileNotFoundError as ex:
+                print(ex)
+                continue
+
+            history_df = history.get_data_frame()
 
         try:
             timetable = timetables.get_by_date(agency.id, route_id, d)
-        except FileNotFoundError as ex:
+        except (FileNotFoundError, KeyError) as ex:
             print(ex)
             continue
 
         timetable_df = timetable.get_data_frame()
-
-        history_df = history.get_data_frame()
 
         for stat_id in stat_ids:
             for interval_index, _ in enumerate(timestamp_intervals):
@@ -301,9 +295,13 @@ def compute_stats(d: date, agency: config.Agency, routes, save_to_s3=True):
 
                     all_stats[stat_id][interval_index][route_id]['directions'][dir_id] = collections.defaultdict(dict)
 
-        add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df)
-        add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, history_df)
-        add_schedule_adherence_stats_for_route(all_stats, timestamp_intervals, route_config, history_df, timetable_df)
+        base_df = timetable_df if scheduled else history_df
+
+        add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, base_df)
+        add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, base_df)
+
+        if not scheduled:
+            add_schedule_adherence_stats_for_route(all_stats, timestamp_intervals, route_config, history_df, timetable_df)
 
         t2 = time.time()
         print(f' {round(t2-t1, 2)} sec')
@@ -315,7 +313,23 @@ def compute_stats(d: date, agency: config.Agency, routes, save_to_s3=True):
             data = {
                 'routes': all_stats[stat_id][interval_index],
             }
-            precomputed_stats.save_stats(agency.id, stat_id, d, start_time_str, end_time_str, data, save_to_s3)
+            precomputed_stats.save_stats(agency.id, stat_id, d, start_time_str, end_time_str, scheduled=scheduled, data=data, save_to_s3=save_to_s3)
+
+def compute_stats_for_dates(dates, agency: config.Agency, scheduled=False, save_to_s3=True):
+
+    routes = agency.get_route_list()
+
+    if scheduled:
+        computed_date_keys = {}
+        for d in dates:
+            date_key = timetables.get_date_key(agency.id, d)
+            if date_key not in computed_date_keys:
+                computed_date_keys[date_key] = True
+                schedule_date = util.parse_date(date_key)
+                compute_stats(schedule_date, agency, routes, scheduled=True, save_to_s3=save_to_s3)
+    else:
+        for d in dates:
+            compute_stats(d, agency, routes, scheduled=False, save_to_s3=save_to_s3)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache statistics')
@@ -324,7 +338,9 @@ if __name__ == '__main__':
     parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
     parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
+    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='compute scheduled stats from timetable')
     parser.set_defaults(s3=False)
+    parser.set_defaults(scheduled=False)
 
     args = parser.parse_args()
 
@@ -334,10 +350,14 @@ if __name__ == '__main__':
         dates = util.get_dates_in_range(args.date, args.date)
     elif args.start_date is not None and args.end_date is not None:
         dates = util.get_dates_in_range(args.start_date, args.end_date)
+    elif args.scheduled and len(agencies) == 1:
+        # save all dates in current GTFS feed if no date range is provided
+        scraper = gtfs.GtfsScraper(agencies[0])
+        dates = sorted(scraper.get_services_by_date().keys())
     else:
         raise Exception('missing date, start-date, or end-date')
 
+    scheduled = args.scheduled
+
     for agency in agencies:
-        routes = agency.get_route_list()
-        for d in dates:
-            compute_stats(d, agency, routes, save_to_s3=args.s3)
+        compute_stats_for_dates(dates, agency, scheduled=scheduled, save_to_s3=args.s3)
