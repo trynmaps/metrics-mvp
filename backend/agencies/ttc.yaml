@@ -17,7 +17,7 @@ js_properties:
   ]
 default_day_start_hour: 4
 custom_day_start_hours:
-  - start_hour: 0 # Blue Night Network (300 series) routes run from 2:30-6 am (2:30-8am Sundays)
+  - start_hour: 1 # Blue Night Network (300 series) routes run from 1:30-6 am (1:30-8am Sundays)
     routes: [
       # bus
       '300', '302', '307', '312', '315', '320', '322', '324', '325',
@@ -28,13 +28,37 @@ custom_day_start_hours:
     ]
 default_directions:
   '0':
-    title_prefix: Eastbound
+    title_prefix: Southbound
   '1':
-    title_prefix: Westbound
-  # 0 is Southbound and 1 is Northbound for north-south routes
-  # TODO - define different set of directions for a list of routes
+    title_prefix: Northbound
+custom_default_directions:
+  'east-west':
+    '0':
+      title_prefix: Eastbound
+    '1':
+      title_prefix: Westbound
+    routes: [
+      # subway
+      '2', '4',
+      # bus
+      '8', '10', '12', '14', '15', '23', '26', '32', '34',
+      '36', '38', '39', '40', '42', '48', '49', '50', '52', '53', '54',
+      '59', '60', '62', '78', '82', '84', '85', '86', '87', '94', '95', '96',
+      '98', '107', '108', '109', '113', '115', '116', '117', '119', '120', '121',
+      '122', '123', '124', '125', '127', '130', '131', '132', '134', '135',
+      '143', '145', '161', '162', '165', '171', '176', '189', '300', '312',
+      '315', '332', '334', '336', '339', '352', '353', '354', '384', '385',
+      '395', '396', '905', '913', '939', '952', '953', '954', '960', '984',
+      '985', '986', '995', '996',
+      # streetcar
+      '301', '304', '306',
+      '501', '502', '503', '504', '505', '506', '508', '509', '512',
+      # discontinued routes (exist in old OpenTransit data), for use in versioned
+      # ttc configs as custom_default_directions can be used for all versions.
+      '190', '191', '192', '193', '196', '198', '199', '185', '186',
+      '514', 
+    ]
 custom_directions:
-  # TODO - define custom_directions for all north-south routes and routes with branches (about 150 routes)
   '25': # Don Mills
     - id: "25A-NB"
       title: "25A Northbound to Steeles via Don Mills Stn"

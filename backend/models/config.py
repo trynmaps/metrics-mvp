@@ -50,6 +50,10 @@ class Agency:
         # `title_prefix` property will be prepended to the title of the direction for display in the UI.
         self.default_directions = conf.get('default_directions', {})
 
+        # map of custom default direction name to object containing a default_directions object
+        # and routes, a list of route IDs that should use this type of directions.
+        self.custom_default_directions = conf.get('custom_default_directions', {})
+    
         self.conf = conf
 
     def get_route_list(self):

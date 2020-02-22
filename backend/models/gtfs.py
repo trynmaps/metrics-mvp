@@ -782,6 +782,13 @@ class GtfsScraper:
         agency = self.agency
         if title is None:
             default_direction_info = agency.default_directions.get(gtfs_direction_id, {})
+            custom_default_directions = agency.custom_default_directions
+            for custom_default_direction_key in custom_default_directions:
+                custom_default_direction = custom_default_directions[
+                    custom_default_direction_key
+                ]
+                if id in custom_default_direction['routes']:
+                    default_direction_info = custom_default_direction.get(gtfs_direction_id, {})
             title_prefix = default_direction_info.get('title_prefix', None)
 
             last_stop_id = stop_ids[-1]
