@@ -445,6 +445,9 @@ class DirectionIntervalMetrics:
             to_stop_id = stop_ids[next_index]
             segment_metrics_arr.append(SegmentIntervalMetrics(self, from_stop_id, to_stop_id))
 
+        if dir_info.is_loop():
+            segment_metrics_arr.append(SegmentIntervalMetrics(self, stop_ids[len(stop_ids) - 1], stop_ids[0]))
+
         return segment_metrics_arr
 
     def get_cumulative_segment_interval_metrics(self):
@@ -466,6 +469,9 @@ class DirectionIntervalMetrics:
 
             if to_stop_id == end_stop_id:
                 break
+
+        if dir_info.is_loop():
+            segment_metrics_arr.append(SegmentIntervalMetrics(self, from_stop_id, from_stop_id))
 
         return segment_metrics_arr
 
