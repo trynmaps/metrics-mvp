@@ -869,9 +869,11 @@ class GtfsScraper:
 
             stop_geometry = get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_index)
 
-            if stop_geometry['offset'] > 100:
-                print(f"    !! bad geometry for stop {stop_id}: {stop_geometry['offset']} m from route line segment")
-                continue
+            if stop_geometry['offset'] > 300:
+                # Throw as skipping it will result in speed metrics API calls failing
+                raise Exception(
+                    f"Bad geometry for stop {stop_id}: {stop_geometry['offset']}m from route line segment"
+                )
 
             dir_data['stop_geometry'][stop_id] = stop_geometry
 
