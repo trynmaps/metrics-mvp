@@ -994,11 +994,27 @@ class GtfsScraper:
 
             routes_data.append(route_data)
 
+        excluded_routes = {}
+        # Skip routes without sort_order if the first route has a sort_order.
+        # For Nextbus agencies, the Nextbus route list is used,
+        # so the routes in GTFS that are not in Nextbus are skipped.
         if routes_data[0]['sort_order'] is not None:
             sort_key = lambda route_data: route_data['sort_order']
+            for route_data in routes_data:
+                if route_data['sort_order'] == None:
+                    excluded_routes[route_data['id']] = True
         else:
             sort_key = lambda route_data: route_data['id']
 
+        for excluded_route in excluded_routes:
+            print(
+                'Excluded Route, in GTFS but not in Nextbus:',
+                excluded_route,
+            )
+        routes_data = [
+            route_data for route_data in routes_data
+            if route_data['id'] not in excluded_routes
+        ]
         routes_data = sorted(routes_data, key=sort_key)
 
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
