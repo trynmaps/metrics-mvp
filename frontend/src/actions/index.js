@@ -48,7 +48,7 @@ function computeDates(graphParams) {
 
 // S3 URL to route configuration
 export function generateRoutesURL(agencyId) {
-  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?r`;
+  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?u`;
 }
 
 /**
@@ -61,7 +61,7 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
   return `https://${S3Bucket}.s3.amazonaws.com/arrivals/${ArrivalsVersion}/${agencyId}/${dateStr.replace(
     /-/g,
     '/',
-  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?ab`;
+  )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?ai`;
 }
 
 export function fetchTripMetrics(params) {
@@ -209,13 +209,13 @@ export function fetchRouteMetrics(params) {
             fromStopId
             toStopId
             medianTripTime
-            numTrips
+            trips
           }
           cumulativeSegments {
             fromStopId
             toStopId
             medianTripTime
-            numTrips
+            trips
           }
         }
       }

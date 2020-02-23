@@ -19,7 +19,6 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', dest='verbose', action='store_true', help='verbose output')
     parser.set_defaults(verbose=False)
     parser.set_defaults(comparison = False)
-    parser.set_defaults(thresholds = '5,10')
 
     args = parser.parse_args()
     route_id = args.route

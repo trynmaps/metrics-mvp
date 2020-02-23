@@ -324,113 +324,61 @@ class TripIntervalMetrics(ObjectType):
 
     headwayScheduleDeltas = Field(BasicStats)
 
-    # parent is a dict with "route_metrics","start_stop_id","end_stop_id","direction_id","range" keys
+    # parent is a metrics.TripIntervalMetrics object
 
-    def resolve_dates(parent, info):
-        return [str(d) for d in parent["range"].dates]
+    def resolve_dates(trip_interval_metrics, info):
+        return [str(d) for d in trip_interval_metrics.rng.dates]
 
-    def resolve_waitTimes(parent, info):
-        return parent["route_metrics"].get_wait_time_stats(
-            direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_waitTimes(trip_interval_metrics, info):
+        return trip_interval_metrics.get_wait_time_stats(scheduled=False)
 
-    def resolve_scheduledWaitTimes(parent, info):
-        return parent["route_metrics"].get_scheduled_wait_time_stats(
-            direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_scheduledWaitTimes(trip_interval_metrics, info):
+        return trip_interval_metrics.get_wait_time_stats(scheduled=True)
 
-    def resolve_headways(parent, info):
-        return parent["route_metrics"].get_headways(
-            direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_headways(trip_interval_metrics, info):
+        return trip_interval_metrics.get_headways(scheduled=False)
 
-    def resolve_scheduledHeadways(parent, info):
-        return parent["route_metrics"].get_scheduled_headways(
-            direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_scheduledHeadways(trip_interval_metrics, info):
+        return trip_interval_metrics.get_headways(scheduled=True)
 
-    def resolve_tripTimes(parent, info):
-        return parent["route_metrics"].get_trip_times(
-            direction_id = parent["direction_id"],
-            start_stop_id = parent["start_stop_id"],
-            end_stop_id = parent["end_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_tripTimes(trip_interval_metrics, info):
+        return trip_interval_metrics.get_trip_times(scheduled=False)
 
-    def resolve_scheduledTripTimes(parent, info):
-        return parent["route_metrics"].get_scheduled_trip_times(
-            direction_id = parent["direction_id"],
-            start_stop_id = parent["start_stop_id"],
-            end_stop_id = parent["end_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_scheduledTripTimes(trip_interval_metrics, info):
+        return trip_interval_metrics.get_trip_times(scheduled=True)
 
-    def resolve_departures(parent, info):
-        return parent["route_metrics"].get_departures(
-            direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_departures(trip_interval_metrics, info):
+        return trip_interval_metrics.get_departures(scheduled=False)
 
-    def resolve_scheduledDepartures(parent, info):
-        return parent["route_metrics"].get_scheduled_departures(
-            direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_scheduledDepartures(trip_interval_metrics, info):
+        return trip_interval_metrics.get_departures(scheduled=True)
 
-    def resolve_arrivals(parent, info):
-        return parent["route_metrics"].get_arrivals(
-            direction_id = parent["direction_id"],
-            stop_id = parent["end_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_arrivals(trip_interval_metrics, info):
+        return trip_interval_metrics.get_arrivals(scheduled=False)
 
-    def resolve_scheduledArrivals(parent, info):
-        return parent["route_metrics"].get_scheduled_arrivals(
-            direction_id = parent["direction_id"],
-            stop_id = parent["end_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_scheduledArrivals(trip_interval_metrics, info):
+        return trip_interval_metrics.get_arrivals(scheduled=True)
 
-    def resolve_departureScheduleAdherence(parent, info, early_sec, late_sec):
-        return parent["route_metrics"].get_departure_schedule_adherence(
-            direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
+    def resolve_departureScheduleAdherence(trip_interval_metrics, info, early_sec, late_sec):
+        return trip_interval_metrics.get_departure_schedule_adherence(
             early_sec = early_sec,
             late_sec = late_sec,
-            rng = parent["range"]
         )
 
-    def resolve_arrivalScheduleAdherence(parent, info, early_sec, late_sec):
-        return parent["route_metrics"].get_arrival_schedule_adherence(
-            direction_id = parent["direction_id"],
-            stop_id = parent["end_stop_id"],
+    def resolve_arrivalScheduleAdherence(trip_interval_metrics, info, early_sec, late_sec):
+        return trip_interval_metrics.get_arrival_schedule_adherence(
             early_sec = early_sec,
             late_sec = late_sec,
-            rng = parent["range"]
         )
 
-    def resolve_headwayScheduleDeltas(parent, info):
-        return parent["route_metrics"].get_headway_schedule_deltas(
-            direction_id = parent["direction_id"],
-            stop_id = parent["start_stop_id"],
-            rng = parent["range"]
-        )
+    def resolve_headwayScheduleDeltas(trip_interval_metrics, info):
+        return trip_interval_metrics.get_headway_schedule_deltas()
 
-    def resolve_startTime(parent, info):
-        return parent["range"].start_time_str
+    def resolve_startTime(trip_interval_metrics, info):
+        return trip_interval_metrics.rng.start_time_str
 
-    def resolve_endTime(parent, info):
-        return parent["range"].end_time_str
+    def resolve_endTime(trip_interval_metrics, info):
+        return trip_interval_metrics.rng.end_time_str
 
 class TripMetrics(ObjectType):
     interval = Field(TripIntervalMetrics,
@@ -449,12 +397,11 @@ class TripMetrics(ObjectType):
         end_time = String(required = False),
     )
 
-    # parent is a dict with "route_metrics","start_stop_id","end_stop_id","direction_id" keys
+    # parent is a metrics.TripMetrics object
 
-    def resolve_interval(parent, info, date_strs, start_time = None, end_time = None):
+    def resolve_interval(trip_metrics, info, date_strs, start_time = None, end_time = None):
         dates = [util.parse_date(date_str) for date_str in date_strs]
-
-        agency = config.get_agency(parent['route_metrics'].agency_id)
+        agency = config.get_agency(trip_metrics.route_metrics.agency_id)
 
         rng = metrics.Range(
             dates,
@@ -463,43 +410,31 @@ class TripMetrics(ObjectType):
             agency.tz
         )
 
-        return {
-            "range": rng,
-            **parent
-        }
+        return metrics.TripIntervalMetrics(trip_metrics, rng)
 
-    def resolve_timeRanges(parent, info, date_strs):
+    def resolve_timeRanges(trip_metrics, info, date_strs):
         dates = [util.parse_date(date_str) for date_str in date_strs]
-
-        agency = config.get_agency(parent['route_metrics'].agency_id)
-
+        agency = config.get_agency(trip_metrics.route_metrics.agency_id)
         return [
-            {
-                'range': metrics.Range(
-                    dates,
-                    start_time,
-                    end_time,
-                    agency.tz
-                ),
-                **parent
-            }
+            metrics.TripIntervalMetrics(trip_metrics, metrics.Range(
+                dates,
+                start_time,
+                end_time,
+                agency.tz
+            ))
             for start_time,end_time in constants.DEFAULT_TIME_STR_INTERVALS
         ]
 
-    def resolve_byDay(parent, info, date_strs, start_time = None, end_time = None):
+    def resolve_byDay(trip_metrics, info, date_strs, start_time = None, end_time = None):
         dates = [util.parse_date(date_str) for date_str in date_strs]
-        agency = config.get_agency(parent['route_metrics'].agency_id)
-
+        agency = config.get_agency(trip_metrics.route_metrics.agency_id)
         return [
-            {
-                'range': metrics.Range(
-                    [date],
-                    start_time,
-                    end_time,
-                    agency.tz
-                ),
-                **parent,
-            }
+            metrics.TripIntervalMetrics(trip_metrics, metrics.Range(
+                [date],
+                start_time,
+                end_time,
+                agency.tz
+            ))
             for date in dates
         ]
 
@@ -507,7 +442,9 @@ class SegmentIntervalMetrics(ObjectType):
     fromStopId = String()
     toStopId = String()
     medianTripTime = Float()
-    numTrips = Int()
+    scheduledMedianTripTime = Float()
+    trips = Int()
+    scheduledTrips = Int()
 
     # parent is a metrics.SegmentIntervalMetrics object
 
@@ -518,77 +455,97 @@ class SegmentIntervalMetrics(ObjectType):
         return segment_metrics.to_stop_id
 
     def resolve_medianTripTime(segment_metrics, info):
-        return segment_metrics.get_median_trip_time()
+        return segment_metrics.get_median_trip_time(scheduled=False)
 
-    def resolve_numTrips(segment_metrics, info):
-        return segment_metrics.get_num_trips()
+    def resolve_scheduledMedianTripTime(segment_metrics, info):
+        return segment_metrics.get_median_trip_time(scheduled=True)
+
+    def resolve_trips(segment_metrics, info):
+        return segment_metrics.get_num_trips(scheduled=False)
+
+    def resolve_scheduledTrips(segment_metrics, info):
+        return segment_metrics.get_num_trips(scheduled=True)
 
 class DirectionIntervalMetrics(ObjectType):
     directionId = String()
     medianWaitTime = Float() # minutes
+    scheduledMedianWaitTime = Float()
+    medianHeadway = Float()
+    scheduledMedianHeadway = Float()
     averageSpeed = Float(
+        units = String(required=False),
+    )
+    scheduledAverageSpeed = Float(
         units = String(required=False),
     )
     travelTimeVariability = Float() # minutes, 90th percentile - 10th percentile trip time
     onTimeRate = Float()
-    numCompletedTrips = Int()
+    completedTrips = Int()
+    scheduledCompletedTrips = Int()
 
     segments = List(SegmentIntervalMetrics)
     cumulativeSegments = List(SegmentIntervalMetrics)
 
-    def resolve_directionId(parent, info):
-        return parent["direction_id"]
+    # parent is a metrics.DirectionIntervalMetrics object
 
-    def resolve_travelTimeVariability(parent, info):
-        return round_or_none(parent["agency_metrics"].get_travel_time_variability(parent["route_id"], parent["direction_id"], parent["range"]))
+    def resolve_directionId(dir_metrics, info):
+        return dir_metrics.direction_id
 
-    def resolve_averageSpeed(parent, info, units=constants.MILES_PER_HOUR):
-        return round_or_none(parent["agency_metrics"].get_average_speed(parent["route_id"], parent["direction_id"], parent["range"], units))
+    def resolve_travelTimeVariability(dir_metrics, info):
+        return round_or_none(dir_metrics.get_travel_time_variability())
 
-    def resolve_medianWaitTime(parent, info):
-        return round_or_none(parent["agency_metrics"].get_median_wait_time(parent["route_id"], parent["direction_id"], "median", parent["range"]))
+    def resolve_averageSpeed(dir_metrics, info, units=constants.MILES_PER_HOUR):
+        return round_or_none(dir_metrics.get_average_speed(units, scheduled=False))
 
-    def resolve_onTimeRate(parent, info):
-        return round_or_none(parent["agency_metrics"].get_on_time_rate(parent["route_id"], parent["direction_id"], "median", parent["range"]))
+    def resolve_scheduledAverageSpeed(dir_metrics, info, units=constants.MILES_PER_HOUR):
+        return round_or_none(dir_metrics.get_average_speed(units, scheduled=True))
 
-    def resolve_numCompletedTrips(parent, info):
-        return parent["agency_metrics"].get_num_completed_trips(parent["route_id"], parent["direction_id"], parent["range"])
+    def resolve_medianWaitTime(dir_metrics, info):
+        return round_or_none(dir_metrics.get_median_wait_time(scheduled=False))
 
-    def resolve_segments(parent, info):
-        return parent["agency_metrics"].get_segment_interval_metrics(parent["route_id"], parent["direction_id"], parent["range"])
+    def resolve_scheduledMedianWaitTime(dir_metrics, info):
+        return round_or_none(dir_metrics.get_median_wait_time(scheduled=True))
 
-    def resolve_cumulativeSegments(parent, info):
-        return parent["agency_metrics"].get_cumulative_segment_interval_metrics(parent["route_id"], parent["direction_id"], parent["range"])
+    def resolve_medianHeadway(dir_metrics, info):
+        return round_or_none(dir_metrics.get_median_headway(scheduled=False))
+
+    def resolve_scheduledMedianHeadway(dir_metrics, info):
+        return round_or_none(dir_metrics.get_median_headway(scheduled=True))
+
+    def resolve_onTimeRate(dir_metrics, info):
+        return round_or_none(dir_metrics.get_on_time_rate())
+
+    def resolve_completedTrips(dir_metrics, info):
+        return dir_metrics.get_completed_trips(scheduled=False)
+
+    def resolve_scheduledCompletedTrips(dir_metrics, info):
+        return dir_metrics.get_completed_trips(scheduled=True)
+
+    def resolve_segments(dir_metrics, info):
+        return dir_metrics.get_segment_interval_metrics()
+
+    def resolve_cumulativeSegments(dir_metrics, info):
+        return dir_metrics.get_cumulative_segment_interval_metrics()
 
 class RouteIntervalMetrics(ObjectType):
     routeId = String()
     directions = List(DirectionIntervalMetrics)
 
-    def resolve_routeId(parent, info):
-        return parent["route_id"]
+    # parent is a metrics.RouteIntervalMetrics object
 
-    def resolve_directions(parent, info):
-        route_config = parent["agency_metrics"].get_route_config(parent["route_id"])
+    def resolve_routeId(route_interval_metrics, info):
+        return route_interval_metrics.route_id
 
-        return [{
-                **parent,
-                "direction_id": direction_id,
-            } for direction_id in route_config.get_direction_ids()
-        ]
+    def resolve_directions(route_interval_metrics, info):
+        return route_interval_metrics.get_direction_interval_metrics()
 
 class AgencyIntervalMetrics(ObjectType):
     routes = List(RouteIntervalMetrics)
 
-    def resolve_routes(parent, info):
-        route_ids = parent["agency_metrics"].get_route_ids()
+    # parent is a metrics.AgencyIntervalMetrics object
 
-        return [
-            {
-                'route_id': route_id,
-                **parent,
-            }
-            for route_id in route_ids
-        ]
+    def resolve_routes(agency_interval_metrics, info):
+        return agency_interval_metrics.get_route_interval_metrics()
 
 class RouteMetrics(ObjectType):
     trip = Field(TripMetrics,
@@ -606,12 +563,7 @@ class RouteMetrics(ObjectType):
     # parent is a metrics.RouteMetrics object
 
     def resolve_trip(route_metrics, info, start_stop_id, end_stop_id = None, direction_id = None):
-        return {
-            "route_metrics": route_metrics,
-            "start_stop_id": start_stop_id,
-            "end_stop_id": end_stop_id,
-            "direction_id": direction_id,
-        }
+        return metrics.TripMetrics(route_metrics, direction_id, start_stop_id, end_stop_id)
 
     def resolve_interval(route_metrics, info, date_strs, start_time = None, end_time = None):
         dates = [util.parse_date(date_str) for date_str in date_strs]
@@ -625,12 +577,11 @@ class RouteMetrics(ObjectType):
             agency.tz
         )
 
-        return {
-            "range": rng,
-            "agency_metrics": route_metrics.agency_metrics,
-            "route_id": route_metrics.route_id,
-            #"route_metrics": route_metrics,
-        }
+        return metrics.RouteIntervalMetrics(
+            route_metrics.agency_metrics,
+            route_metrics.route_id,
+            rng,
+        )
 
 class AgencyMetrics(ObjectType):
     agencyId = String()
@@ -655,18 +606,13 @@ class AgencyMetrics(ObjectType):
 
     def resolve_interval(agency_metrics, info, date_strs, start_time = None, end_time = None):
         dates = [util.parse_date(date_str) for date_str in date_strs]
-
         rng = metrics.Range(
             dates,
             start_time,
             end_time,
             None
         )
-
-        return {
-            "range": rng,
-            "agency_metrics": agency_metrics
-        }
+        return metrics.AgencyIntervalMetrics(agency_metrics, rng)
 
 class Query(ObjectType):
     agencies = List(AgencyMetrics,

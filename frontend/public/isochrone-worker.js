@@ -21,7 +21,6 @@ const FirstStopMinWaitMinutes = 1.0;
 
 let curComputeId = null;
 let tripTimesCache = {};
-let waitTimesCache = {};
 
 // todo: support multiple agencies on one map
 const agencyId = thisUrl.searchParams.get('agency_id');
@@ -124,7 +123,7 @@ function getTimePath(timeStr)
     return timeStr ? ('_' + timeStr.replace(/:/g,'').replace('-','_').replace(/\+/g,'%2B')) : '';
 }
 
-async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId, dateStr, timeStr)
+async function getTripTimes(agencyId, dateStr, timeStr)
 {
     const cacheKey = agencyId + dateStr + timeStr;
     let tripTimes = tripTimesCache[cacheKey];
@@ -133,9 +132,9 @@ async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId,
     {
         let timePath = getTimePath(timeStr);
 
-        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/precomputed-stats/'+PrecomputedStatsVersion+'/'+agencyId+'/'+
+        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/observed-stats/'+PrecomputedStatsVersion+'/'+agencyId+'/'+
             dateStr.replace(/\-/g, '/')+
-            '/precomputed-stats_'+PrecomputedStatsVersion+'_'+agencyId+'_median-trip-times_'+dateStr+timePath+'.json.gz';
+            '/observed-stats_'+PrecomputedStatsVersion+'_'+agencyId+'_median-trip-times_'+dateStr+timePath+'.json.gz';
 
         tripTimes = tripTimesCache[cacheKey] = await loadJson(s3Url).catch(function(e) {
             e.message = 'error loading trip times: ' + e.message;
@@ -144,11 +143,19 @@ async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId,
         });
     }
 
+    return tripTimes;
+}
+
+async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId, dateStr, timeStr)
+{
+    const tripTimes = await getTripTimes(agencyId, dateStr, timeStr);
+
     let routeStats = tripTimes.routes[routeId];
     if (!routeStats)
     {
         return null;
     }
+
     let directionStats = routeStats.directions[directionId];
     if (!directionStats)
     {
@@ -166,26 +173,9 @@ async function getTripTimesFromStop(agencyId, routeId, directionId, startStopId,
 
 async function getWaitTimeAtStop(agencyId, routeId, directionId, stopId, dateStr, timeStr)
 {
-    const cacheKey = dateStr + timeStr;
+    const tripTimes = await getTripTimes(agencyId, dateStr, timeStr);
 
-    let waitTimes = waitTimesCache[cacheKey];
-
-    if (!waitTimes)
-    {
-        var timePath = getTimePath(timeStr);
-
-        let s3Url = 'https://'+S3Bucket+'.s3.amazonaws.com/precomputed-stats/'+PrecomputedStatsVersion+'/'+agencyId+'/'+
-            dateStr.replace(/\-/g, '/')+
-            '/precomputed-stats_'+PrecomputedStatsVersion+'_'+agencyId+'_combined_'+dateStr+timePath+'.json.gz';
-
-        waitTimes = waitTimesCache[cacheKey] = await loadJson(s3Url).catch(function(e) {
-            e.message = 'error loading wait times: ' + e.message;
-            sendError(e);
-            throw e;
-        });
-    }
-
-    let routeStats = waitTimes.routes[routeId];
+    let routeStats = tripTimes.routes[routeId];
     if (!routeStats)
     {
         return null;
@@ -196,6 +186,7 @@ async function getWaitTimeAtStop(agencyId, routeId, directionId, stopId, dateStr
     {
         return null;
     }
+
     let medianWaitTimes = directionStats.medianWaitTimes;
     if (!medianWaitTimes)
     {
