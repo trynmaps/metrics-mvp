@@ -7,6 +7,7 @@ from . import config
 import time
 from pathlib import Path
 from datetime import date
+import pandas as pd
 
 class CachedState:
     def __init__(self):
@@ -45,8 +46,6 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
         print('state already cached')
         return state
 
-    route_state_map = {}
-
     # Request data from trynapi in smaller chunks to avoid internal server errors.
     # The more routes we have, the smaller our chunk size needs to be in order to
     # avoid getting internal server errors from trynapi.
@@ -61,78 +60,191 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
         trynapi_max_chunk = 720
     else:
         trynapi_max_chunk = int(trynapi_max_chunk)
-
-    chunk_minutes = math.ceil(trynapi_max_chunk / len(route_ids))
-
     trynapi_min_chunk = 15
 
+    chunk_minutes = math.ceil(trynapi_max_chunk / len(route_ids))
     chunk_minutes = max(chunk_minutes, trynapi_min_chunk)
-    num_errors = 0
-
+    
     print(f"chunk_minutes = {chunk_minutes}")
 
     chunk_start_time = start_time
+    allow_chunk_error = True # allow up to one trynapi error before raising an exception
+    remove_route_temp_cache(agency_id)
     while chunk_start_time < end_time:
-
+        # download trynapi data in chunks; each call return data for all routes
         chunk_end_time = min(chunk_start_time + 60 * chunk_minutes, end_time)
-
-        chunk_state = get_state_raw(agency_id, chunk_start_time, chunk_end_time, uncached_route_ids)
-
-        if 'errors' in chunk_state: # trynapi returns an internal server error if you ask for too much data at once
-            raise Exception(f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['errors']}")
-
-        if 'message' in chunk_state: # trynapi returns an internal server error if you ask for too much data at once
-            error = f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}"
-            if num_errors == 0 and chunk_minutes > 5:
-                print(error)
-                chunk_minutes = math.ceil(chunk_minutes / 2)
-                num_errors += 1
-                print(f"chunk_minutes = {chunk_minutes}")
-                continue
-            else:
-                raise Exception(f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}")
-
-        if not ('data' in chunk_state):
-            print(chunk_state)
-            raise Exception(f'trynapi returned no data')
-
-        for chunk_route_state in chunk_state['data']['state']['routes']:
-            route_id = chunk_route_state['routeId']
-            if route_id not in route_state_map:
-                route_state_map[route_id] = chunk_route_state
-            else:
-                route_state_map[route_id]['states'].extend(chunk_route_state['states'])
-
+        chunk_states = get_chunk_state(
+            agency_id,
+            chunk_start_time,
+            chunk_end_time,
+            uncached_route_ids,
+            chunk_minutes,
+            allow_chunk_error,
+        )
         chunk_start_time = chunk_end_time
+        if chunk_states == False:
+            allow_chunk_error = False
+            continue
+        for chunk_state in chunk_states:
+            write_chunk_state(chunk_state, agency_id)
 
-    # cache state per route so we don't have to request it again if a route appears in a different list of routes
+    # cache state per route so we don't have to request it again
+    # if a route appears in a different list of routes
     for route_id in uncached_route_ids:
         cache_path = get_cache_path(agency_id, d, start_time, end_time, route_id)
-
-        if route_id not in route_state_map:
-            route_state_map[route_id] = None
-
+        states = read_temp_chunk_state(agency_id, route_id)
         cache_dir = Path(cache_path).parent
         if not cache_dir.exists():
             cache_dir.mkdir(parents = True, exist_ok = True)
 
         with open(cache_path, "w") as f:
             print(f'writing state for route {route_id} to cache: {cache_path}')
-            f.write(json.dumps(route_state_map[route_id]))
+            f.write(json.dumps(states))
 
         state.add(route_id, cache_path)
-
+    # remove_route_temp_cache(agency_id)
     return state
 
-def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> str:
+
+def validate_agency_route_path_attributes(agency_id: str, route_id: str):
     if re.match('^[\w\-]+$', agency_id) is None:
         raise Exception(f"Invalid agency: {agency_id}")
 
     if re.match('^[\w\-]+$', route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
 
+
+def get_route_temp_cache_path(agency_id: str, route_id: str) -> str:
+    validate_agency_route_path_attributes(agency_id, route_id)
+    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) 
+    return os.path.join(
+        source_dir,
+        'data',
+        f"state_v2_{agency_id}/state_{agency_id}_{route_id}_temp_cache.csv",
+    )
+
+
+def remove_route_temp_cache(agency_id: str):
+    """Removes all files with the ending temp_cache.csv in the
+    source data directory"""
+    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) 
+    dir = os.path.join(
+        source_dir,
+        'data',
+        f"state_v2_{agency_id}"
+    )
+    for path in os.listdir(dir):
+        if path.endswith('_temp_cache.csv'):
+            os.remove(os.path.join(dir, path))
+
+
+def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> str:
+    validate_agency_route_path_attributes(agency_id, route_id)
     source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    return os.path.join(source_dir, 'data', f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.json")
+    return os.path.join(
+        source_dir,
+        'data',
+        f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.json",
+    )
+
+
+def get_chunk_state(
+    agency_id,
+    chunk_start_time,
+    chunk_end_time,
+    uncached_route_ids,
+    chunk_minutes,
+    allow_error,
+):
+    """Makes TrynAPI calls to assemble a chunk and returns list of chunk states,
+    with each state having the fields of routeId and states.
+    Returns False when allow_error is set to True, chunk_minutes is greater than 5,
+    and TrynAPI has an internal server error (data request too large).
+    """
+    chunk_state = get_state_raw(
+        agency_id,
+        chunk_start_time,
+        chunk_end_time,
+        uncached_route_ids,
+    )
+    if 'errors' in chunk_state:
+        # trynapi returns an internal server error if you ask for too much data at once
+        raise Exception(
+            f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['errors']}"
+        )
+    if 'message' in chunk_state: # trynapi returns an internal server error if you ask for too much data at once
+        error = f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}"
+        if allow_error and chunk_minutes > 5:
+            print(error)
+            chunk_minutes = math.ceil(chunk_minutes / 2)
+            print(f"chunk_minutes = {chunk_minutes}")
+            return False
+        else:
+            raise Exception(
+                f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}"
+            )
+    if not ('data' in chunk_state):
+        print(chunk_state)
+        raise Exception(f'trynapi returned no data')
+    return chunk_state['data']['state']['routes']
+
+
+# Properties of each vehicle as returned from tryn-api,
+# used for writing and reading chunk states to and from CSV files
+vehicle_keys = ['vid', 'lat', 'lon', 'did', 'secsSinceReport']
+
+def write_chunk_state(chunk_state, agency_id):
+    # TODO - use the write functions part of PR #578
+    """Writes chunks to a CSV for the given route in the given directory.
+    Appends states and creates a new file if one does not exist."""
+    route_id = chunk_state['routeId']
+    path = get_route_temp_cache_path(agency_id, route_id)
+    states = chunk_state['states']
+    if len(states) == 0:
+        return
+    header_keys = ['timestamp'] + vehicle_keys
+    if not os.path.exists(path):
+        with open(path, 'w+') as chunk_out:
+            chunk_out.writelines([','.join(header_keys) + '\n'])
+    with open(path, 'a') as chunk_out:
+        chunk_lines = []
+        for state in states:
+            timestamp = state['timestamp']
+            for vehicle in state['vehicles']:
+                chunk_line = ','.join(map(str, [timestamp]+ [
+                    vehicle[vehicle_key]
+                    for vehicle_key in vehicle_keys
+                ])) + '\n'
+                chunk_lines.append(chunk_line)
+        chunk_out.writelines(chunk_lines)
+
+
+def read_temp_chunk_state(agency_id, route_id):
+    """Reads chunk_state from temporary CSV cache for the given
+    agency_id and route_id. Returns the chunk_state as a dict,
+    or None if it does not exist."""
+    path = get_route_temp_cache_path(agency_id, route_id)
+    if not os.path.exists(path):
+        return None
+    chunk_state_dict = pd.read_csv(
+        path,
+        dtype={'vid': str},
+        float_precision='high', # keep precision for rounding lat/lon
+    ).groupby('timestamp').agg(list).to_dict('index')
+    chunk_state = {'routeId': route_id, 'states': []}
+    for timestamp in chunk_state_dict:
+        vehicle_row = chunk_state_dict[timestamp]
+        state = {
+            'timestamp': timestamp,
+            'vehicles': []
+        }
+        for vehicle_idx in range(len(vehicle_row[vehicle_keys[0]])):
+            state['vehicles'].append({
+                vehicle_key: vehicle_row[vehicle_key][vehicle_idx]
+                for vehicle_key in vehicle_keys
+            })
+        chunk_state['states'].append(state)
+    return chunk_state
 
 
 def get_state_raw(agency_id, start_time, end_time, route_ids):
