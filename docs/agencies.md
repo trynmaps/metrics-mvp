@@ -39,6 +39,26 @@ default_directions:
     title_prefix: Inbound
 ```
 
+`custom_default_directions` - an extension of `default_directions`; it is an optional object with keys for each `default_directions` object you provide that also contains a `route` field where you provide the list of routes that the rule should apply to. This field can be provided in addition to `default_directions`. In the example below, a direction_id of '0' can have multiple meanings such as Outbound or Eastbound depending on the route:
+```
+  'inbound-outbound':
+    '0':
+      title_prefix: Outbound
+    '1':
+      title_prefix: Inbound
+    routes: [
+      'KT', 'L', 'M', 'N', 'J', 'E', 'F'
+    ]
+  'east-west':
+    '0':
+      title_prefix: Eastbound
+    '1':
+      title_prefix: Westbound
+    routes: [
+      '2', '3', '4', '501', '502', '503', '504', '505', '506', '508', '509', '512'
+    ]
+```
+
 `custom_directions` - an optional object that allows manually defining directions for certain routes, in order to support routes with multiple branches. Each key in this object is a route ID, and the value is an array of directions for that route, with the properties `id`, `title` (optional), `gtfs_direction_id`, `included_stop_ids` (optional), and `excluded_stop_ids` (optional).
 
 The `gtfs_direction_id`, `included_stop_ids`, and `excluded_stop_ids` properties are used to filter the shape_ids referred to by trips.txt in the GTFS feed. Each custom direction should match at least one shape in the GTFS feed. If a custom direction can be matched to multiple shapes, it is matched to the one associated with the most trips in the GTFS feed. If a custom direction cannot be matched to any shapes, the direction will be omitted and an exception will be raised by save_routes.py after saving the new routes file. If included_stop_ids contains multiple stop IDs, they must be listed in order.
