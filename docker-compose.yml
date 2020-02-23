@@ -23,7 +23,7 @@ services:
     environment:
       FLASK_DEBUG: 1
       TRYNAPI_URL: http://tryn-api.opentransit.city
-      OPENTRANSIT_AGENCY_IDS: muni
+      OPENTRANSIT_AGENCY_IDS: ttc
   react-dev:
     container_name: metrics-react-dev
     image: metrics-mvp_react-dev:latest
