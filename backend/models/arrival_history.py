@@ -174,9 +174,8 @@ def get_by_date(agency_id: str, route_id: str, d: date, version = DefaultVersion
         mtime = os.stat(cache_path).st_mtime
         now = time.time()
         if now - mtime < 86400:
-            with open(cache_path, "r") as f:
-                text = f.read()
-                return ArrivalHistory.from_data(json.loads(text))
+            text = util.read_from_file(cache_path)
+            return ArrivalHistory.from_data(json.loads(text))
     except FileNotFoundError as err:
         pass
 
@@ -199,9 +198,7 @@ def get_by_date(agency_id: str, route_id: str, d: date, version = DefaultVersion
     if not cache_dir.exists():
         cache_dir.mkdir(parents = True, exist_ok = True)
 
-    with open(cache_path, "w") as f:
-        f.write(r.text)
-
+    util.write_to_file(cache_path, r.text)
     return ArrivalHistory.from_data(data)
 
 def save_for_date(history: ArrivalHistory, d: date, s3=False):
@@ -217,8 +214,7 @@ def save_for_date(history: ArrivalHistory, d: date, s3=False):
     if not cache_dir.exists():
         cache_dir.mkdir(parents = True, exist_ok = True)
 
-    with open(cache_path, "w") as f:
-        f.write(data_str)
+    util.write_to_file(cache_path, data_str)
 
     if s3:
         s3 = boto3.resource('s3')

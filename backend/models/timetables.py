@@ -258,9 +258,8 @@ def match_schedule_to_actual_times(scheduled_times, actual_times, early_sec=60, 
 def get_data_by_date_key(agency_id: str, route_id: str, date_key: str, version = DefaultVersion) -> Timetable:
     cache_path = get_cache_path(agency_id, route_id, date_key, version)
     try:
-        with open(cache_path, "r") as f:
-            text = f.read()
-            return json.loads(text)
+        text = util.read_from_file(cache_path)
+        return json.loads(text)
     except FileNotFoundError as err:
         pass
 
@@ -283,9 +282,7 @@ def get_data_by_date_key(agency_id: str, route_id: str, date_key: str, version =
     if not cache_dir.exists():
         cache_dir.mkdir(parents = True, exist_ok = True)
 
-    with open(cache_path, "w") as f:
-        f.write(r.text)
-
+    util.write_to_file(cache_path, r.text)
     return data
 
 def get_cache_path(agency_id, route_id, date_key, version = DefaultVersion):
@@ -314,9 +311,9 @@ def get_date_keys(agency_id, version = DefaultVersion):
     cache_path = get_date_keys_cache_path(agency_id, version)
 
     try:
-        with open(cache_path, "r") as f:
-            data = json.loads(f.read())
-            return data['date_keys']
+        data = util.read_from_file(cache_path)
+        data = json.loads(data)
+        return data['date_keys']
     except FileNotFoundError as err:
         pass
 
@@ -339,9 +336,7 @@ def get_date_keys(agency_id, version = DefaultVersion):
     if not cache_dir.exists():
         cache_dir.mkdir(parents = True, exist_ok = True)
 
-    with open(cache_path, "w") as f:
-        f.write(r.text)
-
+    util.write_to_file(cache_path, r.text)
     return data['date_keys']
 
 def get_date_keys_cache_path(agency_id, version = DefaultVersion):
