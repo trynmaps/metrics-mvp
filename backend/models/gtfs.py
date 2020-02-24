@@ -967,56 +967,47 @@ class GtfsScraper:
 
         return route_data
 
-    def save_routes(self, save_to_s3=True):
+    def sort_routes(self, routes_df):
         agency = self.agency
-        agency_id = agency.id
-
         routes_data = []
-
-        routes_df = self.get_gtfs_routes()
-
         if agency.provider == 'nextbus':
-            nextbus_route_order = [route.id for route in nextbus.get_route_list(agency.nextbus_id)]
-
+            nextbus_route_order = [
+                route.id for route in nextbus.get_route_list(agency.nextbus_id)
+            ]
+        use_sort_order = False
         for route in routes_df.itertuples():
             route_data = self.get_route_data(route)
-
             if agency.provider == 'nextbus':
                 try:
                     sort_order = nextbus_route_order.index(route_data['id'])
+                    use_sort_order = True
                 except ValueError as ex:
                     print(ex)
                     sort_order = None
             else:
-                sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
-
+                sort_order = int(
+                    route.route_sort_order
+                ) if hasattr(route, 'route_sort_order') else None
             route_data['sort_order'] = sort_order
-
             routes_data.append(route_data)
+        def get_sort_key(route_data):
+            if use_sort_order:
+                if route_data['sort_order'] is None:
+                    if route_data['type'] == 1:
+                        # place subways at the front if they don't have a sort_order
+                        return -1
+                    return 9999
+                return route_data['sort_order']
+            return route_data['id']
+        return sorted(routes_data, key=get_sort_key)
 
-        excluded_routes = {}
-        # Skip routes without sort_order if the first route has a sort_order.
-        # For Nextbus agencies, the Nextbus route list is used,
-        # so the routes in GTFS that are not in Nextbus are skipped.
-        if routes_data[0]['sort_order'] is not None:
-            sort_key = lambda route_data: route_data['sort_order']
-            for route_data in routes_data:
-                if route_data['sort_order'] == None:
-                    excluded_routes[route_data['id']] = True
-        else:
-            sort_key = lambda route_data: route_data['id']
+    def save_routes(self, save_to_s3=True):
+        agency = self.agency
+        agency_id = agency.id
 
-        for excluded_route in excluded_routes:
-            print(
-                'Excluded Route, in GTFS but not in Nextbus:',
-                excluded_route,
-            )
-        routes_data = [
-            route_data for route_data in routes_data
-            if route_data['id'] not in excluded_routes
-        ]
-        routes_data = sorted(routes_data, key=sort_key)
-
+        routes_df = self.get_gtfs_routes()
+        routes_data = self.sort_routes(routes_df)
+        
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
         routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)
