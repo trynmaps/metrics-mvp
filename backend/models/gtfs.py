@@ -8,7 +8,6 @@ import boto3
 import gzip
 import hashlib
 import zipfile
-from collections import OrderedDict
 
 from . import config, util, nextbus, routeconfig, timetables
 
@@ -968,16 +967,14 @@ class GtfsScraper:
 
         return route_data
 
-    def sort_routes(self, routes_df):
+    def sort_routes(self, routes_data):
         agency = self.agency
-        routes_data = []
         if agency.provider == 'nextbus':
             nextbus_route_order = [
                 route.id for route in nextbus.get_route_list(agency.nextbus_id)
             ]
         use_sort_order = False
-        for route in routes_df.itertuples():
-            route_data = self.get_route_data(route)
+        for route_data in routes_data:
             if agency.provider == 'nextbus':
                 try:
                     sort_order = nextbus_route_order.index(route_data['id'])
@@ -987,10 +984,9 @@ class GtfsScraper:
                     sort_order = None
             else:
                 sort_order = int(
-                    route.route_sort_order
-                ) if hasattr(route, 'route_sort_order') else None
+                    route_data['route_sort_order']
+                ) if hasattr(route_data, 'route_sort_order') else None
             route_data['sort_order'] = sort_order
-            routes_data.append(route_data)
         def get_sort_key(route_data):
             if use_sort_order:
                 if route_data['sort_order'] is None:
@@ -1002,36 +998,16 @@ class GtfsScraper:
             return route_data['id']
         return sorted(routes_data, key=get_sort_key)
 
-    def newer_route(self, newest_route_data, route_data):
-        try:
-            return int(
-                route_data['gtfs_route_id']
-            ) > int(newest_route_data['gtfs_route_id'])
-        except ValueError:
-            return route_data['gtfs_route_id'] > newest_route_data['gtfs_route_id']
-
-    def remove_duplicate_routes(self, routes_data):
-        """Remove routes with the same id that appear multiple times.
-        Keeps the route with the highest gtfs_route_id, converting it to
-        a number of possible."""
-        routes_dict = OrderedDict()
-        for route_data in routes_data:
-            if route_data['id'] not in routes_dict or self.newer_route(
-                routes_dict[route_data['id']],
-                route_data,
-            ):
-                routes_dict[route_data['id']] = route_data
-        return [
-            routes_dict[route_id] for route_id in routes_dict
-        ]
-
     def save_routes(self, save_to_s3=True):
         agency = self.agency
         agency_id = agency.id
 
         routes_df = self.get_gtfs_routes()
-        routes_data = self.sort_routes(routes_df)
-        routes_data = self.remove_duplicate_routes(routes_data)
+        routes_data = [
+            self.get_route_data(route)
+            for route in routes_df.itertuples()
+        ]
+        routes_data = self.sort_routes(routes_data)
         
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
