@@ -10,7 +10,6 @@ import {
   ChartLabel,
   CustomSVGSeries,
 } from 'react-vis';
-import { getAllWaits, getAllSpeeds } from '../helpers/routeCalculations';
 
 /**
  * This is a debugging chart that helps finds routes with anomalous
@@ -20,30 +19,33 @@ import { getAllWaits, getAllSpeeds } from '../helpers/routeCalculations';
  * @param {any} props
  */
 function QuadrantChart(props) {
-  const allWaits = getAllWaits(
-    props.precomputedStats.waitTimes,
-    props.routes,
-  );
-  const allSpeeds = getAllSpeeds(
-    props.precomputedStats.tripTimes,
-    props.routes,
-  );
+  const { statsByRouteId } = props;
 
-  const quadrantData = allSpeeds
-    ? allSpeeds.map(speed => {
-        const waitObj = allWaits.find(
-          myWaitObj => myWaitObj.routeId === speed.routeId,
-        );
-        return {
-          x: waitObj ? waitObj.wait : 0,
-          y: speed.speed,
-          title: speed.routeId,
-        };
-      })
-    : [];
+  const quadrantData = [];
+
+  let maxSpeed = 0;
+  let maxWaitTime = 0;
+
+  Object.keys(statsByRouteId).forEach(function(routeId) {
+    const stats = statsByRouteId[routeId];
+    if (stats.medianWaitTime != null && stats.averageSpeed != null) {
+      maxWaitTime = Math.max(maxWaitTime, stats.medianWaitTime);
+      maxSpeed = Math.max(maxSpeed, stats.averageSpeed);
+      quadrantData.push({
+        x: stats.medianWaitTime,
+        y: stats.averageSpeed,
+        title: stats.routeId,
+      });
+    }
+  });
 
   return (
-    <XYPlot height={600} width={1000} xDomain={[30, 0]} xxyDomain={[0, 30]}>
+    <XYPlot
+      height={600}
+      width={1000}
+      xDomain={[maxWaitTime, 0]}
+      yDomain={[0, maxSpeed]}
+    >
       <HorizontalGridLines />
       <VerticalGridLines />
       <XAxis top={300} style={{ text: { stroke: 'none', fill: '#cccccc' } }} />
@@ -88,9 +90,7 @@ function QuadrantChart(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.data,
-  precomputedStats: state.precomputedStats,
-  graphParams: state.graphParams,
+  statsByRouteId: state.agencyMetrics.statsByRouteId,
 });
 
 export default connect(mapStateToProps)(QuadrantChart);

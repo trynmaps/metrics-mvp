@@ -75,7 +75,7 @@
   top: 1px;
   left: 23px;
   font-weight: bold;
-  color: #5c6bc0;
+  color: #0177bf; /* this needs to match the theme's main primary color */
   text-shadow: -1px 1px 0 #fff, 1px 1px 0 #fff, 1px -1px 0 #fff,
     -1px -1px 0 #fff;
 }

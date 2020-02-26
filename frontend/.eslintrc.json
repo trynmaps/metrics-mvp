@@ -24,11 +24,17 @@
         "ignoreUrls": true
       }
     ],
+    "no-param-reassign": [
+      "error",
+      {
+        "props": false
+      }
+    ],
     "func-names": "off",
     "prefer-destructuring": "off",
     "no-plusplus": [
       "error",
-      { "allowForLoopAfterthoughts": true } 
+      { "allowForLoopAfterthoughts": true }
     ],
     "no-underscore-dangle": "warn",
     "react/destructuring-assignment": "off",

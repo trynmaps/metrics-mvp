@@ -8,9 +8,7 @@ import { getAgency } from '../config';
 
 export function getDownstreamStopIds(routeInfo, dirInfo, stopId) {
   const stopsList = dirInfo.stops;
-  const secondStopListIndex = stopId
-    ? stopsList.indexOf(stopId)
-    : 0;
+  const secondStopListIndex = stopId ? stopsList.indexOf(stopId) : 0;
 
   const isLoopRoute = dirInfo.loop;
   const oneWaySecondStopsList = stopsList.slice(secondStopListIndex + 1);
@@ -19,7 +17,9 @@ export function getDownstreamStopIds(routeInfo, dirInfo, stopId) {
     return oneWaySecondStopsList;
   }
   // loop routes display all subsequent stops up to and including origin stop
-  return oneWaySecondStopsList.concat(stopsList.slice(0, secondStopListIndex + 1));
+  return oneWaySecondStopsList.concat(
+    stopsList.slice(0, secondStopListIndex + 1),
+  );
 }
 
 /**
@@ -51,7 +51,10 @@ export function getTripPoints(
 
     let startIndex = fromStopGeometry.after_index + 1;
 
-    if (dirInfo.loop && toStopGeometry.after_index <= fromStopGeometry.after_index) {
+    if (
+      dirInfo.loop &&
+      toStopGeometry.after_index <= fromStopGeometry.after_index
+    ) {
       for (let i = startIndex; i < coords.length; i++) {
         tripPoints.push(coords[i]);
       }
@@ -70,7 +73,6 @@ export function getTripPoints(
     const fromStopIndex = stopIds.indexOf(fromStop);
     const toStopIndex = stopIds.indexOf(toStop);
     if (fromStopIndex !== -1 && toStopIndex !== -1) {
-
       let startIndex = fromStopIndex;
       if (dirInfo.loop && toStopIndex <= fromStopIndex) {
         for (let i = startIndex; i < stopIds.length; i++) {
@@ -113,36 +115,33 @@ export function getDistanceInMiles(
     }
 
     return metersToMiles(distance);
-  } else {
-    // if unknown geometry, draw straight lines between stops
-    const stopIds = dirInfo.stops;
-    const stops = routeInfo.stops;
-    const fromStopIndex = stopIds.indexOf(fromStop);
-    const toStopIndex = stopIds.indexOf(toStop);
-    let miles = 0;
+  }
+  // if unknown geometry, draw straight lines between stops
+  const stopIds = dirInfo.stops;
+  const stops = routeInfo.stops;
+  const fromStopIndex = stopIds.indexOf(fromStop);
+  const toStopIndex = stopIds.indexOf(toStop);
+  let miles = 0;
 
-    if (fromStopIndex !== -1 && toStopIndex !== -1) {
-      let startIndex = fromStopIndex;
-      const numStops = stopIds.length;
-      if (dirInfo.loop && toStopIndex <= fromStopIndex) {
-        for (let i = startIndex; i < numStops; i++) {
-          miles += milesBetween(
-            stops[stopIds[i]],
-            stops[stopIds[(i + 1) % numStops]]
-          );
-        }
-        startIndex = 0;
-      }
-
-      for (let i = startIndex; i < toStopIndex; i++) {
+  if (fromStopIndex !== -1 && toStopIndex !== -1) {
+    let startIndex = fromStopIndex;
+    const numStops = stopIds.length;
+    if (dirInfo.loop && toStopIndex <= fromStopIndex) {
+      for (let i = startIndex; i < numStops; i++) {
         miles += milesBetween(
           stops[stopIds[i]],
-          stops[stopIds[i + 1]]
+          stops[stopIds[(i + 1) % numStops]],
         );
       }
-      return miles;
+      startIndex = 0;
     }
+
+    for (let i = startIndex; i < toStopIndex; i++) {
+      miles += milesBetween(stops[stopIds[i]], stops[stopIds[i + 1]]);
+    }
+    return miles;
   }
+  return null;
 }
 
 /**

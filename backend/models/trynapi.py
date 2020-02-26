@@ -1,6 +1,4 @@
 import requests
-import urllib
-import hashlib
 import os
 import re
 import json

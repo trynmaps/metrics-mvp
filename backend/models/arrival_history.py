@@ -1,11 +1,11 @@
-from datetime import date, datetime, timedelta
+from datetime import date
 import time
 import re
 import os
 import json
 import requests
 import pandas as pd
-from . import eclipses, util, config
+from . import util, config
 import boto3
 from pathlib import Path
 import gzip

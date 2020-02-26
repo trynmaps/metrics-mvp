@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import { Agencies } from '../config';
 import MapSpider from '../components/MapSpider';
 import RouteTable from '../components/RouteTable';
+import AppBarLogo from '../components/AppBarLogo';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
@@ -32,8 +33,9 @@ function Dashboard(props) {
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
+          <AppBarLogo />
           <div className="page-title">{agency.title}</div>
-          <DateTimePanel />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
       <Grid container spacing={0}>

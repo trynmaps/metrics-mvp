@@ -19,11 +19,7 @@ import {
   getTripPoints,
   isInServiceArea,
 } from '../helpers/mapGeometry';
-import {
-  filterRoutes,
-  milesBetween,
-  HighestPossibleScore,
-} from '../helpers/routeCalculations';
+import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
 import { handleSpiderMapClick, handleSegmentHover } from '../actions';
 import { Agencies } from '../config';
 
@@ -46,7 +42,8 @@ class MapSpider extends Component {
    * A function that returns one of ten colors given a route index.
    * (index modulo 10).
    */
-  routeColor = d3.scaleQuantize([0, 9], d3.schemeCategory10);
+
+  routeColorOptions = d3.scaleQuantize([0, 9], d3.schemeCategory10);
 
   constructor(props) {
     super(props);
@@ -97,24 +94,36 @@ class MapSpider extends Component {
   };
 
   /**
+   * Gets color associated with route or one of routeColorOptions
+   */
+
+  getRouteColor = startMarker => {
+    const routeColor = startMarker.routeInfo.color
+      ? `#${startMarker.routeInfo.color}`
+      : this.routeColorOptions(startMarker.routeIndex % 10);
+
+    return routeColor;
+  };
+
+  /**
    * Creates a clickable Marker with a custom svg icon (MapShield) for the route
    * represented by startMarker.
    *
    * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
    */
+
   generateShield = (startMarker, waitScaled) => {
     const { hoverRoute } = this.props.spiderSelection;
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
     const zIndex = hoverRoute ? 200 : 0;
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
       html: MapShield({
         waitScaled,
-        color: routeColor,
+        color: this.getRouteColor(startMarker),
         routeText: startMarker.routeId,
       }),
     });
@@ -136,6 +145,7 @@ class MapSpider extends Component {
               startStopId: startMarker.stopId,
               endStopId: lastStop.stopId,
             },
+            query: this.props.query,
           });
         }}
       ></Marker>
@@ -147,7 +157,7 @@ class MapSpider extends Component {
    */
   getStartMarkers = (startMarker, index, radius = 8, opacity = 0.2, color) => {
     const position = [startMarker.stop.lat, startMarker.stop.lon];
-    let routeColor = this.routeColor(startMarker.routeIndex % 10);
+    let routeColor = this.getRouteColor(startMarker);
     let outlineKey = '';
     // Used by white outline of hovered route
     if (color) {
@@ -274,11 +284,9 @@ class MapSpider extends Component {
       }
 
       // Add a solid circle at the terminal stop.
-
       polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
 
       // Add a route shield next to the terminal stop.
-
       polylines.push(this.generateShield(startMarker, waitScaled));
 
       return polylines;
@@ -298,28 +306,26 @@ class MapSpider extends Component {
    * Get scale for leaflet layers based on wait rank
    */
   getWaitScale = startMarker => {
-    const { routeStats } = this.props;
-    const stats = routeStats[startMarker.routeId] || {};
+    const { statsByRouteId } = this.props;
+    const stats = statsByRouteId[startMarker.routeId] || {};
     return stats.waitRankCount
       ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
       : 0;
   };
 
-  /**
-   * Creates a circle at the terminal of a route.
-   */
+  // Creates a circle at the terminal of a route.
+
   generateTerminalCircle = (startMarker, waitScaled) => {
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const terminalPosition = [lastStop.lat, lastStop.lon];
-    const routeColor = this.routeColor(startMarker.routeIndex % 10);
 
     return (
       <CircleMarker
         key={`startMarker-${startMarker.routeId}-terminal-${lastStop.id}`}
         center={terminalPosition}
         radius={3.0 + waitScaled / 2.0}
-        fillColor={routeColor}
+        fillColor={this.getRouteColor(startMarker)}
         fillOpacity={0.75}
         stroke={false}
       ></CircleMarker>
@@ -335,7 +341,7 @@ class MapSpider extends Component {
 
     const computedWeight = waitScaled * 1.5 + 3;
 
-    let routeColor = this.routeColor(startMarker.routeIndex % 10);
+    let routeColor = this.getRouteColor(startMarker);
 
     let opacity = 0.5;
     let outlineKey = '';
@@ -376,7 +382,6 @@ class MapSpider extends Component {
           this.onMouseOut(e);
         }}
         // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
-
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
 
@@ -388,6 +393,7 @@ class MapSpider extends Component {
               startStopId: startMarker.stopId,
               endStopId: downstreamStops[i + 1].id,
             },
+            query: this.props.query,
           });
         }}
       >
@@ -574,7 +580,7 @@ class MapSpider extends Component {
    * Main React render method.
    */
   render() {
-    const { position, zoom, spiderSelection, routeStats } = this.props;
+    const { position, zoom, spiderSelection, statsByRouteId } = this.props;
     const { isValidLocation } = this.state;
     const mapClass = { width: '100%', height: this.state.height };
     const startMarkers = spiderSelection.stops.map((startMarker, index) =>
@@ -604,7 +610,7 @@ class MapSpider extends Component {
           <this.DownstreamLines
             latLng={spiderSelection.latLng}
             stops={spiderSelection.stops}
-            routeStats={routeStats}
+            statsByRouteId={statsByRouteId}
           />
           {startMarkers}
           <this.SpiderOriginMarker spiderLatLng={spiderSelection.latLng} />
@@ -641,13 +647,15 @@ class MapSpider extends Component {
   } // end render
 } // end class
 
-const mapStateToProps = state => ({
-  routes: state.routes.data,
-  precomputedStats: state.precomputedStats,
-  routeStats: state.routeStats,
-  graphParams: state.graphParams,
-  spiderSelection: state.spiderSelection,
-});
+const mapStateToProps = state => {
+  return {
+    routes: state.routes.data,
+    statsByRouteId: state.agencyMetrics.statsByRouteId,
+    graphParams: state.graphParams,
+    spiderSelection: state.spiderSelection,
+    query: state.location.query,
+  };
+};
 
 const mapDispatchToProps = dispatch => {
   return {

@@ -1,12 +1,8 @@
-from models import arrival_history, util, trynapi
-import json
-import math
+from models import arrival_history
 import argparse
 from datetime import datetime, timedelta, time as dt_time
 import pytz
-import boto3
 import csv
-import gzip
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute and cache arrival history from Muni timepoint CSV')
