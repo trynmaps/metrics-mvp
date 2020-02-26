@@ -102,7 +102,7 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
             f.write(json.dumps(states))
 
         state.add(route_id, cache_path)
-    # remove_route_temp_cache(agency_id)
+    remove_route_temp_cache(agency_id)
     return state
 
 
@@ -228,7 +228,10 @@ def read_temp_chunk_state(agency_id, route_id):
         return None
     chunk_state_dict = pd.read_csv(
         path,
-        dtype={'vid': str},
+        dtype={
+            'vid': str,
+            'did': str,
+        },
         float_precision='high', # keep precision for rounding lat/lon
     ).groupby('timestamp').agg(list).to_dict('index')
     chunk_state = {'routeId': route_id, 'states': []}
