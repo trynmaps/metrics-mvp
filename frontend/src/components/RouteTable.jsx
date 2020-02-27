@@ -432,7 +432,7 @@ function RouteTable(props) {
               if (row.route.id === segmentRouteId) {
                 hover = classes.artificialHover;
               }
-                          
+
               return (
                 <TableRow
                   hover

@@ -61,6 +61,8 @@ class MapSpider extends Component {
     this.mapRef = createRef(); // used for geolocating
 
     this.handleLocationFound = this.handleLocationFound.bind(this);
+
+    this.MemoizedDownstreamLines = React.memo(this.DownstreamLines);
   }
 
   componentDidMount() {
@@ -190,7 +192,7 @@ class MapSpider extends Component {
   /**
    * Rendering of route from nearest stop to terminal.
    */
-  DownstreamLines = React.memo(props => {
+  DownstreamLines = props => {
     // One polyline for each start marker
     let items = null;
 
@@ -201,7 +203,7 @@ class MapSpider extends Component {
     }
 
     return <Fragment>{items}</Fragment>;
-  });
+  };
 
   /**
    * Rendering of polylines and markers of hovered table route
@@ -299,7 +301,8 @@ class MapSpider extends Component {
    */
   getZoomScale = waitScaled => {
     const zoom = this.mapRef.current.leafletElement.getZoom();
-    return zoom < 17 ? 0 : waitScaled > 0 ? 1 : 2;
+    const zoomScale = waitScaled > 0 ? 1 : 2;
+    return zoom < 17 ? 0 : zoomScale;
   };
 
   /**
@@ -607,7 +610,7 @@ class MapSpider extends Component {
           />
           {/* see http://maps.stamen.com for details */}
           <this.HoveredLine />
-          <this.DownstreamLines
+          <this.MemoizedDownstreamLines
             latLng={spiderSelection.latLng}
             stops={spiderSelection.stops}
             statsByRouteId={statsByRouteId}
