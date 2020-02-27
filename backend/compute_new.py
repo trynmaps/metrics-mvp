@@ -9,10 +9,10 @@ from models import config, util
 from compute_arrivals import compute_arrivals
 from compute_stats import compute_stats
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description = '')
-    parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
-    parser.add_argument('--agency', required=False, help='Agency ID')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument("--start-date", help="Start date (yyyy-mm-dd)")
+    parser.add_argument("--agency", required=False, help="Agency ID")
 
     args = parser.parse_args()
 
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     s3_bucket = config.s3_bucket
 
-    version = 'v1'
+    version = "v1"
 
     for agency in agencies:
         agency_id = agency.id
@@ -28,13 +28,11 @@ if __name__ == '__main__':
 
         def save_state(state):
             state_str = json.dumps(state)
-            s3 = boto3.resource('s3')
-            print(f'saving state to s3://{s3_bucket}/{s3_path}')
+            s3 = boto3.resource("s3")
+            print(f"saving state to s3://{s3_bucket}/{s3_path}")
             object = s3.Object(s3_bucket, s3_path)
             object.put(
-                Body=bytes(state_str, 'utf-8'),
-                ContentType='application/json',
-                ACL='public-read'
+                Body=bytes(state_str, "utf-8"), ContentType="application/json", ACL="public-read"
             )
 
         s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
@@ -49,10 +47,12 @@ if __name__ == '__main__':
 
         if args.start_date is not None:
             d = util.parse_date(args.start_date)
-        elif 'last_complete_date' in state:
-            d = util.parse_date(state['last_complete_date']) + timedelta(days=1)
+        elif "last_complete_date" in state:
+            d = util.parse_date(state["last_complete_date"]) + timedelta(days=1)
         else:
-            raise Exception(f"No compute state for agency {agency_id}, use --start-date parameter the first time")
+            raise Exception(
+                f"No compute state for agency {agency_id}, use --start-date parameter the first time"
+            )
 
         routes = agency.get_route_list()
         route_ids = [route.id for route in routes]
@@ -68,19 +68,21 @@ if __name__ == '__main__':
         while d <= today:
             compute_start_time = datetime.now(tz)
 
-            print(f'computing arrivals for {d}')
+            print(f"computing arrivals for {d}")
             compute_arrivals(d, agency, route_ids)
 
-            print(f'computing stats for {d}')
+            print(f"computing stats for {d}")
             compute_stats(d, agency, routes)
 
             date_str = str(d)
 
-            if d < today and ('last_complete_date' not in state or date_str > state['last_complete_date']):
-                state['last_complete_date'] = date_str
+            if d < today and (
+                "last_complete_date" not in state or date_str > state["last_complete_date"]
+            ):
+                state["last_complete_date"] = date_str
                 save_state(state)
             elif d == today:
-                state['last_partial_date_time'] = str(compute_start_time)
+                state["last_partial_date_time"] = str(compute_start_time)
                 save_state(state)
 
             d += timedelta(days=1)

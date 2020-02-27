@@ -1,11 +1,14 @@
 class ValidationError(Exception):
-   pass
+    pass
+
 
 class ArrivalHistoryNotFoundError(Exception):
-   pass
+    pass
+
 
 class InvalidInputError(Exception):
-   pass
+    pass
+
 
 class TimetableError(Exception):
-   pass
+    pass

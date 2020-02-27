@@ -2,19 +2,19 @@ import argparse
 from datetime import datetime
 from models import config, arrival_history, util
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Show stop history for a particular vehicle')
-    parser.add_argument('--agency', required=True, help='Agency id')
-    parser.add_argument('--route', required=True, help='Route id')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Show stop history for a particular vehicle")
+    parser.add_argument("--agency", required=True, help="Agency id")
+    parser.add_argument("--route", required=True, help="Route id")
 
-    parser.add_argument('--date', help='Date (yyyy-mm-dd)', required=True)
-    parser.add_argument('--vid', help='Vehicle ID', required=True)
-    parser.add_argument('--dir', help='Direction ID')
+    parser.add_argument("--date", help="Date (yyyy-mm-dd)", required=True)
+    parser.add_argument("--vid", help="Vehicle ID", required=True)
+    parser.add_argument("--dir", help="Direction ID")
 
-    parser.add_argument('--version')
+    parser.add_argument("--version")
 
-    parser.add_argument('--start-time', help='hh:mm of first local time to include each day')
-    parser.add_argument('--end-time', help='hh:mm of first local time to exclude each day')
+    parser.add_argument("--start-time", help="hh:mm of first local time to include each day")
+    parser.add_argument("--end-time", help="hh:mm of first local time to exclude each day")
 
     args = parser.parse_args()
 
@@ -51,14 +51,16 @@ if __name__ == '__main__':
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)
 
-        df = history.get_data_frame(vehicle_id=vid, direction_id=direction_id, start_time=start_time, end_time=end_time)
+        df = history.get_data_frame(
+            vehicle_id=vid, direction_id=direction_id, start_time=start_time, end_time=end_time
+        )
 
         if df.empty:
             print(f"no arrival times found for vehicle {vid} on {date_str}")
             continue
 
-        df = df.sort_values(['TIME','TRIP'], axis=0)
-        df['DATE_TIME'] = df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
+        df = df.sort_values(["TIME", "TRIP"], axis=0)
+        df["DATE_TIME"] = df["TIME"].apply(lambda t: datetime.fromtimestamp(t, tz))
 
         for row in df.itertuples():
             stop_id = row.SID
@@ -71,10 +73,12 @@ if __name__ == '__main__':
                 stop_index = None
 
             dwell_time = util.render_dwell_time(row.DEPARTURE_TIME - row.TIME)
-            dist_str = f'{row.DIST}'.rjust(3)
+            dist_str = f"{row.DIST}".rjust(3)
 
-            print(f"t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  #{row.TRIP} {dist_str}m  dir:{row.DID} stop:{stop_id} [{stop_index}] {stop_info.title if stop_info else '?'}")
+            print(
+                f"t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  #{row.TRIP} {dist_str}m  dir:{row.DID} stop:{stop_id} [{stop_index}] {stop_info.title if stop_info else '?'}"
+            )
 
             num_stops += 1
 
-    print(f'num_stops = {num_stops}')
+    print(f"num_stops = {num_stops}")

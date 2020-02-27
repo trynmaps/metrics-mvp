@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 from datetime import date
 
+
 class CachedState:
     def __init__(self):
         self.cache_paths = {}
@@ -17,7 +18,7 @@ class CachedState:
 
     def get_for_route(self, route_id):
         cache_path = self.cache_paths[route_id]
-        print(f'loading state for route {route_id} from cache: {cache_path}')
+        print(f"loading state for route {route_id} from cache: {cache_path}")
         with open(cache_path, "r") as f:
             return json.loads(f.read())
 
@@ -27,7 +28,7 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
     now = int(time.time())
     if end_time > now:
         end_time = now
-        print(f'end_time set to current time ({end_time})')
+        print(f"end_time set to current time ({end_time})")
 
     # saves state to local file system, since keeping the state for all routes in memory
     # while computing arrival times causes causes Python to spend more time doing GC
@@ -42,7 +43,7 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
             uncached_route_ids.append(route_id)
 
     if len(uncached_route_ids) == 0:
-        print('state already cached')
+        print("state already cached")
         return state
 
     route_state_map = {}
@@ -56,7 +57,7 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
     # unused data into memory from the restbus API output, mostly from the _links field
     # returned by http://restbus.info/api/agencies/sf-muni/vehicles
     # which causes the memory usage to be probably 5x higher
-    trynapi_max_chunk = os.environ.get('TRYNAPI_MAX_CHUNK')
+    trynapi_max_chunk = os.environ.get("TRYNAPI_MAX_CHUNK")
     if trynapi_max_chunk is None:
         trynapi_max_chunk = 720
     else:
@@ -78,10 +79,16 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
         chunk_state = get_state_raw(agency_id, chunk_start_time, chunk_end_time, uncached_route_ids)
 
-        if 'errors' in chunk_state: # trynapi returns an internal server error if you ask for too much data at once
-            raise Exception(f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['errors']}")
+        if (
+            "errors" in chunk_state
+        ):  # trynapi returns an internal server error if you ask for too much data at once
+            raise Exception(
+                f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['errors']}"
+            )
 
-        if 'message' in chunk_state: # trynapi returns an internal server error if you ask for too much data at once
+        if (
+            "message" in chunk_state
+        ):  # trynapi returns an internal server error if you ask for too much data at once
             error = f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}"
             if num_errors == 0 and chunk_minutes > 5:
                 print(error)
@@ -90,18 +97,20 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
                 print(f"chunk_minutes = {chunk_minutes}")
                 continue
             else:
-                raise Exception(f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}")
+                raise Exception(
+                    f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}"
+                )
 
-        if not ('data' in chunk_state):
+        if not ("data" in chunk_state):
             print(chunk_state)
-            raise Exception(f'trynapi returned no data')
+            raise Exception(f"trynapi returned no data")
 
-        for chunk_route_state in chunk_state['data']['state']['routes']:
-            route_id = chunk_route_state['routeId']
+        for chunk_route_state in chunk_state["data"]["state"]["routes"]:
+            route_id = chunk_route_state["routeId"]
             if route_id not in route_state_map:
                 route_state_map[route_id] = chunk_route_state
             else:
-                route_state_map[route_id]['states'].extend(chunk_route_state['states'])
+                route_state_map[route_id]["states"].extend(chunk_route_state["states"])
 
         chunk_start_time = chunk_end_time
 
@@ -114,30 +123,35 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
         cache_dir = Path(cache_path).parent
         if not cache_dir.exists():
-            cache_dir.mkdir(parents = True, exist_ok = True)
+            cache_dir.mkdir(parents=True, exist_ok=True)
 
         with open(cache_path, "w") as f:
-            print(f'writing state for route {route_id} to cache: {cache_path}')
+            print(f"writing state for route {route_id} to cache: {cache_path}")
             f.write(json.dumps(route_state_map[route_id]))
 
         state.add(route_id, cache_path)
 
     return state
 
+
 def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> str:
-    if re.match('^[\w\-]+$', agency_id) is None:
+    if re.match("^[\w\-]+$", agency_id) is None:
         raise Exception(f"Invalid agency: {agency_id}")
 
-    if re.match('^[\w\-]+$', route_id) is None:
+    if re.match("^[\w\-]+$", route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
 
     source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    return os.path.join(source_dir, 'data', f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.json")
+    return os.path.join(
+        source_dir,
+        "data",
+        f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.json",
+    )
 
 
 def get_state_raw(agency_id, start_time, end_time, route_ids):
 
-    params = f'state(agencyId: {json.dumps(agency_id)}, startTime: {json.dumps(int(start_time))}, endTime: {json.dumps(int(end_time))}, routes: {json.dumps(route_ids)})'
+    params = f"state(agencyId: {json.dumps(agency_id)}, startTime: {json.dumps(int(start_time))}, endTime: {json.dumps(int(end_time))}, routes: {json.dumps(route_ids)})"
 
     query = f"""{{
        {params} {{
@@ -155,7 +169,7 @@ def get_state_raw(agency_id, start_time, end_time, route_ids):
 
     trynapi_url = config.trynapi_url
 
-    print(f'fetching state from {trynapi_url}')
+    print(f"fetching state from {trynapi_url}")
     print(params)
 
     query_url = f"{trynapi_url}/graphql?query={query}"
@@ -166,6 +180,5 @@ def get_state_raw(agency_id, start_time, end_time, route_ids):
     try:
         return json.loads(r.text)
     except:
-        print(f'invalid response from {query_url}: {r.text}')
+        print(f"invalid response from {query_url}: {r.text}")
         raise
-

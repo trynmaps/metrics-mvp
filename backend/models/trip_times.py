@@ -1,11 +1,15 @@
 import numpy as np
 import sortednp as snp
 
+
 def get_completed_trip_times(
-    s1_trip_values, s1_departure_time_values,
-    s2_trip_values, s2_arrival_time_values,
+    s1_trip_values,
+    s1_departure_time_values,
+    s2_trip_values,
+    s2_arrival_time_values,
     is_loop=False,
-    assume_sorted=False):
+    assume_sorted=False,
+):
     # Returns an array of trip times in minutes from stop s1 to stop s2
     # for trip IDs contained in both s1_trip_values and s2_trip_values.
     #
@@ -26,25 +30,35 @@ def get_completed_trip_times(
         # If s1 and s2 are the same stop, this will compute the time to complete 1 full loop
 
         if not assume_sorted:
-            s1_departure_time_values, s1_trip_values = sort_parallel(s1_departure_time_values, s1_trip_values)
-            s2_arrival_time_values, s2_trip_values = sort_parallel(s2_arrival_time_values, s2_trip_values)
+            s1_departure_time_values, s1_trip_values = sort_parallel(
+                s1_departure_time_values, s1_trip_values
+            )
+            s2_arrival_time_values, s2_trip_values = sort_parallel(
+                s2_arrival_time_values, s2_trip_values
+            )
 
         s1_indexes, s2_indexes = find_indexes_of_next_arrival_times(
-            s1_trip_values, s1_departure_time_values,
-            s2_trip_values, s2_arrival_time_values
+            s1_trip_values, s1_departure_time_values, s2_trip_values, s2_arrival_time_values
         )
     else:
         if not assume_sorted:
-            s1_trip_values, s1_departure_time_values = sort_parallel(s1_trip_values, s1_departure_time_values)
-            s2_trip_values, s2_arrival_time_values = sort_parallel(s2_trip_values, s2_arrival_time_values)
+            s1_trip_values, s1_departure_time_values = sort_parallel(
+                s1_trip_values, s1_departure_time_values
+            )
+            s2_trip_values, s2_arrival_time_values = sort_parallel(
+                s2_trip_values, s2_arrival_time_values
+            )
 
         _, (s1_indexes, s2_indexes) = snp.intersect(s1_trip_values, s2_trip_values, indices=True)
 
     return (s2_arrival_time_values[s2_indexes] - s1_departure_time_values[s1_indexes]) / 60
 
+
 def find_indexes_of_next_arrival_times(
-    sorted_s1_trip_values, sorted_s1_departure_time_values,
-    sorted_s2_trip_values, sorted_s2_arrival_time_values
+    sorted_s1_trip_values,
+    sorted_s1_departure_time_values,
+    sorted_s2_trip_values,
+    sorted_s2_arrival_time_values,
 ):
     # Given two pairs of parallel arrays for each stop with trip IDs and departure/arrival times,
     # already sorted by departure/arrival time, returns parallel lists of indexes into these pairs of arrays:
@@ -76,10 +90,10 @@ def find_indexes_of_next_arrival_times(
 
     return sorted_s1_indexes, sorted_s2_indexes
 
+
 def get_matching_trips_and_arrival_times(
-    s1_trip_values, s1_departure_time_values,
-    s2_trip_values, s2_arrival_time_values,
-    is_loop=False):
+    s1_trip_values, s1_departure_time_values, s2_trip_values, s2_arrival_time_values, is_loop=False
+):
 
     # Returns a tuple (array of trip times in minutes, array of s2 arrival times).
     # The returned arrays are parallel to s1_trip_values and s1_departure_time_values.
@@ -99,13 +113,15 @@ def get_matching_trips_and_arrival_times(
         sorted_s1_departure_time_values = s1_departure_time_values[sort_order]
         sorted_s1_trip_values = s1_trip_values[sort_order]
 
-        sorted_s2_arrival_time_values, sorted_s2_trip_values = sort_parallel(s2_arrival_time_values, s2_trip_values)
+        sorted_s2_arrival_time_values, sorted_s2_trip_values = sort_parallel(
+            s2_arrival_time_values, s2_trip_values
+        )
 
         sorted_s1_indexes, sorted_s2_indexes = find_indexes_of_next_arrival_times(
             sorted_s1_trip_values,
             sorted_s1_departure_time_values,
             sorted_s2_trip_values,
-            sorted_s2_arrival_time_values
+            sorted_s2_arrival_time_values,
         )
 
     else:
@@ -114,9 +130,13 @@ def get_matching_trips_and_arrival_times(
         sort_order = np.argsort(s1_trip_values)
         sorted_s1_trip_values = s1_trip_values[sort_order]
 
-        sorted_s2_trip_values, sorted_s2_arrival_time_values = sort_parallel(s2_trip_values, s2_arrival_time_values)
+        sorted_s2_trip_values, sorted_s2_arrival_time_values = sort_parallel(
+            s2_trip_values, s2_arrival_time_values
+        )
 
-        _, (sorted_s1_indexes, sorted_s2_indexes) = snp.intersect(sorted_s1_trip_values, sorted_s2_trip_values, indices=True)
+        _, (sorted_s1_indexes, sorted_s2_indexes) = snp.intersect(
+            sorted_s1_trip_values, sorted_s2_trip_values, indices=True
+        )
 
     # start with an array of all nans
     s1_s2_arrival_time_values = np.full(len(s1_trip_values), np.nan)
@@ -129,6 +149,7 @@ def get_matching_trips_and_arrival_times(
     trip_min = (s1_s2_arrival_time_values - s1_departure_time_values) / 60
 
     return trip_min, s1_s2_arrival_time_values
+
 
 def sort_parallel(arr, arr2):
     sort_order = np.argsort(arr)

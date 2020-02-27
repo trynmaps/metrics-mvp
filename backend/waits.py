@@ -5,19 +5,23 @@ import numpy as np
 
 from models import config, arrival_history, util, wait_times, timetables
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description = 'Compute wait times (in minutes) at a given stop in a given direction on a route, for one or more dates, optionally at particular times of day')
-    parser.add_argument('--agency', required=True, help='Agency id')
-    parser.add_argument('--route', required = True, help = 'Route id')
-    parser.add_argument('--stop', required = True, help = 'Stop id')
-    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='show scheduled times')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Compute wait times (in minutes) at a given stop in a given direction on a route, for one or more dates, optionally at particular times of day"
+    )
+    parser.add_argument("--agency", required=True, help="Agency id")
+    parser.add_argument("--route", required=True, help="Route id")
+    parser.add_argument("--stop", required=True, help="Stop id")
+    parser.add_argument(
+        "--scheduled", dest="scheduled", action="store_true", help="show scheduled times"
+    )
 
-    parser.add_argument('--date', help='Date (yyyy-mm-dd)')
-    parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
-    parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
+    parser.add_argument("--date", help="Date (yyyy-mm-dd)")
+    parser.add_argument("--start-date", help="Start date (yyyy-mm-dd)")
+    parser.add_argument("--end-date", help="End date (yyyy-mm-dd), inclusive")
 
-    parser.add_argument('--start-time', help='hh:mm of first local time to include each day')
-    parser.add_argument('--end-time', help='hh:mm of first local time to exclude each day')
+    parser.add_argument("--start-time", help="hh:mm of first local time to include each day")
+    parser.add_argument("--end-time", help="hh:mm of first local time to exclude each day")
 
     args = parser.parse_args()
 
@@ -47,7 +51,7 @@ if __name__ == '__main__':
     elif args.start_date is not None and args.end_date is not None:
         dates = util.get_dates_in_range(args.start_date, args.end_date)
     else:
-        raise Exception('missing date, start-date, or end-date')
+        raise Exception("missing date, start-date, or end-date")
 
     # print results for each direction
     for stop_dir in stop_dirs:
@@ -63,12 +67,12 @@ if __name__ == '__main__':
             else:
                 hist = arrival_history.get_by_date(agency.id, route_id, d)
 
-            arrivals = hist.get_data_frame(stop_id = stop, direction_id = stop_dir)
+            arrivals = hist.get_data_frame(stop_id=stop, direction_id=stop_dir)
 
             start_time = util.get_timestamp_or_none(d, start_time_str, tz)
             end_time = util.get_timestamp_or_none(d, end_time_str, tz)
 
-            departure_times = np.sort(arrivals['DEPARTURE_TIME'].values)
+            departure_times = np.sort(arrivals["DEPARTURE_TIME"].values)
             if len(departure_times) == 0:
                 continue
 
@@ -93,9 +97,9 @@ if __name__ == '__main__':
         print(f'first bus departure = {" ".join([str(dt) for dt in first_bus_date_times])}')
         print(f'last bus departure  = {" ".join([str(dt) for dt in last_bus_date_times])}')
 
-        print(f'average wait time   = {round(stats.get_average(),1)} min')
-        print(f'shortest wait time  = {round(stats.get_quantile(0),1)} min')
-        print(f'10% wait time       = {round(stats.get_quantile(0.1),1)} min')
-        print(f'median wait time    = {round(stats.get_quantile(0.5),1)} min')
-        print(f'90% wait time       = {round(stats.get_quantile(0.9),1)} min')
-        print(f'longest wait time   = {round(stats.get_quantile(1),1)} min')
+        print(f"average wait time   = {round(stats.get_average(),1)} min")
+        print(f"shortest wait time  = {round(stats.get_quantile(0),1)} min")
+        print(f"10% wait time       = {round(stats.get_quantile(0.1),1)} min")
+        print(f"median wait time    = {round(stats.get_quantile(0.5),1)} min")
+        print(f"90% wait time       = {round(stats.get_quantile(0.9),1)} min")
+        print(f"longest wait time   = {round(stats.get_quantile(1),1)} min")

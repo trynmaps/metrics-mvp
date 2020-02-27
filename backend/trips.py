@@ -4,22 +4,26 @@ from models import config, arrival_history, util, trip_times, timetables
 import numpy as np
 import pandas as pd
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Compute trip lengths (in minutes) from stop s1 to stop s2 along a route, for one or more dates, optionally at particular times of day')
-    parser.add_argument('--agency', required=True, help='Agency id')
-    parser.add_argument('--route', required=True, help='Route id')
-    parser.add_argument('--s1', required=True, help='Initial stop id')
-    parser.add_argument('--s2', required=True, help='Destination stop id')
-    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='show scheduled times')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Compute trip lengths (in minutes) from stop s1 to stop s2 along a route, for one or more dates, optionally at particular times of day"
+    )
+    parser.add_argument("--agency", required=True, help="Agency id")
+    parser.add_argument("--route", required=True, help="Route id")
+    parser.add_argument("--s1", required=True, help="Initial stop id")
+    parser.add_argument("--s2", required=True, help="Destination stop id")
+    parser.add_argument(
+        "--scheduled", dest="scheduled", action="store_true", help="show scheduled times"
+    )
 
-    parser.add_argument('--version')
+    parser.add_argument("--version")
 
-    parser.add_argument('--date', help='Date (yyyy-mm-dd)')
-    parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
-    parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
+    parser.add_argument("--date", help="Date (yyyy-mm-dd)")
+    parser.add_argument("--start-date", help="Start date (yyyy-mm-dd)")
+    parser.add_argument("--end-date", help="End date (yyyy-mm-dd), inclusive")
 
-    parser.add_argument('--start-time', help='hh:mm of first local time to include each day')
-    parser.add_argument('--end-time', help='hh:mm of first local time to exclude each day')
+    parser.add_argument("--start-time", help="hh:mm of first local time to include each day")
+    parser.add_argument("--end-time", help="hh:mm of first local time to exclude each day")
 
     args = parser.parse_args()
 
@@ -78,7 +82,7 @@ if __name__ == '__main__':
     elif args.start_date is not None and args.end_date is not None:
         dates = util.get_dates_in_range(args.start_date, args.end_date)
     else:
-        raise Exception('missing date, start-date, or end-date')
+        raise Exception("missing date, start-date, or end-date")
 
     print(f"Date: {', '.join([str(date) for date in dates])}")
     print(f"Local Time Range: [{start_time_str}, {end_time_str})")
@@ -98,42 +102,50 @@ if __name__ == '__main__':
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)
 
-        s1_df = history.get_data_frame(stop_id=s1, start_time = start_time, end_time = end_time)
-        s2_df = history.get_data_frame(stop_id=s2, start_time = start_time)
+        s1_df = history.get_data_frame(stop_id=s1, start_time=start_time, end_time=end_time)
+        s2_df = history.get_data_frame(stop_id=s2, start_time=start_time)
 
-        s1_df['trip_min'], s1_df['dest_arrival_time'] = trip_times.get_matching_trips_and_arrival_times(
-            s1_df['TRIP'].values,
-            s1_df['DEPARTURE_TIME'].values,
-            s2_df['TRIP'].values,
-            s2_df['TIME'].values,
-            is_loop
+        s1_df["trip_min"], s1_df[
+            "dest_arrival_time"
+        ] = trip_times.get_matching_trips_and_arrival_times(
+            s1_df["TRIP"].values,
+            s1_df["DEPARTURE_TIME"].values,
+            s2_df["TRIP"].values,
+            s2_df["TIME"].values,
+            is_loop,
         )
 
-        s1_df['DATE_TIME'] = s1_df['DEPARTURE_TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
+        s1_df["DATE_TIME"] = s1_df["DEPARTURE_TIME"].apply(lambda t: datetime.fromtimestamp(t, tz))
 
         if s1_df.empty:
             print(f"no arrival times found for stop {s1} on {d}")
         else:
             for index, row in s1_df.iterrows():
                 dest_arrival_time = row.dest_arrival_time
-                dest_arrival_time_str = datetime.fromtimestamp(dest_arrival_time, tz).time() if dest_arrival_time is not None and not np.isnan(dest_arrival_time) else None
+                dest_arrival_time_str = (
+                    datetime.fromtimestamp(dest_arrival_time, tz).time()
+                    if dest_arrival_time is not None and not np.isnan(dest_arrival_time)
+                    else None
+                )
 
-                trip_str = f'#{row.TRIP}'.rjust(5)
+                trip_str = f"#{row.TRIP}".rjust(5)
 
-                vid_str = f'vid:{row.VID}' if not show_scheduled else ''
+                vid_str = f"vid:{row.VID}" if not show_scheduled else ""
 
-                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.DEPARTURE_TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time})  {vid_str}  {trip_str}   {round(row.trip_min, 1)} min trip")
+                print(
+                    f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.DEPARTURE_TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time})  {vid_str}  {trip_str}   {round(row.trip_min, 1)} min trip"
+                )
 
             completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 
     trips = pd.concat(completed_trips_arr)
 
-    print(f'completed trips     = {len((trips))}')
+    print(f"completed trips     = {len((trips))}")
     if len(trips) > 0:
-        print(f'average trip time   = {round(np.average(trips),1)} min')
-        print(f'standard deviation  = {round(np.std(trips),1)} min')
-        print(f'shortest trip time  = {round(np.min(trips),1)} min')
-        print(f'10% trip time       = {round(np.quantile(trips,0.1),1)} min')
-        print(f'median trip time    = {round(np.median(trips),1)} min')
-        print(f'90% trip time       = {round(np.quantile(trips,0.9),1)} min')
-        print(f'longest trip time   = {round(np.max(trips),1)} min')
+        print(f"average trip time   = {round(np.average(trips),1)} min")
+        print(f"standard deviation  = {round(np.std(trips),1)} min")
+        print(f"shortest trip time  = {round(np.min(trips),1)} min")
+        print(f"10% trip time       = {round(np.quantile(trips,0.1),1)} min")
+        print(f"median trip time    = {round(np.median(trips),1)} min")
+        print(f"90% trip time       = {round(np.quantile(trips,0.9),1)} min")
+        print(f"longest trip time   = {round(np.max(trips),1)} min")

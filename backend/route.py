@@ -3,19 +3,23 @@ import argparse
 import pandas as pd
 import numpy as np
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Show overview of configuration and arrival history or schedule for a particular route')
-    parser.add_argument('--agency', required=True, help='Agency id')
-    parser.add_argument('--route', required=True, help='Route id')
-    parser.add_argument('--dir', help='Direction id')
-    parser.add_argument('--date', help='Date (yyyy-mm-dd)')
-    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='show scheduled times')
+    parser = argparse.ArgumentParser(
+        description="Show overview of configuration and arrival history or schedule for a particular route"
+    )
+    parser.add_argument("--agency", required=True, help="Agency id")
+    parser.add_argument("--route", required=True, help="Route id")
+    parser.add_argument("--dir", help="Direction id")
+    parser.add_argument("--date", help="Date (yyyy-mm-dd)")
+    parser.add_argument(
+        "--scheduled", dest="scheduled", action="store_true", help="show scheduled times"
+    )
 
-    parser.add_argument('--version')
+    parser.add_argument("--version")
 
-    parser.add_argument('--start-time', help='hh:mm of first local time to include each day')
-    parser.add_argument('--end-time', help='hh:mm of first local time to exclude each day')
+    parser.add_argument("--start-time", help="hh:mm of first local time to include each day")
+    parser.add_argument("--end-time", help="hh:mm of first local time to exclude each day")
 
     args = parser.parse_args()
 
@@ -50,7 +54,7 @@ if __name__ == '__main__':
         dates = None
 
     def render_distance(dist):
-        return '----' if np.isnan(dist) else ('%3dm' % dist)
+        return "----" if np.isnan(dist) else ("%3dm" % dist)
 
     route_config = agency.get_route_config(route_id)
     if route_config is None:
@@ -64,10 +68,12 @@ if __name__ == '__main__':
             else:
                 history = arrival_history.get_by_date(agency.id, route_id, d, version)
 
-            dfs.append(history.get_data_frame(
-                start_time = util.get_timestamp_or_none(d, start_time_str, tz),
-                end_time = util.get_timestamp_or_none(d, end_time_str, tz)
-            ))
+            dfs.append(
+                history.get_data_frame(
+                    start_time=util.get_timestamp_or_none(d, start_time_str, tz),
+                    end_time=util.get_timestamp_or_none(d, end_time_str, tz),
+                )
+            )
 
         df = pd.concat(dfs)
     else:
@@ -93,62 +99,94 @@ if __name__ == '__main__':
             stop_info = route_config.get_stop_info(stop_id)
 
             if prev_stop_info is not None:
-                delta_dist = util.haver_distance(stop_info.lat, stop_info.lon, prev_stop_info.lat, prev_stop_info.lon)
+                delta_dist = util.haver_distance(
+                    stop_info.lat, stop_info.lon, prev_stop_info.lat, prev_stop_info.lon
+                )
             else:
                 delta_dist = np.nan
 
-            stop_info_str = f'{stop_info.id} [{dir_index}] \u0394 {render_distance(delta_dist)} - {stop_info.title}'
+            stop_info_str = f"{stop_info.id} [{dir_index}] \u0394 {render_distance(delta_dist)} - {stop_info.title}"
 
             if df is not None:
-                stop_arrivals = df[(df['SID'] == stop_info.id) & (df['DID'] == dir_info.id)]
-                dwell_time = (stop_arrivals['DEPARTURE_TIME'] - stop_arrivals['TIME'])
+                stop_arrivals = df[(df["SID"] == stop_info.id) & (df["DID"] == dir_info.id)]
+                dwell_time = stop_arrivals["DEPARTURE_TIME"] - stop_arrivals["TIME"]
 
-                dwell_time_quantiles = np.quantile(dwell_time, [0,0.5,1]) if not stop_arrivals.empty else []
+                dwell_time_quantiles = (
+                    np.quantile(dwell_time, [0, 0.5, 1]) if not stop_arrivals.empty else []
+                )
 
-                min_dist_quantiles = np.quantile(stop_arrivals['DIST'], [0,0.5,1]) if not stop_arrivals.empty and not show_scheduled else []
+                min_dist_quantiles = (
+                    np.quantile(stop_arrivals["DIST"], [0, 0.5, 1])
+                    if not stop_arrivals.empty and not show_scheduled
+                    else []
+                )
 
-                num_arrivals = len(stop_arrivals['TIME'].values)
+                num_arrivals = len(stop_arrivals["TIME"].values)
 
-                dwell_time_str = ', '.join([util.render_dwell_time(q) for q in dwell_time_quantiles])
-                min_dist_str = ', '.join([render_distance(min_dist) for min_dist in min_dist_quantiles])
+                dwell_time_str = ", ".join(
+                    [util.render_dwell_time(q) for q in dwell_time_quantiles]
+                )
+                min_dist_str = ", ".join(
+                    [render_distance(min_dist) for min_dist in min_dist_quantiles]
+                )
 
-                print(f"{'%3d' % num_arrivals} arrivals ({dwell_time_str}) ({min_dist_str}) @ {stop_info_str}")
+                print(
+                    f"{'%3d' % num_arrivals} arrivals ({dwell_time_str}) ({min_dist_str}) @ {stop_info_str}"
+                )
             else:
                 num_arrivals = None
 
                 print(stop_info_str)
 
-            stop_rows.append((route_id, dir_info.id, stop_id, dir_index, stop_info.lat, stop_info.lon, delta_dist, num_arrivals))
+            stop_rows.append(
+                (
+                    route_id,
+                    dir_info.id,
+                    stop_id,
+                    dir_index,
+                    stop_info.lat,
+                    stop_info.lon,
+                    delta_dist,
+                    num_arrivals,
+                )
+            )
             prev_stop_info = stop_info
 
         if dir_info.is_loop():
             stop_info = route_config.get_stop_info(stop_ids[0])
 
-            delta_dist = util.haver_distance(stop_info.lat, stop_info.lon, prev_stop_info.lat, prev_stop_info.lon)
+            delta_dist = util.haver_distance(
+                stop_info.lat, stop_info.lon, prev_stop_info.lat, prev_stop_info.lon
+            )
 
-            print(f'{stop_info.id} [0] \u0394 {render_distance(delta_dist)} - {stop_info.title} (loop)')
+            print(
+                f"{stop_info.id} [0] \u0394 {render_distance(delta_dist)} - {stop_info.title} (loop)"
+            )
 
-    stops = pd.DataFrame(stop_rows, columns=['ROUTE','DID','SID','DIR_INDEX','LAT','LON','DIST','NUM_ARRIVALS'])
+    stops = pd.DataFrame(
+        stop_rows,
+        columns=["ROUTE", "DID", "SID", "DIR_INDEX", "LAT", "LON", "DIST", "NUM_ARRIVALS"],
+    )
 
     if dates is not None:
-        num_arrivals = stops['NUM_ARRIVALS']
+        num_arrivals = stops["NUM_ARRIVALS"]
 
-        print('** num arrivals **')
-        print(f'average # of arrivals   = {round(np.average(num_arrivals),1)}')
-        print(f'standard deviation      = {round(np.std(num_arrivals),1)}')
-        print(f'lowest # of arrivals    = {round(np.min(num_arrivals),1)}')
-        print(f'10% # of arrivals       = {round(np.quantile(num_arrivals,0.10),1)}')
-        print(f'median # of arrivals    = {round(np.median(num_arrivals),1)}')
-        print(f'90% # of arrivals       = {round(np.quantile(num_arrivals,0.90),1)}')
-        print(f'highest # of arrivals   = {round(np.max(num_arrivals),1)}')
+        print("** num arrivals **")
+        print(f"average # of arrivals   = {round(np.average(num_arrivals),1)}")
+        print(f"standard deviation      = {round(np.std(num_arrivals),1)}")
+        print(f"lowest # of arrivals    = {round(np.min(num_arrivals),1)}")
+        print(f"10% # of arrivals       = {round(np.quantile(num_arrivals,0.10),1)}")
+        print(f"median # of arrivals    = {round(np.median(num_arrivals),1)}")
+        print(f"90% # of arrivals       = {round(np.quantile(num_arrivals,0.90),1)}")
+        print(f"highest # of arrivals   = {round(np.max(num_arrivals),1)}")
 
-    dist = stops[stops['DIR_INDEX'] > 0]['DIST']
+    dist = stops[stops["DIR_INDEX"] > 0]["DIST"]
 
-    print('** stop distance **')
-    print(f'average distance between stops   = {round(np.average(dist),1)} m')
-    print(f'standard deviation               = {round(np.std(dist),1)} m')
-    print(f'shortest distance between stops  = {round(np.min(dist),1)} m')
-    print(f'10% distance between stops       = {round(np.quantile(dist,0.10),1)} m')
-    print(f'median distance between stops    = {round(np.median(dist),1)} m')
-    print(f'90% distance between stops       = {round(np.quantile(dist,0.90),1)} m')
-    print(f'longest distance between stops   = {round(np.max(dist),1)} m')
+    print("** stop distance **")
+    print(f"average distance between stops   = {round(np.average(dist),1)} m")
+    print(f"standard deviation               = {round(np.std(dist),1)} m")
+    print(f"shortest distance between stops  = {round(np.min(dist),1)} m")
+    print(f"10% distance between stops       = {round(np.quantile(dist,0.10),1)} m")
+    print(f"median distance between stops    = {round(np.median(dist),1)} m")
+    print(f"90% distance between stops       = {round(np.quantile(dist,0.90),1)} m")
+    print(f"longest distance between stops   = {round(np.max(dist),1)} m")

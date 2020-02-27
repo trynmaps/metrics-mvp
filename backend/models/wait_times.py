@@ -1,11 +1,14 @@
 import numpy as np
 import sys
 
+
 def get_stats(time_values, start_time=None, end_time=None):
     return IntervalWaitTimeStats(time_values, start_time, end_time)
 
+
 def combine_stats(interval_stats_arr):
     return MultiIntervalWaitTimeStats(interval_stats_arr)
+
 
 # WaitTimeStats allows computing statistics about wait times within an interval,
 # (such as averages, percentiles, and histograms),
@@ -121,10 +124,11 @@ class WaitTimeStats:
             else:
                 segment_start_index = segment_end_index - 1
                 # linear interpolation to find wait time where value of CDF = quantile
-                quantile_value = cdf_domain[segment_start_index] + \
-                    (quantile - cdf_range[segment_start_index]) / \
-                    (cdf_range[segment_end_index] - cdf_range[segment_start_index]) * \
-                    (cdf_domain[segment_end_index] - cdf_domain[segment_start_index])
+                quantile_value = cdf_domain[segment_start_index] + (
+                    quantile - cdf_range[segment_start_index]
+                ) / (cdf_range[segment_end_index] - cdf_range[segment_start_index]) * (
+                    cdf_domain[segment_end_index] - cdf_domain[segment_start_index]
+                )
                 quantile_values.append(quantile_value)
 
         return np.array(quantile_values)
@@ -177,8 +181,9 @@ class WaitTimeStats:
 
         return 1.0 - prob_less
 
+
 class IntervalWaitTimeStats(WaitTimeStats):
-    def __init__(self, time_values, start_time = None, end_time = None):
+    def __init__(self, time_values, start_time=None, end_time=None):
         self.time_values = time_values
 
         if len(time_values) == 0:
@@ -195,16 +200,24 @@ class IntervalWaitTimeStats(WaitTimeStats):
             max(first_bus_time, start_time) if start_time is not None else first_bus_time
         )
 
-        interval_end = self.interval_end = int(max(
-            min(last_bus_time, end_time) if end_time is not None else last_bus_time,
-            interval_start
-        ))
+        interval_end = self.interval_end = int(
+            max(
+                min(last_bus_time, end_time) if end_time is not None else last_bus_time,
+                interval_start,
+            )
+        )
 
-        start_arrival_index = self.start_arrival_index = np.searchsorted(time_values, self.interval_start, side='left')
-        end_arrival_index = self.end_arrival_index = np.searchsorted(time_values, self.interval_end, side='left')
+        start_arrival_index = self.start_arrival_index = np.searchsorted(
+            time_values, self.interval_start, side="left"
+        )
+        end_arrival_index = self.end_arrival_index = np.searchsorted(
+            time_values, self.interval_end, side="left"
+        )
 
         if end_arrival_index > start_arrival_index:
-            self.interval_time_values = interval_time_values = time_values[start_arrival_index:end_arrival_index]
+            self.interval_time_values = interval_time_values = time_values[
+                start_arrival_index:end_arrival_index
+            ]
             self.interval_headways = np.diff(interval_time_values, prepend=interval_start)
 
             # end elapsed_time is the number of seconds between when the last bus arrives within this interval and the end of the interval
@@ -233,12 +246,14 @@ class IntervalWaitTimeStats(WaitTimeStats):
 
         if len(self.interval_headways) > 0:
             # for the time between each bus that arrives within the interval, total wait time is area of a triangle
-            total_wait += np.sum(np.square(self.interval_headways))/2
+            total_wait += np.sum(np.square(self.interval_headways)) / 2
 
         if self.end_wait_time is not None:
             # for the next arrival after the end of the interval,
             # total wait time is the area of a rectangle plus the area of a triangle
-            total_wait += (self.end_wait_time * self.end_elapsed_time) + (self.end_elapsed_time ** 2)/2
+            total_wait += (self.end_wait_time * self.end_elapsed_time) + (
+                self.end_elapsed_time ** 2
+            ) / 2
 
         interval_elapsed_time = self.interval_end - self.interval_start
 
@@ -270,7 +285,9 @@ class IntervalWaitTimeStats(WaitTimeStats):
                 interval_headways,
                 end_wait_time,
                 end_wait_time + end_elapsed_time,
-                0:(1 if has_arrival else 0), # only include 0 wait time if there are any arrivals within the interval
+                0 : (
+                    1 if has_arrival else 0
+                ),  # only include 0 wait time if there are any arrivals within the interval
             ]
         elif has_arrival:
             wait_time_values = np.r_[0, interval_headways]
@@ -285,7 +302,9 @@ class IntervalWaitTimeStats(WaitTimeStats):
 
         prev_wait_time = None
 
-        tot_elapsed = 0 # number of seconds in interval with wait time less than the current wait time
+        tot_elapsed = (
+            0
+        )  # number of seconds in interval with wait time less than the current wait time
 
         # each point is (wait time in seconds, percentage of interval having wait time less than that).
         # CDF of wait times is piecewise linear between the returned points.
@@ -319,15 +338,15 @@ class IntervalWaitTimeStats(WaitTimeStats):
         # the last returned point should be (max wait time, 1.0)
         if points[-1][1] != 1 or points[0][1] != 0:
             # should never get here unless the code is broken
-            print('Invalid cumulative distribution:', file=sys.stderr)
+            print("Invalid cumulative distribution:", file=sys.stderr)
             print(points, file=sys.stderr)
-            print('Interval headways:', file=sys.stderr)
+            print("Interval headways:", file=sys.stderr)
             print(interval_headways, file=sys.stderr)
-            print('Sorted wait time values:', file=sys.stderr)
+            print("Sorted wait time values:", file=sys.stderr)
             print(sorted_wait_time_values, file=sys.stderr)
-            print(f'End elapsed time: {end_elapsed_time}', file=sys.stderr)
-            print(f'End wait time: {end_wait_time}', file=sys.stderr)
-            raise AssertionError('Invalid cumulative distribution')
+            print(f"End elapsed time: {end_elapsed_time}", file=sys.stderr)
+            print(f"End wait time: {end_wait_time}", file=sys.stderr)
+            raise AssertionError("Invalid cumulative distribution")
 
         self.cdf_points = np.array(points)
 
@@ -342,17 +361,20 @@ class IntervalWaitTimeStats(WaitTimeStats):
         )
 
         if self.end_wait_time is not None:
-            arrival_time_values = np.r_[self.interval_time_values, self.interval_end + self.end_wait_time, np.nan]
+            arrival_time_values = np.r_[
+                self.interval_time_values, self.interval_end + self.end_wait_time, np.nan
+            ]
         else:
             arrival_time_values = np.r_[self.interval_time_values, np.nan]
 
-        next_arrival_indexes = np.searchsorted(arrival_time_values, sample_time_values, 'left')
+        next_arrival_indexes = np.searchsorted(arrival_time_values, sample_time_values, "left")
 
         next_arrival_times = arrival_time_values[next_arrival_indexes]
 
         waits = next_arrival_times - sample_time_values
 
         return waits[np.logical_not(np.isnan(waits))] / 60
+
 
 class MultiIntervalWaitTimeStats(WaitTimeStats):
     def __init__(self, interval_stats_arr):
@@ -426,6 +448,7 @@ class MultiIntervalWaitTimeStats(WaitTimeStats):
 
         return self.cdf_points
 
+
 def evaluate_cdf(wait_time, cdf_domain, cdf_range):
     segment_end_index = np.searchsorted(cdf_domain, wait_time)
 
@@ -443,7 +466,6 @@ def evaluate_cdf(wait_time, cdf_domain, cdf_range):
             return prev_value
 
         # linear interpolation to find value of CDF for wait time
-        return prev_value + \
-             extra_wait_time / \
-            (cdf_domain[segment_end_index] - cdf_domain[segment_start_index]) * \
-            (cdf_range[segment_end_index] - cdf_range[segment_start_index])
+        return prev_value + extra_wait_time / (
+            cdf_domain[segment_end_index] - cdf_domain[segment_start_index]
+        ) * (cdf_range[segment_end_index] - cdf_range[segment_start_index])

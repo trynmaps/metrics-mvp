@@ -3,9 +3,10 @@ import argparse
 from datetime import datetime, date, timedelta
 import time
 
-def compute_arrivals_for_date_and_start_hour(d: date, start_hour: int,
-                agency: config.Agency, route_ids: list,
-                save_to_s3=True):
+
+def compute_arrivals_for_date_and_start_hour(
+    d: date, start_hour: int, agency: config.Agency, route_ids: list, save_to_s3=True
+):
 
     tz = agency.tz
 
@@ -21,13 +22,13 @@ def compute_arrivals_for_date_and_start_hour(d: date, start_hour: int,
 
     state = trynapi.get_state(agency.id, d, start_time, end_time, route_ids)
 
-    print(f'retrieved state in {round(time.time()-t1,1)} sec')
+    print(f"retrieved state in {round(time.time()-t1,1)} sec")
 
     for i, route_id in enumerate(route_ids):
         route_state = state.get_for_route(route_id)
 
         if route_state is None:
-            print(f'no state for route {route_id}')
+            print(f"no state for route {route_id}")
             continue
 
         route_config = agency.get_route_config(route_id)
@@ -36,13 +37,16 @@ def compute_arrivals_for_date_and_start_hour(d: date, start_hour: int,
 
         arrivals_df = eclipses.find_arrivals(agency, route_state, route_config, d)
 
-        history = arrival_history.from_data_frame(agency.id, route_id, arrivals_df, start_time, end_time)
+        history = arrival_history.from_data_frame(
+            agency.id, route_id, arrivals_df, start_time, end_time
+        )
 
-        print(f'{route_id}: {round(time.time()-t1,1)} saving arrival history')
+        print(f"{route_id}: {round(time.time()-t1,1)} saving arrival history")
 
         arrival_history.save_for_date(history, d, save_to_s3)
 
-        print(f'{route_id}: {round(time.time()-t1,2)} done')
+        print(f"{route_id}: {round(time.time()-t1,2)} done")
+
 
 def compute_arrivals(d: date, agency: config.Agency, route_ids: list, save_to_s3=True):
 
@@ -55,28 +59,27 @@ def compute_arrivals(d: date, agency: config.Agency, route_ids: list, save_to_s3
         all_custom_routes.extend(custom_routes)
 
     compute_arrivals_for_date_and_start_hour(
-        d, start_hour=agency.default_day_start_hour,
+        d,
+        start_hour=agency.default_day_start_hour,
         agency=agency,
         route_ids=[r for r in route_ids if r not in all_custom_routes],
-        save_to_s3=save_to_s3
+        save_to_s3=save_to_s3,
     )
 
     for start_hour, custom_routes in custom_start_hours:
         compute_arrivals_for_date_and_start_hour(
-            d, start_hour=start_hour,
-            agency=agency,
-            route_ids=custom_routes,
-            save_to_s3=save_to_s3
+            d, start_hour=start_hour, agency=agency, route_ids=custom_routes, save_to_s3=save_to_s3
         )
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Compute and cache arrival history')
-    parser.add_argument('--route', nargs='*')
-    parser.add_argument('--agency', required=False, help='Agency ID')
-    parser.add_argument('--date', help='Date (yyyy-mm-dd)')
-    parser.add_argument('--start-date', help='Start date (yyyy-mm-dd)')
-    parser.add_argument('--end-date', help='End date (yyyy-mm-dd), inclusive')
-    parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Compute and cache arrival history")
+    parser.add_argument("--route", nargs="*")
+    parser.add_argument("--agency", required=False, help="Agency ID")
+    parser.add_argument("--date", help="Date (yyyy-mm-dd)")
+    parser.add_argument("--start-date", help="Start date (yyyy-mm-dd)")
+    parser.add_argument("--end-date", help="End date (yyyy-mm-dd), inclusive")
+    parser.add_argument("--s3", dest="s3", action="store_true", help="store in s3")
     parser.set_defaults(s3=False)
 
     args = parser.parse_args()
@@ -93,7 +96,7 @@ if __name__ == '__main__':
     elif args.start_date is not None and args.end_date is not None:
         dates = util.get_dates_in_range(args.start_date, args.end_date)
     else:
-        raise Exception('missing date, start-date, or end-date')
+        raise Exception("missing date, start-date, or end-date")
 
     for agency in agencies:
         if args.agency is not None and args.route is not None:

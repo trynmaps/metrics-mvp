@@ -27,18 +27,22 @@ import argparse
 #    "3095":{"distance":573,"after_index":3},
 #    "4502":{"distance":1045,"after_index":8},
 #    ...
-#}
+# }
 #
 #
 # Currently the script just overwrites the one S3 path, but this process could be extended in the future to
 # store different paths for different dates, to allow fetching historical data for route configurations.
 #
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Save route configuration from GTFS and possibly Nextbus API')
-    parser.add_argument('--agency', required=False, help='Agency ID')
-    parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
-    parser.add_argument('--timetables', dest='timetables', action='store_true', help='also save timetables')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Save route configuration from GTFS and possibly Nextbus API"
+    )
+    parser.add_argument("--agency", required=False, help="Agency ID")
+    parser.add_argument("--s3", dest="s3", action="store_true", help="store in s3")
+    parser.add_argument(
+        "--timetables", dest="timetables", action="store_true", help="also save timetables"
+    )
     parser.set_defaults(s3=False)
     parser.set_defaults(timetables=False)
 
