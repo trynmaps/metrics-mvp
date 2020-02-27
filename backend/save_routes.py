@@ -1,6 +1,7 @@
 from models import gtfs, config
 from compute_stats import compute_stats_for_dates
 import argparse
+from datetime import date
 
 # Downloads and parses the GTFS specification
 # and saves the configuration for all routes to S3.
@@ -50,10 +51,11 @@ if __name__ == '__main__':
     agencies = [config.get_agency(args.agency)] if args.agency is not None else config.agencies
 
     save_to_s3 = args.s3
+    date = date.today()
 
     for agency in agencies:
         scraper = gtfs.GtfsScraper(agency)
-        scraper.save_routes(save_to_s3)
+        scraper.save_routes(save_to_s3, date)
 
         if args.timetables:
             timetables_updated = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)
