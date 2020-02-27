@@ -2,42 +2,22 @@ import React, { useState, Fragment } from 'react';
 import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
-import Checkbox from '@material-ui/core/Checkbox';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import Divider from '@material-ui/core/Divider';
-import Grid from '@material-ui/core/Grid';
 import Popover from '@material-ui/core/Popover';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
-import { connect } from 'react-redux';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import Input from '@material-ui/core/Input';
-import InputLabel from '@material-ui/core/InputLabel';
-import MenuItem from '@material-ui/core/MenuItem';
-import FormControl from '@material-ui/core/FormControl';
-import FormGroup from '@material-ui/core/FormGroup';
-import Select from '@material-ui/core/Select';
-import { List, ListItem } from '@material-ui/core';
-import TextField from '@material-ui/core/TextField';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormLabel from '@material-ui/core/FormLabel';
 import IconButton from '@material-ui/core/IconButton';
-import CloseIcon from '@material-ui/icons/Close';
+import { connect } from 'react-redux';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
-
-import {
-  TIME_RANGES,
-  TIME_RANGE_ALL_DAY,
-  DATE_RANGES,
-  MAX_DATE_RANGE,
-  WEEKDAYS,
-  WEEKENDS,
-} from '../UIConstants';
-import { components } from '../reducers/page';
-import { initialGraphParams } from '../reducers';
+import DateTimePopover from './DateTimePopover';
+import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
+import { typeForPage } from '../reducers/page';
+import { fullQueryFromParams } from '../routesMap';
 import { isLoadingRequest } from '../reducers/loadingReducer';
-import { handleGraphParams } from '../actions';
-import { queryFromParams } from '../routesMap';
+import { getDaysOfTheWeekLabel } from '../helpers/dateTime';
 
 const useStyles = makeStyles(theme => ({
   button: {
@@ -64,17 +44,6 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     flexWrap: 'wrap',
   },
-  formControl: {
-    leftMargin: theme.spacing(1),
-    rightMargin: theme.spacing(1),
-    minWidth: 240,
-  },
-  closeButton: {
-    position: 'absolute',
-    right: theme.spacing(1),
-    top: theme.spacing(1),
-    color: theme.palette.grey[500],
-  },
   popover: {
     padding: theme.spacing(2),
     maxWidth: 400,
@@ -93,17 +62,13 @@ const useStyles = makeStyles(theme => ({
  */
 function DateTimePanel(props) {
   const { graphParams, dateRangeSupported } = props;
+
   const classes = useStyles();
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [anchorEl, setAnchorEl] = React.useState(null);
   const [infoAnchorEl, setInfoAnchorEl] = useState(null);
-  const maxDate = Moment(Date.now()).format('YYYY-MM-DD');
 
   function handleClick(event) {
     setAnchorEl(event.currentTarget);
-  }
-
-  function handleClose() {
-    setAnchorEl(null);
   }
 
   function handleInfoClick(event) {
@@ -114,57 +79,33 @@ function DateTimePanel(props) {
     setInfoAnchorEl(null);
   }
 
-  function applyGraphParams(payload) {
-    // Find the current dispatch type.  This is the key of the "components" object
-    // whose value matches the current page name.
+  /**
+   * Remove second date range params and dispatch.
+   */
 
-    let currentType = null;
-    const types = Object.keys(components);
-    for (let i = 0; i < types.length; i++) {
-      if (props.currentPage === components[types[i]]) {
-        currentType = types[i];
-        break;
-      }
-    }
+  function handleRemove() {
+    const newGraphParams = Object.assign({}, graphParams);
+    newGraphParams.secondDateRange = null;
+
+    const currentType = typeForPage(props.currentPage);
 
     props.dispatch({
       type: currentType,
       payload: graphParams, // not affected by date changes
-      query: queryFromParams(Object.assign({}, graphParams, payload)),
+      query: fullQueryFromParams(newGraphParams),
     });
-  }
-
-  function handleReset() {
-    applyGraphParams({
-      date: initialGraphParams.date,
-      startTime: initialGraphParams.startTime,
-      endTime: initialGraphParams.endTime,
-      daysBack: initialGraphParams.daysBack,
-      startDate: initialGraphParams.date,
-      daysOfTheWeek: initialGraphParams.daysOfTheWeek,
-    });
-    handleClose(); // this forces the native date picker to reset, otherwise it doesn't stay in sync
   }
 
   /**
    * convert yyyy/mm/dd to mm/dd/yyyy
    */
   function convertDate(ymdString) {
-    const date = new Date(ymdString);
-    return `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date
-      .getUTCDate()
-      .toString()
-      .padStart(2, '0')}/${date.getUTCFullYear()}`;
+    return Moment(ymdString).format('MM/DD/YYYY');
   }
 
-  // convert the state's current time range to a string or the sentinel value
-  const timeRange =
-    graphParams.startTime && graphParams.endTime
-      ? `${graphParams.startTime}-${graphParams.endTime}`
-      : TIME_RANGE_ALL_DAY;
+  const firstOpen = Boolean(anchorEl) && anchorEl.id === 'firstDateRange';
+  const secondOpen = Boolean(anchorEl) && anchorEl.id === 'secondDateRange';
 
-  // these are the read-only representations of the date and time range
-  let dateLabel = convertDate(graphParams.date);
   let rangeInfo = null;
 
   //
@@ -173,10 +114,13 @@ function DateTimePanel(props) {
   // that we are only showing one day's data.
   //
 
-  if (graphParams.startDate !== graphParams.date) {
-    if (dateRangeSupported) {
-      dateLabel = `${convertDate(graphParams.startDate)} - ${dateLabel}`;
-    } else {
+  if (
+    graphParams.firstDateRange.startDate !== graphParams.firstDateRange.date ||
+    (graphParams.secondDateRange &&
+      graphParams.secondDateRange.startDate !==
+        graphParams.secondDateRange.date)
+  ) {
+    if (!dateRangeSupported) {
       rangeInfo = (
         <Fragment>
           <IconButton size="small" color="inherit" onClick={handleInfoClick}>
@@ -205,135 +149,99 @@ function DateTimePanel(props) {
     }
   }
 
-  const timeLabel = TIME_RANGES.find(range => range.value === timeRange)
-    .shortLabel;
-
   /**
-   * Handler that takes the time range as a string and sets
-   * the start and end time state.
-   *
-   * @param {any} myTimeRange
+   * @param {Object} buttonProps Object including a "target" indicating which field
+   *   in graphParams this is for.
    */
-  const setTimeRange = myTimeRange => {
-    if (myTimeRange.target.value === TIME_RANGE_ALL_DAY) {
-      applyGraphParams({ startTime: null, endTime: null });
-    } else {
-      const timeRangeParts = myTimeRange.target.value.split('-');
-      applyGraphParams({
-        startTime: timeRangeParts[0],
-        endTime: timeRangeParts[1],
-      });
-    }
-  };
+  function DatePanelButton(buttonProps) {
+    const target = buttonProps.target;
 
-  /**
-   * Handler that updates the (end) date string in the state.
-   * Also keeps startDate no later than date.
-   *
-   * @param {any} myDate
-   */
-  const setDate = myDate => {
-    const newDate = myDate.target.value;
-    if (!newDate) {
-      // ignore empty date and leave at current value
-    } else {
-      const newMoment = Moment(newDate);
-      const startMoment = Moment(graphParams.startDate);
+    // short circuit to a placeholder button if second range is null
 
-      const payload = {
-        date: newDate,
-      };
-
-      if (newMoment.isBefore(graphParams.startDate)) {
-        payload.startDate = newDate;
-      } else if (newMoment.diff(startMoment, 'days') > MAX_DATE_RANGE) {
-        payload.startDate = newMoment
-          .subtract(MAX_DATE_RANGE, 'days')
-          .format('YYYY-MM-DD');
-      }
-      applyGraphParams(payload);
-    }
-  };
-
-  /**
-   * Handler that updates the start date string in the state.
-   *
-   * @param {any} myDate
-   */
-  const setStartDate = myDate => {
-    if (!myDate.target.value) {
-      // ignore empty date and leave at current value
-    } else {
-      applyGraphParams({
-        startDate: myDate.target.value,
-      });
-    }
-  };
-
-  const setDateRange = daysBack => {
-    const date = initialGraphParams.date;
-    const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
-
-    applyGraphParams({
-      date,
-      startDate: startMoment.format('YYYY-MM-DD'),
-    });
-
-    // The GraphQL api takes a list of dates, which are generated just before
-    // calling the API.
-  };
-
-  const handleDayChange = event => {
-    const day = event.target.value;
-    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
-    newDaysOfTheWeek[day] = event.target.checked;
-    applyGraphParams({
-      daysOfTheWeek: newDaysOfTheWeek,
-    });
-  };
-
-  const allFalse = (dictionary, array) => {
-    for (let i = 0; i < array.length; i++) {
-      if (dictionary[array[i].value]) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const allTrue = (dictionary, array) => {
-    for (let i = 0; i < array.length; i++) {
-      if (!dictionary[array[i].value]) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  /**
-   * Bulk toggle.
-   */
-  const toggleDays = event => {
-    const what = event.target.value === 'weekdays' ? WEEKDAYS : WEEKENDS;
-
-    const newDaysOfTheWeek = { ...graphParams.daysOfTheWeek };
-
-    // If all false -> set all to true; some false/true -> set all true; all true -> set all false;
-    // That is, if all true, set to all false, otherwise set to all true.
-
-    const newValue = !allTrue(newDaysOfTheWeek, what);
-
-    for (let i = 0; i < what.length; i++) {
-      newDaysOfTheWeek[what[i].value] = newValue;
+    if (target === 'secondDateRange' && graphParams.secondDateRange === null) {
+      return (
+        <Button
+          variant="contained"
+          className={classes.button}
+          onClick={handleClick}
+          id={target}
+        >
+          <Typography className={classes.secondaryHeading}>
+            Compare Dates
+          </Typography>
+          {secondOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </Button>
+      );
     }
 
-    applyGraphParams({
-      daysOfTheWeek: newDaysOfTheWeek,
-    });
-  };
+    const dateRangeParams = graphParams[target];
 
-  const open = Boolean(anchorEl);
-  const id = open ? 'simple-popover' : undefined;
+    // these are the read-only representations of the date and time range
+    let dateLabel = convertDate(dateRangeParams.date);
+    let smallLabel = '';
+
+    if (dateRangeParams.startDate !== dateRangeParams.date) {
+      dateLabel = `${convertDate(dateRangeParams.startDate)} - ${dateLabel}`;
+
+      // generate a days of the week label
+
+      smallLabel = `${getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek)}, `;
+    }
+
+    // convert the state's current time range to a string or the sentinel value
+    const timeRange =
+      dateRangeParams.startTime && dateRangeParams.endTime
+        ? `${dateRangeParams.startTime}-${dateRangeParams.endTime}`
+        : TIME_RANGE_ALL_DAY;
+
+    smallLabel += TIME_RANGES.find(range => range.value === timeRange)
+      .shortLabel;
+
+    return (
+      <Fragment>
+        <Button
+          variant="contained"
+          className={classes.button}
+          onClick={handleClick}
+          id={target}
+        >
+          <div className={classes.dateTime}>
+            <span>
+              <Typography className={classes.heading} display="inline">
+                {dateLabel}&nbsp;
+              </Typography>
+              <Typography className={classes.secondaryHeading} display="inline">
+                {smallLabel}
+              </Typography>
+            </span>
+            {(target === 'firstDateRange' && firstOpen) ||
+            (target === 'secondDateRange' && secondOpen) ? (
+              <ExpandLessIcon />
+            ) : (
+              <ExpandMoreIcon />
+            )}
+          </div>
+        </Button>
+        {target === 'secondDateRange' ? (
+          <IconButton
+            color="inherit"
+            size="small"
+            onClick={handleRemove}
+            aria-label="Remove"
+          >
+            <RemoveCircleOutlineIcon />
+          </IconButton>
+        ) : null}
+      </Fragment>
+    );
+  }
+
+  // For some reason, invoking this as a component causes anchorEl not to have a bounding box
+  // and thus the popover appears at the upper left corner of the window.  So invoking it as
+  // just a plain old function instead.
+
+  const firstButton = DatePanelButton({ target: 'firstDateRange' });
+  const secondButton = DatePanelButton({ target: 'secondDateRange' });
 
   return (
     <div className={classes.root}>
@@ -347,230 +255,11 @@ function DateTimePanel(props) {
           />
         </Box>
       ) : null}
-
       {rangeInfo}
-      <Button
-        variant="contained"
-        className={classes.button}
-        onClick={handleClick}
-      >
-        <div className={classes.dateTime}>
-          <span>
-            <Typography className={classes.heading} display="inline">
-              {dateLabel}&nbsp;
-            </Typography>
-            <Typography className={classes.secondaryHeading} display="inline">
-              {timeLabel}
-            </Typography>
-          </span>
-          <ExpandMoreIcon />
-        </div>
-      </Button>
-
-      <Popover
-        id={id}
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-      >
-        <IconButton
-          size="small"
-          aria-label="close"
-          className={classes.closeButton}
-          onClick={handleClose}
-        >
-          <CloseIcon />
-        </IconButton>
-
-        <List style={{ color: 'black', marginTop: 32 }}>
-          <ListItem>
-            <FormControl className={classes.formControl}>
-              <TextField
-                id="startDate"
-                label="Start Date"
-                type="date"
-                value={graphParams.startDate}
-                InputProps={{
-                  inputProps: {
-                    max: graphParams.date,
-                    min: Moment(graphParams.date)
-                      .subtract(MAX_DATE_RANGE, 'days')
-                      .format('YYYY-MM-DD'),
-                  },
-                }}
-                className={classes.textField}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                onChange={setStartDate}
-              />
-            </FormControl>
-          </ListItem>
-
-          <ListItem>
-            <FormControl className={classes.formControl}>
-              <TextField
-                id="date"
-                label="End Date"
-                type="date"
-                value={graphParams.date}
-                InputProps={{
-                  inputProps: {
-                    max: maxDate,
-                  },
-                }}
-                className={classes.textField}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                onChange={setDate}
-              />
-            </FormControl>
-          </ListItem>
-
-          <ListItem>
-            <Grid container style={{ maxWidth: 250 }}>
-              {DATE_RANGES.map(range => (
-                <Grid item xs={6} key={range.value}>
-                  <Button
-                    key={range.value}
-                    onClick={() => {
-                      setDateRange(range.value);
-                    }}
-                  >
-                    {range.label}
-                  </Button>
-                </Grid>
-              ))}
-            </Grid>
-          </ListItem>
-
-          <ListItem>
-            <FormControl component="fieldset" className={classes.formControl}>
-              <FormLabel
-                component="legend"
-                className={classes.secondaryHeading}
-              >
-                Days of the Week
-              </FormLabel>
-
-              <Grid container>
-                <Grid item>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          value="weekdays"
-                          checked={
-                            !allFalse(graphParams.daysOfTheWeek, WEEKDAYS)
-                          }
-                          indeterminate={
-                            !allFalse(graphParams.daysOfTheWeek, WEEKDAYS) &&
-                            !allTrue(graphParams.daysOfTheWeek, WEEKDAYS)
-                          }
-                          onChange={toggleDays}
-                        />
-                      }
-                      label="Weekdays"
-                    />
-
-                    <Divider
-                      variant="middle"
-                      style={
-                        { marginLeft: 0 } /* divider with a right margin */
-                      }
-                    />
-
-                    {WEEKDAYS.map(day => (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={graphParams.daysOfTheWeek[day.value]}
-                            onChange={handleDayChange}
-                            value={day.value}
-                          />
-                        }
-                        key={day.value}
-                        label={day.label}
-                      />
-                    ))}
-                  </FormGroup>
-                </Grid>
-                <Grid item>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          value="weekends"
-                          checked={
-                            !allFalse(graphParams.daysOfTheWeek, WEEKENDS)
-                          }
-                          indeterminate={
-                            !allFalse(graphParams.daysOfTheWeek, WEEKENDS) &&
-                            !allTrue(graphParams.daysOfTheWeek, WEEKENDS)
-                          }
-                          onChange={toggleDays}
-                        />
-                      }
-                      label="Weekends"
-                    />
-
-                    <Divider
-                      variant="middle"
-                      style={
-                        { marginLeft: 0 } /* divider with a right margin */
-                      }
-                    />
-
-                    {WEEKENDS.map(day => (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={graphParams.daysOfTheWeek[day.value]}
-                            onChange={handleDayChange}
-                            value={day.value}
-                          />
-                        }
-                        key={day.value}
-                        label={day.label}
-                      />
-                    ))}
-                  </FormGroup>
-                </Grid>
-              </Grid>
-            </FormControl>
-          </ListItem>
-
-          <ListItem>
-            <FormControl className={classes.formControl}>
-              <InputLabel htmlFor="time-helper">Time Range</InputLabel>
-              <Select
-                value={timeRange}
-                onChange={setTimeRange}
-                input={<Input name="time_range" id="time_range" />}
-              >
-                {TIME_RANGES.map(range => (
-                  <MenuItem value={range.value} key={range.value}>
-                    {range.shortLabel}
-                    {range.restOfLabel}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </ListItem>
-          <ListItem>
-            <Button onClick={handleReset}>Reset</Button>
-          </ListItem>
-        </List>
-      </Popover>
+      {firstButton}
+      &nbsp;
+      {secondButton}
+      <DateTimePopover anchorEl={anchorEl} setAnchorEl={setAnchorEl} />
     </div>
   );
 }
@@ -583,7 +272,6 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    handleGraphParams: params => dispatch(handleGraphParams(params)),
     dispatch,
   };
 };

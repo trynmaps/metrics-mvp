@@ -4,6 +4,7 @@ import {
   HorizontalGridLines,
   XAxis,
   YAxis,
+  VerticalBarSeries,
   VerticalRectSeries,
   ChartLabel,
   Crosshair,
@@ -31,6 +32,20 @@ function Info(props) {
   const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
   const byDayData = tripMetrics ? tripMetrics.byDay : null;
 
+  const headways2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.headways
+      : null;
+  const waitTimes2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.waitTimes
+      : null;
+  const tripTimes2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.tripTimes
+      : null;
+  // By day data is not requested for the second date range.
+
   const headwayData =
     headways && headways.histogram
       ? headways.histogram.map(bin => ({
@@ -52,6 +67,33 @@ function Info(props) {
   const tripData =
     tripTimes && tripTimes.histogram
       ? tripTimes.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const headwayData2 =
+    headways2 && headways2.histogram
+      ? headways2.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const waitData2 =
+    waitTimes2 && waitTimes2.histogram
+      ? waitTimes2.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const tripData2 =
+    tripTimes2 && tripTimes2.histogram
+      ? tripTimes2.histogram.map(bin => ({
           x0: bin.binStart,
           x: bin.binEnd,
           y: bin.count,
@@ -158,7 +200,9 @@ function Info(props) {
             </Typography>
 
             <InfoByDay
-              byDayData={byDayData}
+              byDayData={
+                byDayData /* consider switching to trip metrics here for consistency */
+              }
               graphParams={graphParams}
               routes={routes}
             />
@@ -192,12 +236,23 @@ function Info(props) {
               <YAxis hideLine />
 
               <VerticalRectSeries
+                cluster="first"
                 data={headwayData}
                 onNearestX={onNearestXHeadway}
                 stroke="white"
                 fill={CHART_COLORS[0]}
                 style={{ strokeWidth: 2 }}
               />
+              {headwayData2 ? (
+                <VerticalBarSeries
+                  cluster="second"
+                  data={headwayData2}
+                  onNearestX={onNearestXHeadway}
+                  stroke="white"
+                  fill={CHART_COLORS[2]}
+                  style={{ strokeWidth: 2 }}
+                />
+              ) : null}
 
               <ChartLabel
                 text="arrivals"
@@ -254,12 +309,23 @@ function Info(props) {
             <YAxis hideLine tickFormat={v => `${v}%`} />
 
             <VerticalRectSeries
+              cluster="first"
               data={waitData}
               onNearestX={onNearestXWaitTimes}
               stroke="white"
               fill={CHART_COLORS[0]}
               style={{ strokeWidth: 2 }}
             />
+            {waitData2 ? (
+              <VerticalBarSeries
+                cluster="second"
+                data={waitData2}
+                onNearestX={onNearestXHeadway}
+                stroke="white"
+                fill={CHART_COLORS[2]}
+                style={{ strokeWidth: 2 }}
+              />
+            ) : null}
 
             <ChartLabel
               text="chance"
@@ -314,12 +380,23 @@ function Info(props) {
             <YAxis hideLine />
 
             <VerticalRectSeries
+              cluster="first"
               data={tripData}
               onNearestX={onNearestXTripTimes}
               stroke="white"
               fill={CHART_COLORS[1]}
               style={{ strokeWidth: 2 }}
             />
+            {tripData2 ? (
+              <VerticalBarSeries
+                cluster="second"
+                data={tripData2}
+                onNearestX={onNearestXHeadway}
+                stroke="white"
+                fill={CHART_COLORS[3]}
+                style={{ strokeWidth: 2 }}
+              />
+            ) : null}
 
             <ChartLabel
               text="trips"

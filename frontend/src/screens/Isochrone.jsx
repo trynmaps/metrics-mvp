@@ -741,9 +741,9 @@ class Isochrone extends React.Component {
 
 const mapStateToProps = state => ({
   routes: state.routes.data,
-  date: state.graphParams.date,
-  startTime: state.graphParams.startTime,
-  endTime: state.graphParams.endTime,
+  date: state.graphParams.firstDateRange.date,
+  startTime: state.graphParams.firstDateRange.startTime,
+  endTime: state.graphParams.firstDateRange.endTime,
 });
 
 const mapDispatchToProps = dispatch => ({
