@@ -3,6 +3,7 @@ import React, { Fragment, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
+import HomeIcon from '@material-ui/icons/Home';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
@@ -39,6 +40,89 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+const BreadCrumbHomeLink = props => {
+  const { breadCrumbStyling, darkLinks } = props.styleClasses;
+  const iconStyle = {
+    alignSelf: 'center',
+  };
+  return (
+    <Typography
+      variant="subtitle1"
+      key={'asdad'}
+      className={`${breadCrumbStyling} ${darkLinks}`}
+    >
+      <Link to={{ type: 'DASHBOARD', query: props.query }} exact strict>
+        <HomeIcon
+          style={iconStyle}
+          className={`${breadCrumbStyling} ${darkLinks}`}
+        />
+      </Link>
+    </Typography>
+  );
+};
+
+const breadCrumbs = (paths, styleClasses, linkQuery) => {
+  const { breadCrumbStyling, darkLinks } = styleClasses;
+
+  let link = {
+    type: 'ROUTESCREEN',
+    query: linkQuery,
+  };
+
+  const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
+  const labels = (param, title) => {
+    const specialLabels = {};
+    specialLabels.startStopId = 'from ';
+    specialLabels.endStopId = 'to ';
+    return {
+      label: title,
+      specialLabel: specialLabels[param] ? specialLabels[param] : null,
+    };
+  };
+  paths = paths
+    .filter(path => {
+      // return paths with non null values
+      return !!path;
+    })
+    .map((path, index) => {
+      const hasNextValue = paths[index + 1];
+      const param = params[index];
+      const payload = {};
+      payload[param] = path.id;
+      const updatedPayload = Object.assign({ ...link.payload }, payload);
+      console.log(updatedPayload, 'payload');
+      link = Object.assign({ ...link }, { payload: updatedPayload });
+      console.log(link, 'final');
+      const { label, specialLabel } = labels(param, path.title);
+      return hasNextValue ? (
+        <Typography
+          variant="subtitle1"
+          key={label}
+          className={`${breadCrumbStyling} ${darkLinks}`}
+        >
+          {' '}
+          {specialLabel}{' '}
+          <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
+            {' '}
+            {label}{' '}
+          </Link>{' '}
+        </Typography>
+      ) : (
+        <Typography
+          variant="subtitle1"
+          key={label}
+          className={breadCrumbStyling}
+        >
+          {' '}
+          {specialLabel} {label}{' '}
+        </Typography>
+      );
+    });
+
+  paths.unshift(<BreadCrumbHomeLink styleClasses />);
+  return paths;
+};
+
 function RouteScreen(props) {
   const {
     tripMetrics,
@@ -47,9 +131,9 @@ function RouteScreen(props) {
     graphParams,
     routes,
   } = props;
-
   const myFetchRoutes = props.fetchRoutes;
   const agencyId = graphParams ? graphParams.agencyId : null;
+  const linkQuery = props.query;
 
   useEffect(() => {
     if (!routes && agencyId) {
@@ -58,65 +142,7 @@ function RouteScreen(props) {
   }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
   const agency = getAgency(agencyId);
-
   const backArrowStyle = { color: '#ffffff' };
-
-  const breadCrumbs = (paths, classes) => {
-    const { breadCrumbStyling, darkLinks } = classes;
-
-    let link = {
-      type: 'ROUTESCREEN',
-      query: props.query,
-    };
-    const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
-    const labels = (param, title) => {
-      const specialLabels = {};
-      specialLabels.startStopId = 'from ';
-      specialLabels.endStopId = 'to ';
-      return {
-        label: title,
-        specialLabel: specialLabels[param] ? specialLabels[param] : null,
-      };
-    };
-    return paths
-      .filter(path => {
-        // return paths with non null values
-        return !!path;
-      })
-      .map((path, index) => {
-        const hasNextValue = paths[index + 1];
-        const param = params[index];
-        const payload = {};
-        payload[param] = path.id;
-        const updatedPayload = Object.assign({ ...link.payload }, payload);
-        link = Object.assign({ ...link }, { payload: updatedPayload });
-        const { label, specialLabel } = labels(param, path.title);
-        return hasNextValue ? (
-          <Typography
-            variant="subtitle1"
-            key={label}
-            className={`${breadCrumbStyling} ${darkLinks}`}
-          >
-            {' '}
-            {specialLabel}{' '}
-            <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
-              {' '}
-              {label}{' '}
-            </Link>{' '}
-          </Typography>
-        ) : (
-          <Typography
-            variant="subtitle1"
-            key={label}
-            className={breadCrumbStyling}
-          >
-            {' '}
-            {specialLabel} {label}{' '}
-          </Typography>
-        );
-      });
-  };
-
   const selectedRoute =
     routes && graphParams && graphParams.routeId
       ? routes.find(
@@ -184,6 +210,7 @@ function RouteScreen(props) {
                 : null,
             ],
             classes,
+            linkQuery,
           )}
         </Breadcrumbs>
       </Paper>

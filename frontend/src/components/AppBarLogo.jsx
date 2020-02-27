@@ -7,6 +7,8 @@ export default function AppBarLogo(props) {
     paddingRight: '8px',
   };
 
+  console.log(props, 'appbar logo');
+
   return (
     <Fragment>
       <NavLink to={{ type: 'DASHBOARD', query: props.query }} exact strict>
