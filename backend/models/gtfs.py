@@ -643,17 +643,17 @@ class GtfsScraper:
     def normalize_gtfs_stop_ids(self, gtfs_stop_ids):
         """
         Returns a list of OpenTransit stop IDs given a list of GTFS stop IDs in one trip.
-        
+
         The frontend assumes that each stop ID only appears once per direction.
         However, some GTFS routes contain the same stop ID multiple times in one trip.
-        
+
         This can occur if the route contains a figure-eight like SF Muni's 36-Teresita,
         or if it is a loop like Portland Streetcar's A and B Loop.
-        
+
         If the same GTFS stop ID appears multiple times in one trip, append
         "-2" (or "-3" etc) to the stop ID so that we can uniquely identify where each stop ID
         occurs in the trip.
-        
+
         For loop routes, the ending "-2" stop will not actually be saved in the route config,
         however "-2" stops will appear in the route config for figure-eight routes.
         """
@@ -907,7 +907,8 @@ class GtfsScraper:
         shape_prev_lon = np.r_[shape_lon[0], shape_lon[:-1]]
         shape_prev_lat = np.r_[shape_lat[0], shape_lat[:-1]]
 
-        # shape_cumulative_dist[i] is the cumulative distance in meters along the shape geometry from 0th to ith coordinate
+        # shape_cumulative_dist[i] is the cumulative distance in meters along the shape geometry
+        # from 0th to ith coordinate
         shape_cumulative_dist = np.cumsum(
             util.haver_distance(shape_lat, shape_lon, shape_prev_lat, shape_prev_lon)
         )
@@ -923,14 +924,15 @@ class GtfsScraper:
 
         print(f"  distance = {dir_data['distance']}")
 
-        # Find each stop along the route shape, so that the frontend can draw line segments between stops along the shape
+        # Find each stop along the route shape, so that the frontend can draw line segments between
+        # stops along the shape
         start_index = 0
 
         for stop_id in stop_ids:
             stop = self.get_stop_row(stop_id)
 
-            # Need to project lon/lat coords to x/y in order for shapely to determine the distance between
-            # a point and a line (shapely doesn't support distance for lon/lat coords)
+            # Need to project lon/lat coords to x/y in order for shapely to determine the distance
+            # between a point and a line (shapely doesn't support distance for lon/lat coords)
             stop_xy = shapely.geometry.Point(project_xy(stop.geometry.x, stop.geometry.y))
 
             stop_geometry = get_stop_geometry(
@@ -939,7 +941,8 @@ class GtfsScraper:
 
             if stop_geometry["offset"] > 100:
                 print(
-                    f"    !! bad geometry for stop {stop_id}: {stop_geometry['offset']} m from route line segment"
+                    f"    !! bad geometry for stop {stop_id}: {stop_geometry['offset']} m from"
+                    " route line segment"
                 )
                 continue
 
@@ -951,11 +954,8 @@ class GtfsScraper:
 
     def get_route_data(self, route):
         agency = self.agency
-        agency_id = agency.id
 
         trips_df = self.get_gtfs_trips()
-        stops_df = self.get_gtfs_stops()
-        stop_times = self.get_gtfs_stop_times()
 
         gtfs_route_id = route.route_id
 
@@ -1090,10 +1090,11 @@ class GtfsScraper:
 
             routes_data.append(route_data)
 
-        if routes_data[0]["sort_order"] is not None:
-            sort_key = lambda route_data: route_data["sort_order"]
-        else:
-            sort_key = lambda route_data: route_data["id"]
+        def sort_key(route_data, routes_data):
+            if routes_data[0]["sort_order"] is not None:
+                return route_data["sort_order"]
+            else:
+                return route_data["id"]
 
         routes_data = sorted(routes_data, key=sort_key)
 

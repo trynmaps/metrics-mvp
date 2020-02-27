@@ -35,7 +35,8 @@ class ArrivalHistory:
         self, direction_id=None, stop_id=None, vehicle_id=None, start_time=None, end_time=None
     ) -> pd.DataFrame:
         """
-        Returns a data frame for a subset of this arrival history, after filtering by the provided parameters:
+        Returns a data frame for a subset of this arrival history, after filtering by the provided
+        parameters:
             stop_id
             vehicle_id
             direction_id
@@ -67,7 +68,8 @@ class ArrivalHistory:
                     if start_time is not None and timestamp < start_time:
                         continue
                     if end_time is not None and timestamp >= end_time:
-                        break  # arrivals for each stop+direction are in timestamp order, so can stop here
+                        # arrivals for each stop+direction are in timestamp order, so can stop here
+                        break
 
                     departure_time = arrival["e"] if has_departure_time else timestamp
                     dist = arrival["d"] if has_dist else np.nan
@@ -173,21 +175,22 @@ def get_cache_path(agency_id: str, route_id: str, d: date, version=DefaultVersio
         version = DefaultVersion
 
     date_str = str(d)
-    if re.match("^[\w\-]+$", agency_id) is None:
+    if re.match(r"^[\w\-]+$", agency_id) is None:
         raise Exception(f"Invalid agency id: {agency_id}")
 
-    if re.match("^[\w\-]+$", route_id) is None:
+    if re.match(r"^[\w\-]+$", route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
 
-    if re.match("^[\w\-]+$", date_str) is None:
+    if re.match(r"^[\w\-]+$", date_str) is None:
         raise Exception(f"Invalid date: {date_str}")
 
-    if re.match("^[\w\-]+$", version) is None:
+    if re.match(r"^[\w\-]+$", version) is None:
         raise Exception(f"Invalid version: {version}")
 
     return os.path.join(
         util.get_data_dir(),
-        f"arrivals_{version}_{agency_id}/{date_str}/arrivals_{version}_{agency_id}_{date_str}_{route_id}.json",
+        f"arrivals_{version}_{agency_id}/{date_str}/arrivals_{version}_"
+        f"{agency_id}_{date_str}_{route_id}.json",
     )
 
 
@@ -197,7 +200,10 @@ def get_s3_path(agency_id: str, route_id: str, d: date, version=DefaultVersion) 
 
     date_str = str(d)
     date_path = d.strftime("%Y/%m/%d")
-    return f"arrivals/{version}/{agency_id}/{date_path}/arrivals_{version}_{agency_id}_{date_str}_{route_id}.json.gz"
+    return (
+        f"arrivals/{version}/{agency_id}/{date_path}/arrivals_{version}_"
+        f"{agency_id}_{date_str}_{route_id}.json.gz"
+    )
 
 
 def get_by_date(agency_id: str, route_id: str, d: date, version=DefaultVersion) -> ArrivalHistory:
@@ -211,7 +217,7 @@ def get_by_date(agency_id: str, route_id: str, d: date, version=DefaultVersion) 
             with open(cache_path, "r") as f:
                 text = f.read()
                 return ArrivalHistory.from_data(json.loads(text))
-    except FileNotFoundError as err:
+    except FileNotFoundError:
         pass
 
     s3_bucket = config.s3_bucket

@@ -17,9 +17,13 @@ from . import (
 import pandas as pd
 import numpy as np
 
-# Represents a range of days with a time range within each day.
-# RouteMetrics and AgencyMetrics can calculate various statistics over a range.
+
 class Range:
+    """
+    Represents a range of days with a time range within each day.
+    RouteMetrics and AgencyMetrics can calculate various statistics over a range.
+    """
+
     def __init__(self, dates: list, start_time_str: str, end_time_str: str, tz: pytz.timezone):
         self.dates = dates  # list of datetime.date objects
         self.start_time_str = start_time_str  # if None, no start time filter
@@ -60,7 +64,7 @@ class RouteMetrics:
             self.arrival_histories[d] = history = arrival_history.get_by_date(
                 self.agency_id, self.route_id, d
             )
-        except FileNotFoundError as ex:
+        except FileNotFoundError:
             print(f"Arrival history not found for route {self.route_id} on {d}", file=sys.stderr)
             history = arrival_history.ArrivalHistory(self.agency_id, self.route_id, {})
         return history
@@ -107,7 +111,10 @@ class RouteMetrics:
         wait_stats_arr = []
 
         for d in rng.dates:
-            key = f"{direction_id}-{stop_id}-{d}-{rng.start_time_str}-{rng.end_time_str}-{rng.tz}-{get_data_frame.__name__}"
+            key = (
+                f"{direction_id}-{stop_id}-{d}-{rng.start_time_str}-{rng.end_time_str}-"
+                f"{rng.tz}-{get_data_frame.__name__}"
+            )
 
             if key not in self.wait_time_stats:
                 # print(f'_get_wait_time_stats {key}', file=sys.stderr)
@@ -153,7 +160,10 @@ class RouteMetrics:
         count = 0
 
         for d in rng.dates:
-            key = f"{direction_id}-{stop_id}-{d}-{rng.start_time_str}-{rng.end_time_str}-{rng.tz}-{get_data_frame.__name__}-{time_field}"
+            key = (
+                f"{direction_id}-{stop_id}-{d}-{rng.start_time_str}-{rng.end_time_str}-"
+                f"{rng.tz}-{get_data_frame.__name__}-{time_field}"
+            )
             if key not in self.counts:
                 # print(f'_get_count {key}', file=sys.stderr)
 
@@ -197,7 +207,8 @@ class RouteMetrics:
         now = time.time()
 
         for d in rng.dates:
-            key = f"{direction_id}-{stop_id}-{early_sec}-{late_sec}-{d}-{rng.start_time_str}-{rng.end_time_str}-{rng.tz}-{time_field}"
+            key = f"{direction_id}-{stop_id}-{early_sec}-{late_sec}-{d}-{rng.start_time_str}-"
+            f"{rng.end_time_str}-{rng.tz}-{time_field}"
             if key not in self.schedule_adherence:
                 # print(f'_get_schedule_adherence {key}', file=sys.stderr)
 
@@ -334,7 +345,10 @@ class RouteMetrics:
                 is_loop = dir_info.is_loop()
 
         for d in rng.dates:
-            key = f"{direction_id}-{start_stop_id}-{end_stop_id}-{d}-{rng.start_time_str}-{rng.end_time_str}-{rng.tz}-{get_data_frame.__name__}"
+            key = (
+                f"{direction_id}-{start_stop_id}-{end_stop_id}-{d}-{rng.start_time_str}-"
+                f"{rng.end_time_str}-{rng.tz}-{get_data_frame.__name__}"
+            )
 
             if key not in self.trip_times:
                 # print(f'_get_trip_time_stats {key}', file=sys.stderr)
@@ -376,7 +390,10 @@ class RouteMetrics:
         headway_min_arr = []
 
         for d in rng.dates:
-            key = f"{direction_id}-{stop_id}-{d}-{rng.start_time_str}-{rng.end_time_str}-{rng.tz}-{get_data_frame.__name__}"
+            key = (
+                f"{direction_id}-{stop_id}-{d}-{rng.start_time_str}-{rng.end_time_str}-{rng.tz}-"
+                f"{get_data_frame.__name__}"
+            )
 
             if key not in self.headways:
                 # print(f'_get_headways {key}', file=sys.stderr)
@@ -581,7 +598,8 @@ class AgencyMetrics:
             p90_trip_time = stats.get_p90_trip_time(
                 route_id, direction_id, first_stop_id, last_stop_id
             )
-            # print(f'{route_id} {direction_id} {first_stop_id}->{last_stop_id} : {trip_time_arr}', file=sys.stderr)
+            # print(f'{route_id} {direction_id} {first_stop_id}->{last_stop_id} : {trip_time_arr}',
+            #  file=sys.stderr)
             if p10_trip_time is not None and p90_trip_time is not None:
                 all_variabilities.append(p90_trip_time - p10_trip_time)
 
@@ -614,7 +632,8 @@ class AgencyMetrics:
         dist = last_stop_geometry["distance"] - first_stop_geometry["distance"]
         if dist <= 0:
             raise Exception(
-                f"invalid distance {dist} between {first_stop_id} and {last_stop_id} in route_id {route_id} direction {direction_id}"
+                f"invalid distance {dist} between {first_stop_id} and {last_stop_id} in route_id"
+                f" {route_id} direction {direction_id}"
             )  # file=sys.stderr)
 
         for d in rng.dates:

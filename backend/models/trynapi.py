@@ -83,13 +83,15 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
             "errors" in chunk_state
         ):  # trynapi returns an internal server error if you ask for too much data at once
             raise Exception(
-                f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['errors']}"
+                f"trynapi error for time range {chunk_start_time}-{chunk_end_time}:"
+                f" {chunk_state['errors']}"
             )
 
         if (
             "message" in chunk_state
         ):  # trynapi returns an internal server error if you ask for too much data at once
-            error = f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}"
+            error = f"trynapi error for time range {chunk_start_time}-{chunk_end_time}:\
+                f {chunk_state['message']}"
             if num_errors == 0 and chunk_minutes > 5:
                 print(error)
                 chunk_minutes = math.ceil(chunk_minutes / 2)
@@ -98,7 +100,8 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
                 continue
             else:
                 raise Exception(
-                    f"trynapi error for time range {chunk_start_time}-{chunk_end_time}: {chunk_state['message']}"
+                    f"trynapi error for time range {chunk_start_time}-{chunk_end_time}:"
+                    f" {chunk_state['message']}"
                 )
 
         if not ("data" in chunk_state):
@@ -114,7 +117,8 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
         chunk_start_time = chunk_end_time
 
-    # cache state per route so we don't have to request it again if a route appears in a different list of routes
+    # cache state per route so we don't have to request it again if a route appears in a different
+    # list of routes
     for route_id in uncached_route_ids:
         cache_path = get_cache_path(agency_id, d, start_time, end_time, route_id)
 
@@ -135,23 +139,27 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
 
 def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> str:
-    if re.match("^[\w\-]+$", agency_id) is None:
+    if re.match(r"^[\w\-]+$", agency_id) is None:
         raise Exception(f"Invalid agency: {agency_id}")
 
-    if re.match("^[\w\-]+$", route_id) is None:
+    if re.match(r"^[\w\-]+$", route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
 
     source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     return os.path.join(
         source_dir,
         "data",
-        f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.json",
+        f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_"
+        f"{int(start_time)}_{int(end_time)}.json",
     )
 
 
 def get_state_raw(agency_id, start_time, end_time, route_ids):
 
-    params = f"state(agencyId: {json.dumps(agency_id)}, startTime: {json.dumps(int(start_time))}, endTime: {json.dumps(int(end_time))}, routes: {json.dumps(route_ids)})"
+    params = (
+        f"state(agencyId: {json.dumps(agency_id)}, startTime: {json.dumps(int(start_time))}, "
+        f"endTime: {json.dumps(int(end_time))}, routes: {json.dumps(route_ids)})"
+    )
 
     query = f"""{{
        {params} {{
