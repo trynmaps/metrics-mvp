@@ -23,7 +23,8 @@ class Timetable:
         self, direction_id=None, stop_id=None, start_time=None, end_time=None
     ) -> pd.DataFrame:
         """
-        Returns a data frame for a subset of this timetable, after filtering by the provided parameters:
+        Returns a data frame for a subset of this timetable, after filtering by
+        the provided parameters:
             stop_id
             vehicle_id
             direction_id
@@ -137,13 +138,16 @@ def match_actual_times_to_schedule(actual_times, scheduled_times) -> pd.DataFram
 def match_schedule_to_actual_times(
     scheduled_times, actual_times, early_sec=60, late_sec=300
 ) -> pd.DataFrame:
-    # For each scheduled arrival/departure time in the first array, finds the previous, next, and closest actual
-    # arrival/departure time from the second array.
-    #
-    # Each scheduled arrival/departure time is matched with one actual arrival/departure time
-    # or np.nan if there was no match.
-    #
-    # It is possible that some actual arrival/departure times may not match any scheduled arrival/departure times.
+    """
+    For each scheduled arrival/departure time in the first array, finds the previous, next, and
+    closest actual arrival/departure time from the second array.
+
+    Each scheduled arrival/departure time is matched with one actual arrival/departure time
+    or np.nan if there was no match.
+
+    It is possible that some actual arrival/departure times may not match any scheduled
+     arrival/departure times.
+    """
 
     if len(actual_times) > 0:
         actual_headways = np.r_[np.nan, metrics.compute_headway_minutes(actual_times)]
@@ -168,8 +172,9 @@ def match_schedule_to_actual_times(
         np.place(prev_actual_deltas, pd.isnull(prev_actual_deltas), -np.inf)
 
         # determine the 'closest' actual arrival/departure time, either the next or previous.
-        # however, if either the previous or next actual arrival/departure time (but not both) are within the on-time interval,
-        # then use the one that is within the on-time interval, even if it is not necessarily the closest to the scheduled time
+        # however, if either the previous or next actual arrival/departure time (but not both) are
+        #  within the on-time interval,  then use the one that is within the on-time interval, even
+        #  if it is not necessarily the closest to the scheduled time
 
         is_next_closer = next_actual_deltas <= -prev_actual_deltas
         prev_on_time = prev_actual_deltas >= -early_sec
@@ -183,10 +188,10 @@ def match_schedule_to_actual_times(
         closest_actual_headways = np.where(next_is_best, next_actual_headways, prev_actual_headways)
         closest_actual_deltas = closest_actual_times - scheduled_times
 
-        # it's possible that one actual arrival may be the closest arrival to multiple scheduled arrival times,
-        # for example if some scheduled trips didn't actually occur.
-        # find consecutive scheduled times with the same actual arrival time, and ignore all duplicate actual arrival times
-        # except the one that is closest to the scheduled time.
+        # it's possible that one actual arrival may be the closest arrival to multiple scheduled
+        # arrival times, for example if some scheduled trips didn't actually occur.
+        # find consecutive scheduled times with the same actual arrival time, and ignore all
+        # duplicate actual arrival times except the one that is closest to the scheduled time.
 
         is_new_closest_actual_time = np.diff(closest_actual_times, prepend=-999999) != 0
         is_next_new_closest_actual_time = np.r_[is_new_closest_actual_time[1:], True]
@@ -213,10 +218,11 @@ def match_schedule_to_actual_times(
         matching_actual_headways = np.where(no_match, np.nan, closest_actual_headways)
         matching_actual_deltas = np.where(no_match, np.inf, closest_actual_deltas)
 
-        # in some situations, a particular actual arrival time may not be the closest arrival time to any scheduled arrival time,
-        # so matching_actual_times will have np.nan in that position even though the scheduled trip did actually occur.
-        # to handle this case, determine if the previous or next actual arrival time didn't match the previous or next scheduled arrival time.
-        # if this is the case, use this time to replace np.nan in matching_actual_times.
+        # in some situations, a particular actual arrival time may not be the closest arrival time
+        # to any scheduled arrival time, so matching_actual_times will have np.nan in that position
+        # even though the scheduled trip did actually occur. to handle this case, determine if the
+        # previous or next actual arrival time didn't match the previous or next scheduled arrival
+        # time. if this is the case, use this time to replace np.nan in matching_actual_times.
 
         if len(scheduled_times):
             prev_matching_arrivals = np.r_[np.nan, matching_actual_times[:-1]]
@@ -320,7 +326,7 @@ def get_data_by_date_key(
         with open(cache_path, "r") as f:
             text = f.read()
             return json.loads(text)
-    except FileNotFoundError as err:
+    except FileNotFoundError:
         pass
 
     s3_bucket = config.s3_bucket
@@ -349,23 +355,29 @@ def get_data_by_date_key(
 
 
 def get_cache_path(agency_id, route_id, date_key, version=DefaultVersion):
-    if re.match("^[\w\-]+$", agency_id) is None:
+    if re.match(r"^[\w\-]+$", agency_id) is None:
         raise Exception(f"Invalid agency id: {agency_id}")
 
-    if re.match("^[\w\-]+$", route_id) is None:
+    if re.match(r"^[\w\-]+$", route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
 
-    if re.match("^[\w\-]+$", date_key) is None:
+    if re.match(r"^[\w\-]+$", date_key) is None:
         raise Exception(f"Invalid date key: {date_key}")
 
-    if re.match("^[\w\-]+$", version) is None:
+    if re.match(r"^[\w\-]+$", version) is None:
         raise Exception(f"Invalid version: {version}")
 
-    return f"{util.get_data_dir()}/timetables_{version}_{agency_id}/{date_key}/timetables_{version}_{agency_id}_{date_key}_{route_id}.json"
+    return (
+        f"{util.get_data_dir()}/timetables_{version}_{agency_id}/{date_key}/"
+        f"timetables_{version}_{agency_id}_{date_key}_{route_id}.json"
+    )
 
 
 def get_s3_path(agency_id, route_id, date_key, version=DefaultVersion):
-    return f"timetables/{version}/{agency_id}/{date_key}/timetables_{version}_{agency_id}_{date_key}_{route_id}.json.gz"
+    return (
+        f"timetables/{version}/{agency_id}/{date_key}/"
+        f"timetables_{version}_{agency_id}_{date_key}_{route_id}.json.gz"
+    )
 
 
 def get_date_key(agency_id, d: date, version=DefaultVersion):
@@ -380,7 +392,7 @@ def get_date_keys(agency_id, version=DefaultVersion):
         with open(cache_path, "r") as f:
             data = json.loads(f.read())
             return data["date_keys"]
-    except FileNotFoundError as err:
+    except FileNotFoundError:
         pass
 
     s3_bucket = config.s3_bucket
@@ -409,7 +421,7 @@ def get_date_keys(agency_id, version=DefaultVersion):
 
 
 def get_date_keys_cache_path(agency_id, version=DefaultVersion):
-    if re.match("^[\w\-]+$", agency_id) is None:
+    if re.match(r"^[\w\-]+$", agency_id) is None:
         raise Exception(f"Invalid agency id: {agency_id}")
 
     return (

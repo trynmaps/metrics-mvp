@@ -51,7 +51,8 @@ if __name__ == "__main__":
             d = util.parse_date(state["last_complete_date"]) + timedelta(days=1)
         else:
             raise Exception(
-                f"No compute state for agency {agency_id}, use --start-date parameter the first time"
+                f"No compute state for agency {agency_id},"
+                " use --start-date parameter the first time"
             )
 
         routes = agency.get_route_list()

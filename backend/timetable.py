@@ -114,7 +114,10 @@ if __name__ == "__main__":
                     else None
                 )
 
-                arrival_info = f"p:{prev_actual_time} n:{next_actual_time} c:{closest_actual_time} m:{matching_actual_time}"
+                arrival_info = (
+                    f"p:{prev_actual_time} n:{next_actual_time}"
+                    f" c:{closest_actual_time} m:{matching_actual_time}"
+                )
             else:
                 arrival_info = f"actual: {matching_actual_time}"
 
@@ -134,12 +137,18 @@ if __name__ == "__main__":
                     else None
                 )
 
-                arrival_info += f"  {status_text.ljust(5)} {util.render_delta(row.matching_actual_delta/60)} min   {matching_actual_headway} min headway ({util.render_delta(headway_delta)} min)"
+                arrival_info += (
+                    f"  {status_text.ljust(5)} "
+                    f"{util.render_delta(row.matching_actual_delta/60)} min "
+                    f"  {matching_actual_headway} min headway "
+                    f"({util.render_delta(headway_delta)} min)"
+                )
         else:
             arrival_info = ""
 
         print(
-            f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time}  dir:{did}  {scheduled_headway} min headway   {arrival_info}"
+            f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time}  dir:{did}"
+            f" {scheduled_headway} min headway   {arrival_info}"
         )
 
     num_scheduled = len(timetable_df)
@@ -153,14 +162,18 @@ if __name__ == "__main__":
         missing_rate = np.average(timetable_df["no_match"])
 
         print(
-            f"On-time  : {round(on_time_rate * 100, 1)}% ({np.sum(timetable_df['on_time'])}/{num_scheduled})"
+            f"On-time  : {round(on_time_rate * 100, 1)}% "
+            f"({np.sum(timetable_df['on_time'])}/{num_scheduled})"
         )
         print(
-            f"Late     : {round(late_rate * 100, 1)}% ({np.sum(timetable_df['late'])}/{num_scheduled}) more than {late_min} min late"
+            f"Late     : {round(late_rate * 100, 1)}% ({np.sum(timetable_df['late'])}"
+            f"/{num_scheduled}) more than {late_min} min late"
         )
         print(
-            f"Early    : {round(early_rate * 100, 1)}% ({np.sum(timetable_df['early'])}/{num_scheduled}) more than {early_min} min early"
+            f"Early    : {round(early_rate * 100, 1)}% ({np.sum(timetable_df['early'])}"
+            f"/{num_scheduled}) more than {early_min} min early"
         )
         print(
-            f"Missing  : {round(missing_rate * 100, 1)}% ({np.sum(timetable_df['no_match'])}/{num_scheduled})"
+            f"Missing  : {round(missing_rate * 100, 1)}% ({np.sum(timetable_df['no_match'])}"
+            f"/{num_scheduled})"
         )

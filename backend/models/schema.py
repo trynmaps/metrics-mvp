@@ -79,7 +79,8 @@ class RouteInfo(ObjectType):
     config = Field(RouteConfig)
 
     # `parent` is a routeconfig.RouteConfig object
-    # perhaps this could be optimized so that routeList doesn't need to load full config for all routes if the client just needs basic info
+    # perhaps this could be optimized so that routeList doesn't need to load full config for all
+    # routes if the client just needs basic info
 
     def resolve_id(route_config, info):
         return route_config.id
@@ -227,7 +228,8 @@ class WaitTimeStats(ObjectType):
         bin_size=Float(required=False, default_value=5),
     )
 
-    # parent is a wait_times.WaitTimeStats object (either IntervalWaitTimeStats or MultiIntervalWaitTimeStats)
+    # parent is a wait_times.WaitTimeStats object (either IntervalWaitTimeStats or
+    # MultiIntervalWaitTimeStats)
 
     def resolve_avg(wait_stats, info):
         return round_or_none(wait_stats.get_average())
@@ -339,7 +341,8 @@ class TripIntervalMetrics(ObjectType):
 
     headwayScheduleDeltas = Field(BasicStats)
 
-    # parent is a dict with "route_metrics","start_stop_id","end_stop_id","direction_id","range" keys
+    # parent is a dict with "route_metrics", "start_stop_id", "end_stop_id",
+    # "direction_id", "range" keys
 
     def resolve_dates(parent, info):
         return [str(d) for d in parent["range"].dates]

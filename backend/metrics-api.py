@@ -88,7 +88,10 @@ else:
 
     @app.route("/")
     def root():
-        return """<h2>Hello!</h2><p>This is the API server.<br /><br />Go to port 3000 to see the real app.</p>"""
+        return (
+            "<h2>Hello!</h2><p>This is the API server.<br /><br />Go to"
+            " port 3000 to see the real app.</p>"
+        )
 
 
 if __name__ == "__main__":

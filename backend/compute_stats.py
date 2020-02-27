@@ -22,11 +22,11 @@ all_stat_ids = [combined_stat_id, median_trip_times_stat_id]
 
 
 def filter_departures_by_interval(s1_trip_values, s1_departure_time_values, timestamp_intervals):
-    #
-    # Given parallel arrays of trip IDs and departure times for the entire day, returns parallel
-    # lists of arrays of trip IDs and departure times for each interval. The i-th element of each list
-    # corresponds to the trips with departure times within the i-th interval.
-    #
+    """
+    Given parallel arrays of trip IDs and departure times for the entire day, returns parallel
+    lists of arrays of trip IDs and departure times for each interval. The i-th element of each list
+    corresponds to the trips with departure times within the i-th interval.
+    """
     s1_trip_values_by_interval = []
     s1_departure_time_values_by_interval = []
 
@@ -207,7 +207,8 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
             arrival_time_values = stop_df["TIME"].values
 
             if is_loop:
-                # for loop routes, pre-sort arrays by departure/arrival times for better performance.
+                # for loop routes, pre-sort arrays by departure/arrival times for better
+                # performance.
                 sorted_departure_time_values, sorted_departure_trip_values = trip_times.sort_parallel(
                     departure_time_values, trip_values
                 )
@@ -265,14 +266,16 @@ def add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, 
                         sorted_trip_min = np.sort(trip_min)
                         median_trip_time = round(util.quantile_sorted(sorted_trip_min, 0.5), 1)
 
-                        # save all pairs of stops in median-trip-times stat, used for the isochrone map
+                        # save all pairs of stops in median-trip-times stat, used for the
+                        # isochrone map
                         all_stats[median_trip_times_stat_id][interval_index][route_id][
                             "directions"
                         ][dir_id]["medianTripTimes"][s1][s2] = median_trip_time
 
-                        # only store median trip times for adjacent stops, or from the first three stops in combined stats
-                        # to reduce file size and loading time, since the frontend only needs this for displaying segments
-                        # and cumulative time along a route.
+                        # only store median trip times for adjacent stops, or from the first three
+                        # stops in combined stats to reduce file size and loading time, since the
+                        # frontend only needs this for displaying segments and cumulative time
+                        # along a route.
                         if (i <= 2) or (j == (i + 1) % num_stops) or s1 == start_stop_id:
                             all_stats[combined_stat_id][interval_index][route_id]["directions"][
                                 dir_id

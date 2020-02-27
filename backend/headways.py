@@ -7,7 +7,8 @@ import pandas as pd
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Compute headways (in minutes) at stop s1 for a route, on one or more dates, optionally at particular times of day"
+        description="Compute headways (in minutes) at stop s1 for a route, on one or more"
+        " dates, optionally at particular times of day"
     )
     parser.add_argument("--agency", required=True, help="Agency id")
     parser.add_argument("--route", required=True, help="Route id")
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     print(f"Stop: {stop_id} ({stop_info.title})")
     print(
         f"Direction: {', '.join([dir_info.id for dir_info in dir_infos])} "
-        + f"({', '.join([dir_info.title for dir_info in dir_infos])})"
+        f"({', '.join([dir_info.title for dir_info in dir_infos])})"
     )
 
     headways_arr = []
@@ -156,12 +157,18 @@ if __name__ == "__main__":
                     else None
                 )
 
-                comparison_info = f"scheduled: {closest_scheduled_time} ({util.render_delta(row.closest_scheduled_delta/60)} min) @ {round(row.closest_scheduled_headway, 1)} min headway ({util.render_delta(headway_diff).rjust(5)} min)"
+                comparison_info = (
+                    f"scheduled: {closest_scheduled_time} "
+                    f"({util.render_delta(row.closest_scheduled_delta/60)} min)"
+                    f" @ {round(row.closest_scheduled_headway, 1)} min headway "
+                    f"({util.render_delta(headway_diff).rjust(5)} min)"
+                )
             else:
                 comparison_info = ""
 
             print(
-                f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} vid:{row.VID}  dir:{did}  {dist_str}m  {headway_str} min   {comparison_info}"
+                f"{row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {dwell_time} "
+                f"vid:{row.VID}  dir:{did}  {dist_str}m  {headway_str} min   {comparison_info}"
             )
 
         t6 = time.time() * 1000

@@ -121,7 +121,9 @@ if __name__ == "__main__":
         stop_info = route_config.get_stop_info(row.SID)
 
         print(
-            f"{base_version}={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) {other_version}={other_time_str} ({other_time})  diff: {round(row.time_diff_min,1)} min  v:{row.VID} s:{stop_info.title if stop_info else '?'} ({row.SID}) ({row.DID})"
+            f"{base_version}={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) "
+            f"{other_version}={other_time_str} ({other_time})  diff: {round(row.time_diff_min,1)}"
+            f" min  v:{row.VID} s:{stop_info.title if stop_info else '?'} ({row.SID}) ({row.DID})"
         )
 
     abs_time_diff_min = df.abs_time_diff_min[df.abs_time_diff_min.notnull()]

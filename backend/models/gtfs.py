@@ -13,9 +13,11 @@ from . import config, util, nextbus, routeconfig, timetables
 
 
 def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_index):
-    # Finds the first position of a particular stop along a shape (after the start_index'th line segment in shape_lines_xy),
-    # using XY coordinates in meters.
-    # The returned dict is used by the frontend to draw line segments along a route between two stops.
+    """
+    Finds the first position of a particular stop along a shape (after the start_index'th line
+    segment in shape_lines_xy), using XY coordinates in meters.
+    The returned dict is used by the frontend to draw line segments along a route between two stops.
+    """
 
     num_shape_lines = len(shape_lines_xy)
 
@@ -44,7 +46,9 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
 
     if best_offset > 30:
         print(
-            f"   stop_dist = {int(stop_dist)} = ({int(distance_to_shape_point)} + {int(distance_after_shape_point)}),  offset = {int(best_offset)},  after_index = {best_index} "
+            f"   stop_dist = {int(stop_dist)} = ({int(distance_to_shape_point)} +"
+            f" {int(distance_after_shape_point)}),  offset = {int(best_offset)}, "
+            f" after_index = {best_index}"
         )
 
     return {
@@ -110,7 +114,7 @@ def contains_included_stops(shape_stop_ids, included_stop_ids):
 def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
     for stop_id in excluded_stop_ids:
         try:
-            index = shape_stop_ids.index(stop_id)
+            _ = shape_stop_ids.index(stop_id)
             return True
         except ValueError:
             pass
@@ -255,7 +259,8 @@ class GtfsScraper:
                         dates_map[d].remove(service_id)
                     else:
                         print(
-                            f"error in GTFS feed: service {service_id} removed from {d}, but it was not scheduled on that date"
+                            f"error in GTFS feed: service {service_id} removed from {d}, but it"
+                            f" was not scheduled on that date"
                         )
 
         return dates_map
@@ -266,20 +271,21 @@ class GtfsScraper:
         dates_map = self.get_services_by_date()
 
         #
-        # Typically, many dates have identical scheduled timetables (with times relative to midnight on that date).
-        # Instead of storing redundant timetables for each date, store one timetable per route for each unique set of service_ids.
-        # Each stored timetable is named with a string 'key' which is unique for each set of service_ids.
+        # Typically, many dates have identical scheduled timetables (with times relative to
+        # midnight on that date). Instead of storing redundant timetables for each date, store one
+        # timetable per route for each unique set of service_ids. Each stored timetable is named
+        # with a string 'key' which is unique for each set of service_ids.
         #
         # A "date_keys" JSON object is stored in S3 and the local cache which maps dates to keys.
         #
-        # Although the keys could be any string that is legal in paths, for ease of browsing, the keys are chosen to be
-        # the string representation of one date with that set of service_ids.
+        # Although the keys could be any string that is legal in paths, for ease of browsing, the
+        # keys are chosen to be the string representation of one date with that set of service_ids.
 
         first_date_for_service_ids_map = {}
 
         try:
             old_date_keys = timetables.get_date_keys(agency_id)
-        except FileNotFoundError as err:
+        except FileNotFoundError:
             old_date_keys = {}
 
         date_keys = old_date_keys.copy()
@@ -300,9 +306,9 @@ class GtfsScraper:
 
         gtfs_route_id_map = {}
 
-        route_configs = routeconfig.get_route_list(
-            self.agency_id
-        )  # todo: use route config from parsing this GTFS file (will eventually be needed to process old GTFS feeds)
+        route_configs = routeconfig.get_route_list(self.agency_id)
+        # todo: use route config from parsing this GTFS file (will eventually be needed to
+        # process old GTFS feeds)
         for route_config in route_configs:
             gtfs_route_id_map[route_config.gtfs_route_id] = route_config
 
@@ -436,13 +442,14 @@ class GtfsScraper:
     def get_scheduled_arrivals_by_service_id(
         self, service_id, route_config, service_route_trips, trip_ids_map
     ):
-
-        # returns dict { direction_id => { stop_id => { 't': arrival_time, 'i': trip_int, 'e': departure_time } } }
-        # where arrival_time and departure_time are the number of seconds after midnight,
-        # and trip_int is a unique integer for each trip (instead of storing GTFS trip ID strings directly)
+        """
+        returns dict { direction_id => { stop_id => { 't': arrival_time, 'i': trip_int, 'e':
+        departure_time } } } where arrival_time and departure_time are the number of seconds after
+        midnight, and trip_int is a unique integer for each trip (instead of storing GTFS trip ID
+        strings directly)
+        """
 
         agency = self.agency
-        agency_id = agency.id
 
         route_id = route_config.id
 
@@ -480,7 +487,8 @@ class GtfsScraper:
                 )
                 if custom_direction_id is None:
                     print(
-                        f"Unknown custom direction ID for trip {trip_id} ({gtfs_direction_id}, {stop_ids})"
+                        f"Unknown custom direction ID for trip {trip_id} "
+                        f"({gtfs_direction_id}, {stop_ids})"
                     )
                     continue
 
@@ -519,21 +527,24 @@ class GtfsScraper:
         return arrivals_by_direction
 
     def clean_loop_schedule(self, dir_info, direction_arrivals):
-        # For loop routes, the GTFS feed contains separate stop times for the end of one loop
-        # and the beginning of the next loop. These stop times may be the same, or may be
-        # slightly different if the vehicle waits a few minutes before beginning the next loop.
-        #
-        # Since the "end-of-loop" stop is not actually saved in our route configuration,
-        # this function associates the end-of-loop times with the first stop. If there is an arrival time
-        # at the first stop that is within a few minutes of the arrival time at the end-of-loop
-        # stop, it is assumed to be the same 'trip' and will be updated to use the arrival time
-        # of the end-of-loop stop.
+        """
+        For loop routes, the GTFS feed contains separate stop times for the end of one loop
+        and the beginning of the next loop. These stop times may be the same, or may be
+        slightly different if the vehicle waits a few minutes before beginning the next loop.
+
+        Since the "end-of-loop" stop is not actually saved in our route configuration,
+        this function associates the end-of-loop times with the first stop. If there is an arrival
+        time at the first stop that is within a few minutes of the arrival time at the end-of-loop
+        stop, it is assumed to be the same 'trip' and will be updated to use the arrival time
+        of the end-of-loop stop.
+        """
 
         stop_ids = dir_info.get_stop_ids()
         first_stop_id = stop_ids[0]
         last_stop_id = stop_ids[0] + "-2"
 
-        sort_key = lambda arr: arr["t"]
+        def sort_key(arr):
+            return arr["t"]
 
         first_stop_arrivals = sorted(direction_arrivals[first_stop_id], key=sort_key)
         last_stop_arrivals = sorted(direction_arrivals[last_stop_id], key=sort_key)
@@ -630,21 +641,22 @@ class GtfsScraper:
             return base_stop_id
 
     def normalize_gtfs_stop_ids(self, gtfs_stop_ids):
-        # Returns a list of OpenTransit stop IDs given a list of GTFS stop IDs in one trip.
-        #
-        # The frontend assumes that each stop ID only appears once per direction.
-        # However, some GTFS routes contain the same stop ID multiple times in one trip.
-        #
-        # This can occur if the route contains a figure-eight like SF Muni's 36-Teresita,
-        # or if it is a loop like Portland Streetcar's A and B Loop.
-        #
-        # If the same GTFS stop ID appears multiple times in one trip, append
-        # "-2" (or "-3" etc) to the stop ID so that we can uniquely identify where each stop ID
-        # occurs in the trip.
-        #
-        # For loop routes, the ending "-2" stop will not actually be saved in the route config,
-        # however "-2" stops will appear in the route config for figure-eight routes.
-        #
+        """
+        Returns a list of OpenTransit stop IDs given a list of GTFS stop IDs in one trip.
+        
+        The frontend assumes that each stop ID only appears once per direction.
+        However, some GTFS routes contain the same stop ID multiple times in one trip.
+        
+        This can occur if the route contains a figure-eight like SF Muni's 36-Teresita,
+        or if it is a loop like Portland Streetcar's A and B Loop.
+        
+        If the same GTFS stop ID appears multiple times in one trip, append
+        "-2" (or "-3" etc) to the stop ID so that we can uniquely identify where each stop ID
+        occurs in the trip.
+        
+        For loop routes, the ending "-2" stop will not actually be saved in the route config,
+        however "-2" stops will appear in the route config for figure-eight routes.
+        """
 
         trip_occurrences_map = {}
         stop_ids = []
@@ -657,9 +669,12 @@ class GtfsScraper:
         return stop_ids
 
     def get_unique_shapes(self, direction_trips_df):
-        # Finds the unique shapes associated with a GTFS route/direction, merging shapes that contain common subsequences of stops.
-        # These unique shapes may represent multiple branches of a route.
-        # Returns a list of dicts with properties 'shape_id', 'count', and 'stop_ids', sorted by count in descending order.
+        """
+        Finds the unique shapes associated with a GTFS route/direction, merging shapes that
+        contain common subsequences of stops. These unique shapes may represent multiple branches
+        of a route. Returns a list of dicts with properties 'shape_id', 'count', and 'stop_ids',
+        sorted by count in descending order.
+        """
 
         stop_times_df = self.get_gtfs_stop_times()
 
@@ -701,14 +716,16 @@ class GtfsScraper:
                     # print(f"   checking match with {shape_id} and {other_shape_info['shape_id']}")
                     if is_subsequence(shape_trip_stop_ids, other_shape_info["stop_ids"]):
                         print(
-                            f"    shape {shape_id} is subsequence of shape {other_shape_info['shape_id']}"
+                            f"    shape {shape_id} is subsequence of shape"
+                            f" {other_shape_info['shape_id']}"
                         )
                         unique_shape_key = other_shape_key
                         other_shape_info["shape_ids"].append(shape_id)
                         break
                     elif is_subsequence(other_shape_info["stop_ids"], shape_trip_stop_ids):
                         print(
-                            f"    shape {other_shape_info['shape_id']} is subsequence of shape {shape_id}"
+                            f"    shape {other_shape_info['shape_id']} is"
+                            f" subsequence of shape {shape_id}"
                         )
                         shape_id_count += other_shape_info["count"]
                         matching_shape_ids.extend(other_shape_info["shape_ids"])
@@ -738,7 +755,9 @@ class GtfsScraper:
             last_stop = self.get_stop_row(last_stop_id)
 
             print(
-                f'  shape_id: {shape_id} ({count}x) stops:{len(stop_ids)} from {first_stop_id} {first_stop.stop_name} to {last_stop_id} {last_stop.stop_name} {",".join(stop_ids)}'
+                f"  shape_id: {shape_id} ({count}x) stops:{len(stop_ids)} from {first_stop_id} "
+                f"{first_stop.stop_name} to {last_stop_id} {last_stop.stop_name} "
+                f"{','.join(stop_ids)}"
             )
 
         return sorted_shapes
@@ -768,7 +787,10 @@ class GtfsScraper:
 
         if len(matching_shapes) != 1:
             matching_shape_ids = [shape["shape_id"] for shape in matching_shapes]
-            error_message = f"{len(matching_shapes)} shapes found for route {route_id} with GTFS direction ID {gtfs_direction_id}"
+            error_message = (
+                f"{len(matching_shapes)} shapes found for route {route_id} with GTFS"
+                f" direction ID {gtfs_direction_id}"
+            )
             if len(included_stop_ids) > 0:
                 error_message += f" including {','.join(included_stop_ids)}"
 
@@ -866,9 +888,10 @@ class GtfsScraper:
         deg_lat_dist = util.haver_distance(start_lat, start_lon, start_lat - 0.1, start_lon) * 10
         deg_lon_dist = util.haver_distance(start_lat, start_lon, start_lat, start_lon - 0.1) * 10
 
-        # projection function from lon/lat coordinates in degrees (z ignored) to x/y coordinates in meters.
-        # satisfying the interface of shapely.ops.transform (https://shapely.readthedocs.io/en/stable/manual.html#shapely.ops.transform).
-        # This makes it possible to use shapely methods to calculate the distance in meters between geometries
+        # projection function from lon/lat coordinates in degrees (z ignored) to x/y coordinates
+        # in meters. satisfying the interface of shapely.ops.transform
+        # (https://shapely.readthedocs.io/en/stable/manual.html#shapely.ops.transform). This makes
+        #  it possible to use shapely methods to calculate the distance in meters between geometries
         def project_xy(lon, lat, z=None):
             return (
                 round((lon - start_lon) * deg_lon_dist, 1),
