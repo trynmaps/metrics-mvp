@@ -48,7 +48,7 @@ const BreadCrumbHomeLink = props => {
   return (
     <Typography
       variant="subtitle1"
-      key={'asdad'}
+      key="asdad"
       className={`${breadCrumbStyling} ${darkLinks}`}
     >
       <Link to={{ type: 'DASHBOARD', query: props.query }} exact strict>
