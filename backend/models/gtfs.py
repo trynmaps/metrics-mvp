@@ -978,13 +978,24 @@ class GtfsScraper:
 
         return route_data
 
-    def get_active_routes(self, routes_df, date):
+    def get_active_routes(self, routes_df, d):
         """Returns routes in routes_df whose service_ids all have a
         start_date that is at or before and an end_date that is at or
         after the given date."""
         trips_df = self.get_gtfs_trips()
         dates_map = self.get_services_by_date(ignore_day_of_week=True)
-        active_services = set(dates_map[date])
+        before_service_ids = []
+        after_service_ids = []
+        for _d in dates_map:
+            if _d < d:
+                before_service_ids += dates_map[d]
+            elif _d > d:
+                after_service_ids += dates_map[d]
+        active_services = set.intersection(
+            set(dates_map[d]),
+            set(before_service_ids),
+            set(after_service_ids),
+        )
         def has_active_service_id(service_ids):
             for (_, service_id) in service_ids.iteritems():
                 if service_id in active_services:
@@ -1038,12 +1049,14 @@ class GtfsScraper:
             return route_data['title']
         return sorted(routes_data, key=get_sort_key)
 
-    def save_routes(self, save_to_s3, date):
+    def save_routes(self, save_to_s3, d):
         agency = self.agency
         agency_id = agency.id
+
         routes_data = []
+
         routes_df = self.get_gtfs_routes()
-        routes_df = self.get_active_routes(routes_df, date)
+        routes_df = self.get_active_routes(routes_df, d)
         routes_data = [
             self.get_route_data(route)
             for route in routes_df.itertuples()
