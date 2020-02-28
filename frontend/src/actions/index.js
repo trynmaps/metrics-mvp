@@ -64,6 +64,16 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
   )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?ai`;
 }
 
+/**
+ * The functions below here are Redux "thunks" (see https://github.com/reduxjs/redux-thunk),
+ * a kind of Redux action that can do asynchronous processing.
+ */
+
+/**
+ * Redux "thunk" that calls the GraphQL API and then processes the results.
+ *
+ * @param params {Object} The query parameters from Redux state.
+ */
 export function fetchTripMetrics(params) {
   const singleDateRangeQuery = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
     $directionId:String, $dates:[String!], $startTime:String, $endTime:String) {
