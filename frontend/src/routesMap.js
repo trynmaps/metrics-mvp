@@ -135,6 +135,17 @@ export function fullQueryFromParams(params) {
   const query = {};
   query.firstDateRange = dateQueryFromDateRangeParams(params.firstDateRange);
   query.secondDateRange = dateQueryFromDateRangeParams(params.secondDateRange);
+
+  // Edge case:  second date range matches defaults and thus is empty.  Use a flag
+  // to signify that it is active.
+
+  if (
+    query.secondDateRange &&
+    Object.entries(query.secondDateRange).length === 0
+  ) {
+    // this goes in the query string just to get the second range populated
+    query.secondDateRange.isActive = true;
+  }
   return query;
 }
 
