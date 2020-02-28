@@ -49,8 +49,8 @@ function DataDiagnostic(props) {
           <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
-      xxx still need this? Date: {graphParams.firstDateRange.date} Time:{' '}
-      {graphParams.firstDateRage.startTime} -{' '}
+      Date: {graphParams.firstDateRange.date} Time:{' '}
+      {graphParams.firstDateRange.startTime} -{' '}
       {graphParams.firstDateRange.endTime}
       <QuadrantChart />
     </Fragment>
