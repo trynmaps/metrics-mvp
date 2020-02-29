@@ -71,12 +71,16 @@ function DateTimePopover(props) {
     graphParams[targetRange] || initialGraphParams.firstDateRange,
   );
 
-  // Whenever targetRange changes, we need to resync our local state with Redux
-
-  useEffect(() => {
+  function resetLocalDateRangeParams() {
     setLocalDateRangeParams(
       graphParams[targetRange] || initialGraphParams.firstDateRange,
     );
+  }
+
+  // Whenever targetRange changes, we need to resync our local state with Redux
+
+  useEffect(() => {
+    resetLocalDateRangeParams();
   }, [targetRange, graphParams]);
 
   const classes = useStyles();
@@ -99,9 +103,17 @@ function DateTimePopover(props) {
   }
 
   /**
-   * On close, we apply to local changes to the Redux state.
+   * On close (x), we don't apply changes and revert the local form state.
    */
-  function handleClose() {
+  function handleCancel() {
+    resetLocalDateRangeParams();
+    setAnchorEl(null);
+  }
+
+  /**
+   * Apply to local changes to the Redux state then close the popover.
+   */
+  function handleApply() {
     applyGraphParams();
     setAnchorEl(null);
   }
@@ -252,7 +264,7 @@ function DateTimePopover(props) {
       id={id}
       open={open}
       anchorEl={anchorEl}
-      onClose={handleClose}
+      onClose={handleCancel}
       anchorOrigin={{
         vertical: 'bottom',
         horizontal: 'right',
@@ -266,7 +278,7 @@ function DateTimePopover(props) {
         size="small"
         aria-label="close"
         className={classes.closeButton}
-        onClick={handleClose}
+        onClick={handleCancel}
       >
         <CloseIcon />
       </IconButton>
@@ -457,7 +469,17 @@ function DateTimePopover(props) {
           </FormControl>
         </ListItem>
         <ListItem>
-          <Button onClick={handleReset}>Reset</Button>
+          <Grid
+            container
+            alignItems="flex-start"
+            justify="space-between"
+            direction="row"
+          >
+            <Button onClick={handleReset}>Reset</Button>
+            <Button onClick={handleApply} color="primary" variant="contained">
+              Apply
+            </Button>
+          </Grid>
         </ListItem>
       </List>
     </Popover>
