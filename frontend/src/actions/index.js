@@ -174,6 +174,10 @@ export function fetchTripMetrics(params) {
           onTimeCount
           scheduledCount
         }
+        arrivalScheduleAdherence {
+          onTimeCount
+          scheduledCount
+        }
     }
 
     fragment timeRangeFields on TripIntervalMetrics {
@@ -552,5 +556,18 @@ export function handleGraphParams(params) {
       // when we don't have all params, clear graph data
       dispatch(resetTripMetrics());
     }
+  };
+}
+
+export function updateQuery(queryParams) {
+  return function(dispatch, getState) {
+    const currentLocation = getState().location;
+    const newQuery = { ...currentLocation.query, ...queryParams };
+
+    dispatch({
+      type: currentLocation.type,
+      payload: currentLocation.payload,
+      query: newQuery,
+    });
   };
 }

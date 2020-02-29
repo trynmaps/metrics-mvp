@@ -84,6 +84,22 @@
     }
 }
 
+.MuiSvgIcon-root.clear-filter
+{
+  color: #900;
+}
+
+.MuiSvgIcon-root.clear-filter, .MuiSvgIcon-root.add-filter
+{
+  font-size: 19px;
+  vertical-align:-4px;
+  opacity: 0.6;
+}
+
+.MuiSvgIcon-root.clear-filter:hover, .MuiSvgIcon-root.add-filter:hover {
+  opacity: 1.0;
+}
+
 .MuiFormControl-root.inline-form-control {
     margin:8px 8px 8px 0px;
 }
@@ -115,6 +131,14 @@
 {
     .app-tab-text {
         display:inline;
+    }
+}
+
+@media (min-width: 900px)
+{
+    .date-time-ranges
+    {
+        white-space:nowrap;
     }
 }
 

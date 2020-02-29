@@ -28,6 +28,11 @@ export const allTrue = (dictionary, array) => {
   return true;
 };
 
+export function renderDateString(ymdString) {
+  const date = new Date(ymdString);
+  return date.toLocaleDateString('en', { timeZone: 'UTC' });
+}
+
 /**
  * Returns a string describing the selected days of the week.
  *
@@ -40,7 +45,7 @@ export function getDaysOfTheWeekLabel(daysOfTheWeek) {
   const noWeekends = allFalse(daysOfTheWeek, WEEKENDS);
 
   if (weekdays && weekends) {
-    return 'Every day';
+    return '';
   }
   if (weekdays && noWeekends) {
     return 'Weekdays';
@@ -75,4 +80,16 @@ export function getDaysOfTheWeekLabel(daysOfTheWeek) {
     return accumulator;
   }, []);
   return checkedLabels.join();
+}
+
+export function renderDateRange(dateRangeParams) {
+  let dateLabel = renderDateString(dateRangeParams.date);
+  let smallLabel = '';
+
+  if (dateRangeParams.startDate !== dateRangeParams.date) {
+    dateLabel = `${renderDateString(dateRangeParams.startDate)} - ${dateLabel}`;
+    smallLabel = `${getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek)}`;
+  }
+
+  return dateLabel + smallLabel;
 }

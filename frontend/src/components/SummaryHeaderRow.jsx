@@ -2,7 +2,8 @@ import React from 'react';
 
 import { TableCell, TableRow } from '@material-ui/core';
 
-export default function SummaryHeaderRow() {
+export default function SummaryHeaderRow(props) {
+  const { headers } = props;
   const headerCellStyle = { padding: 6, fontSize: 16 };
 
   return (
@@ -10,10 +11,10 @@ export default function SummaryHeaderRow() {
       <TableCell align="right" padding="none"></TableCell>
       <TableCell align="right" padding="none"></TableCell>
       <TableCell align="right" padding="none" style={headerCellStyle}>
-        Observed
+        {headers[0]}
       </TableCell>
       <TableCell align="right" padding="none" style={headerCellStyle}>
-        Scheduled
+        {headers[1]}
       </TableCell>
       <TableCell align="right" padding="none"></TableCell>
     </TableRow>

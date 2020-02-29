@@ -25,7 +25,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Button from '@material-ui/core/Button';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
-import DateRangeControl from '../components/DateRangeControl';
+import SingleDateControl from '../components/SingleDateControl';
 import TimeRangeControl from '../components/TimeRangeControl';
 
 import { fetchRoutes } from '../actions';
@@ -90,7 +90,7 @@ class Isochrone extends React.Component {
     this.initialCenter = agency.initialMapCenter;
     const defaultDisabledRoutes = agency.defaultDisabledRoutes || [];
 
-    this.state = {
+    const initialState = {
       maxTripMin: 90,
       computedMaxTripMin: null,
       computeId: null,
@@ -102,6 +102,12 @@ class Isochrone extends React.Component {
       noData: false,
       height: this.computeHeight(),
     };
+
+    defaultDisabledRoutes.forEach(routeId => {
+      initialState.enabledRoutes[routeId] = false;
+    });
+
+    this.state = initialState;
 
     let workerUrl = `${
       process.env.PUBLIC_URL
@@ -126,10 +132,6 @@ class Isochrone extends React.Component {
     this.tripLayers = [];
     this.routeLayers = [];
     this.mapRef = React.createRef();
-
-    defaultDisabledRoutes.forEach(routeId => {
-      this.state.enabledRoutes[routeId] = false;
-    });
 
     this.handleMapClick = this.handleMapClick.bind(this);
     this.handleToggleRoute = this.handleToggleRoute.bind(this);
@@ -726,17 +728,19 @@ class Isochrone extends React.Component {
           {/* see http://maps.stamen.com for details */}
           <Control position="topleft" className="isochrone-controls">
             <div ref={this.refContainer}>
-              <div>
-                <DateRangeControl dateRangeSupported={false} />
-              </div>
-              <div>
-                <TimeRangeControl />
-              </div>
+              <FormControl className="inline-form-control">
+                <InputLabel shrink>Date-Time Range</InputLabel>
+                <div style={{ paddingTop: '10px' }}>
+                  <SingleDateControl />
+                </div>
+                <div>
+                  <TimeRangeControl />
+                </div>
+              </FormControl>
               <div>
                 <FormControl className="inline-form-control">
-                  <InputLabel id="maxTripTimeLabel">Max Trip Time</InputLabel>
+                  <InputLabel shrink>Max Trip Time</InputLabel>
                   <Select
-                    labelId="maxTripTimeLabel"
                     value={this.state.maxTripMin}
                     onChange={this.handleMaxTripMinChange}
                   >

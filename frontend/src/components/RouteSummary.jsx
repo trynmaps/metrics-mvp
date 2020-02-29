@@ -47,16 +47,22 @@ function RouteSummary(props) {
     intervalMetrics = routeIntervalMetrics;
   }
 
+  const columns = ['observed', 'scheduled'];
+  const baseColumn = 'scheduled';
+  const headers = ['Observed', 'Scheduled'];
+
   return (
     <>
       <Table>
         <TableHead>
-          <SummaryHeaderRow />
+          <SummaryHeaderRow headers={headers} />
         </TableHead>
         <TableBody>
           <SummaryRow
             label="Median Service Frequency"
-            actual={stats.medianHeadway}
+            columns={columns}
+            baseColumn={baseColumn}
+            observed={stats.medianHeadway}
             scheduled={
               intervalMetrics ? intervalMetrics.scheduledMedianHeadway : null
             }
@@ -76,7 +82,9 @@ function RouteSummary(props) {
           />
           <SummaryRow
             label="Median Wait Time"
-            actual={stats.medianWaitTime}
+            columns={columns}
+            baseColumn={baseColumn}
+            observed={stats.medianWaitTime}
             scheduled={
               intervalMetrics ? intervalMetrics.scheduledMedianWaitTime : null
             }
@@ -97,7 +105,9 @@ function RouteSummary(props) {
           />
           <SummaryRow
             label="Average Speed"
-            actual={stats.averageSpeed}
+            columns={columns}
+            baseColumn={baseColumn}
+            observed={stats.averageSpeed}
             scheduled={
               intervalMetrics ? intervalMetrics.scheduledAverageSpeed : null
             }
@@ -116,7 +126,9 @@ function RouteSummary(props) {
           />
           <SummaryRow
             label="On-Time %"
-            actual={stats.onTimeRate != null ? stats.onTimeRate * 100 : null}
+            columns={columns}
+            baseColumn={baseColumn}
+            observed={stats.onTimeRate != null ? stats.onTimeRate * 100 : null}
             scheduled=""
             units="%"
             precision={0}
@@ -135,7 +147,11 @@ function RouteSummary(props) {
             <Fragment>
               <SummaryRow
                 label="Completed Trips"
-                actual={intervalMetrics ? intervalMetrics.completedTrips : null}
+                columns={columns}
+                baseColumn={baseColumn}
+                observed={
+                  intervalMetrics ? intervalMetrics.completedTrips : null
+                }
                 scheduled={
                   intervalMetrics
                     ? intervalMetrics.scheduledCompletedTrips
@@ -147,12 +163,14 @@ function RouteSummary(props) {
               />
               <SummaryRow
                 label="Travel Distance"
+                columns={columns}
                 scheduled={dirInfo ? metersToMiles(dirInfo.distance) : null}
                 units="mi"
                 precision={1}
               />
               <SummaryRow
                 label="Stops"
+                columns={columns}
                 scheduled={dirInfo ? dirInfo.stops.length : null}
               />
             </Fragment>

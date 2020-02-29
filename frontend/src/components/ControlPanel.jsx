@@ -3,15 +3,11 @@ import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import { makeStyles } from '@material-ui/core/styles';
 import FormControl from '@material-ui/core/FormControl';
-// import StartStopIcon from '@material-ui/icons/DirectionsTransit';
-// import EndStopIcon from '@material-ui/icons/Flag';
 import Navlink from 'redux-first-router-link';
 import BackspaceIcon from '@material-ui/icons/Backspace';
-import red from '@material-ui/core/colors/red';
 import { getDownstreamStopIds } from '../helpers/mapGeometry';
 import ReactSelect from './ReactSelect';
-import DateRangeControl from './DateRangeControl';
-import TimeRangeControl from './TimeRangeControl';
+import DateTimeRangeControls from './DateTimeRangeControls';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -21,15 +17,6 @@ const useStyles = makeStyles(() => ({
     margin: '8px 8px 8px 0px',
     minWidth: 120,
     maxWidth: '100%',
-  },
-  backspaceIcon: {
-    color: red[900],
-    fontSize: 19,
-    verticalAlign: '-4px',
-    opacity: 0.6,
-    '&:hover': {
-      opacity: 1.0,
-    },
   },
 }));
 
@@ -174,7 +161,7 @@ function ControlPanel(props) {
                     query: props.query,
                   }}
                 >
-                  <BackspaceIcon className={classes.backspaceIcon} />
+                  <BackspaceIcon className="clear-filter" />
                 </Navlink>
               </span>
             ),
@@ -213,7 +200,7 @@ function ControlPanel(props) {
                         query: props.query,
                       }}
                     >
-                      <BackspaceIcon className={classes.backspaceIcon} />
+                      <BackspaceIcon className="clear-filter" />
                     </Navlink>
                   ) : null}
                 </span>
@@ -254,7 +241,7 @@ function ControlPanel(props) {
                           query: props.query,
                         }}
                       >
-                        <BackspaceIcon className={classes.backspaceIcon} />
+                        <BackspaceIcon className="clear-filter" />
                       </Navlink>
                     ) : null}
                   </span>
@@ -299,7 +286,7 @@ function ControlPanel(props) {
                           query: props.query,
                         }}
                       >
-                        <BackspaceIcon className={classes.backspaceIcon} />
+                        <BackspaceIcon className="clear-filter" />
                       </Navlink>
                     ) : null}
                   </span>
@@ -327,10 +314,9 @@ function ControlPanel(props) {
           </FormControl>
         </>
       ) : null}
-      <span style={{ whiteSpace: 'nowrap' }}>
-        <DateRangeControl dateRangeSupported />
-        <TimeRangeControl />
-      </span>
+      <DateTimeRangeControls
+        compareSupported={graphParams.startStopId && graphParams.endStopId}
+      />
     </div>
   );
 }

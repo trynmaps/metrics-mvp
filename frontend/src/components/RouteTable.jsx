@@ -14,8 +14,7 @@ import InfoIcon from '@material-ui/icons/InfoOutlined';
 import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
 import { filterRoutes } from '../helpers/routeCalculations';
-import DateRangeControl from './DateRangeControl';
-import TimeRangeControl from './TimeRangeControl';
+import DateTimeRangeControls from './DateTimeRangeControls';
 
 function getComparisonFunction(order, orderBy) {
   // Sort null values to bottom regardless of ascending/descending
@@ -182,8 +181,7 @@ const EnhancedTableToolbar = props => {
         </IconButton>
       </div>
       <div>
-        <DateRangeControl dateRangeSupported />
-        <TimeRangeControl />
+        <DateTimeRangeControls />
       </div>
 
       <div className={classes.spacer} />
@@ -298,11 +296,9 @@ function RouteTable(props) {
       numeric: true,
       label: 'Median Service Frequency',
       rowValue: row => {
-        return (
-          row.medianHeadway == null
-            ? '--'
-            : `${row.medianHeadway.toFixed(0)} min`
-        );
+        return row.medianHeadway == null
+          ? '--'
+          : `${row.medianHeadway.toFixed(0)} min`;
       },
       helpContent: (
         <Fragment>
@@ -316,11 +312,9 @@ function RouteTable(props) {
       numeric: true,
       label: 'Median Wait Time',
       rowValue: row => {
-        return (
-          row.medianWaitTime == null
-            ? '--'
-            : `${row.medianWaitTime.toFixed(0)} min`
-        );
+        return row.medianWaitTime == null
+          ? '--'
+          : `${row.medianWaitTime.toFixed(0)} min`;
       },
       helpContent: (
         <Fragment>
@@ -335,11 +329,9 @@ function RouteTable(props) {
       numeric: true,
       label: 'Average Speed',
       rowValue: row => {
-        return (
-          row.averageSpeed == null
-            ? '--'
-            : `${row.averageSpeed.toFixed(0)} mph`
-        );
+        return row.averageSpeed == null
+          ? '--'
+          : `${row.averageSpeed.toFixed(0)} mph`;
       },
       helpContent: (
         <Fragment>
@@ -353,11 +345,9 @@ function RouteTable(props) {
       numeric: true,
       label: 'On\u2011Time %',
       rowValue: row => {
-        return (
-          row.onTimeRate == null
-            ? '--'
-            : `${(row.onTimeRate * 100).toFixed(0)}%`
-        );
+        return row.onTimeRate == null
+          ? '--'
+          : `${(row.onTimeRate * 100).toFixed(0)}%`;
       },
       helpContent: (
         <Fragment>

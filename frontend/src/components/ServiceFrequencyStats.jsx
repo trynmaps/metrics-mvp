@@ -10,21 +10,39 @@ import {
   Crosshair,
 } from 'react-vis';
 import { Typography } from '@material-ui/core';
+import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import { CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
+import { renderDateRange } from '../helpers/dateTime';
 
 function ServiceFrequencyStats(props) {
-  const { tripMetrics } = props;
+  const { tripMetrics, graphParams } = props;
 
   const [crosshairValues, setCrosshairValues] = React.useState({});
 
   const headways = tripMetrics ? tripMetrics.interval.headways : null;
 
+  const headways2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.headways
+      : null;
+
   const headwayData =
-    headways && headways.histogram
+    headways && headways.histogram && headways.count
       ? headways.histogram.map(bin => ({
           x0: bin.binStart,
           x: bin.binEnd,
-          y: bin.count,
+          y: (100 * bin.count) / headways.count,
+          count: bin.count,
+        }))
+      : null;
+
+  const headwayData2 =
+    headways2 && headways2.histogram && headways2.count
+      ? headways2.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: (100 * -bin.count) / headways2.count,
+          count: bin.count,
         }))
       : null;
 
@@ -46,6 +64,21 @@ function ServiceFrequencyStats(props) {
     setCrosshairValues({ headway: [headwayData[index]] });
   }
 
+  const legendItems = graphParams.secondDateRange
+    ? [
+        {
+          title: `${renderDateRange(graphParams.firstDateRange)} (Observed)`,
+          color: CHART_COLORS[0],
+          strokeWidth: 10,
+        },
+        {
+          title: `${renderDateRange(graphParams.secondDateRange)} (Observed)`,
+          color: CHART_COLORS[2],
+          strokeWidth: 10,
+        },
+      ]
+    : null;
+
   return headways ? (
     <>
       <Typography variant="h5">Service Frequency by Time of Day</Typography>
@@ -61,13 +94,13 @@ function ServiceFrequencyStats(props) {
       </div>
       <XYPlot
         xDomain={[0, Math.max(60, Math.round(headways.max) + 5)]}
-        height={300}
+        height={200}
         width={500}
         onMouseLeave={onMouseLeave}
       >
         <HorizontalGridLines />
         <XAxis />
-        <YAxis hideLine />
+        <YAxis hideLine tickFormat={value => `${Math.abs(value)}%`} />
 
         <VerticalRectSeries
           data={headwayData}
@@ -77,17 +110,16 @@ function ServiceFrequencyStats(props) {
           style={{ strokeWidth: 2 }}
         />
 
-        <ChartLabel
-          text="arrivals"
-          className="alt-y-label"
-          includeMargin={false}
-          xPercent={0.06}
-          yPercent={0.06}
-          style={{
-            transform: 'rotate(-90)',
-            textAnchor: 'end',
-          }}
-        />
+        {headwayData2 ? (
+          <VerticalRectSeries
+            cluster="second"
+            data={headwayData2}
+            onNearestX={onNearestXHeadway}
+            stroke="white"
+            fill={CHART_COLORS[2]}
+            style={{ strokeWidth: 2 }}
+          />
+        ) : null}
 
         <ChartLabel
           text="minutes"
@@ -103,11 +135,21 @@ function ServiceFrequencyStats(props) {
             style={REACT_VIS_CROSSHAIR_NO_LINE}
           >
             <div className="rv-crosshair__inner__content">
-              Arrivals: {Math.round(crosshairValues.headway[0].y)}
+              Arrivals:{' '}
+              {crosshairValues.headway[0]
+                ? Math.round(crosshairValues.headway[0].count)
+                : null}
             </div>
           </Crosshair>
         )}
       </XYPlot>
+      {headwayData2 ? (
+        <DiscreteColorLegend
+          orientation="vertical"
+          height={100}
+          items={legendItems}
+        />
+      ) : null}
       TODO - show scheduled distribution of headways
       <br />
       <br />

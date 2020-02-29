@@ -30,7 +30,7 @@ function TripTimesByDayChart(props) {
   const [selectedOption, setSelectedOption] = useState(AVERAGE_TIME); // radio button starts on average time
   const [crosshairValues, setCrosshairValues] = useState([]); // tooltip starts out empty
 
-  const { byDayData, graphParams } = props;
+  const { byDayData } = props;
 
   /**
    * Event handler for radio buttons

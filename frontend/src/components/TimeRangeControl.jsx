@@ -1,30 +1,24 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
-import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 
 import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
-import { fullQueryFromParams } from '../routesMap';
+import { dateQueryFromDateRangeParams } from '../routesMap';
+import { updateQuery } from '../actions';
 
 function TimeRangeControl(props) {
-  const { graphParams, currentLocation } = props;
+  const { graphParams } = props;
 
   const targetRange = props.targetRange || 'firstDateRange';
 
   const dateRangeParams = graphParams[targetRange];
 
   function applyDateRangeParams(payload) {
-    const newDateRangeParams = Object.assign({}, dateRangeParams, payload);
-    const newGraphParams = Object.assign({}, graphParams);
-    newGraphParams[targetRange] = newDateRangeParams;
-
-    props.dispatch({
-      type: currentLocation.type,
-      payload: currentLocation.payload,
-      query: fullQueryFromParams(newGraphParams),
+    const newDateRangeParams = { ...dateRangeParams, ...payload };
+    props.updateQuery({
+      [targetRange]: dateQueryFromDateRangeParams(newDateRangeParams),
     });
   }
 
@@ -52,34 +46,34 @@ function TimeRangeControl(props) {
     }
   };
 
+  const renderTimeRange = value => {
+    const range = TIME_RANGES.find(t => t.value === value);
+    return range ? range.shortLabel : value;
+  };
+
   return (
-    <FormControl className="inline-form-control">
-      <InputLabel id="timeRangeLabel">Time of Day</InputLabel>
-      <Select
-        value={timeRange}
-        labelId="timeRangeLabel"
-        onChange={setTimeRange}
-        id="time_range"
-      >
-        {TIME_RANGES.map(range => (
-          <MenuItem value={range.value} key={range.value}>
-            {range.shortLabel}
-            {range.restOfLabel}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
+    <Select
+      value={timeRange}
+      onChange={setTimeRange}
+      renderValue={renderTimeRange}
+    >
+      {TIME_RANGES.map(range => (
+        <MenuItem value={range.value} key={range.value}>
+          {range.shortLabel}
+          {range.restOfLabel}
+        </MenuItem>
+      ))}
+    </Select>
   );
 }
 
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
-  currentLocation: state.location,
 });
 
 const mapDispatchToProps = dispatch => {
   return {
-    dispatch,
+    updateQuery: params => dispatch(updateQuery(params)),
   };
 };
 

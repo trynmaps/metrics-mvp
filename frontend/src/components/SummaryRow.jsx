@@ -9,21 +9,28 @@ import InfoIcon from '@material-ui/icons/InfoOutlined';
 
 export default function SummaryRow(props) {
   const {
+    columns,
+    baseColumn,
     precision,
     units,
-    actual,
-    scheduled,
     goodDiffDirection,
     infoContent,
   } = props;
+
+  const firstColumn = columns[0];
+  const secondColumn = columns[1];
+
+  const firstValue = props[firstColumn];
+  const secondValue = props[secondColumn];
+
+  const baseValue = baseColumn ? props[baseColumn] : null;
+  const otherValue =
+    baseColumn === firstColumn ? props[secondColumn] : props[firstColumn];
 
   let unitsSuffix = '';
   if (units) {
     unitsSuffix = units !== '%' ? ` ${units}` : units;
   }
-
-  const positiveDiffDesc = props.positiveDiffDesc || 'more';
-  const negativeDiffDesc = props.negativeDiffDesc || 'less';
 
   const renderValue = value => {
     if (value === null) {
@@ -41,9 +48,15 @@ export default function SummaryRow(props) {
     return value;
   };
 
+  const firstColumnText = renderValue(firstValue);
+  const secondColumnText = renderValue(secondValue);
+
+  const positiveDiffDesc = props.positiveDiffDesc || 'more';
+  const negativeDiffDesc = props.negativeDiffDesc || 'less';
+
   /* const diffPercent =
-    typeof actual === 'number' && typeof scheduled === 'number' && scheduled > 0
-      ? (actual / scheduled - 1) * 100
+    typeof observed === 'number' && typeof scheduled === 'number' && scheduled > 0
+      ? (observed / scheduled - 1) * 100
       : null;
 
   const diffPercentStr =
@@ -51,8 +64,8 @@ export default function SummaryRow(props) {
   */
 
   const diff =
-    typeof actual === 'number' && typeof scheduled === 'number'
-      ? actual - scheduled
+    typeof firstValue === 'number' && typeof secondValue === 'number'
+      ? otherValue - baseValue
       : null;
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -80,21 +93,18 @@ export default function SummaryRow(props) {
     fontSize: 16,
   };
 
-  const actualText = renderValue(actual);
-  const scheduledText = renderValue(scheduled);
-
   let comparisonCellColor = 'green';
   if (
     goodDiffDirection != null &&
     diff != null &&
-    actualText !== scheduledText &&
+    firstColumnText !== secondColumnText &&
     goodDiffDirection * diff < 0
   ) {
     comparisonCellColor = '#f07d02';
   }
 
   let comparisonText = null;
-  if (diff != null && actualText !== scheduledText) {
+  if (diff != null && firstColumnText !== secondColumnText) {
     const absDiff = Math.abs(diff);
     let diffStr = absDiff.toFixed(precision);
     if (diffStr === '0') {
@@ -122,14 +132,14 @@ export default function SummaryRow(props) {
         padding="none"
         style={{ ...cellStyle, minWidth: 80 }}
       >
-        {actualText}
+        {firstColumnText}
       </TableCell>
       <TableCell
         align="right"
         padding="none"
         style={{ ...cellStyle, minWidth: 80 }}
       >
-        {scheduledText}
+        {secondColumnText}
       </TableCell>
       <TableCell
         align="right"
@@ -140,7 +150,7 @@ export default function SummaryRow(props) {
           color: comparisonCellColor,
         }}
       >
-        {scheduled === 'TODO' && actual
+        {baseValue === 'TODO' && otherValue
           ? `##${unitsSuffix} ${positiveDiffDesc}/${negativeDiffDesc} (#%)`
           : null}
         {comparisonText}

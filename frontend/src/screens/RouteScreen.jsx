@@ -1,14 +1,10 @@
 import React, { useEffect } from 'react';
+import { connect } from 'react-redux';
 
 import { makeStyles } from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
+import { AppBar, Tab, Tabs, Box, Paper, Grid } from '@material-ui/core';
 
-import { AppBar, Tab, Tabs, Box } from '@material-ui/core';
-
-import { connect } from 'react-redux';
 import MapStops from '../components/MapStops';
-
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
 import TripSummary from '../components/TripSummary';
@@ -16,7 +12,6 @@ import TripTimesStats from '../components/TripTimesStats';
 import ServiceFrequencyStats from '../components/ServiceFrequencyStats';
 import OnTimePerformanceStats from '../components/OnTimePerformanceStats';
 import MareyChart from '../components/MareyChart';
-
 import { fetchRoutes } from '../actions';
 
 const useStyles = makeStyles(theme => ({
@@ -75,7 +70,7 @@ function RouteScreen(props) {
           onChange={handleTabChange}
           aria-label="tab bar"
           variant="scrollable"
-          scrollButtons="on"
+          scrollButtons="auto"
         >
           <Tab
             style={{ minWidth: 72 }}
