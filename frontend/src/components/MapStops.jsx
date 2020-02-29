@@ -5,6 +5,7 @@ import * as d3 from 'd3';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
+import Button from '@material-ui/core/Button';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { withTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
@@ -515,6 +516,18 @@ class MapStops extends Component {
           {!graphParams.startStopId || !graphParams.endStopId ? (
             <div className="map-instructions">{mapInstruction}</div>
           ) : null}
+        </Control>
+        <Control position="bottomleft">
+          <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => this.props.onGraphParams({
+                startStopId: null,
+                endStopId: null
+              })}
+            >
+              Clear Stops
+            </Button>
         </Control>
       </Map>
     );
