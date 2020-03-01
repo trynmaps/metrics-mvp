@@ -241,7 +241,7 @@ class MapSpider extends Component {
         routeStops.forEach((startMarker, index) => {
           const waitScaled = this.getWaitScale(startMarker);
           // 7 + wait scale replaces the default radius of 8 so it better suits the weight of the polyline
-          const radius = 7 + waitScaled + this.getZoomScale(waitScaled);
+          const radius = 7 + waitScaled;
           // White start marker outline
           hoveredLayers.push(
             this.getStartMarkers(startMarker, index, radius + 2, 1, '#ffffff'),
@@ -270,7 +270,7 @@ class MapSpider extends Component {
 
       // Add white polylines under other layers of hovered route
       if (tableHoverRoute) {
-        const outlineScale = waitScaled + this.getZoomScale(waitScaled) + 4;
+        const outlineScale = waitScaled + 4;
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           polylines.push(
             this.generatePolyline(startMarker, outlineScale, i, '#ffffff'),
@@ -294,15 +294,6 @@ class MapSpider extends Component {
       return polylines;
     });
     return items;
-  };
-
-  /**
-   * Get additional scale when near max zoom to account for increased periphery
-   */
-  getZoomScale = waitScaled => {
-    const zoom = this.mapRef.current.leafletElement.getZoom();
-    const zoomScale = waitScaled > 0 ? 1 : 2;
-    return zoom < 17 ? 0 : zoomScale;
   };
 
   /**
