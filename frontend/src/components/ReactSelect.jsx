@@ -26,6 +26,9 @@ const useStyles = makeStyles({
   },
   selectInput: {
     minWidth: '100%',
+    '& input': {
+        width:'1px !important' // fix layout on firefox
+    }
   },
   valueContainer: {
     display: 'flex',
