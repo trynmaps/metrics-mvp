@@ -15,11 +15,11 @@ custom_directions:
     - id: "1"
       title: "From NW Yeon & 44th to Gateway Transit Center"
       gtfs_direction_id: "1"
-      included_stop_ids: ["6470"]
+      included_stop_ids: ["6470","749"]
     - id: "1-T"
       title: "From NW Thurman & 28th to Gateway Transit Center"
       gtfs_direction_id: "1"
-      included_stop_ids: ["5837"]
+      included_stop_ids: ["5837","749"]
   '50':
     - id: "0"
       title: "Evening Loop"
@@ -51,7 +51,7 @@ custom_directions:
     - id: "1"
       title: "From Council Crest to Portland City Center via Hamilton & Dosch"
       gtfs_direction_id: "1"
-      included_stop_ids: ["1218","2467"]
+      included_stop_ids: ["1218","2467","7098"]
   '53':
     - id: "0"
       title: "Evening Loop"
