@@ -24,7 +24,7 @@ import {
   scoreBackgroundColor,
   scoreContrastColor,
 } from '../helpers/routeCalculations';
-import { handleRouteTableHover } from '../actions';
+import { handleTableRowHover } from '../actions';
 
 function getComparisonFunction(order, orderBy) {
   // Sort null values to bottom regardless of ascending/descending
@@ -256,15 +256,11 @@ function RouteTable(props) {
   const dense = true;
   const theme = useTheme();
 
-  const {
-    statsByRouteId,
-    onRowHover,
-    spiderSelection: { segmentRouteId },
-  } = props;
+  const { statsByRouteId, onTableRowHover, spiderSelection } = props;
 
   useEffect(() => {
-    return () => onRowHover(null);
-  }, [onRowHover]);
+    return () => onTableRowHover(null);
+  }, [onTableRowHover]);
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -426,10 +422,10 @@ function RouteTable(props) {
             rowCount={displayedRouteStats.length}
             columns={columns}
           />
-          <TableBody onMouseLeave={() => onRowHover(null)}>
+          <TableBody onMouseLeave={() => onTableRowHover(null)}>
             {stableSort(displayedRouteStats, order, orderBy).map(row => {
               let hover;
-              if (row.route.id === segmentRouteId) {
+              if (row.route.id === spiderSelection.routeId) {
                 hover = classes.artificialHover;
               }
 
@@ -439,7 +435,7 @@ function RouteTable(props) {
                   role="checkbox"
                   tabIndex={-1}
                   key={row.route.id}
-                  onMouseEnter={() => onRowHover(row.route)}
+                  onMouseEnter={() => onTableRowHover(row.route)}
                   classes={{ root: hover }}
                 >
                   {columns.map(column => {
@@ -474,7 +470,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  onRowHover: route => dispatch(handleRouteTableHover(route)),
+  onTableRowHover: route => dispatch(handleTableRowHover(route)),
 });
 
 export default connect(

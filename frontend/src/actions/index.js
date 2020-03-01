@@ -389,15 +389,15 @@ export function handleSpiderMapClick(stops, latLng) {
   };
 }
 
-export function handleRouteTableHover(hoverRoute) {
+export function handleTableRowHover(tableHoverRoute) {
   return function(dispatch) {
-    dispatch({ type: 'RECEIVED_ROUTE_TABLE_HOVER', hoverRoute });
+    dispatch({ type: 'RECEIVED_TABLE_ROW_HOVER', tableHoverRoute });
   };
 }
 
-export function handleSegmentHover(segmentRouteId) {
+export function handleSpiderHover(routeId) {
   return function(dispatch) {
-    dispatch({ type: 'RECEIVED_SEGMENT_HOVER', segmentRouteId });
+    dispatch({ type: 'RECEIVED_SPIDER_HOVER', routeId });
   };
 }
 

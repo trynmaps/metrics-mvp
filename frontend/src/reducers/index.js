@@ -121,8 +121,8 @@ export function arrivals(state = initialArrivals, action) {
 const initialSpiderSelection = {
   stops: [],
   latLng: null,
-  hoverRoute: null,
-  segmentRouteId: null,
+  tableHoverRoute: null,
+  routeId: null,
 };
 
 export function spiderSelection(state = initialSpiderSelection, action) {
@@ -133,15 +133,15 @@ export function spiderSelection(state = initialSpiderSelection, action) {
         stops: action.stops,
         latLng: action.latLng,
       };
-    case 'RECEIVED_ROUTE_TABLE_HOVER':
+    case 'RECEIVED_TABLE_ROW_HOVER':
       return {
         ...state,
-        hoverRoute: action.hoverRoute,
+        tableHoverRoute: action.tableHoverRoute,
       };
-    case 'RECEIVED_SEGMENT_HOVER':
+    case 'RECEIVED_SPIDER_HOVER':
       return {
         ...state,
-        segmentRouteId: action.segmentRouteId,
+        routeId: action.routeId,
       };
     default:
       return state;

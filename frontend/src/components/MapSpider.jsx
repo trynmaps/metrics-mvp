@@ -20,7 +20,7 @@ import {
   isInServiceArea,
 } from '../helpers/mapGeometry';
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
-import { handleSpiderMapClick, handleSegmentHover } from '../actions';
+import { handleSpiderMapClick, handleSpiderHover } from '../actions';
 import { Agencies } from '../config';
 
 import MapShield from './MapShield';
@@ -115,11 +115,11 @@ class MapSpider extends Component {
    */
 
   generateShield = (startMarker, waitScaled) => {
-    const { hoverRoute } = this.props.spiderSelection;
+    const { tableHoverRoute } = this.props.spiderSelection;
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
-    const zIndex = hoverRoute ? 200 : 0;
+    const zIndex = tableHoverRoute ? 200 : 0;
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
@@ -212,13 +212,13 @@ class MapSpider extends Component {
     const { routes, spiderSelection } = this.props;
     const hoveredLayers = [];
 
-    if (spiderSelection.hoverRoute) {
+    if (spiderSelection.tableHoverRoute) {
       // index from entire routes array required for proper route color
       const routeIndex = filterRoutes(routes).findIndex(
-        route => route.id === spiderSelection.hoverRoute.id,
+        route => route.id === spiderSelection.tableHoverRoute.id,
       );
       let routeStops = this.populateStops(
-        spiderSelection.hoverRoute,
+        spiderSelection.tableHoverRoute,
         routeIndex,
         spiderSelection.latLng,
       );
@@ -259,7 +259,7 @@ class MapSpider extends Component {
    */
   getDownstreamLayers = selectedStops => {
     const {
-      spiderSelection: { hoverRoute },
+      spiderSelection: { tableHoverRoute },
     } = this.props;
     const items = selectedStops.map(startMarker => {
       const downstreamStops = startMarker.downstreamStops;
@@ -269,7 +269,7 @@ class MapSpider extends Component {
       const waitScaled = this.getWaitScale(startMarker);
 
       // Add white polylines under other layers of hovered route
-      if (hoverRoute) {
+      if (tableHoverRoute) {
         const outlineScale = waitScaled + this.getZoomScale(waitScaled) + 4;
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           polylines.push(
@@ -339,7 +339,7 @@ class MapSpider extends Component {
    * Creates a line between two stops.
    */
   generatePolyline = (startMarker, waitScaled, i, color) => {
-    const { onSegmentHover } = this.props;
+    const { onSpiderHover } = this.props;
     const downstreamStops = startMarker.downstreamStops;
 
     const computedWeight = waitScaled * 1.5 + 3;
@@ -370,7 +370,7 @@ class MapSpider extends Component {
         onMouseOver={e => {
           // on hover, draw segment wider
           e.target.setStyle({ opacity: 1, weight: computedWeight + 4 });
-          onSegmentHover(startMarker.routeId);
+          onSpiderHover(startMarker.routeId);
           return true;
         }}
         onFocus={e => {
@@ -378,7 +378,7 @@ class MapSpider extends Component {
         }}
         onMouseOut={e => {
           e.target.setStyle({ opacity: 0.5, weight: computedWeight });
-          onSegmentHover(null);
+          onSpiderHover(null);
           return true;
         }}
         onBlur={e => {
@@ -664,8 +664,7 @@ const mapDispatchToProps = dispatch => {
   return {
     onSpiderMapClick: (stops, latLng) =>
       dispatch(handleSpiderMapClick(stops, latLng)),
-    onSegmentHover: segmentRouteId =>
-      dispatch(handleSegmentHover(segmentRouteId)),
+    onSpiderHover: routeId => dispatch(handleSpiderHover(routeId)),
     dispatch,
   };
 };
