@@ -4,11 +4,13 @@ import {
   HorizontalGridLines,
   XAxis,
   YAxis,
+  VerticalBarSeries,
   VerticalRectSeries,
   ChartLabel,
   Crosshair,
 } from 'react-vis';
 import { AppBar, Box, Tab, Tabs, Typography } from '@material-ui/core';
+import InfoByDay from './InfoByDay';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import InfoTripSummary from './InfoTripSummary';
 import { CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
@@ -18,17 +20,38 @@ function Info(props) {
   const [tabValue, setTabValue] = React.useState(0);
 
   const {
-    graphData,
-    graphError,
+    tripMetrics,
+    tripMetricsError,
+    tripMetricsLoading,
     graphParams,
-    intervalData,
-    intervalError,
     routes,
   } = props;
 
-  const headways = graphData ? graphData.headways : null;
-  const waitTimes = graphData ? graphData.waitTimes : null;
-  const tripTimes = graphData ? graphData.tripTimes : null;
+  const headways = tripMetrics ? tripMetrics.interval.headways : null;
+  const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
+  const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
+  const byDayData = tripMetrics ? tripMetrics.byDay : null;
+
+  const headways2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.headways
+      : null;
+  const waitTimes2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.waitTimes
+      : null;
+  const tripTimes2 =
+    tripMetrics && tripMetrics.interval2
+      ? tripMetrics.interval2.tripTimes
+      : null;
+  /*
+   * By day data is not requested for the second date range.
+   *
+   * The second range can have the same data the first, as they are using the same GraphQL query API.
+   * It gets tricky for the "by day" tab, because how do you chart two date ranges by day when they
+   * could have different numbers of days in them?  Does this chart only work when the ranges have
+   * the same number of days?  Do we "scale" the time axis so both are the full width of the chart?
+   */
 
   const headwayData =
     headways && headways.histogram
@@ -51,6 +74,33 @@ function Info(props) {
   const tripData =
     tripTimes && tripTimes.histogram
       ? tripTimes.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const headwayData2 =
+    headways2 && headways2.histogram
+      ? headways2.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const waitData2 =
+    waitTimes2 && waitTimes2.histogram
+      ? waitTimes2.histogram.map(bin => ({
+          x0: bin.binStart,
+          x: bin.binEnd,
+          y: bin.count,
+        }))
+      : null;
+
+  const tripData2 =
+    tripTimes2 && tripTimes2.histogram
+      ? tripTimes2.histogram.map(bin => ({
           x0: bin.binStart,
           x: bin.binEnd,
           y: bin.count,
@@ -95,10 +145,11 @@ function Info(props) {
   }
 
   const SUMMARY = 0;
-  const TIME_OF_DAY = 1;
-  const HEADWAYS = 2;
-  const WAITS = 3;
-  const TRIPS = 4;
+  const BY_DAY = 1;
+  const TIME_OF_DAY = 2;
+  const HEADWAYS = 3;
+  const WAITS = 4;
+  const TRIPS = 5;
 
   return (
     <div>
@@ -116,9 +167,10 @@ function Info(props) {
             label="Summary"
             {...a11yProps(SUMMARY)}
           />
+          <Tab style={{ minWidth: 72 }} label="By Day" {...a11yProps(BY_DAY)} />
           <Tab
             style={{ minWidth: 72 }}
-            label="Time of Day"
+            label="By Time of Day"
             {...a11yProps(TIME_OF_DAY)}
           />
           <Tab
@@ -143,7 +195,21 @@ function Info(props) {
         <div>
           <Box p={2} hidden={tabValue !== SUMMARY}>
             <InfoTripSummary
-              graphData={graphData}
+              tripMetrics={tripMetrics}
+              graphParams={graphParams}
+              routes={routes}
+            />
+          </Box>
+
+          <Box p={2} hidden={tabValue !== BY_DAY}>
+            <Typography variant="h5" display="inline">
+              Performance by Day
+            </Typography>
+
+            <InfoByDay
+              byDayData={
+                byDayData /* consider switching to trip metrics here for consistency */
+              }
               graphParams={graphParams}
               routes={routes}
             />
@@ -154,10 +220,7 @@ function Info(props) {
               Performance by Time of Day
             </Typography>
 
-            <InfoIntervalsOfDay
-              intervalData={intervalData}
-              intervalError={intervalError}
-            />
+            <InfoIntervalsOfDay tripMetrics={tripMetrics} />
           </Box>
 
           <Box p={2} hidden={tabValue !== HEADWAYS}>
@@ -180,12 +243,23 @@ function Info(props) {
               <YAxis hideLine />
 
               <VerticalRectSeries
+                cluster="first"
                 data={headwayData}
                 onNearestX={onNearestXHeadway}
                 stroke="white"
                 fill={CHART_COLORS[0]}
                 style={{ strokeWidth: 2 }}
               />
+              {headwayData2 ? (
+                <VerticalBarSeries
+                  cluster="second"
+                  data={headwayData2}
+                  onNearestX={onNearestXHeadway}
+                  stroke="white"
+                  fill={CHART_COLORS[2]}
+                  style={{ strokeWidth: 2 }}
+                />
+              ) : null}
 
               <ChartLabel
                 text="arrivals"
@@ -228,8 +302,8 @@ function Info(props) {
             Wait Times
           </Typography>
           <p>
-            median wait time {Math.round(waitTimes.median)} minutes, max wait time{' '}
-            {Math.round(waitTimes.max)} minutes
+            median wait time {Math.round(waitTimes.median)} minutes, max wait
+            time {Math.round(waitTimes.max)} minutes
           </p>
           <XYPlot
             xDomain={[0, Math.max(60, Math.round(waitTimes.max) + 5)]}
@@ -242,12 +316,23 @@ function Info(props) {
             <YAxis hideLine tickFormat={v => `${v}%`} />
 
             <VerticalRectSeries
+              cluster="first"
               data={waitData}
               onNearestX={onNearestXWaitTimes}
               stroke="white"
               fill={CHART_COLORS[0]}
               style={{ strokeWidth: 2 }}
             />
+            {waitData2 ? (
+              <VerticalBarSeries
+                cluster="second"
+                data={waitData2}
+                onNearestX={onNearestXHeadway}
+                stroke="white"
+                fill={CHART_COLORS[2]}
+                style={{ strokeWidth: 2 }}
+              />
+            ) : null}
 
             <ChartLabel
               text="chance"
@@ -302,12 +387,23 @@ function Info(props) {
             <YAxis hideLine />
 
             <VerticalRectSeries
+              cluster="first"
               data={tripData}
               onNearestX={onNearestXTripTimes}
               stroke="white"
               fill={CHART_COLORS[1]}
               style={{ strokeWidth: 2 }}
             />
+            {tripData2 ? (
+              <VerticalBarSeries
+                cluster="second"
+                data={tripData2}
+                onNearestX={onNearestXHeadway}
+                stroke="white"
+                fill={CHART_COLORS[3]}
+                style={{ strokeWidth: 2 }}
+              />
+            ) : null}
 
             <ChartLabel
               text="trips"
@@ -343,11 +439,12 @@ function Info(props) {
         </Box>
       ) : null}
 
-      {graphError ? (
+      {tripMetricsError ? (
         <Box p={2}>
-          <code>{graphError}</code>
+          <code>Error: {tripMetricsError}</code>
         </Box>
       ) : null}
+      {tripMetricsLoading ? <Box p={2}>Loading...</Box> : null}
     </div>
   );
 }

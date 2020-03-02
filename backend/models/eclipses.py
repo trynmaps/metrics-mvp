@@ -1,6 +1,5 @@
 import time
-from datetime import datetime, date, timedelta, timezone
-import pytz
+from datetime import date
 import pandas as pd
 import numpy as np
 from . import routeconfig, util, config
@@ -219,6 +218,7 @@ def find_arrivals(agency: config.Agency, route_state: dict, route_config: routec
 
         dir_stops = dir_info.get_stop_ids()
         num_dir_stops = len(dir_stops)
+        is_loop = dir_info.is_loop()
 
         for stop_index, stop_id in enumerate(dir_stops):
             stop_info = route_config.get_stop_info(stop_id)
@@ -229,14 +229,14 @@ def find_arrivals(agency: config.Agency, route_state: dict, route_config: routec
 
             is_terminal = (stop_index == 0) or (stop_index == num_dir_stops - 1)
 
-            if stop_index > 0:
-                prev_stop_id = dir_stops[stop_index - 1]
-                if prev_stop_id not in adjacent_stop_ids:
-                    adjacent_stop_ids.append(prev_stop_id)
-            if stop_index < num_dir_stops - 1:
-                next_stop_id = dir_stops[stop_index + 1]
-                if next_stop_id not in adjacent_stop_ids:
-                    adjacent_stop_ids.append(next_stop_id)
+            if is_loop:
+                adjacent_stop_ids.append(dir_stops[(stop_index + num_dir_stops - 1) % num_dir_stops])
+                adjacent_stop_ids.append(dir_stops[(stop_index + 1) % num_dir_stops])
+            else:
+                if stop_index > 0:
+                    adjacent_stop_ids.append(dir_stops[stop_index - 1])
+                if stop_index < num_dir_stops - 1:
+                    adjacent_stop_ids.append(dir_stops[stop_index + 1])
 
             for adjacent_stop_id in adjacent_stop_ids:
                 adjacent_stop_info = route_config.get_stop_info(adjacent_stop_id)
@@ -270,7 +270,9 @@ def find_arrivals(agency: config.Agency, route_state: dict, route_config: routec
     else:
         print(f'{route_id}: {round(time.time() - t0, 1)} cleaning arrivals')
 
-        arrivals, num_trips = clean_arrivals(possible_arrivals, buses, route_config)
+        arrivals = clean_arrivals(possible_arrivals, buses, route_config)
+
+        num_trips = len(np.unique(arrivals['TRIP'].values))
 
     print(f"{route_id}: {round(time.time() - t0, 1)} found {len(arrivals['TIME'].values)} arrivals in {num_trips} trips")
 
@@ -416,61 +418,6 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
     trip_times = []
     '''
 
-    def set_trip(dir_arrivals):
-        nonlocal start_trip
-
-        stop_index_values = dir_arrivals['STOP_INDEX'].values
-        if len(stop_index_values) == 0:
-            return dir_arrivals
-
-        stop_index_diff = np.diff(stop_index_values, prepend=-999999)
-
-        # if vehicle not observed at 3 or more stops in a row, count it as starting a new trip
-        new_trip = (stop_index_diff <= 0) | (stop_index_diff > 3)
-
-        # The trip ID is an arbitrary integer that is the same for a group
-        # of arrivals for the same vehicle and direction that have an ascending stop index.
-        # Storing this in the arrival history makes it easy and fast to compute trip times between two stops.
-
-        trip_id = np.cumsum(new_trip) + start_trip
-
-        dir_arrivals = dir_arrivals.copy()
-        dir_arrivals['TRIP'] = trip_id
-
-        # uncomment to print information about adjacent arrivals in the same trip with long travel times in between
-        '''
-        arrival_time_values = dir_arrivals['TIME'].values
-        departure_time_values = dir_arrivals['DEPARTURE_TIME'].values
-        prev_departure_time_values = np.r_[arrival_time_values[0], departure_time_values[:-1]]
-        arrival_time_diff = np.diff(arrival_time_values, prepend=arrival_time_values[0])
-
-        arrival_time_diffs.append(arrival_time_diff[~new_trip])
-
-        trip_time = arrival_time_values - prev_departure_time_values
-
-        trip_times.append(trip_time[~new_trip])
-
-        trip_time_1 = np.r_[trip_time[1:],0]
-
-        gap_arrivals = dir_arrivals.copy()
-        gap_arrivals['NT'] = new_trip
-
-        new_trip_1 = np.r_[new_trip[1:],False]
-        gap_arrivals['NT1'] = new_trip_1
-
-        gap_arrivals['TT'] = trip_time
-        gap_arrivals['TT_1'] = trip_time_1
-        gap_arrivals['DWELL'] = gap_arrivals['DEPARTURE_TIME'].values - gap_arrivals['TIME'].values
-        gap_arrivals = gap_arrivals[((trip_time > 1800) & (~new_trip)) | ((trip_time_1 > 1800) & (~new_trip_1))]
-
-        if not gap_arrivals.empty:
-            print(gap_arrivals)
-        '''
-
-        start_trip = trip_id[-1] + 1
-
-        return dir_arrivals
-
     def get_arrivals_for_vehicle_direction(
         dir_arrivals: pd.DataFrame,
         vehicle_id: str,
@@ -479,10 +426,18 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         bus: pd.DataFrame,
         route_config: routeconfig.RouteConfig
     ) -> pd.DataFrame:
-        dir_arrivals = get_arrivals_with_ascending_stop_index(dir_arrivals)
+
+        nonlocal start_trip
+
+        debug = False #vehicle_id == 'S005' and direction_id == '0' # and obs_group == 1
+
+        if debug:
+            print(f"vehicle_id = {vehicle_id}, direction_id = {direction_id}, obs_group = {obs_group}")
+
+        dir_info = route_config.get_direction_info(direction_id)
+
+        dir_arrivals, start_trip = get_arrivals_with_ascending_stop_index(dir_arrivals, dir_info, start_trip, debug=debug)
         dir_arrivals = add_missing_arrivals_for_vehicle_direction(dir_arrivals, vehicle_id, direction_id, bus, route_config)
-        dir_arrivals = filter_duplicates(dir_arrivals)
-        dir_arrivals = set_trip(dir_arrivals)
 
         return dir_arrivals
 
@@ -504,101 +459,396 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
         print(f' adjacent stop times median={diff_quantiles[0]} 90%={diff_quantiles[1]} max={diff_quantiles[2]}')
     '''
 
-    return arrivals.sort_values('TIME'), start_trip
+    return arrivals.sort_values('TIME')
 
-def filter_duplicates(dir_arrivals):
-    # If there are two consecutive arrivals for the same vehicle at the same stop,
-    # remove whichever arrival has the larger distance.
+class StopSequence:
+    # helper used by get_arrivals_with_ascending_stop_index,
+    # representing a possible subset of the rows in the dir_arrivals data frame
+    # associated with one "trip".
 
-    stop_index_values = dir_arrivals['STOP_INDEX'].values
-    if len(stop_index_values) == 0:
-        return dir_arrivals
+    def __init__(self):
+        self.last_stop_index = None
+        self.last_departure_time = None
+        self.num_loops = 0
+        self.stop_indexes = []
+        self.row_indexes = []
 
-    stop_index_diff = np.diff(stop_index_values, prepend=-999999)
+    def append(self, row_index, stop_index, departure_time):
+        if self.last_stop_index is not None and stop_index < self.last_stop_index:
+            self.num_loops += 1
 
-    prev_is_duplicate = stop_index_diff == 0
+        self.last_stop_index = stop_index
+        self.last_departure_time = departure_time
+        self.stop_indexes.append(stop_index)
+        self.row_indexes.append(row_index)
 
-    if not np.any(prev_is_duplicate):
-        return dir_arrivals
+    def copy(self):
+        other = StopSequence()
+        other.last_stop_index = self.last_stop_index
+        other.last_departure_time = self.last_departure_time
+        other.stop_indexes = self.stop_indexes.copy()
+        other.row_indexes = self.row_indexes.copy()
+        other.num_loops = self.num_loops
+        return other
 
-    dist_values = dir_arrivals['DIST'].values
-
-    worse_than_prev = np.diff(dist_values, prepend=-1) > 0
-
-    worse_than_next = np.logical_not(np.r_[worse_than_prev[1:], True])
-    next_is_duplicate = np.r_[prev_is_duplicate[1:], False]
-
-    # create a boolean array with the indexes of the arrivals to remove:
-    # where the previous arrival has the same STOP_INDEX and where this arrival has a larger distance than the previous one,
-    # or where the next arrival has the same STOP_INDEX and where this arrival has a larger distance than the next one
-
-    worse_duplicates = np.logical_or(
-        np.logical_and(
-            prev_is_duplicate,
-            worse_than_prev
-        ),
-        np.logical_and(
-            next_is_duplicate,
-            worse_than_next
-        )
-    )
-
-    #dir_arrivals['prev_duplicate_stop'] = prev_duplicate_stop
-    #dir_arrivals['worse_than_prev'] = worse_than_prev
-    #dir_arrivals['next_duplicate_stop'] = next_duplicate_stop
-    #dir_arrivals['worse_than_next'] = worse_than_next
-    #print(dir_arrivals[np.logical_or(prev_is_duplicate, next_is_duplicate)])
-    #print(dir_arrivals[worse_duplicates])
-
-    return dir_arrivals[np.logical_not(worse_duplicates)]
-
-
-def get_arrivals_with_ascending_stop_index(dir_arrivals: pd.DataFrame) -> pd.DataFrame:
-    # only include arrivals for stops where STOP_INDEX is increasing over time
-    # for 3 stops visited consecutively in the same direction (either looking back at previous 2 stops,
-    # looking ahead at next 2 stops, or looking at previous and next stop).
-    # this is needed because the direction reported on Nextbus is sometimes
-    # not the actual direction the bus is going :(
-    # note: assumes route has at least 3 stops
+def get_arrivals_with_ascending_stop_index(
+    dir_arrivals: pd.DataFrame,
+    dir_info: routeconfig.DirectionInfo,
+    start_trip: int,
+    debug=False
+) -> pd.DataFrame:
+    # Given a data frame containing all "possible" arrivals
+    # for one vehicle in one direction (sorted by arrival time),
+    # returns a subset of rows in that data frame,
+    # where arrivals are grouped into trips with a unique trip ID,
+    # and each trip contains arrivals where the stop_index is ascending over time.
+    #
+    # The 'TRIP' column in the returned data frame is set to the unique trip ID, starting
+    # at `start_trip`.
+    #
+    # For routes with 2 directions, the given data frame of possible arrivals contains
+    # arrivals for stops in both directions. However, the stop_index values will typically be decreasing
+    # over time for stops that are not in the direction that the vehicle is actually traveling.
+    #
+    # For twisty routes where a single direction doubles back on itself (or nearly so), such as
+    # SF Muni's 39-Coit, 36-Teresita, 30-Stockton, 9-San Bruno, etc., it is possible that there may
+    # be out-of-order stop indexes in the "possible" arrivals, e.g. 1,2,6,3,7,4,5,6,3,4,7,8,9.
+    # In this case the "best" trip has the stop indexes 1,2,3,4,5,6,7,8,9. However, if the algorithm
+    # only used the first ascending index it found, it would only find 1,2,6,7,8,9 and miss indexes 3,4,5.
+    #
+    # In order to handle these cases, the algorithm keeps track of multiple possible sequences
+    # as it loops through the possible arrivals. To avoid needing to keep track of a large number of
+    # possible sequences, it drops possible sequences if they are strictly worse than another possible sequence.
+    # A sequence is worse than another sequence, for example,
+    # if it is shorter than another sequence and ends in the same stop_index;
+    # or if it is the same size as another sequence but ends in a larger stop_index.
+    #
+    # When all possible sequences end in a terminal, or if the algorithm processes several rows
+    # without being able to extend any of the possible sequences with an ascending stop index,
+    # it assumes that the trip has ended and chooses the longest possible sequence as the "best".
+    #
+    # After it finds the end of a trip, it resets the possible sequences and continues processing
+    # possible arrivals where the previous sequence ended.
 
     stop_index_values = dir_arrivals['STOP_INDEX'].values
 
     num_arrivals = len(stop_index_values)
     if num_arrivals < 2:
-        return make_arrivals_frame([])
+        return make_arrivals_frame([]), start_trip
 
-    padded_stop_index_values = np.r_[999999, 999999, stop_index_values, -999999, -999999]
+    arrival_time_values = dir_arrivals['TIME'].values
+    departure_time_values = dir_arrivals['DEPARTURE_TIME'].values
+    dist_values = dir_arrivals['DIST'].values
 
-    padded_stop_index_ascending = np.diff(padded_stop_index_values) > 0
+    if debug:
+        #dir_arrivals = dir_arrivals.copy()
+        #dir_arrivals['ROW_INDEX'] = np.arange(0, num_arrivals)
 
-    # previous stop index > previous previous stop index
-    stop_index_prev2_ascending = padded_stop_index_ascending[:-3]
+        with pd.option_context("display.max_rows", None):
+            print(dir_arrivals)
 
-    # current stop index > previous stop index
-    stop_index_prev_ascending = padded_stop_index_ascending[1:-2]
+    next_sequence_key = None
+    possible_sequences = None
 
-    # next stop index > current stop index
-    stop_index_next_ascending = padded_stop_index_ascending[2:-1]
+    next_trip = start_trip
 
-    # next next stop index > next stop index
-    stop_index_next2_ascending = padded_stop_index_ascending[3:]
+    def reset_possible_sequences():
+        nonlocal possible_sequences, next_sequence_key
 
-    return dir_arrivals[np.logical_or(
-        np.logical_or(
-            np.logical_and(
-                stop_index_prev_ascending,
-                stop_index_prev2_ascending,
-            ),
-            np.logical_and(
-                stop_index_next_ascending,
-                stop_index_next2_ascending
-            )
-        ),
-        np.logical_and(
-            stop_index_prev_ascending,
-            stop_index_next_ascending,
-        )
-    )]
+        possible_sequences = {
+            0: StopSequence()
+        }
+        next_sequence_key = 1
+
+    reset_possible_sequences()
+
+    is_loop = dir_info.is_loop()
+
+    def print_sequences():
+        for sequence_key, sequence in possible_sequences.items():
+            print(f'{sequence_key}: {sequence.stop_indexes} {sequence.row_indexes}{f" ({sequence.num_loops} loops)" if is_loop else ""}')
+        print('-')
+
+    all_row_indexes = []
+    trip_ids = []
+
+    row_index = 0
+
+    dir_stop_ids = dir_info.get_stop_ids()
+    num_stops = len(dir_stop_ids)
+    terminal_stop_index = num_stops if is_loop else (num_stops - 1) # never reaches terminal_stop_index for loop routes
+
+    min_trip_length = min(3, num_stops)
+    max_small_gap_index_diff = 5
+    max_large_gap_seconds = 300
+    num_non_ascending_stop_indexes = 0
+
+    def finish_trip():
+        nonlocal row_index, next_trip, num_non_ascending_stop_indexes
+
+        longest_sequence = None
+        for sequence in possible_sequences.values():
+            if longest_sequence is None:
+                if len(sequence.row_indexes) > 0:
+                    longest_sequence = sequence
+            else:
+                len_diff = len(sequence.row_indexes) - len(longest_sequence.row_indexes)
+
+                # if multiple possible sequences have the same number of stops, choose the one that finishes first
+                if len_diff > 0 or (len_diff == 0 and sequence.row_indexes[-1] < longest_sequence.row_indexes[-1]):
+                    longest_sequence = sequence
+
+        num_non_ascending_stop_indexes = 0
+
+        if longest_sequence is not None:
+
+            if len(longest_sequence.row_indexes) >= min_trip_length:
+
+                trip_row_indexes = longest_sequence.row_indexes
+
+                trip_len = len(trip_row_indexes)
+
+                if debug:
+                    print(f'trip {next_trip}:')
+                    print(f'{longest_sequence.stop_indexes}')
+                    print(f'{longest_sequence.row_indexes}')
+                    print('---')
+
+                all_row_indexes.extend(trip_row_indexes)
+
+                for i in range(trip_len):
+                    trip_ids.append(next_trip)
+
+                next_trip += 1
+
+            # loop may have continued a few rows past the end of the longest sequence.
+            # in this case we back up the loop so it doesn't skip any rows
+            # (row_index will be incremented once after this)
+            row_index = longest_sequence.row_indexes[-1]
+
+            reset_possible_sequences()
+
+    while row_index < num_arrivals:
+        stop_index = stop_index_values[row_index]
+        arrival_time = arrival_time_values[row_index]
+        departure_time = departure_time_values[row_index]
+
+        if debug:
+            print(f'row_index = {row_index} stop_index = {stop_index}')
+
+        new_sequences = {}
+        updated_sequences = False
+
+        for sequence_key, sequence in possible_sequences.items():
+            last_stop_index = sequence.last_stop_index
+
+            if last_stop_index is None:
+                updated_sequences = True
+                if stop_index == 0 or is_loop:
+                    sequence.append(row_index, stop_index, departure_time)
+                else:
+                    # if the first stop_index is not zero, leave an empty possible sequence
+                    # which can still accept smaller stop indexes.
+                    alt_sequence = sequence.copy()
+                    new_sequences[next_sequence_key] = alt_sequence
+                    next_sequence_key += 1
+                    sequence.append(row_index, stop_index, departure_time)
+            else:
+                index_diff = stop_index - last_stop_index
+                trip_time = arrival_time - sequence.last_departure_time
+
+                if is_loop and index_diff < 0:
+                    # make sure that index_diff is non-negative for loops so that
+                    # we continue appending to the same trip after completing a loop
+                    index_diff = (index_diff + num_stops) % num_stops
+
+                if trip_time <= 0:
+                    # arrival times within in a trip must be strictly ascending,
+                    # otherwise it wouldn't be possible to ensure the correct sort order
+                    # when displaying arrivals for a vehicle in order
+                    pass
+                elif index_diff == 1:
+                    # if stops appear in sequential order, just append to this sequence
+                    # without creating any more possibilities.
+                    updated_sequences = True
+                    sequence.append(row_index, stop_index, departure_time)
+                elif index_diff > 1 and (index_diff <= max_small_gap_index_diff or trip_time < max_large_gap_seconds):
+                    # if this arrival skipped one or more stops, create possibilities that
+                    # contain or don't contain this arrival
+                    updated_sequences = True
+                    alt_sequence = sequence.copy()
+                    new_sequences[next_sequence_key] = alt_sequence
+                    next_sequence_key += 1
+                    sequence.append(row_index, stop_index, departure_time)
+                elif index_diff == 0:
+                    # If there are two consecutive arrivals for the same vehicle at the same stop,
+                    # use the arrival with the smaller distance.
+                    last_row_index = sequence.row_indexes[-1]
+                    if dist_values[row_index] < dist_values[last_row_index]:
+                        sequence.row_indexes[-1] = row_index
+                        sequence.last_departure_time = departure_time
+                        updated_sequences = True
+                        if debug:
+                            print(f"stop_index = {stop_index} dist[{row_index}] = {dist_values[row_index]}")
+
+        if not updated_sequences:
+            num_non_ascending_stop_indexes += 1
+
+            if debug:
+                print(f'no updated sequences, num_non_ascending_stop_indexes = {num_non_ascending_stop_indexes}')
+
+            # as a heuristic that seems to work in practice without making things too slow,
+            # finish the current trip if 4 rows are processed without being able to extend any possible sequences.
+            # (SF Muni's 39-Coit sometimes has 3 rows with non-ascending stop indexes before another ascending stop index.)
+            if num_non_ascending_stop_indexes >= 4:
+                finish_trip()
+        else:
+            num_non_ascending_stop_indexes = 0
+
+            possible_sequences.update(new_sequences)
+
+            if len(possible_sequences) > 1:
+                # If there are multiple possible sequences, remove sequences that appear to be worse than
+                # other sequences in order to avoid creating a large number of possible sequences
+
+                if is_loop:
+                    # If this is a loop route, remove sequences with extra loops
+                    # (can happen in certain geometries due to passing stops out of order, like TriMet route 50)
+                    min_loops_by_stop_index = {}
+                    for sequence_key, sequence in possible_sequences.items():
+                        num_loops = sequence.num_loops
+                        last_stop_index = sequence.last_stop_index
+
+                        if last_stop_index not in min_loops_by_stop_index:
+                            min_loops_by_stop_index[last_stop_index] = num_loops
+                        else:
+                            best_num_loops = min_loops_by_stop_index[last_stop_index]
+                            if num_loops < best_num_loops:
+                                min_loops_by_stop_index[last_stop_index] = num_loops
+
+                    extra_loop_sequence_keys = []
+                    for sequence_key, sequence in possible_sequences.items():
+                        if min_loops_by_stop_index[sequence.last_stop_index] < sequence.num_loops:
+                            extra_loop_sequence_keys.append(sequence_key)
+
+                    for sequence_key in extra_loop_sequence_keys:
+                        del possible_sequences[sequence_key]
+
+                terminal_sequence_keys = []
+
+                longest_sequence_len = 0
+                for sequence in possible_sequences.values():
+                    sequence_len = len(sequence.row_indexes)
+                    if sequence_len > longest_sequence_len:
+                        longest_sequence_len = sequence_len
+
+                # Construct a dict of sequence length => key in the `possible_sequences` dict
+                # for the sequence of that length (or longer) with the smallest last_stop_index value.
+                # These are the keys of the sequences we want to keep.
+                #
+                # Suppose the possible arrivals have the stop indexes [1,3,5] and the
+                # possible sequences are:
+                #
+                # 0: [1, 3, 5]
+                # 2: [1, 5]
+                # 3: [5]
+                # 4: [1, 3]
+                # 5: [1]
+                # 6: []
+                #
+                # There is only one sequence of length 3 or more, with key 0.
+                # There are two sequences of length 2 or more, with keys 0, 2, and 4 (key 4 has the smallest last stop index).
+                # There are two sequences of length 1 or more, with keys 0, 2, 3, and 5 (key 5 has the smallest last stop index).
+                # There is one sequence of length 0, with key 6.
+                #
+                # smallest_last_index_keys_by_length should end up like this:
+                # {0: 6, 1: 5, 2: 4, 3: 0}
+                #
+                # This indicates that we can remove the sequences 2 and 3 (which are not in the values)
+                # since the sequences [5] and [1,5] are guaranteed to be worse than the sequence [1,3,5].
+                #
+                # The sequence [1,3] is kept because we might see 4,5 in the future.
+                # The sequence [1] is kept because we might see 2,3,4,5 in the future.
+                # The sequence [] is kept because we might see 0,1,2,3,4,5 in the future.
+
+                smallest_last_index_keys_by_length = {}
+
+                # as a heuristic to avoid losing long but incomplete sequences (e.g. missing stop index 0),
+                # avoid creating new sequences that are much shorter than the best sequence
+                min_sequence_len = max(0, longest_sequence_len - 3)
+
+                for sequence_key, sequence in possible_sequences.items():
+                    sequence_len = len(sequence.row_indexes)
+
+                    if sequence_len < min_sequence_len:
+                        continue
+
+                    last_stop_index = sequence.last_stop_index
+
+                    if last_stop_index == terminal_stop_index:
+                        terminal_sequence_keys.append(sequence_key)
+
+                    if sequence_len == 0:
+                        smallest_last_index_keys_by_length[sequence_len] = sequence_key
+                    else:
+                        for seq_len in range(min_sequence_len, sequence_len+1):
+                            if seq_len not in smallest_last_index_keys_by_length:
+                                smallest_last_index_keys_by_length[seq_len] = sequence_key
+                            else:
+                                smallest_last_index_key = smallest_last_index_keys_by_length[seq_len]
+                                best_sequence = possible_sequences[smallest_last_index_key]
+
+                                # For loop routes, different sequences may contain a different number of loops.
+                                # In this case, the one with the smallest last_stop_index for a particular length
+                                # isn't necessarily the best one, since it may contain more loops than another sequence.
+                                # To handle this case, add the total number of stops in each loop for each sequence.
+                                total_stops = num_stops * sequence.num_loops + last_stop_index
+                                best_total_stops = num_stops * best_sequence.num_loops + best_sequence.last_stop_index
+
+                                if total_stops < best_total_stops:
+                                    smallest_last_index_keys_by_length[seq_len] = sequence_key
+
+                unneded_sequence_keys = set(possible_sequences.keys()) - set(smallest_last_index_keys_by_length.values())
+
+                if debug:
+                    print(smallest_last_index_keys_by_length)
+
+                # if a possible sequence ends in a terminal, keep it as a possibility even if
+                # there is another sequence of the same length that ends before the terminal. this is needed to
+                # avoid losing the terminal sequence if we only see the second-to-last stop *after* seeing the terminal
+                # (which happens sometimes with with the 39-Coit at Coit Tower)
+                if len(terminal_sequence_keys) > 0:
+                    unneded_sequence_keys = unneded_sequence_keys - set(terminal_sequence_keys)
+
+                for sequence_key in unneded_sequence_keys:
+                    del possible_sequences[sequence_key]
+
+            all_terminals = True
+            for sequence in possible_sequences.values():
+                if sequence.last_stop_index is None or sequence.last_stop_index < terminal_stop_index:
+                    all_terminals = False
+                    break
+
+            # if all possible sequences end in a terminal, choose the best one as the actual trip.
+            if all_terminals:
+                finish_trip()
+
+        if debug:
+            print_sequences()
+
+        row_index += 1
+
+    finish_trip()
+
+    ascending_dir_arrivals = dir_arrivals.iloc[all_row_indexes].copy()
+
+    ascending_dir_arrivals['TRIP'] = trip_ids
+
+    if debug:
+        with pd.option_context("display.max_rows", None):
+            print(ascending_dir_arrivals)
+
+    return ascending_dir_arrivals, next_trip
 
 def add_missing_arrivals_for_vehicle_direction(
     dir_arrivals: pd.DataFrame,
@@ -633,6 +883,7 @@ def add_missing_arrivals_for_vehicle_direction(
     # only fix gaps of 1 or 2 stops, with less than a few minutes gap
     prev_departure_time_values = np.r_[0, dir_arrivals['DEPARTURE_TIME'].values[:-1]]
     time_values = dir_arrivals['TIME'].values
+
     gap_time_values = time_values - prev_departure_time_values
 
     fixable_gaps_values = np.logical_and(
@@ -654,10 +905,16 @@ def add_missing_arrivals_for_vehicle_direction(
 
     all_arrivals = [dir_arrivals]
 
+    row_index_after_prev_gap_arrival = 0
+    num_gap_arrivals = 0
+    new_row_indexes = []
+
     fixable_gap_indexes = np.nonzero(fixable_gaps_values)[0]
 
     all_time_values = bus['TIME'].values
     num_all_time_values = len(all_time_values)
+
+    trip_values = dir_arrivals['TRIP'].values
 
     for i in fixable_gap_indexes:
         next_arrival_time = time_values[i]
@@ -712,9 +969,17 @@ def add_missing_arrivals_for_vehicle_direction(
 
             prev_gap_arrival_time = gap_arrival_times[0]
 
+            gap_arrival['TRIP'] = trip_values[i]
+
             all_arrivals.append(gap_arrival)
+            new_row_indexes.extend(range(row_index_after_prev_gap_arrival, i))
+            new_row_indexes.append(num_arrivals + num_gap_arrivals)
+            row_index_after_prev_gap_arrival = i
+            num_gap_arrivals += 1
 
     if len(all_arrivals) == 1:
         return dir_arrivals
 
-    return pd.concat(all_arrivals).sort_values('TIME', axis=0)
+    new_row_indexes.extend(range(row_index_after_prev_gap_arrival, num_arrivals))
+
+    return pd.concat(all_arrivals, sort=False).iloc[new_row_indexes]

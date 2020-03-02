@@ -1,4 +1,6 @@
 import React from 'react';
+import { NavLink } from 'redux-first-router-link';
+import { connect } from 'react-redux';
 import Drawer from '@material-ui/core/Drawer';
 import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
@@ -6,12 +8,19 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import MenuIcon from '@material-ui/icons/Menu';
-import { NavLink } from 'redux-first-router-link';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
-import HomeIcon from '@material-ui/icons/Home';
+import MapRoundedIcon from '@material-ui/icons/MapRounded';
+import TimelineRoundedIcon from '@material-ui/icons/TimelineRounded';
+import CodeRoundedIcon from '@material-ui/icons/CodeRounded';
+import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
+import Divider from '@material-ui/core/Divider';
+import { useTheme } from '@material-ui/core/styles';
+import { components } from '../reducers/page';
 
-function SidebarButton() {
+function SidebarButton(props) {
+  const currentPage = props.currentPage;
   const [drawerOpen, setDrawer] = React.useState(false);
+  const theme = useTheme();
 
   function toggleDrawer() {
     setDrawer(!drawerOpen);
@@ -19,9 +28,16 @@ function SidebarButton() {
 
   const activeStyle = {
     fontWeight: 'bold',
-    color: '#3f51b5',
+    color: theme.palette.primary.dark,
     textDecoration: 'none',
     cursor: 'default',
+  };
+
+  const inactiveStyle = {
+    fontWeight: 'normal',
+    color: '#000000',
+    textDecoration: 'none',
+    cursor: 'pointer',
   };
 
   return (
@@ -34,7 +50,7 @@ function SidebarButton() {
       >
         <MenuIcon />
       </IconButton>
-      <Drawer variant="persistent" anchor="left" open={drawerOpen}>
+      <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer}>
         <div style={{ width: 250 }}>
           <IconButton
             color="inherit"
@@ -42,51 +58,72 @@ function SidebarButton() {
             onClick={toggleDrawer}
             edge="start"
           >
-            <ChevronLeftIcon />
+            <ChevronLeftIcon color="primary" />
           </IconButton>
           <List>
-            <ListItem>
-              <NavLink
-                to={{ type: 'DASHBOARD' }}
-                activeStyle={activeStyle}
-                exact
-                strict
-              >
-                Dashboard
-              </NavLink>
-            </ListItem>
-            <ListItem>
-              <NavLink
-                to={{ type: 'ISOCHRONE' }}
-                activeStyle={activeStyle}
-                exact
-                strict
-              >
-                Isochrone
-              </NavLink>
-            </ListItem>
-            <ListItem>
-              <NavLink
-                to={{ type: 'DATADIAGNOSTIC' }}
-                activeStyle={activeStyle}
-                exact
-                strict
-              >
-                .{/* Semi-hidden data diagnostic link for developers */}
-              </NavLink>
-            </ListItem>
-          </List>
-          {/* Footer content */}
-          <List style={{
-            position: "absolute",
-            width: "100%",
-            bottom: 0,
-          }} >
-            <ListItem button component="a" href="https://sites.google.com/view/opentransit" target="_blank">
+            <ListItem
+              component={NavLink}
+              to={{
+                type: 'DASHBOARD',
+                query: props.currentLocation.query,
+              }}
+              activeStyle={activeStyle}
+              exact
+              style={inactiveStyle}
+              button
+              selected={currentPage === components.DASHBOARD}
+            >
               <ListItemIcon>
-                <HomeIcon />
+                <MapRoundedIcon color="primary" />
               </ListItemIcon>
-              <ListItemText primary="About" />
+              <ListItemText primary="Dashboard" />
+            </ListItem>
+            <ListItem
+              component={NavLink}
+              to={{
+                type: 'ISOCHRONE',
+                query: props.currentLocation.query,
+              }}
+              activeStyle={activeStyle}
+              exact
+              style={inactiveStyle}
+              button
+              selected={currentPage === components.ISOCHRONE}
+            >
+              <ListItemIcon>
+                <TimelineRoundedIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="Isochrone" />
+            </ListItem>
+            <ListItem
+              component={NavLink}
+              to={{
+                type: 'DATADIAGNOSTIC',
+                query: props.currentLocation.query,
+              }}
+              activeStyle={activeStyle}
+              exact
+              style={inactiveStyle}
+              button
+              selected={currentPage === components.DATADIAGNOSTIC}
+            >
+              <ListItemIcon>
+                <CodeRoundedIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="Developer Tools" />
+            </ListItem>
+            <Divider light />
+            <ListItem
+              component="a"
+              href="https://sites.google.com/view/opentransit"
+              target="_blank"
+              onClick={toggleDrawer}
+              button
+            >
+              <ListItemIcon>
+                <InfoRoundedIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="About" style={inactiveStyle} />
             </ListItem>
           </List>
         </div>
@@ -95,4 +132,9 @@ function SidebarButton() {
   );
 }
 
-export default SidebarButton;
+const mapStateToProps = state => ({
+  currentPage: state.page,
+  currentLocation: state.location,
+});
+
+export default connect(mapStateToProps)(SidebarButton);

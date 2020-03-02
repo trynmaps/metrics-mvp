@@ -1,14 +1,21 @@
 import React, { Fragment, useEffect } from 'react';
-import Box from '@material-ui/core/Box';
+
+import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import IconButton from '@material-ui/core/IconButton';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import Link, { NavLink } from 'redux-first-router-link';
+import NavigateNextIcon from '@material-ui/icons/NavigateNext';
+import Breadcrumbs from '@material-ui/core/Breadcrumbs';
+import Typography from '@material-ui/core/Typography';
 
 import { connect } from 'react-redux';
+import AppBarLogo from '../components/AppBarLogo';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
-import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { getAgency } from '../config';
@@ -17,25 +24,107 @@ import RouteSummary from '../components/RouteSummary';
 
 import { fetchRoutes } from '../actions';
 
+const useStyles = makeStyles(theme => ({
+  breadCrumbStyling: {
+    fontWeight: 'bold',
+    textTransform: 'initial',
+    display: 'inline',
+  },
+  darkLinks: {
+    color: theme.palette.primary.dark,
+  },
+  breadCrumbsWrapper: {
+    padding: '1%',
+    paddingRight: '0',
+  },
+}));
+
 function RouteScreen(props) {
   const {
-    graphData,
-    graphError,
+    tripMetrics,
+    tripMetricsLoading,
+    tripMetricsError,
     graphParams,
-    intervalData,
-    intervalError,
     routes,
-    myFetchRoutes,
   } = props;
 
+  const myFetchRoutes = props.fetchRoutes;
   const agencyId = graphParams && graphParams.agencyId;
+
+  useEffect(() => {
+    if (!routes && agencyId) {
+      myFetchRoutes({ agencyId });
+    }
+  }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
  
   const agency = getAgency(agencyId);
 
+  const backArrowStyle = { color: '#ffffff' };
+
+  const breadCrumbs = (paths, classes) => {
+    const { breadCrumbStyling, darkLinks } = classes;
+
+    let link = {
+      type: 'ROUTESCREEN',
+      query: props.query,
+    };
+    const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
+    const labels = (param, title) => {
+      const specialLabels = {};
+      specialLabels.startStopId = 'from ';
+      specialLabels.endStopId = 'to ';
+      return {
+        label: title,
+        specialLabel: specialLabels[param] ? specialLabels[param] : null,
+      };
+    };
+    return paths
+      .filter(path => {
+        // return paths with non null values
+        return !!path;
+      })
+      .map((path, index) => {
+        const hasNextValue = paths[index + 1];
+        const param = params[index];
+        const payload = {};
+        payload[param] = path.id;
+        const updatedPayload = Object.assign({ ...link.payload }, payload);
+        link = Object.assign({ ...link }, { payload: updatedPayload });
+        const { label, specialLabel } = labels(param, path.title);
+        return hasNextValue ? (
+          <Typography
+            variant="subtitle1"
+            key={label}
+            className={`${breadCrumbStyling} ${darkLinks}`}
+          >
+            {' '}
+            {specialLabel}{' '}
+            <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
+              {' '}
+              {label}{' '}
+            </Link>{' '}
+          </Typography>
+        ) : (
+          <Typography
+            variant="subtitle1"
+            key={label}
+            className={breadCrumbStyling}
+          >
+            {' '}
+            {specialLabel} {label}{' '}
+          </Typography>
+        );
+      });
+  };
+
   const selectedRoute =
     routes && graphParams && graphParams.routeId
-      && routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId));
+      ? routes.find(
+          route =>
+            route.id === graphParams.routeId && route.agencyId === agencyId,
+        )
+      : null;
 
   const direction =
     selectedRoute && graphParams.directionId
@@ -54,25 +143,53 @@ function RouteScreen(props) {
         + (startStopInfo ?  ` (from ${startStopInfo.title}` : '')
         + (endStopInfo ? ` to ${endStopInfo.title})` : '');
 
+  const classes = useStyles();
+  const { breadCrumbStyling, breadCrumbsWrapper } = classes;
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
-          <SidebarButton />
-          <div className="page-title">
-            {agency ? agency.title : null}
-          </div>
-          <div style={{flexGrow: 1}}/>
-          <DateTimePanel dateRangeSupported={graphData || graphError}/>
+          <NavLink to={{ type: 'DASHBOARD', query: props.query }} exact strict>
+            <IconButton aria-label="Back to dashboard" edge="start">
+              <ArrowBackIcon style={backArrowStyle} />
+            </IconButton>
+          </NavLink>
+          <AppBarLogo />
+          <div className="page-title">{agency ? agency.title : null}</div>
+          <div style={{ flexGrow: 1 }} />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
-      
-      <Paper>
-        <Box p={2} className="page-title">            
-          {title}
-        </Box>
+      <Paper className={breadCrumbsWrapper}>
+        <Breadcrumbs
+          separator={
+            <NavigateNextIcon
+              fontSize="default"
+              className={breadCrumbStyling}
+            />
+          }
+        >
+          {breadCrumbs(
+            [
+              selectedRoute,
+              direction,
+              startStopInfo
+                ? Object.assign(
+                    { ...startStopInfo },
+                    { id: graphParams.startStopId },
+                  )
+                : null,
+              endStopInfo
+                ? Object.assign(
+                    { ...endStopInfo },
+                    { id: graphParams.endStopInfo },
+                  )
+                : null,
+            ],
+            classes,
+          )}
+        </Breadcrumbs>
       </Paper>
-
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
           <MapStops routes={routes} />
@@ -80,15 +197,15 @@ function RouteScreen(props) {
         <Grid item xs={12} sm={6}>
           {/* control panel and map are full width for 640px windows or smaller, else half width */}
           <ControlPanel routes={routes} />
-          {graphData ||
-          graphError /* if we have graph data or an error, then show the info component */ ? (
+          {tripMetrics ||
+          tripMetricsError ||
+          tripMetricsLoading /* if we have trip metrics or an error, then show the info component */ ? (
             <Info
-              graphData={graphData}
-              graphError={graphError}
+              tripMetrics={tripMetrics}
+              tripMetricsError={tripMetricsError}
+              tripMetricsLoading={tripMetricsLoading}
               graphParams={graphParams}
               routes={routes}
-              intervalData={intervalData}
-              intervalError={intervalError}
             />
           ) : (
             /* if no graph data, show the info summary component */
@@ -101,16 +218,16 @@ function RouteScreen(props) {
 }
 
 const mapStateToProps = state => ({
-  graphData: state.fetchGraph.graphData,
-  routes: state.routes.routes,
-  graphError: state.fetchGraph.err,
-  intervalData: state.fetchGraph.intervalData,
-  intervalError: state.fetchGraph.intervalErr,
-  graphParams: state.routes.graphParams,
+  tripMetrics: state.tripMetrics.data,
+  tripMetricsError: state.tripMetrics.error,
+  tripMetricsLoading: state.loading.TRIP_METRICS,
+  routes: state.routes.data,
+  graphParams: state.graphParams,
+  query: state.location.query,
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: params => dispatch(fetchRoutes(params)),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
 export default connect(

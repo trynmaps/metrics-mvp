@@ -1,16 +1,17 @@
-from datetime import date, datetime, timedelta
+from datetime import date
+import time
 import re
 import os
 import json
 import requests
 import pandas as pd
-from . import eclipses, util, config
+from . import util, config
 import boto3
 from pathlib import Path
 import gzip
 import numpy as np
 
-DefaultVersion = 'v4b'
+DefaultVersion = 'v4c'
 
 class ArrivalHistory:
     def __init__(self, agency_id: str, route_id, stops_data, start_time = None, end_time = None, version = DefaultVersion):
@@ -21,7 +22,7 @@ class ArrivalHistory:
         self.stops_data = stops_data
         self.version = version
 
-    def get_data_frame(self, stop_id = None, vehicle_id = None, direction_id = None,
+    def get_data_frame(self, direction_id = None, stop_id = None, vehicle_id = None,
             start_time = None, end_time = None) -> pd.DataFrame:
         '''
         Returns a data frame for a subset of this arrival history, after filtering by the provided parameters:
@@ -170,9 +171,12 @@ def get_by_date(agency_id: str, route_id: str, d: date, version = DefaultVersion
     cache_path = get_cache_path(agency_id, route_id, d, version)
 
     try:
-        with open(cache_path, "r") as f:
-            text = f.read()
-            return ArrivalHistory.from_data(json.loads(text))
+        mtime = os.stat(cache_path).st_mtime
+        now = time.time()
+        if now - mtime < 86400:
+            with open(cache_path, "r") as f:
+                text = f.read()
+                return ArrivalHistory.from_data(json.loads(text))
     except FileNotFoundError as err:
         pass
 

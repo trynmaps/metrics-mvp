@@ -1,15 +1,11 @@
-import pandas as pd
 import numpy as np
-from . import util, config
-from datetime import date
 import sys
-import re
-import requests
-from pathlib import Path
-import json
 
 def get_stats(time_values, start_time=None, end_time=None):
-    return WaitTimeStats(time_values, start_time, end_time)
+    return IntervalWaitTimeStats(time_values, start_time, end_time)
+
+def combine_stats(interval_stats_arr):
+    return MultiIntervalWaitTimeStats(interval_stats_arr)
 
 # WaitTimeStats allows computing statistics about wait times within an interval,
 # (such as averages, percentiles, and histograms),
@@ -100,6 +96,88 @@ def get_stats(time_values, start_time=None, end_time=None):
 # Note: all returned statistics are in minutes (not seconds)
 #
 class WaitTimeStats:
+    def get_cumulative_distribution(self):
+        raise NotImplementedError
+
+    def get_average(self):
+        raise NotImplementedError
+
+    def get_sampled_waits(self, sample_sec=60):
+        raise NotImplementedError
+
+    def get_quantiles(self, quantiles):
+        cdf_points = self.get_cumulative_distribution()
+        if cdf_points is None:
+            return None
+
+        cdf_domain, cdf_range = cdf_points.T
+
+        quantile_values = []
+
+        for quantile in quantiles:
+            segment_end_index = np.searchsorted(cdf_range, quantile)
+            if segment_end_index == 0:
+                quantile_values.append(cdf_domain[0])
+            else:
+                segment_start_index = segment_end_index - 1
+                # linear interpolation to find wait time where value of CDF = quantile
+                quantile_value = cdf_domain[segment_start_index] + \
+                    (quantile - cdf_range[segment_start_index]) / \
+                    (cdf_range[segment_end_index] - cdf_range[segment_start_index]) * \
+                    (cdf_domain[segment_end_index] - cdf_domain[segment_start_index])
+                quantile_values.append(quantile_value)
+
+        return np.array(quantile_values)
+
+    def get_quantile(self, quantile):
+        quantiles = self.get_quantiles([quantile])
+        if quantiles is None:
+            return None
+        return quantiles[0]
+
+    def get_percentiles(self, percentiles):
+        return self.get_quantiles(np.array(percentiles) / 100)
+
+    def get_percentile(self, percentile):
+        return self.get_quantile(percentile / 100)
+
+    def get_histogram(self, bins):
+        cdf_points = self.get_cumulative_distribution()
+        if cdf_points is None:
+            return None
+
+        cdf_domain, cdf_range = cdf_points.T
+
+        histogram = []
+        prev_cumulative_value = None
+        for bin_index, bin_value in enumerate(bins):
+            cumulative_value = evaluate_cdf(bin_value, cdf_domain, cdf_range)
+
+            if prev_cumulative_value is not None:
+                histogram.append(cumulative_value - prev_cumulative_value)
+
+            prev_cumulative_value = cumulative_value
+
+        return np.array(histogram)
+
+    def get_probability_less_than(self, wait_time):
+        cdf_points = self.get_cumulative_distribution()
+        if cdf_points is None:
+            return None
+
+        cdf_domain, cdf_range = cdf_points.T
+
+        return evaluate_cdf(wait_time, cdf_domain, cdf_range)
+
+    def get_probability_greater_than(self, wait_time):
+        prob_less = self.get_probability_less_than(wait_time)
+
+        if prob_less is None:
+            return None
+
+        return 1.0 - prob_less
+
+class IntervalWaitTimeStats(WaitTimeStats):
     def __init__(self, time_values, start_time = None, end_time = None):
         self.time_values = time_values
 
@@ -220,7 +298,7 @@ class WaitTimeStats:
                 num_occurrences_with_smaller_wait_time = num_wait_time_values - i
                 if end_wait_time is not None and wait_time <= end_wait_time:
                     # for wait times less than or equal to end_wait_time,
-                    # adjust num_occurrences_with_smaller_headway to avoid counting end_wait_time and end_wait_time + end_elapsed_time
+                    # adjust num_occurrences_with_smaller_wait_time to avoid counting end_wait_time and end_wait_time + end_elapsed_time
                     # otherwise, no adjustment needed
                     num_occurrences_with_smaller_wait_time -= 2
 
@@ -255,85 +333,6 @@ class WaitTimeStats:
 
         return self.cdf_points
 
-    def get_quantiles(self, quantiles):
-        cdf_points = self.get_cumulative_distribution()
-        if cdf_points is None:
-            return None
-
-        cdf_domain, cdf_range = cdf_points.T
-
-        quantile_values = []
-
-        for quantile in quantiles:
-            segment_end_index = np.searchsorted(cdf_range, quantile)
-            if segment_end_index == 0:
-                quantile_values.append(cdf_domain[0])
-            else:
-                segment_start_index = segment_end_index - 1
-                # linear interpolation to find wait time where value of CDF = quantile
-                quantile_value = cdf_domain[segment_start_index] + \
-                    (quantile - cdf_range[segment_start_index]) / \
-                    (cdf_range[segment_end_index] - cdf_range[segment_start_index]) * \
-                    (cdf_domain[segment_end_index] - cdf_domain[segment_start_index])
-                quantile_values.append(quantile_value)
-
-        return np.array(quantile_values)
-
-    def get_percentiles(self, percentiles):
-        return self.get_quantiles(np.array(percentiles) / 100)
-
-    def get_histogram(self, bins):
-        cdf_points = self.get_cumulative_distribution()
-        if cdf_points is None:
-            return None
-
-        cdf_domain, cdf_range = cdf_points.T
-
-        histogram = []
-        prev_cumulative_value = None
-        for bin_index, bin_value in enumerate(bins):
-            cumulative_value = self._get_probability_less_than(bin_value, cdf_domain, cdf_range)
-
-            if prev_cumulative_value is not None:
-                histogram.append(cumulative_value - prev_cumulative_value)
-
-            prev_cumulative_value = cumulative_value
-
-        return np.array(histogram)
-
-    def get_probability_less_than(self, wait_time):
-        cdf_points = self.get_cumulative_distribution()
-        if cdf_points is None:
-            return None
-
-        cdf_domain, cdf_range = cdf_points.T
-
-        return self._get_probability_less_than(wait_time, cdf_domain, cdf_range)
-
-    def get_probability_greater_than(self, wait_time):
-        prob_less = self.get_probability_less_than(wait_time)
-
-        if prob_less is None:
-            return None
-
-        return 1.0 - prob_less
-
-    def _get_probability_less_than(self, wait_time, cdf_domain, cdf_range):
-        segment_end_index = np.searchsorted(cdf_domain, wait_time)
-
-        if segment_end_index >= len(cdf_domain):
-            return 1.0
-        elif segment_end_index == 0:
-            return 0.0
-        else:
-            segment_start_index = segment_end_index - 1
-
-            # linear interpolation to find value of CDF with wait time = bin_value
-            return cdf_range[segment_start_index] + \
-                (wait_time - cdf_domain[segment_start_index]) / \
-                (cdf_domain[segment_end_index] - cdf_domain[segment_start_index]) * \
-                (cdf_range[segment_end_index] - cdf_range[segment_start_index])
-
     def get_sampled_waits(self, sample_sec=60):
         if self.is_empty:
             return None
@@ -355,94 +354,96 @@ class WaitTimeStats:
 
         return waits[np.logical_not(np.isnan(waits))] / 60
 
-DefaultVersion = 'v1b'
+class MultiIntervalWaitTimeStats(WaitTimeStats):
+    def __init__(self, interval_stats_arr):
+        self.interval_stats_arr = interval_stats_arr
+        self.cdf_points = None
 
-class CachedWaitTimes:
-    def __init__(self, wait_times_data):
-        self.wait_times_data = wait_times_data
+    def get_sampled_waits(self, sample_sec=60):
+        sampled_waits_arr = []
+        for interval_stats in self.interval_stats_arr:
+            sampled_waits = interval_stats.get_sampled_waits(sample_sec)
+            if sampled_waits is not None:
+                sampled_waits_arr.append(sampled_waits)
 
-    def get_value(self, route_id, direction_id, stop_id):
-        routes_data = self.wait_times_data['routes']
+        return np.concatenate(sampled_waits_arr)
 
-        if route_id not in routes_data:
+    def get_average(self):
+        # With each interval weighted equally, the average wait time for all intervals
+        # is the average of the average wait times for each interval.
+
+        count = 0
+        total = 0
+
+        for interval_stats in self.interval_stats_arr:
+            interval_avg = interval_stats.get_average()
+            if interval_avg is not None:
+                total += interval_avg
+                count += 1
+
+        if count == 0:
             return None
 
-        route_data = routes_data[route_id]
+        return total / count
 
-        if direction_id not in route_data:
+    def get_cumulative_distribution(self):
+        if self.cdf_points is not None:
+            return self.cdf_points
+
+        num_intervals = 0
+        cdf_domains = []
+        cdf_ranges = []
+
+        # With each interval weighted equally, the probability of a wait time less than a certain amount
+        # (CDF value) is the average of the values of the CDFs for each interval.
+        # Since each interval's CDF is piecewise linear, the combined CDF will be piecewise linear
+        # between all of the unique domain values defining the intervals' CDFs.
+
+        for interval_stats in self.interval_stats_arr:
+            cdf_points = interval_stats.get_cumulative_distribution()
+
+            if cdf_points is not None:
+                cdf_domain, cdf_range = cdf_points.T
+                cdf_domains.append(cdf_domain)
+                cdf_ranges.append(cdf_range)
+                num_intervals += 1
+
+        if num_intervals == 0:
             return None
 
-        direction_data = route_data[direction_id]
+        combined_domain = np.unique(np.concatenate(cdf_domains))
 
-        if stop_id not in direction_data:
-            return None
+        combined_cdf_points = []
 
-        return direction_data[stop_id]
+        for wait_time in combined_domain:
+            total_value = 0
+            for cdf_domain, cdf_range in zip(cdf_domains, cdf_ranges):
+                total_value += evaluate_cdf(wait_time, cdf_domain, cdf_range)
 
-def get_cached_wait_times(agency_id, d: date, stat_id: str, start_time_str = None, end_time_str = None, version = DefaultVersion) -> CachedWaitTimes:
+            combined_cdf_points.append((wait_time, total_value / num_intervals))
 
-    cache_path = get_cache_path(agency_id, d, stat_id, start_time_str, end_time_str, version)
+        self.cdf_points = np.array(combined_cdf_points)
 
-    try:
-        with open(cache_path, "r") as f:
-            text = f.read()
-            return CachedWaitTimes(json.loads(text))
-    except FileNotFoundError as err:
-        pass
+        return self.cdf_points
 
-    s3_bucket = config.s3_bucket
-    s3_path = get_s3_path(agency_id, d, stat_id, start_time_str, end_time_str, version)
+def evaluate_cdf(wait_time, cdf_domain, cdf_range):
+    segment_end_index = np.searchsorted(cdf_domain, wait_time)
 
-    s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
-    r = requests.get(s3_url)
-
-    if r.status_code == 404:
-        raise FileNotFoundError(f"{s3_url} not found")
-    if r.status_code == 403:
-        raise FileNotFoundError(f"{s3_url} not found or access denied")
-    if r.status_code != 200:
-        raise Exception(f"Error fetching {s3_url}: HTTP {r.status_code}: {r.text}")
-
-    data = json.loads(r.text)
-
-    cache_dir = Path(cache_path).parent
-    if not cache_dir.exists():
-        cache_dir.mkdir(parents = True, exist_ok = True)
-
-    with open(cache_path, "w") as f:
-        f.write(r.text)
-
-    return CachedWaitTimes(data)
-
-def get_time_range_path(start_time_str, end_time_str):
-    if start_time_str is None and end_time_str is None:
-        return ''
+    if segment_end_index >= len(cdf_domain):
+        return 1.0
+    elif segment_end_index == 0:
+        return 0.0
     else:
-        return f'_{start_time_str.replace(":","")}_{end_time_str.replace(":","")}'
+        segment_start_index = segment_end_index - 1
 
-def get_s3_path(agency_id: str, d: date, stat_id: str, start_time_str, end_time_str, version = DefaultVersion) -> str:
-    time_range_path = get_time_range_path(start_time_str, end_time_str)
-    date_str = str(d)
-    date_path = d.strftime("%Y/%m/%d")
-    return f"wait-times/{version}/{agency_id}/{date_path}/wait-times_{version}_{agency_id}_{date_str}_{stat_id}{time_range_path}.json.gz"
+        prev_value = cdf_range[segment_start_index]
+        extra_wait_time = wait_time - cdf_domain[segment_start_index]
 
-def get_cache_path(agency_id: str, d: date, stat_id: str, start_time_str, end_time_str, version = DefaultVersion) -> str:
-    time_range_path = get_time_range_path(start_time_str, end_time_str)
+        if extra_wait_time == 0:
+            return prev_value
 
-    date_str = str(d)
-    if re.match('^[\w\-]+$', agency_id) is None:
-        raise Exception(f"Invalid agency: {agency_id}")
-
-    if re.match('^[\w\-]+$', date_str) is None:
-        raise Exception(f"Invalid date: {date_str}")
-
-    if re.match('^[\w\-]+$', version) is None:
-        raise Exception(f"Invalid version: {version}")
-
-    if re.match('^[\w\-]+$', stat_id) is None:
-        raise Exception(f"Invalid stat id: {stat_id}")
-
-    if re.match('^[\w\-\+]*$', time_range_path) is None:
-        raise Exception(f"Invalid time range: {time_range_path}")
-
-    return f'{util.get_data_dir()}/wait-times_{version}_{agency_id}/{date_str}/wait-times_{version}_{agency_id}_{date_str}_{stat_id}{time_range_path}.json'
+        # linear interpolation to find value of CDF for wait time
+        return prev_value + \
+             extra_wait_time / \
+            (cdf_domain[segment_end_index] - cdf_domain[segment_start_index]) * \
+            (cdf_range[segment_end_index] - cdf_range[segment_start_index])

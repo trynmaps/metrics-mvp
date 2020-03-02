@@ -1,10 +1,13 @@
-# OpenTransit's Metrics MVP
+# OpenTransit Metrics MVP
 
 Welcome to OpenTransit! We're passionate about using open data to improve
-public transit systems around the world, starting with San Francisco.
+public transit systems around the world.
 
-This app uses historical transit data to help riders understand
-the quality of SF Muni bus and subway lines. [Check out the app!](http://muni.opentransit.city/)
+This app uses historical transit data to help riders, transit advocates,
+and transit planners understand the quality of public transit systems.
+
+[Check out the app](http://muni.opentransit.city/) to see the performance
+of Muni bus and light rail lines in San Francisco.
 
 If you're visiting this repo and looking to contribute, [check out our onboarding doc!](http://bit.ly/opentransit-onboarding)
 
@@ -57,6 +60,14 @@ Make sure you've been added to the trynmaps organization on GitHub.
 then you'll see a guide to get in.
 
 To get started, see the Issues page. You may want to [identify good first issues](https://github.com/trynmaps/metrics-mvp/labels/Good%20First%20Issue).
+
+### Code Style
+
+This repository uses eslint to enforce a consistent style for frontend JavaScript code.
+
+Before committing, run `dev/docker-lint.sh` (Mac/Linux) or `dev\docker-lint.bat` (Windows) to check for style errors and automatically fix formatting issues. (You will need to run `docker-compose up` or `docker-compose build` at least once before the docker-lint script will work.)
+
+GitHub automatically runs tests for each push to check for eslint errors. If eslint reports any style errors, pull requests will show a failing check.
 
 ### Deploying to Heroku
 
@@ -116,8 +127,14 @@ popular React framework and looks great on mobile.
 
 ### Backend
 
-- **Flask** - because our data science work was already done in iPython and using
-Python for the backend would ease the migration from experimentation to production.
+- **Flask** - provides API endpoints used by the frontend.
+- **GraphQL/Graphene** - a flexible API for returning various metrics requested by the frontend.
+- **Pandas** - much of the data processing logic is implemented using Pandas data frames, e.g. when computing arrival times from raw GPS data.
+- **NumPy** - algorithms involving arrays are implemented using Numpy for better performance, e.g. computing wait times and trip times.
+- **Amazon S3** - the backend stores various data files (including route configuration, timetables, historical arrival times, and precomputed stats) as publicly-readable gzipped JSON files in S3, allowing the frontend to fetch data directly from S3 without hitting the Flask backend, and allowing multiple developers to share the same data without having to compute it themselves.
+- **orion** - A node.js app in a separate repo (https://github.com/trynmaps/orion) which fetches the raw GPS location data for all vehicles in a transit agency every 15 seconds and stores the data in S3.
+- **tryn-api** - A node.js app in a separate repo (https://github.com/trynmaps/tryn-api) which implements another GraphQL API that the backend uses to fetch the stored GPS location data from S3.
+- **Unittest** - Framework for testing the backend Python code.
 
 ## Notes for developers
 

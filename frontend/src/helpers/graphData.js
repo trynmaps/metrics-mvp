@@ -2,6 +2,8 @@
  * Helper functions for working with graph data.
  */
 
+/* eslint import/prefer-default-export: "off" */
+
 /**
  * Helper method to get a specific percentile out of histogram graph data
  * where percentile is 0-100.

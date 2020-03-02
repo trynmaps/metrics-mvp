@@ -2,22 +2,29 @@
  * Constants for the UI that allow for reconfiguration.
  */
 
-import indigo from '@material-ui/core/colors/indigo';
+import deepPurple from '@material-ui/core/colors/deepPurple';
+import grey from '@material-ui/core/colors/grey';
 
 // Colors definition:
 // This section its should be use to declare an object color
 // that contain the colors used in the application
 export const Colors = {
-  GRAY: '#a4a6a9',
-  PURPLE: '#aa82c5',
+  GRAY: grey[400],
+  GRAY_DARK: grey[600],
+  PURPLE: deepPurple[200],
+  PURPLE_DARK: deepPurple[400],
   BLUE: 'blue',
   RED: 'red',
   GREEN: 'green',
-  INDIGO: indigo[400],
 };
 
 // placeholder colors: gray and purple from nyc busstats
-export const CHART_COLORS = [Colors.GRAY, Colors.PURPLE];
+export const CHART_COLORS = [
+  Colors.GRAY,
+  Colors.PURPLE,
+  Colors.GRAY_DARK,
+  Colors.PURPLE_DARK,
+];
 
 // use this percentile (e.g. 90th) for waits/travel times
 // for planning purposes the idea here is to filter out
@@ -71,16 +78,16 @@ export const DATE_RANGES = [
 
 // Values are Moment days of the week (0-6)
 export const WEEKDAYS = [
-  { value: '1', label: 'Monday' },
-  { value: '2', label: 'Tuesday' },
-  { value: '3', label: 'Wednesday' },
-  { value: '4', label: 'Thursday' },
-  { value: '5', label: 'Friday' },
+  { value: '1', label: 'Monday', shortLabel: 'M' },
+  { value: '2', label: 'Tuesday', shortLabel: 'Tu' },
+  { value: '3', label: 'Wednesday', shortLabel: 'W' },
+  { value: '4', label: 'Thursday', shortLabel: 'Th' },
+  { value: '5', label: 'Friday', shortLabel: 'F' },
 ];
 
 export const WEEKENDS = [
-  { value: '6', label: 'Saturday' },
-  { value: '0', label: 'Sunday' },
+  { value: '6', label: 'Saturday', shortLabel: 'Sa' },
+  { value: '0', label: 'Sunday', shortLabel: 'Su' },
 ];
 
 // Marey chart:  how long of a dwell at a stop results in a second data point for exit.

@@ -31,33 +31,10 @@ custom_directions:
       title: "Outbound to 48th Ave & Point Lobos Ave via V.A. Hospital"
       gtfs_direction_id: "0"
       included_stop_ids: ["15511","13608"]
-  '47':
-    - id: "1"
-      gtfs_direction_id: "1"
-      excluded_stop_ids: ["14967"]
-    - id: "1-3rd"
-      title: "Inbound to Powell St & Beach St via 3rd St"
-      gtfs_direction_id: "1"
-      included_stop_ids: ["14967"]
-    - id: "0"
-      gtfs_direction_id: "0"
-      included_stop_ids: ["13723"]
   '81X':
     - id: "1"
       gtfs_direction_id: "1"
       included_stop_ids: ["16694"]
-  '83X':
-    - id: "0"
-      gtfs_direction_id: "0"
-      included_stop_ids: ["17776"]
-    - id: "1-18010"
-      title: "Inbound to 9th St & Market St via Brannan St & 8th St"
-      gtfs_direction_id: "1"
-      included_stop_ids: ["18010"]
-    - id: "1-17683"
-      title: "Inbound to 9th St & Market St via Townsend St & 8th St"
-      gtfs_direction_id: "1"
-      included_stop_ids: ["17683"]
 default_day_start_hour: 3
 custom_day_start_hours:
   - start_hour: 0 # owl routes run from 1AM to 5AM so they are associated with the same day
@@ -246,27 +223,197 @@ js_properties:
   #     should be used instead for end-to-end calculations.  Cable car lines are like this.
   # - Possibly special handling for routes with back end issues (currently 5, 9, 9R) as a temporary workaround.
   #   - The 9 has multiple terminals so use the last common stop.
-  #   - The 5 was reconfigured and Nextbus stop configs are out of sync with historic data.  Use last good stop.
   routeHeuristics: {
+      E: {
+        '0': {
+          ignoreFirstStop: '13095', # use Beach and Stockton as outbound start terminal until ~Oct 2020.
+        },
+        '1': {
+          ignoreLastStop: '14530', # use Embarcadero and Stockton as inbound end terminal until ~Oct 2020.
+        }
+      },
+      F: {
+        '0': {
+          ignoreFirstStop: '13095', # use Beach and Stockton as outbound start terminal until ~Oct 2020.
+        },
+        '1': {
+          ignoreLastStop: '14530', # use Embarcadero and Stockton as inbound end terminal until ~Oct 2020.
+        }
+      },
+      J: {
+        '0': {
+          ignoreFirstStop: true,
+        },
+        '1': {
+          ignoreLastStop: true,
+        },
+      },
+      L: {
+        '0': {
+          ignoreFirstStop: true,
+        },
+        '1': {
+          ignoreLastStop: true,
+        },
+      },
+      M: {
+        '0': {
+          ignoreFirstStop: true,
+        },
+        '1': {
+          ignoreLastStop: true,
+        },
+      },
       N: {
         '0': {
           ignoreFirstStop: true, # 4th and King to 2nd and King trip times are skewed by a few hyperlong trips
+          ignoreLastStop: true,
         },
       },
       S: {
         ignoreRoute: true,
       },
-      '5': {
-        '1': {
-          ignoreFirstStop: '4218', # no data for 3927, and first few stop ids are now different.  Problem is even worse on outbound side, no good fix there.
+      '1': {
+        '0': {
+          ignoreLastStop: true,
+        },
+      },
+      '7X': {
+        '0': {
+          ignoreFirstStop: true,
         },
       },
       '9': {
-        '1': {
-          ignoreFirstStop: '7297', # use Bayshore as actual first stop (daytime)
-        },
         '0': {
-          ignoreLastStop: '7297', # use Bayshore as actual terminal (daytime)
+          ignoreLastStop: '13783', # use Bayshore and Leland as actual terminal (daytime)
+        },
+        '1': {
+          ignoreFirstStop: '13793',
+        },
+      },
+      '10': {
+        '0': {
+          ignoreFirstStop: '15851',
+        },
+        '1': {
+          ignoreLastStop: '15850',
+        },
+      },
+      '12': {
+        '0': {
+          ignoreLastStop: '13486',
+        },
+      },
+      '14': {
+        '1': {
+          ignoreFirstStop: true,
+        },
+      },
+      '14X': {
+        '1': {
+          ignoreFirstStop: true,
+          ignoreLastStop: '15693',
+        },
+      },
+      '18': {
+        '0': {
+          ignoreFirstStop: '15261',
+          ignoreLastStop: true,
+        },
+      },
+      '21': {
+        '0': {
+          ignoreFirstStop: '15669',
+        },
+        '1': {
+          ignoreFirstStop: '14988',
+        }
+      },
+      '22': {
+        '0': {
+          ignoreFirstStop: '14610',
+        },
+      },
+      '23': {
+        '0': {
+          ignoreLastStop: true,
+        },
+        '1': {
+          ignoreFirstStop: true,
+        }
+      },
+      '28R': {
+        '0': {
+          ignoreFirstStop: true,
+        }
+      },
+      '29': {
+        '1': {
+          ignoreFirstStop: '14783', # use Gilman and 3rd St as first inbound stop, almost doubling back
+          ignoreLastStop: true
+        }
+      },
+      '30': {
+        '0': {
+          ignoreLastStop: true,
+        }
+      },
+      '30X': {
+        '0': {
+          ignoreLastStop: true,
+        }
+      },
+      '31': {
+        '0': {
+          ignoreFirstStop: true,
+        }
+      },
+      '31AX': {
+        '1': {
+          ignoreFirstStop: true,
+        }
+      },
+      '36': {
+        '1': {
+          ignoreFirstStop: true,
+        }
+      },
+      '38': {
+        '0-32nd': {
+          ignoreLastStop: '14273',
+        }
+      },
+      '44': {
+        '0': {
+          ignoreFirstStop: true,
+        }
+      },
+      '49': {
+        '1': {
+          ignoreLastStop: '16806',
+        }
+      },
+      '54': {
+        '0': {
+          ignoreFirstStop: true,
+        }
+      },
+      '55': {
+        '0': {
+          ignoreLastStop: true,
+        },
+        '1': {
+          ignoreLastStop: true,
+        }
+      },
+      '57': {
+        '0': {
+          ignoreLastStop: true,
+        },
+      },
+      '76X': {
+        '1': {
+          ignoreLastStop: '13815',
         },
       },
       '90': {
@@ -305,7 +452,7 @@ js_properties:
       },
       C: {
         '1': {
-          ignoreLastStop: true, # long time to California & Drumm (probably in holding area)
+          ignoreLastStop: '13857', # long time to California & Drumm (probably in holding area)
         },
       },
     }
