@@ -28,35 +28,31 @@ function RouteScreen(props) {
     myFetchRoutes,
   } = props;
 
-  const agencyId = graphParams ? graphParams.agencyId : null;
+  const agencyId = graphParams && graphParams.agencyId;
 
-  useEffect(() => {
-    if (!routes && agencyId) {
-      myFetchRoutes({agencyId: agencyId});
-    }
-  }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
-
+ 
   const agency = getAgency(agencyId);
 
   const selectedRoute =
     routes && graphParams && graphParams.routeId
-      ? routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId))
-      : null;
+      && routes.find(route => (route.id === graphParams.routeId && route.agencyId === agencyId));
 
   const direction =
     selectedRoute && graphParams.directionId
-      ? selectedRoute.directions.find(
+      && selectedRoute.directions.find(
           myDirection => myDirection.id === graphParams.directionId,
-        )
-      : null;
+        );
+
   const startStopInfo =
-    direction && graphParams.startStopId
-      ? selectedRoute.stops[graphParams.startStopId]
-      : null;
+    direction && graphParams.startStopId && selectedRoute.stops[graphParams.startStopId];
+
   const endStopInfo =
-    direction && graphParams.endStopId
-      ? selectedRoute.stops[graphParams.endStopId]
-      : null;
+    direction && graphParams.endStopId && selectedRoute.stops[graphParams.endStopId];
+
+  const title = (selectedRoute ? selectedRoute.title : '')
+        + (direction ? ` > ${direction.title}` : '')
+        + (startStopInfo ?  ` (from ${startStopInfo.title}` : '')
+        + (endStopInfo ? ` to ${endStopInfo.title})` : '');
 
   return (
     <Fragment>
@@ -73,11 +69,7 @@ function RouteScreen(props) {
       
       <Paper>
         <Box p={2} className="page-title">            
-          {selectedRoute ? ` ${selectedRoute.title}` : null}
-          {direction ? ` > ${direction.title}` : null}
-          &nbsp;
-          {startStopInfo ? `(from ${startStopInfo.title}` : null}
-          {endStopInfo ? ` to ${endStopInfo.title})` : null}
+          {title}
         </Box>
       </Paper>
 
