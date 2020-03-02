@@ -81,6 +81,9 @@ invalid_direction_times:
       - ["50","1"]
       - ["53","1"]
       - ["84","1"]
+custom_day_start_hours:
+  - start_hour: 0
+    routes: ['272'] # PDX night bus runs from about 1am-4:30am
 js_properties:
   title: TriMet
   initialMapCenter: { lat: 45.525, lng: -122.677 }
