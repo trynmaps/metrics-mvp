@@ -600,7 +600,9 @@ class MapSpider extends Component {
             opacity={0.3}
           />
           {/* see http://maps.stamen.com for details */}
+
           <this.HoveredLine />
+          {/* Props are shallow compared with previous props and skips re-rendering if they are equal */}
           <this.MemoizedDownstreamLines
             latLng={spiderSelection.latLng}
             stops={spiderSelection.stops}

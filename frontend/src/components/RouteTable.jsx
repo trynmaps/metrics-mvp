@@ -258,6 +258,7 @@ function RouteTable(props) {
 
   const { statsByRouteId, onTableRowHover, spiderSelection } = props;
 
+  // Null hovered route on mount and unmount to prevent route being already highlighted when entering Dashboard
   useEffect(() => {
     return () => onTableRowHover(null);
   }, [onTableRowHover]);
