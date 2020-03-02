@@ -49,7 +49,7 @@ function RouteScreen(props) {
   } = props;
 
   const myFetchRoutes = props.fetchRoutes;
-  const agencyId = graphParams && graphParams.agencyId;
+  const agencyId = graphParams ? graphParams.agencyId : null;
 
   useEffect(() => {
     if (!routes && agencyId) {
@@ -57,7 +57,6 @@ function RouteScreen(props) {
     }
   }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
- 
   const agency = getAgency(agencyId);
 
   const backArrowStyle = { color: '#ffffff' };
@@ -128,20 +127,18 @@ function RouteScreen(props) {
 
   const direction =
     selectedRoute && graphParams.directionId
-      && selectedRoute.directions.find(
+      ? selectedRoute.directions.find(
           myDirection => myDirection.id === graphParams.directionId,
-        );
-
+        )
+      : null;
   const startStopInfo =
-    direction && graphParams.startStopId && selectedRoute.stops[graphParams.startStopId];
-
+    direction && graphParams.startStopId
+      ? selectedRoute.stops[graphParams.startStopId]
+      : null;
   const endStopInfo =
-    direction && graphParams.endStopId && selectedRoute.stops[graphParams.endStopId];
-
-  const title = (selectedRoute ? selectedRoute.title : '')
-        + (direction ? ` > ${direction.title}` : '')
-        + (startStopInfo ?  ` (from ${startStopInfo.title}` : '')
-        + (endStopInfo ? ` to ${endStopInfo.title})` : '');
+    direction && graphParams.endStopId
+      ? selectedRoute.stops[graphParams.endStopId]
+      : null;
 
   const classes = useStyles();
   const { breadCrumbStyling, breadCrumbsWrapper } = classes;
