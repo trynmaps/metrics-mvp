@@ -11,8 +11,8 @@ export default (state = DEFAULT, action = {}) => {
     case 'ISOCHRONE':
       return `Isochrone | ${DEFAULT}`;
     case 'ROUTESCREEN':
-      return  `Routes | ${DEFAULT}`;
+      return `Routes | ${DEFAULT}`;
     default:
-      return state
+      return state;
   }
-}
+};
