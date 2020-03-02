@@ -12,6 +12,10 @@ export default (state = DEFAULT, action = {}) => {
       return `Isochrone | ${DEFAULT}`;
     case 'ROUTESCREEN':
       return `Routes | ${DEFAULT}`;
+    case 'DATADIAGNOSTIC':
+      return `Developer Tools | ${DEFAULT}`;
+    case 'LANDING':
+      return `Landing | ${DEFAULT}`;
     default:
       return state;
   }
