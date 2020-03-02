@@ -894,6 +894,7 @@ class GtfsScraper:
         url = route.route_url if hasattr(route, 'route_url') and isinstance(route.route_url, str) else None
         color = route.route_color if hasattr(route, 'route_color') and isinstance(route.route_color, str) else None
         text_color = route.route_text_color if hasattr(route, 'route_text_color') and isinstance(route.route_text_color, str) else None
+        sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
 
         route_id = getattr(route, agency.route_id_gtfs_field)
 
@@ -915,6 +916,7 @@ class GtfsScraper:
             'color': color,
             'text_color': text_color,
             'gtfs_route_id': gtfs_route_id,
+            'sort_order': sort_order,
             'stops': {},
         }
 
@@ -983,10 +985,9 @@ class GtfsScraper:
                     print(ex)
                     sort_order = None
             else:
-                sort_order = int(
-                    route_data['route_sort_order']
-                ) if hasattr(route_data, 'route_sort_order') else None
-            route_data['sort_order'] = sort_order
+                if route_data['sort_order'] is not None:
+                    use_sort_order = True
+
         def get_sort_key(route_data):
             if use_sort_order:
                 if route_data['sort_order'] is None:
@@ -995,7 +996,7 @@ class GtfsScraper:
                         return 0
                     return 9999
                 return route_data['sort_order']
-            return route_data['id']
+            return route_data['title']
         return sorted(routes_data, key=get_sort_key)
 
     def save_routes(self, save_to_s3=True):
@@ -1008,7 +1009,7 @@ class GtfsScraper:
             for route in routes_df.itertuples()
         ]
         routes_data = self.sort_routes(routes_data)
-        
+
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
         routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)
