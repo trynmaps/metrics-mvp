@@ -191,8 +191,9 @@ class GtfsScraper:
 
     def get_services_by_date(self, ignore_day_of_week=False):
         """Returns map of a date object to a list of service_ids.
-        Can optionally supply ignore_day_of_week, which specifies that service_ids
-        for any day of week to be included as long as the date is within their range."""
+        Can optionally supply ignore_day_of_week, which includes all service_ids
+        that are active on a date within a date range provided in calendar.txt
+        regardless of the day of the week."""
         calendar_df = self.feed.calendar
         calendar_dates_df = self.feed.calendar_dates
 
@@ -1052,9 +1053,6 @@ class GtfsScraper:
     def save_routes(self, save_to_s3, d):
         agency = self.agency
         agency_id = agency.id
-
-        routes_data = []
-
         routes_df = self.get_gtfs_routes()
         routes_df = self.get_active_routes(routes_df, d)
         routes_data = [
