@@ -12,10 +12,10 @@ of Muni bus and light rail lines in San Francisco.
 If you're visiting this repo and looking to contribute, [check out our onboarding doc!](http://bit.ly/opentransit-onboarding)
 
 ## Building the app
+To start, you'll need to make a local clone of this repository.
+Then get Docker for your local environment (to run the application from that local code): Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
 
-To start, you'll need to get Docker. Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
-
-Build and run the Docker containers:
+Build and run the Docker containers - run this on your local terminal from the root of your local repository clone:
 
 ```sh
 docker-compose up
