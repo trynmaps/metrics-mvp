@@ -2,7 +2,14 @@
  * Helper functions for manipulating date and time.
  */
 
-import { WEEKDAYS, WEEKENDS } from '../UIConstants';
+import Moment from 'moment';
+
+import {
+  WEEKDAYS,
+  WEEKENDS,
+  TIME_RANGES,
+  TIME_RANGE_ALL_DAY,
+} from '../UIConstants';
 
 /**
  * Whether all of array's entries in the dictionary are false.
@@ -75,4 +82,40 @@ export function getDaysOfTheWeekLabel(daysOfTheWeek) {
     return accumulator;
   }, []);
   return checkedLabels.join();
+}
+
+/**
+ * convert yyyy/mm/dd to mm/dd/yyyy
+ */
+function convertDate(ymdString) {
+  return Moment(ymdString).format('MM/DD/YYYY');
+}
+
+/**
+ * Create the date range label and small descriptive label.
+ *
+ * @param {Object} dateRangeParams Date settings from Redux state
+ */
+export function generateDateLabels(dateRangeParams) {
+  // these are the read-only representations of the date and time range
+  let dateLabel = convertDate(dateRangeParams.date);
+  let smallLabel = '';
+
+  if (dateRangeParams.startDate !== dateRangeParams.date) {
+    dateLabel = `${convertDate(dateRangeParams.startDate)} - ${dateLabel}`;
+
+    // generate a days of the week label
+
+    smallLabel = `${getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek)}, `;
+  }
+
+  // convert the state's current time range to a string or the sentinel value
+  const timeRange =
+    dateRangeParams.startTime && dateRangeParams.endTime
+      ? `${dateRangeParams.startTime}-${dateRangeParams.endTime}`
+      : TIME_RANGE_ALL_DAY;
+
+  smallLabel += TIME_RANGES.find(range => range.value === timeRange).shortLabel;
+
+  return { dateLabel, smallLabel };
 }

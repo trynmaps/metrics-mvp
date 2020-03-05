@@ -2,16 +2,17 @@ import React, { Fragment, useState } from 'react';
 import {
   XYPlot,
   HorizontalGridLines,
+  VerticalBarSeries,
   XAxis,
   YAxis,
-  VerticalBarSeries,
   ChartLabel,
   Crosshair,
 } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
+import { useTheme } from '@material-ui/core/styles';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import WatchLaterOutlinedIcon from '@material-ui/icons/WatchLaterOutlined';
-import { CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
+import { REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
 import '../../node_modules/react-vis/dist/style.css';
 
 /**
@@ -37,9 +38,11 @@ function InfoJourneyChart(props) {
     setCrosshairValues([value]);
   };
 
+  const theme = useTheme();
+
   const { firstWaits, secondWaits, firstTravels, secondTravels } = props;
 
-  const legendItems = [
+  const legendItems = (travelColor, waitColor) => [
     {
       title: (
         <Fragment>
@@ -47,7 +50,7 @@ function InfoJourneyChart(props) {
           &nbsp;Travel
         </Fragment>
       ),
-      color: CHART_COLORS[1],
+      color: travelColor,
       strokeWidth: 10,
     },
     {
@@ -60,7 +63,7 @@ function InfoJourneyChart(props) {
           &nbsp;Wait
         </Fragment>
       ),
-      color: CHART_COLORS[0],
+      color: waitColor,
       strokeWidth: 10,
     },
   ];
@@ -82,7 +85,7 @@ function InfoJourneyChart(props) {
 
           <VerticalBarSeries
             cluster="first"
-            color={CHART_COLORS[0]}
+            color={theme.palette.primary.dark}
             onValueMouseOver={onValue}
             data={[
               { x: 'Typical', y: firstWaits[0] },
@@ -92,7 +95,7 @@ function InfoJourneyChart(props) {
 
           <VerticalBarSeries
             cluster="first"
-            color={CHART_COLORS[1]}
+            color={theme.palette.primary.light}
             onValueMouseOver={onValue}
             data={[
               { x: 'Typical', y: firstTravels[0] },
@@ -102,7 +105,7 @@ function InfoJourneyChart(props) {
 
           <VerticalBarSeries
             cluster="second"
-            color={CHART_COLORS[2]}
+            color={theme.palette.secondary.dark}
             onValueMouseOver={onValue}
             data={[
               { x: 'Typical', y: secondWaits[0] },
@@ -112,7 +115,7 @@ function InfoJourneyChart(props) {
 
           <VerticalBarSeries
             cluster="second"
-            color={CHART_COLORS[3]}
+            color={theme.palette.secondary.light}
             onValueMouseOver={onValue}
             data={[
               { x: 'Typical', y: secondTravels[0] },
@@ -150,7 +153,18 @@ function InfoJourneyChart(props) {
         <DiscreteColorLegend
           orientation="vertical"
           width={110}
-          items={legendItems}
+          items={legendItems(
+            theme.palette.primary.light,
+            theme.palette.primary.dark,
+          )}
+        />
+        <DiscreteColorLegend
+          orientation="vertical"
+          width={110}
+          items={legendItems(
+            theme.palette.secondary.light,
+            theme.palette.secondary.dark,
+          )}
         />
       </div>
     </div>

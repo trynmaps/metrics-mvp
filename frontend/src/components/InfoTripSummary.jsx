@@ -15,7 +15,7 @@ import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Paper from '@material-ui/core/Paper';
 import Popover from '@material-ui/core/Popover';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
@@ -25,8 +25,14 @@ import {
   HighestPossibleScore,
 } from '../helpers/routeCalculations';
 import { getDistanceInMiles } from '../helpers/mapGeometry';
-import { PLANNING_PERCENTILE, TENTH_PERCENTILE } from '../UIConstants';
+import {
+  PLANNING_PERCENTILE,
+  TENTH_PERCENTILE,
+  NO_VALUE,
+} from '../UIConstants';
 import { getPercentileValue } from '../helpers/graphData';
+import DateTimeLabel from './DateTimeLabel';
+import InfoByDay from './InfoByDay';
 import InfoJourneyChart from './InfoJourneyChart';
 import InfoScoreCard from './InfoScoreCard';
 import InfoScoreLegend from './InfoScoreLegend';
@@ -56,9 +62,13 @@ export default function InfoTripSummary(props) {
     setPlanningAnchorEl(null);
   }
 
+  const theme = useTheme();
+
   const { tripMetrics, graphParams, routes } = props;
   const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
   const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
+  const byDayData = tripMetrics ? tripMetrics.byDay : null;
+
   const scheduleAdherence = tripMetrics
     ? tripMetrics.interval.departureScheduleAdherence
     : null;
@@ -70,6 +80,7 @@ export default function InfoTripSummary(props) {
     tripMetrics && tripMetrics.interval2
       ? tripMetrics.interval2.tripTimes
       : null;
+  const byDayData2 = tripMetrics ? tripMetrics.byDay2 : null;
   const scheduleAdherence2 =
     tripMetrics && tripMetrics.interval2
       ? tripMetrics.interval2.departureScheduleAdherence
@@ -114,16 +125,20 @@ export default function InfoTripSummary(props) {
       : null;
 
   let travelTimeVariability = null;
+  let travelTimeVariabilityHalved = null;
   if (tripTimes) {
     travelTimeVariability =
       getPercentileValue(tripTimes, PLANNING_PERCENTILE) -
       getPercentileValue(tripTimes, TENTH_PERCENTILE);
+    travelTimeVariabilityHalved = (travelTimeVariability / 2).toFixed(0);
   }
-  let travelTimeVariability2 = 0;
+  let travelTimeVariability2 = null;
+  let travelTimeVariabilityHalved2 = null;
   if (tripTimes2) {
     travelTimeVariability2 =
       getPercentileValue(tripTimes2, PLANNING_PERCENTILE) -
       getPercentileValue(tripTimes2, TENTH_PERCENTILE);
+    travelTimeVariabilityHalved2 = (travelTimeVariability2 / 2).toFixed(0);
   }
 
   const scores =
@@ -157,12 +172,12 @@ export default function InfoTripSummary(props) {
     whyNoData = 'No median wait time available.';
   }
 
-  const useStyles = makeStyles(theme => ({
+  const useStyles = makeStyles(myTheme => ({
     uncolored: {
-      margin: theme.spacing(1),
+      margin: myTheme.spacing(1),
     },
     popover: {
-      padding: theme.spacing(2),
+      padding: myTheme.spacing(2),
       maxWidth: 500,
     },
   }));
@@ -221,7 +236,7 @@ export default function InfoTripSummary(props) {
       Median wait of{' '}
       {waitTimes && waitTimes.median != null
         ? waitTimes.median.toFixed(1)
-        : '--'}{' '}
+        : NO_VALUE}{' '}
       min gets a score of {scores.medianWaitScore}.
       <Box pt={2}>
         <InfoScoreLegend
@@ -287,7 +302,7 @@ export default function InfoTripSummary(props) {
     </Fragment>
   );
 
-  const infoTripCards = () => (
+  const InfoTripCards = () => (
     <Fragment>
       <Grid item xs component={Paper} className={classes.uncolored}>
         <Typography variant="overline">Typical journey</Typography>
@@ -361,39 +376,73 @@ export default function InfoTripSummary(props) {
     </Fragment>
   );
 
-  const infoChartCard = () => (
+  const InfoChartCard = () => (
     <Fragment>
-      <Grid item xs component={Paper} className={classes.uncolored}>
-        <Typography variant="overline">Journey Times</Typography>
-        <br />
-        <InfoJourneyChart
-          firstWaits={[typicalWait, planningWait]}
-          secondWaits={[typicalWait2, planningWait2]}
-          firstTravels={[typicalTravel, planningTravel]}
-          secondTravels={[typicalTravel2, planningTravel2]}
-        />
-      </Grid>
+      <Box
+        width={408}
+        style={{ display: 'inline-block', padding: 0, margin: 4 }}
+      >
+        <Paper
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'inline-block',
+          }}
+        >
+          <Box p={2}>
+            <Typography variant="overline">Journey Times</Typography>
+            <br />
+            <InfoJourneyChart
+              firstWaits={[typicalWait, planningWait]}
+              secondWaits={[typicalWait2, planningWait2]}
+              firstTravels={[typicalTravel, planningTravel]}
+              secondTravels={[typicalTravel2, planningTravel2]}
+            />
+          </Box>
+        </Paper>
+      </Box>
     </Fragment>
   );
 
   return (
     <Fragment>
-      <div style={{ padding: 8 }}>
-        {scores ? (
-          <Fragment>
+      {scores ? (
+        <Fragment>
+          <DateTimeLabel
+            style={{ display: 'inline-block', minWidth: 330 }}
+            dateRangeParams={graphParams.firstDateRange}
+            colorCode={theme.palette.primary.main}
+          />
+          {graphParams.secondDateRange ? (
+            <Fragment>
+              <br />
+              <DateTimeLabel
+                style={{ display: 'inline-block', minWidth: 330 }}
+                dateRangeParams={graphParams.secondDateRange}
+                colorCode={theme.palette.secondary.light}
+              />
+            </Fragment>
+          ) : null}
+
+          <InfoByDay
+            byDayData={
+              byDayData /* consider switching to trip metrics here for consistency */
+            }
+            byDayData2={byDayData2}
+            graphParams={graphParams}
+            routes={routes}
+          />
+
+          <div style={{ padding: 8 }}>
             <Grid container spacing={4}>
-              {/* spacing doesn't work exactly right here, just pads the Papers */}
-              {waitTimes2 ? infoChartCard() : infoTripCards()}
+              {waitTimes2 ? <InfoChartCard /> : <InfoTripCards />}
               <InfoScoreCard
                 score={scores.totalScore}
                 title="Trip Score"
                 hideRating
-                largeValue={
-                  scores.totalScore != null ? scores.totalScore : '--'
-                }
-                smallValue={`${
-                  waitTimes2 ? ` vs ${scores2.totalScore}` : ''
-                }/${HighestPossibleScore}`}
+                firstValue={scores.totalScore}
+                secondValue={waitTimes2 ? scores2.totalScore : NO_VALUE}
+                valueSuffix={`/${HighestPossibleScore}`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTotalScore}
               />
@@ -401,10 +450,11 @@ export default function InfoTripSummary(props) {
                 score={scores.medianWaitScore}
                 title="Median Wait"
                 hideRating={waitTimes2}
-                largeValue={Math.round(waitTimes.median)}
-                smallValue={`${
-                  waitTimes2 ? ` vs ${Math.round(waitTimes2.median)}` : ''
-                }\u00a0min`}
+                firstValue={Math.round(waitTimes.median)}
+                secondValue={
+                  waitTimes2 ? Math.round(waitTimes2.median) : NO_VALUE
+                }
+                valueSuffix={`\u00a0min`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentWait}
               />
@@ -412,10 +462,11 @@ export default function InfoTripSummary(props) {
                 score={scores.onTimeRateScore}
                 title="On-Time %"
                 hideRating={waitTimes2}
-                largeValue={Math.round(onTimeRate * 100)}
-                smallValue={`${
-                  waitTimes2 ? ` vs ${Math.round(onTimeRate2 * 100)}` : ''
-                }%`}
+                firstValue={Math.round(onTimeRate * 100)}
+                secondValue={
+                  waitTimes2 ? Math.round(onTimeRate2 * 100) : NO_VALUE
+                }
+                valueSuffix="%"
                 bottomContent={
                   scheduleAdherence
                     ? `${scheduleAdherence.onTimeCount} times out of ${scheduleAdherence.scheduledCount}`
@@ -427,12 +478,11 @@ export default function InfoTripSummary(props) {
                 score={scores.speedScore}
                 title="Median Trip Speed"
                 hideRating={tripTimes2}
-                largeValue={speed.toFixed(0)}
-                smallValue={`${
-                  tripTimes2 ? ` vs ${speed2.toFixed(0)}` : ''
-                }\u00a0mph`}
+                firstValue={speed.toFixed(0)}
+                secondValue={tripTimes2 ? speed2.toFixed(0) : NO_VALUE}
+                valueSuffix={`\u00a0mph`}
                 bottomContent={`${
-                  distance != null ? distance.toFixed(1) : '--'
+                  distance != null ? distance.toFixed(1) : NO_VALUE
                 } miles`}
                 popoverContent={popoverContentSpeed}
               />
@@ -440,66 +490,62 @@ export default function InfoTripSummary(props) {
                 score={scores.travelVarianceScore}
                 title="Travel Time Variability"
                 hideRating={tripTimes2}
-                largeValue={
-                  travelTimeVariability != null
-                    ? `\u00b1${(travelTimeVariability / 2).toFixed(0)}`
-                    : '-'
+                firstValue={travelTimeVariabilityHalved}
+                secondValue={
+                  tripTimes2 ? { travelTimeVariabilityHalved2 } : NO_VALUE
                 }
-                smallValue={`${
-                  tripTimes2
-                    ? ` vs \u00b1${(travelTimeVariability2 / 2).toFixed(0)}`
-                    : ''
-                }\u00a0min`}
+                valuePrefix={`\u00b1`}
+                valueSuffix={`\u00a0min`}
                 bottomContent="&nbsp;"
                 popoverContent={popoverContentTravelVariability}
               />
             </Grid>
+          </div>
 
-            <Popover
-              open={Boolean(typicalAnchorEl)}
-              anchorEl={typicalAnchorEl}
-              onClose={handleTypicalClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'center',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'center',
-              }}
-            >
-              <div className={classes.popover}>
-                This is the median wait time when a rider arrives randomly at a
-                stop or a rider starts checking predictions. This is combined
-                with the median trip time.
-              </div>
-            </Popover>
+          <Popover
+            open={Boolean(typicalAnchorEl)}
+            anchorEl={typicalAnchorEl}
+            onClose={handleTypicalClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'center',
+            }}
+          >
+            <div className={classes.popover}>
+              This is the median wait time when a rider arrives randomly at a
+              stop or a rider starts checking predictions. This is combined with
+              the median trip time.
+            </div>
+          </Popover>
 
-            <Popover
-              open={Boolean(planningAnchorEl)}
-              anchorEl={planningAnchorEl}
-              onClose={handlePlanningClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'center',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'center',
-              }}
-            >
-              <div className={classes.popover}>
-                When planning to arrive by a specific time, the 90th percentile
-                wait time and 90th percentile travel time suggest how far in
-                advance to start checking predictions. Walking time should also
-                be added.
-              </div>
-            </Popover>
-          </Fragment>
-        ) : (
-          `No trip summary (${whyNoData})`
-        )}
-      </div>
+          <Popover
+            open={Boolean(planningAnchorEl)}
+            anchorEl={planningAnchorEl}
+            onClose={handlePlanningClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'center',
+            }}
+          >
+            <div className={classes.popover}>
+              When planning to arrive by a specific time, the 90th percentile
+              wait time and 90th percentile travel time suggest how far in
+              advance to start checking predictions. Walking time should also be
+              added.
+            </div>
+          </Popover>
+        </Fragment>
+      ) : (
+        `No trip summary (${whyNoData})`
+      )}
     </Fragment>
   );
 }

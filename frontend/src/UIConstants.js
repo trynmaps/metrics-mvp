@@ -92,3 +92,6 @@ export const WEEKENDS = [
 
 // Marey chart:  how long of a dwell at a stop results in a second data point for exit.
 export const DWELL_THRESHOLD_SECS = 120;
+
+// Representation of a metric with no value (e.g., missing score).
+export const NO_VALUE = '--';

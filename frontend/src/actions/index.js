@@ -155,6 +155,24 @@ export function fetchTripMetrics(params) {
         }
     }
 
+    fragment byDayFields on TripIntervalMetrics {
+          dates
+          startTime
+          endTime
+          tripTimes {
+            median
+            percentiles(percentiles:[10,90]) { percentile value }
+           }
+          waitTimes {
+            median
+            percentiles(percentiles:[90]) { percentile value }
+          }
+          departureScheduleAdherence {
+            onTimeCount
+            scheduledCount
+          }
+    }
+
     fragment timeRangeFields on TripIntervalMetrics {
         startTime endTime
         waitTimes {
@@ -178,6 +196,12 @@ export function fetchTripMetrics(params) {
           }
           interval2: interval(dates:$dates2, startTime:$startTime2, endTime:$endTime2) {
               ...intervalFields
+          }
+          byDay(dates:$dates, startTime:$startTime, endTime:$endTime) {
+              ...byDayFields
+          }
+          byDay2: byDay(dates:$dates2, startTime:$startTime2, endTime:$endTime2) {
+              ...byDayFields
           }
           timeRanges(dates:$dates) {
               ...timeRangeFields
@@ -372,12 +396,12 @@ export function fetchRouteMetrics(params) {
 
 export function fetchAgencyMetrics(params) {
   const dates = computeDates(params.firstDateRange);
+  const dates2 = params.secondDateRange && computeDates(params.secondDateRange);
 
   return function(dispatch, getState) {
-    const query = `query($agencyId:String!, $dates:[String!], $startTime:String, $endTime:String) {
-  agency(agencyId:$agencyId) {
-    agencyId
-    interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
+    const query = `
+
+    fragment intervalFields on AgencyIntervalMetrics {
       routes {
         routeId
         directions {
@@ -389,15 +413,41 @@ export function fetchAgencyMetrics(params) {
         }
       }
     }
+
+    query($agencyId:String!, $dates:[String!], $startTime:String, $endTime:String,${
+      params.secondDateRange
+        ? `$dates2:[String!], $startTime2:String, $endTime2:String,`
+        : ``
+    }  ) {
+  agency(agencyId:$agencyId) {
+    agencyId
+    interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
+        ...intervalFields
+    }${
+      params.secondDateRange
+        ? `interval2:interval(dates:$dates2, startTime:$startTime2, endTime:$endTime2) {
+        ...intervalFields
+    }`
+        : ``
+    }
   }
 }`.replace(/\s+/g, ' ');
 
-    const variablesJson = JSON.stringify({
+    const variables = {
       agencyId: Agencies[0].id,
       dates,
-      startTime: params.startTime,
-      endTime: params.endTime,
-    });
+      startTime: params.firstDateRange.startTime,
+      endTime: params.firstDateRange.endTime,
+    };
+    if (params.secondDateRange) {
+      Object.assign(variables, {
+        dates2,
+        startTime2: params.secondDateRange.startTime,
+        endTime2: params.secondDateRange.endTime,
+      });
+    }
+
+    const variablesJson = JSON.stringify(variables);
 
     if (getState().agencyMetrics.variablesJson !== variablesJson) {
       dispatch({
@@ -493,7 +543,7 @@ export function handleGraphParams(params) {
     const graphParams = getState().graphParams;
 
     if (
-      oldParams.date !== graphParams.date ||
+      oldParams.firstDateRange.date !== graphParams.firstDateRange.date ||
       oldParams.routeId !== graphParams.routeId ||
       oldParams.agencyId !== graphParams.agencyId
     ) {

@@ -166,8 +166,11 @@ function addScores(stats) {
   );
 }
 
-function makeStatsByRouteId(agencyMetricsData) {
-  const routeStats = agencyMetricsData ? agencyMetricsData.interval.routes : [];
+function makeStatsByRouteId(agencyMetricsData, intervalName) {
+  const routeStats =
+    agencyMetricsData && agencyMetricsData[intervalName]
+      ? agencyMetricsData[intervalName].routes
+      : [];
   const rankedRouteStats = routeStats.filter(
     stats =>
       !isIgnoredRoute({
@@ -222,7 +225,10 @@ export function agencyMetrics(state = initialAgencyMetrics, action) {
         ...state,
         variablesJson: action.variablesJson,
         data: action.data,
-        statsByRouteId: makeStatsByRouteId(action.data),
+        statsByRouteId: makeStatsByRouteId(action.data, 'interval'),
+        statsByRouteId2: action.data.interval2
+          ? makeStatsByRouteId(action.data, 'interval2')
+          : null,
       };
     case 'REQUEST_AGENCY_METRICS':
       return {
@@ -230,6 +236,7 @@ export function agencyMetrics(state = initialAgencyMetrics, action) {
         variablesJson: action.variablesJson,
         data: null,
         statsByRouteId: {},
+        statsByRouteId2: {},
       };
     default:
       return state;

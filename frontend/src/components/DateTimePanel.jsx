@@ -1,5 +1,4 @@
 import React, { useState, Fragment } from 'react';
-import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -12,12 +11,11 @@ import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
+import DateTimeLabel from './DateTimeLabel';
 import DateTimePopover from './DateTimePopover';
-import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
 import { typeForPage } from '../reducers/page';
 import { fullQueryFromParams } from '../routesMap';
 import { isLoadingRequest } from '../reducers/loadingReducer';
-import { getDaysOfTheWeekLabel } from '../helpers/dateTime';
 
 const useStyles = makeStyles(theme => ({
   button: {
@@ -96,13 +94,6 @@ function DateTimePanel(props) {
     });
   }
 
-  /**
-   * convert yyyy/mm/dd to mm/dd/yyyy
-   */
-  function convertDate(ymdString) {
-    return Moment(ymdString).format('MM/DD/YYYY');
-  }
-
   const firstOpen = Boolean(anchorEl) && anchorEl.id === 'firstDateRange';
   const secondOpen = Boolean(anchorEl) && anchorEl.id === 'secondDateRange';
 
@@ -176,27 +167,6 @@ function DateTimePanel(props) {
 
     const dateRangeParams = graphParams[target];
 
-    // these are the read-only representations of the date and time range
-    let dateLabel = convertDate(dateRangeParams.date);
-    let smallLabel = '';
-
-    if (dateRangeParams.startDate !== dateRangeParams.date) {
-      dateLabel = `${convertDate(dateRangeParams.startDate)} - ${dateLabel}`;
-
-      // generate a days of the week label
-
-      smallLabel = `${getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek)}, `;
-    }
-
-    // convert the state's current time range to a string or the sentinel value
-    const timeRange =
-      dateRangeParams.startTime && dateRangeParams.endTime
-        ? `${dateRangeParams.startTime}-${dateRangeParams.endTime}`
-        : TIME_RANGE_ALL_DAY;
-
-    smallLabel += TIME_RANGES.find(range => range.value === timeRange)
-      .shortLabel;
-
     return (
       <Fragment>
         <Button
@@ -206,14 +176,7 @@ function DateTimePanel(props) {
           id={target}
         >
           <div className={classes.dateTime}>
-            <span>
-              <Typography className={classes.heading} display="inline">
-                {dateLabel}&nbsp;
-              </Typography>
-              <Typography className={classes.secondaryHeading} display="inline">
-                {smallLabel}
-              </Typography>
-            </span>
+            <DateTimeLabel dateRangeParams={dateRangeParams} />
             {(target === 'firstDateRange' && firstOpen) ||
             (target === 'secondDateRange' && secondOpen) ? (
               <ExpandLessIcon />

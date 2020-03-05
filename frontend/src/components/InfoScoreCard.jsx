@@ -5,11 +5,12 @@
 import React, { Fragment, useState } from 'react';
 
 import { Typography } from '@material-ui/core';
-import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Paper from '@material-ui/core/Paper';
 import Popover from '@material-ui/core/Popover';
 import { makeStyles } from '@material-ui/core/styles';
+// import red from '@material-ui/core/colors/red'; // delta worse
+// import green from '@material-ui/core/colors/green'; // delta better
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import Rating from '@material-ui/lab/Rating';
 import Box from '@material-ui/core/Box';
@@ -17,6 +18,7 @@ import {
   scoreBackgroundColor,
   scoreContrastColor,
 } from '../helpers/routeCalculations';
+import { NO_VALUE } from '../UIConstants';
 
 /**
  * Renders an "nyc bus stats" style summary of a route and direction.
@@ -27,9 +29,12 @@ export default function InfoScoreCard(props) {
   const {
     score,
     hideRating,
+    preserveRatingSpace,
     title,
-    largeValue,
-    smallValue,
+    firstValue,
+    secondValue,
+    valuePrefix,
+    valueSuffix,
     bottomContent,
     popoverContent,
   } = props;
@@ -53,52 +58,124 @@ export default function InfoScoreCard(props) {
     setAnchorEl(null);
   }
 
+  function percentDifference(a, b) {
+    if (a === null || a === undefined || b === null || b === undefined) {
+      return '--';
+    }
+    if (a === 0 && b === 0) {
+      return 0;
+    }
+    if (a === 0) {
+      return -100;
+    }
+    if (b === 0) {
+      return 100;
+    }
+    return (100 * (1 - b / a)).toFixed(0);
+  }
+
+  /*  function percentContent(a, b) {
+    const percent = percentDifference(a, b);
+           
+    return  <Typography variant="h3" display="inline">
+  }
+  */
+
   const cardStyle = {
     background: score != null ? scoreBackgroundColor(score) : 'gray',
     color: score != null ? scoreContrastColor(score) : 'black',
-    margin: 4,
+    width: '100%',
+    height: '100%',
+    display: 'inline-block',
   };
 
   const rating =
     score != null ? Math.max(Math.round(score / 10.0) / 2.0, 0.5) : 0;
 
+  // NO_VALUE is overloaded as both a display string and a special case signifier.
+  // Here, if it passed in as the second value, it means that we are not comparing
+  // values.  Otherwise, we are comparing values that are possibly null, like a missing
+  // score, or possibly undefined).
+
+  const hasSecondValue = secondValue !== NO_VALUE;
+  const largeContent = hasSecondValue ? (
+    <Fragment>
+      <Typography variant="h3" display="inline">
+        {percentDifference(firstValue, secondValue)}
+      </Typography>
+      <Typography variant="h5" display="inline">
+        %
+      </Typography>
+    </Fragment>
+  ) : (
+    <Fragment>
+      <Typography variant="h3" display="inline">
+        {valuePrefix || null}
+        {firstValue === null ? NO_VALUE : firstValue}
+      </Typography>
+      <Typography variant="h5" display="inline">
+        {valueSuffix}
+      </Typography>
+    </Fragment>
+  );
+
   return (
     <Fragment>
-      <Grid item xs component={Paper} style={cardStyle}>
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="flex-start"
-          height="100%"
-        >
-          <Typography variant="overline">{title}</Typography>
-
-          <Box flexGrow={1}>
-            {' '}
-            {/* middle area takes all possible height */}
-            <Typography variant="h3" display="inline">
-              {largeValue}
-            </Typography>
-            <Typography variant="h5" display="inline">
-              {smallValue}
-            </Typography>
-            {hideRating ? null : (
-              <Rating readOnly size="small" value={rating} precision={0.5} />
-            )}
-          </Box>
+      {/* This width needs to be large enough to prevent wrapping in any card */}
+      <Box
+        width={200}
+        style={{ display: 'inline-block', padding: 0, margin: 4 }}
+      >
+        <Paper style={cardStyle}>
           <Box
             display="flex"
-            justifyContent="space-between"
-            alignItems="flex-end"
-            pt={2}
+            flexDirection="column"
+            justifyContent="flex-start"
+            m={2}
           >
-            {bottomContent}
-            <IconButton size="small" onClick={handleClick}>
-              <InfoIcon fontSize="small" />
-            </IconButton>
+            <Typography variant="overline">{title}</Typography>
+
+            <Box flexGrow={1}>
+              {' '}
+              {/* middle area takes all possible height */}
+              {largeContent}
+              {hasSecondValue ? (
+                <Typography variant="body2">
+                  {valuePrefix}
+                  {firstValue}
+                  {valueSuffix} vs {valuePrefix}
+                  {secondValue}
+                  {valueSuffix}
+                </Typography>
+              ) : null}
+              {hideRating ? null : (
+                <Rating readOnly size="small" value={rating} precision={0.5} />
+              )}
+              {/* This is quick way to maintain the same 18 pixels of height so that
+                route summary cards are the same height */}
+              {preserveRatingSpace ? (
+                <div
+                  className="MuiSvgIcon-root MuiSvgIcon-fontSizeInherit"
+                  style={{ display: 'block' }}
+                >
+                  &nbsp;
+                </div>
+              ) : null}
+            </Box>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="flex-end"
+              pt={2}
+            >
+              {bottomContent}
+              <IconButton size="small" onClick={handleClick}>
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </Box>
           </Box>
-        </Box>
-      </Grid>
+        </Paper>
+      </Box>
 
       <Popover
         open={Boolean(anchorEl)}

@@ -10,7 +10,6 @@ import {
   Crosshair,
 } from 'react-vis';
 import { AppBar, Box, Tab, Tabs, Typography } from '@material-ui/core';
-import InfoByDay from './InfoByDay';
 import InfoIntervalsOfDay from './InfoIntervalsOfDay';
 import InfoTripSummary from './InfoTripSummary';
 import { CHART_COLORS, REACT_VIS_CROSSHAIR_NO_LINE } from '../UIConstants';
@@ -30,7 +29,7 @@ function Info(props) {
   const headways = tripMetrics ? tripMetrics.interval.headways : null;
   const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
   const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
-  const byDayData = tripMetrics ? tripMetrics.byDay : null;
+  // const byDayData = tripMetrics ? tripMetrics.byDay : null;
 
   const headways2 =
     tripMetrics && tripMetrics.interval2
@@ -145,11 +144,11 @@ function Info(props) {
   }
 
   const SUMMARY = 0;
-  const BY_DAY = 1;
-  const TIME_OF_DAY = 2;
-  const HEADWAYS = 3;
-  const WAITS = 4;
-  const TRIPS = 5;
+  // const BY_DAY = 1;
+  const TIME_OF_DAY = 1;
+  const HEADWAYS = 2;
+  const WAITS = 3;
+  const TRIPS = 4;
 
   return (
     <div>
@@ -167,7 +166,7 @@ function Info(props) {
             label="Summary"
             {...a11yProps(SUMMARY)}
           />
-          <Tab style={{ minWidth: 72 }} label="By Day" {...a11yProps(BY_DAY)} />
+          {/*       <Tab style={{ minWidth: 72 }} label="By Day" {...a11yProps(BY_DAY)} /> */}
           <Tab
             style={{ minWidth: 72 }}
             label="By Time of Day"
@@ -201,6 +200,7 @@ function Info(props) {
             />
           </Box>
 
+          {/*
           <Box p={2} hidden={tabValue !== BY_DAY}>
             <Typography variant="h5" display="inline">
               Performance by Day
@@ -208,12 +208,12 @@ function Info(props) {
 
             <InfoByDay
               byDayData={
-                byDayData /* consider switching to trip metrics here for consistency */
+                byDayData
               }
               graphParams={graphParams}
               routes={routes}
             />
-          </Box>
+          </Box> */}
 
           <Box p={2} hidden={tabValue !== TIME_OF_DAY}>
             <Typography variant="h5" display="inline">
