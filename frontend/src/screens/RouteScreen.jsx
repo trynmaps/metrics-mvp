@@ -94,6 +94,7 @@ function RouteScreen(props) {
         return hasNextValue ? (
           <Typography
             variant="subtitle1"
+            component="h1"
             key={label}
             className={`${breadCrumbStyling} ${darkLinks}`}
           >
@@ -107,6 +108,7 @@ function RouteScreen(props) {
         ) : (
           <Typography
             variant="subtitle1"
+            component="h1"
             key={label}
             className={breadCrumbStyling}
           >
