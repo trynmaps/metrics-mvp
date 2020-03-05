@@ -492,7 +492,7 @@ export default function InfoTripSummary(props) {
                 hideRating={tripTimes2}
                 firstValue={travelTimeVariabilityHalved}
                 secondValue={
-                  tripTimes2 ? { travelTimeVariabilityHalved2 } : NO_VALUE
+                  tripTimes2 ? travelTimeVariabilityHalved2 : NO_VALUE
                 }
                 valuePrefix={`\u00b1`}
                 valueSuffix={`\u00a0min`}
