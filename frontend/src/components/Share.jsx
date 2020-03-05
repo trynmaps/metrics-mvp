@@ -1,13 +1,18 @@
 import React from 'react';
-import { withStyles, makeStyles } from '@material-ui/core/styles';
+import { withStyles, makeStyles, createMuiTheme } from '@material-ui/core/styles';
+import { ThemeProvider } from '@material-ui/styles';
+import grey from '@material-ui/core/colors/grey';
+import green from '@material-ui/core/colors/green';
 import Button from '@material-ui/core/Button';
+import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import InboxIcon from '@material-ui/icons/MoveToInbox';
 import DraftsIcon from '@material-ui/icons/Drafts';
-import SendIcon from '@material-ui/icons/Send';
+import ShareIcon from '@material-ui/icons/Share';
+
 import { TwitterShareButton, TwitterIcon, RedditShareButton, RedditIcon, FacebookShareButton, FacebookIcon }from 'react-share';
 
 const StyledMenu = withStyles({
@@ -87,17 +92,22 @@ function Share(props) {
   const classes = useStyles();
   const { flex } = classes;
   const url = window.location.href;
+  const theme = createMuiTheme({
+  palette: {
+    primary: {main: grey[50]},
+  }});
   return (
     <div>
-     <Button
+    <IconButton
         aria-controls="customized-menu"
         aria-haspopup="true"
-        variant="contained"
         color="primary"
         onClick={handleClick}
       >
-        Share
-      </Button>
+      <ThemeProvider theme={theme}>
+        <ShareIcon color="primary" />
+        </ThemeProvider>
+      </IconButton>
       <StyledMenu
         id="customized-menu"
         anchorEl={anchorEl}
