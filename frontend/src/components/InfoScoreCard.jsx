@@ -82,8 +82,8 @@ export default function InfoScoreCard(props) {
   */
 
   const cardStyle = {
-    background: score != null ? scoreBackgroundColor(score) : 'gray',
-    color: score != null ? scoreContrastColor(score) : 'black',
+    background: score !== NO_VALUE ? scoreBackgroundColor(score) : 'white',
+    color: score !== NO_VALUE ? scoreContrastColor(score) : 'black',
     width: '100%',
     height: '100%',
     display: 'inline-block',
@@ -100,7 +100,7 @@ export default function InfoScoreCard(props) {
   const hasSecondValue = secondValue !== NO_VALUE;
   const largeContent = hasSecondValue ? (
     <Fragment>
-      <Typography variant="h3" display="inline">
+      <Typography variant="h4" display="inline">
         {percentDifference(firstValue, secondValue)}
       </Typography>
       <Typography variant="h5" display="inline">
@@ -109,7 +109,7 @@ export default function InfoScoreCard(props) {
     </Fragment>
   ) : (
     <Fragment>
-      <Typography variant="h3" display="inline">
+      <Typography variant="h4" display="inline">
         {valuePrefix || null}
         {firstValue === null ? NO_VALUE : firstValue}
       </Typography>

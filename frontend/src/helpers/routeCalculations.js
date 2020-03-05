@@ -114,7 +114,7 @@ const backgroundColorScale = d3
 
 export const scoreBackgroundColor = score => {
   if (score == null || Number.isNaN(score)) {
-    return null;
+    return 'gray';
   }
   return backgroundColorScale(score / HighestPossibleScore);
 };
@@ -126,7 +126,7 @@ const contrastColorScale = d3
 
 export const scoreContrastColor = score => {
   if (score == null || Number.isNaN(score)) {
-    return null;
+    return 'black';
   }
   return contrastColorScale(score / HighestPossibleScore);
 };

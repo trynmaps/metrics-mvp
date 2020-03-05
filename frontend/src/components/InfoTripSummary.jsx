@@ -2,7 +2,7 @@
  * Stop to stop trip summary component.
  */
 
-import React, { Fragment, useState } from 'react';
+import React, { Fragment } from 'react';
 
 import {
   Table,
@@ -12,12 +12,8 @@ import {
   Typography,
 } from '@material-ui/core';
 import Grid from '@material-ui/core/Grid';
-import IconButton from '@material-ui/core/IconButton';
 import Paper from '@material-ui/core/Paper';
-import Popover from '@material-ui/core/Popover';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
-import InfoIcon from '@material-ui/icons/InfoOutlined';
 import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import WatchLaterOutlinedIcon from '@material-ui/icons/WatchLaterOutlined';
 import {
@@ -31,7 +27,6 @@ import {
   NO_VALUE,
 } from '../UIConstants';
 import { getPercentileValue } from '../helpers/graphData';
-import DateTimeLabel from './DateTimeLabel';
 import InfoByDay from './InfoByDay';
 import InfoJourneyChart from './InfoJourneyChart';
 import InfoScoreCard from './InfoScoreCard';
@@ -43,27 +38,6 @@ import InfoScoreLegend from './InfoScoreLegend';
  * @param {any} props
  */
 export default function InfoTripSummary(props) {
-  const [typicalAnchorEl, setTypicalAnchorEl] = useState(null);
-  const [planningAnchorEl, setPlanningAnchorEl] = useState(null);
-
-  function handleTypicalClick(event) {
-    setTypicalAnchorEl(event.currentTarget);
-  }
-
-  function handleTypicalClose() {
-    setTypicalAnchorEl(null);
-  }
-
-  function handlePlanningClick(event) {
-    setPlanningAnchorEl(event.currentTarget);
-  }
-
-  function handlePlanningClose() {
-    setPlanningAnchorEl(null);
-  }
-
-  const theme = useTheme();
-
   const { tripMetrics, graphParams, routes } = props;
   const waitTimes = tripMetrics ? tripMetrics.interval.waitTimes : null;
   const tripTimes = tripMetrics ? tripMetrics.interval.tripTimes : null;
@@ -171,18 +145,6 @@ export default function InfoTripSummary(props) {
   } else if (!waitTimes.median) {
     whyNoData = 'No median wait time available.';
   }
-
-  const useStyles = makeStyles(myTheme => ({
-    uncolored: {
-      margin: myTheme.spacing(1),
-    },
-    popover: {
-      padding: myTheme.spacing(2),
-      maxWidth: 500,
-    },
-  }));
-
-  const classes = useStyles();
 
   const planningWait = Math.round(
     getPercentileValue(waitTimes, PLANNING_PERCENTILE),
@@ -304,23 +266,14 @@ export default function InfoTripSummary(props) {
 
   const InfoTripCards = () => (
     <Fragment>
-      <Grid item xs component={Paper} className={classes.uncolored}>
-        <Typography variant="overline">Typical journey</Typography>
-        <br />
-
-        <Typography variant="h3" display="inline">
-          {typicalWait + typicalTravel}
-        </Typography>
-        <Typography variant="h5" display="inline">
-          &nbsp;min
-        </Typography>
-
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="flex-end"
-          pt={2}
-        >
+      <InfoScoreCard
+        score={NO_VALUE}
+        title="Typical Journey"
+        hideRating
+        firstValue={typicalWait + typicalTravel}
+        secondValue={NO_VALUE}
+        valueSuffix={`\u00a0min`}
+        bottomContent={
           <Typography variant="body1">
             <WatchLaterOutlinedIcon
               fontSize="small"
@@ -333,29 +286,24 @@ export default function InfoTripSummary(props) {
             &nbsp;
             {typicalTravel} min
           </Typography>
-          <IconButton size="small" onClick={handleTypicalClick}>
-            <InfoIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Grid>
+        }
+        popoverContent={
+          <Fragment>
+            This is the median wait time when a rider arrives randomly at a stop
+            or a rider starts checking predictions. This is combined with the
+            median trip time.
+          </Fragment>
+        }
+      />
 
-      <Grid item xs component={Paper} className={classes.uncolored}>
-        <Typography variant="overline">Journey planning</Typography>
-        <br />
-
-        <Typography variant="h3" display="inline">
-          {planningWait + planningTravel}
-        </Typography>
-        <Typography variant="h5" display="inline">
-          &nbsp;min
-        </Typography>
-
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="flex-end"
-          pt={2}
-        >
+      <InfoScoreCard
+        score={NO_VALUE}
+        title="Journey Planning"
+        hideRating
+        firstValue={planningWait + planningTravel}
+        secondValue={NO_VALUE}
+        valueSuffix={`\u00a0min`}
+        bottomContent={
           <Typography variant="body1">
             <WatchLaterOutlinedIcon
               fontSize="small"
@@ -368,11 +316,15 @@ export default function InfoTripSummary(props) {
             &nbsp;
             {planningTravel} min
           </Typography>
-          <IconButton size="small" onClick={handlePlanningClick}>
-            <InfoIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Grid>
+        }
+        popoverContent={
+          <Fragment>
+            When planning to arrive by a specific time, the 90th percentile wait
+            time and 90th percentile travel time suggest how far in advance to
+            start checking predictions. Walking time should also be added.
+          </Fragment>
+        }
+      />
     </Fragment>
   );
 
@@ -408,22 +360,6 @@ export default function InfoTripSummary(props) {
     <Fragment>
       {scores ? (
         <Fragment>
-          <DateTimeLabel
-            style={{ display: 'inline-block', minWidth: 330 }}
-            dateRangeParams={graphParams.firstDateRange}
-            colorCode={theme.palette.primary.main}
-          />
-          {graphParams.secondDateRange ? (
-            <Fragment>
-              <br />
-              <DateTimeLabel
-                style={{ display: 'inline-block', minWidth: 330 }}
-                dateRangeParams={graphParams.secondDateRange}
-                colorCode={theme.palette.secondary.light}
-              />
-            </Fragment>
-          ) : null}
-
           <InfoByDay
             byDayData={
               byDayData /* consider switching to trip metrics here for consistency */
@@ -440,6 +376,7 @@ export default function InfoTripSummary(props) {
                 score={scores.totalScore}
                 title="Trip Score"
                 hideRating
+                preserveRatingSpace
                 firstValue={scores.totalScore}
                 secondValue={waitTimes2 ? scores2.totalScore : NO_VALUE}
                 valueSuffix={`/${HighestPossibleScore}`}
@@ -501,47 +438,6 @@ export default function InfoTripSummary(props) {
               />
             </Grid>
           </div>
-
-          <Popover
-            open={Boolean(typicalAnchorEl)}
-            anchorEl={typicalAnchorEl}
-            onClose={handleTypicalClose}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'center',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'center',
-            }}
-          >
-            <div className={classes.popover}>
-              This is the median wait time when a rider arrives randomly at a
-              stop or a rider starts checking predictions. This is combined with
-              the median trip time.
-            </div>
-          </Popover>
-
-          <Popover
-            open={Boolean(planningAnchorEl)}
-            anchorEl={planningAnchorEl}
-            onClose={handlePlanningClose}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'center',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'center',
-            }}
-          >
-            <div className={classes.popover}>
-              When planning to arrive by a specific time, the 90th percentile
-              wait time and 90th percentile travel time suggest how far in
-              advance to start checking predictions. Walking time should also be
-              added.
-            </div>
-          </Popover>
         </Fragment>
       ) : (
         `No trip summary (${whyNoData})`

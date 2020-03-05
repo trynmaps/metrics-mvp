@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import {
   Box,
   FormControl,
@@ -10,7 +10,7 @@ import {
 } from '@material-ui/core';
 
 import {
-  XYPlot,
+  FlexibleWidthXYPlot,
   HorizontalGridLines,
   XAxis,
   YAxis,
@@ -21,6 +21,7 @@ import {
 } from 'react-vis';
 // import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import Moment from 'moment';
+import DateTimeLabel from './DateTimeLabel';
 import {
   PLANNING_PERCENTILE,
   REACT_VIS_CROSSHAIR_NO_LINE,
@@ -40,6 +41,7 @@ function InfoByDay(props) {
   const SPEED = 'speed';
   const TRAVEL_VARIABILITY = 'travel_variability';
   const CHART_HEIGHT = 200;
+  const MARK_SIZE = 4;
 
   const [tabValue, setTabValue] = React.useState(0);
 
@@ -149,16 +151,15 @@ function InfoByDay(props) {
     };
   };
 
-  /* 
-  const meanOfDataSeries = (series) => series &&
-    series.length > 0 &&
-    series.reduce((accum, value) => accum + value.y, 0) / series.length;
-    */
-
   const maxOfDataSeries = series =>
     series &&
     series.length > 0 &&
     series.reduce((max, value) => (max > value.y ? max : value.y), 0);
+  const maxOfBothDataSeries = (series1, series2) => {
+    const max1 = maxOfDataSeries(series1);
+    const max2 = maxOfDataSeries(series2);
+    return Math.max(max1, max2 || 0);
+  };
 
   // 1st chart: journey times
 
@@ -176,29 +177,8 @@ function InfoByDay(props) {
     byDayData2 &&
     byDayData2.map(mapDays('tripTimes', selectedOption, 'waitTimes'));
 
-  /*
-
-  const meanWait = meanOfDataSeries(waitData);
-  const meanTrip = meanOfDataSeries(tripData);
-
-  const meanWaitData = waitData && [
-    { x: waitData[0].x, y: meanWait },
-    { x: waitData[waitData.length - 1].x, y: meanWait },
-  ];
-  const meanTripData = tripData && [
-    { x: tripData[0].x, y: meanWait + meanTrip },
-    { x: tripData[tripData.length - 1].x, y: meanWait + meanTrip },
-  ];
-  */
-
-  const maxWait = Math.max(
-    maxOfDataSeries(waitData),
-    maxOfDataSeries(waitData2),
-  );
-  const maxTrip = Math.max(
-    maxOfDataSeries(tripData),
-    maxOfDataSeries(tripData2),
-  );
+  const maxWait = maxOfBothDataSeries(waitData, waitData2);
+  const maxTrip = maxOfBothDataSeries(tripData, tripData2);
 
   /*
   const legendItems = [
@@ -219,10 +199,7 @@ function InfoByDay(props) {
 
   const speedData = byDayData && byDayData.map(mapDays('tripTimes', SPEED));
   const speedData2 = byDayData2 && byDayData2.map(mapDays('tripTimes', SPEED));
-  const maxSpeed = Math.max(
-    maxOfDataSeries(speedData),
-    maxOfDataSeries(speedData2),
-  );
+  const maxSpeed = maxOfBothDataSeries(speedData, speedData2);
 
   // 4th chart: travel variability
 
@@ -230,9 +207,9 @@ function InfoByDay(props) {
     byDayData && byDayData.map(mapDays('tripTimes', TRAVEL_VARIABILITY));
   const travelVariabilityData2 =
     byDayData2 && byDayData2.map(mapDays('tripTimes', TRAVEL_VARIABILITY));
-  const maxTravelVariability = Math.max(
-    maxOfDataSeries(travelVariabilityData),
-    maxOfDataSeries(travelVariabilityData2),
+  const maxTravelVariability = maxOfBothDataSeries(
+    travelVariabilityData,
+    travelVariabilityData2,
   );
 
   // 5th chart: score
@@ -267,29 +244,12 @@ function InfoByDay(props) {
         y: grades.totalScore,
       };
     });
-  const maxScore = Math.max(
-    maxOfDataSeries(scoreData),
-    maxOfDataSeries(scoreData2),
-  );
+  const maxScore = maxOfBothDataSeries(scoreData, scoreData2);
 
   // Non-default chart margins for rotated x-axis tick marks.
   // Default is {left: 40, right: 10, top: 10, bottom: 40}
 
   const chartMargins = { left: 40, right: 10, top: 10, bottom: 60 };
-
-  // Show a prompt to choose a date range if a date range is not selected.
-
-  /*
-  if (
-    graphParams.firstDateRange.date === graphParams.firstDateRange.startDate
-  ) {
-    return (
-      <div>
-        <p />
-        To see performance by day, select a start date and end date.
-      </div>
-    );
-  } */
 
   /**
    * Event handler for onNearestX.
@@ -323,6 +283,11 @@ function InfoByDay(props) {
 
   function handleTabChange(event, newValue) {
     setTabValue(newValue);
+
+    // This is a workaround to trigger the react-vis resize listeners,
+    // because the hidden flexible width charts are all width zero, and
+    // stay width zero when unhidden.
+    window.dispatchEvent(new Event('resize'));
   }
 
   function a11yProps(index) {
@@ -372,39 +337,25 @@ function InfoByDay(props) {
             />
           </Tabs>
 
-          <Box p={2} hidden={tabValue !== JOURNEY_TIMES}>
-            <FormControl>
-              <div className="controls">
-                <FormControlLabel
-                  control={
-                    <Radio
-                      id="average_time"
-                      type="radio"
-                      value={AVERAGE_TIME}
-                      checked={selectedOption === AVERAGE_TIME}
-                      onChange={handleOptionChange}
-                    />
-                  }
-                  label="Median"
-                />
+          <DateTimeLabel
+            style={{ display: 'inline-block', minWidth: 330, paddingTop: 8 }}
+            dateRangeParams={graphParams.firstDateRange}
+            colorCode={theme.palette.primary.main}
+          />
+          {graphParams.secondDateRange ? (
+            <Fragment>
+              <br />
+              <DateTimeLabel
+                style={{ display: 'inline-block', minWidth: 330 }}
+                dateRangeParams={graphParams.secondDateRange}
+                colorCode={theme.palette.secondary.light}
+              />
+            </Fragment>
+          ) : null}
 
-                <FormControlLabel
-                  control={
-                    <Radio
-                      id="planning_time"
-                      type="radio"
-                      value={PLANNING_TIME}
-                      checked={selectedOption === PLANNING_TIME}
-                      onChange={handleOptionChange}
-                    />
-                  }
-                  label={`Planning (${PLANNING_PERCENTILE}th percentile)`}
-                />
-              </div>
-            </FormControl>
-            <XYPlot
+          <Box py={1} hidden={tabValue !== JOURNEY_TIMES}>
+            <FlexibleWidthXYPlot
               xType="ordinal"
-              width={400}
               height={CHART_HEIGHT}
               margin={chartMargins}
               yDomain={[0, maxTrip + maxWait]}
@@ -414,9 +365,15 @@ function InfoByDay(props) {
               <XAxis tickLabelAngle={-90} tickFormat={primaryDateFormatter} />
               <YAxis hideLine />
 
+              <AreaSeries
+                data={waitData}
+                opacity={0.3}
+                color={theme.palette.primary.dark}
+              />
               <LineMarkSeries
                 data={waitData}
                 color={theme.palette.primary.dark}
+                size={MARK_SIZE}
                 onNearestX={onNearestX}
               />
               <AreaSeries
@@ -427,11 +384,13 @@ function InfoByDay(props) {
               <LineMarkSeries
                 data={tripData}
                 color={theme.palette.primary.light}
+                size={MARK_SIZE}
               />
               {byDayData2 ? (
                 <LineMarkSeries
                   data={waitData2}
                   color={theme.palette.secondary.dark}
+                  size={MARK_SIZE}
                   onNearestX={onNearestX}
                 />
               ) : null}
@@ -439,6 +398,7 @@ function InfoByDay(props) {
                 <LineMarkSeries
                   data={tripData2}
                   color={theme.palette.secondary.light}
+                  size={MARK_SIZE}
                 />
               ) : null}
 
@@ -472,7 +432,37 @@ function InfoByDay(props) {
                   </div>
                 </Crosshair>
               )}
-            </XYPlot>
+            </FlexibleWidthXYPlot>
+            <FormControl>
+              <div className="controls">
+                <FormControlLabel
+                  control={
+                    <Radio
+                      id="average_time"
+                      type="radio"
+                      value={AVERAGE_TIME}
+                      checked={selectedOption === AVERAGE_TIME}
+                      onChange={handleOptionChange}
+                    />
+                  }
+                  label="Median"
+                />
+
+                <FormControlLabel
+                  control={
+                    <Radio
+                      id="planning_time"
+                      type="radio"
+                      value={PLANNING_TIME}
+                      checked={selectedOption === PLANNING_TIME}
+                      onChange={handleOptionChange}
+                    />
+                  }
+                  label={`Planning (${PLANNING_PERCENTILE}th percentile)`}
+                />
+              </div>
+            </FormControl>
+
             {/*          <DiscreteColorLegend
             orientation="horizontal"
             width={300}
@@ -480,11 +470,10 @@ function InfoByDay(props) {
           /> */}
           </Box>
 
-          <Box p={2} hidden={tabValue !== ON_TIME}>
-            <XYPlot
+          <Box py={1} hidden={tabValue !== ON_TIME}>
+            <FlexibleWidthXYPlot
               xType="ordinal"
               height={CHART_HEIGHT}
-              width={400}
               margin={chartMargins}
               yDomain={[0, 100]}
               onMouseLeave={onMouseLeave}
@@ -496,11 +485,13 @@ function InfoByDay(props) {
               <LineMarkSeries
                 data={onTimeRateData}
                 color={theme.palette.primary.main}
+                size={MARK_SIZE}
                 onNearestX={onNearestXGeneric}
               />
               <LineMarkSeries
                 data={onTimeRateData2}
                 color={theme.palette.secondary.main}
+                size={MARK_SIZE}
                 onNearestX={onNearestXGeneric}
               />
 
@@ -523,14 +514,13 @@ function InfoByDay(props) {
                     style={REACT_VIS_CROSSHAIR_NO_LINE}
                   ></Crosshair>
                 )}
-            </XYPlot>
+            </FlexibleWidthXYPlot>
           </Box>
 
-          <Box p={2} hidden={tabValue !== MEDIAN_SPEED}>
-            <XYPlot
+          <Box py={1} hidden={tabValue !== MEDIAN_SPEED}>
+            <FlexibleWidthXYPlot
               xType="ordinal"
               height={CHART_HEIGHT}
-              width={400}
               margin={chartMargins}
               yDomain={[0, maxSpeed]}
               onMouseLeave={onMouseLeave}
@@ -542,11 +532,13 @@ function InfoByDay(props) {
               <LineMarkSeries
                 data={speedData}
                 color={theme.palette.primary.main}
+                size={MARK_SIZE}
                 onNearestX={onNearestXGeneric}
               />
               <LineMarkSeries
                 data={speedData2}
                 color={theme.palette.secondary.main}
+                size={MARK_SIZE}
                 onNearestX={onNearestXGeneric}
               />
 
@@ -569,14 +561,13 @@ function InfoByDay(props) {
                     style={REACT_VIS_CROSSHAIR_NO_LINE}
                   ></Crosshair>
                 )}
-            </XYPlot>
+            </FlexibleWidthXYPlot>
           </Box>
 
-          <Box p={2} hidden={tabValue !== TRIP_VARIABILITY}>
-            <XYPlot
+          <Box py={1} hidden={tabValue !== TRIP_VARIABILITY}>
+            <FlexibleWidthXYPlot
               xType="ordinal"
               height={CHART_HEIGHT}
-              width={400}
               margin={chartMargins}
               yDomain={[0, maxTravelVariability]}
               onMouseLeave={onMouseLeave}
@@ -588,11 +579,13 @@ function InfoByDay(props) {
               <LineMarkSeries
                 data={travelVariabilityData}
                 color={theme.palette.primary.main}
+                size={MARK_SIZE}
                 onNearestX={onNearestXGeneric}
               />
               <LineMarkSeries
                 data={travelVariabilityData2}
                 color={theme.palette.secondary.main}
+                size={MARK_SIZE}
                 onNearestX={onNearestXGeneric}
               />
 
@@ -615,55 +608,54 @@ function InfoByDay(props) {
                     style={REACT_VIS_CROSSHAIR_NO_LINE}
                   ></Crosshair>
                 )}
-            </XYPlot>
+            </FlexibleWidthXYPlot>
           </Box>
 
-          <Box p={2} hidden={tabValue !== SCORE}>
-            <div style={{ width: '100%' }}>
-              <XYPlot
-                xType="ordinal"
-                width={400}
-                height={CHART_HEIGHT}
-                margin={chartMargins}
-                yDomain={[0, maxScore]}
-                onMouseLeave={onMouseLeave}
-              >
-                <HorizontalGridLines />
-                <XAxis tickLabelAngle={-90} tickFormat={primaryDateFormatter} />
-                <YAxis hideLine />
+          <Box py={1} hidden={tabValue !== SCORE}>
+            <FlexibleWidthXYPlot
+              xType="ordinal"
+              height={CHART_HEIGHT}
+              margin={chartMargins}
+              yDomain={[0, maxScore]}
+              onMouseLeave={onMouseLeave}
+            >
+              <HorizontalGridLines />
+              <XAxis tickLabelAngle={-90} tickFormat={primaryDateFormatter} />
+              <YAxis hideLine />
 
-                <LineMarkSeries
-                  data={scoreData}
-                  color={theme.palette.primary.main}
-                  onNearestX={onNearestXGeneric}
-                />
-                <LineMarkSeries
-                  data={scoreData2}
-                  color={theme.palette.secondary.main}
-                  onNearestX={onNearestXGeneric}
-                />
+              <LineMarkSeries
+                data={scoreData}
+                color={theme.palette.primary.main}
+                size={MARK_SIZE}
+                onNearestX={onNearestXGeneric}
+              />
+              <LineMarkSeries
+                data={scoreData2}
+                color={theme.palette.secondary.main}
+                size={MARK_SIZE}
+                onNearestX={onNearestXGeneric}
+              />
 
-                <ChartLabel
-                  text="Score"
-                  className="alt-y-label"
-                  includeMargin={false}
-                  xPercent={0.06}
-                  yPercent={0.06}
-                  style={{
-                    transform: 'rotate(-90)',
-                    textAnchor: 'end',
-                  }}
-                />
+              <ChartLabel
+                text="Score"
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.06}
+                yPercent={0.06}
+                style={{
+                  transform: 'rotate(-90)',
+                  textAnchor: 'end',
+                }}
+              />
 
-                {crosshairValues.length > 0 &&
-                false /* need separate state for each crosshair */ && (
-                    <Crosshair
-                      values={crosshairValues}
-                      style={REACT_VIS_CROSSHAIR_NO_LINE}
-                    ></Crosshair>
-                  )}
-              </XYPlot>
-            </div>
+              {crosshairValues.length > 0 &&
+              false /* need separate state for each crosshair */ && (
+                  <Crosshair
+                    values={crosshairValues}
+                    style={REACT_VIS_CROSSHAIR_NO_LINE}
+                  ></Crosshair>
+                )}
+            </FlexibleWidthXYPlot>
           </Box>
         </div>
       ) : (
