@@ -1,9 +1,6 @@
 import argparse
-import json
-import sys
-from datetime import datetime, timedelta
-from models import config, arrival_history, util, metrics, trip_times
-import pytz
+from datetime import datetime
+from models import config, arrival_history, util, trip_times, timetables
 import numpy as np
 import pandas as pd
 
@@ -13,6 +10,7 @@ if __name__ == '__main__':
     parser.add_argument('--route', required=True, help='Route id')
     parser.add_argument('--s1', required=True, help='Initial stop id')
     parser.add_argument('--s2', required=True, help='Destination stop id')
+    parser.add_argument('--scheduled', dest='scheduled', action='store_true', help='show scheduled times')
 
     parser.add_argument('--version')
 
@@ -25,9 +23,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    show_scheduled = args.scheduled
+
     version = args.version
     if version is None:
-        version = arrival_history.DefaultVersion
+        version = timetables.DefaultVersion if show_scheduled else arrival_history.DefaultVersion
 
     route_id = args.route
     date_str = args.date
@@ -51,9 +51,6 @@ if __name__ == '__main__':
     if len(s1_dirs) == 0 or s2_info is None:
         raise Exception(f"invalid stop id {s2}")
 
-    if s1 == s2:
-        raise Exception(f"stop {s1} and {s2} are the same")
-
     common_dirs = [dir for dir in s1_dirs if dir in s2_dirs]
 
     if len(common_dirs) == 0:
@@ -61,11 +58,17 @@ if __name__ == '__main__':
 
     dir_info = route_config.get_direction_info(common_dirs[0])
 
-    for s in dir_info.get_stop_ids():
-        if s == s1:
-            break
-        if s == s2:
-            raise Exception(f"stop {s1} comes after stop {s2} in the {dir_info.name} direction")
+    is_loop = dir_info.is_loop()
+
+    if not is_loop:
+        if s1 == s2:
+            raise Exception(f"stop {s1} and {s2} are the same")
+
+        for s in dir_info.get_stop_ids():
+            if s == s1:
+                break
+            if s == s2:
+                raise Exception(f"stop {s1} comes after stop {s2} in the {dir_info.name} direction")
 
     date_strs = []
     tz = agency.tz
@@ -87,22 +90,26 @@ if __name__ == '__main__':
     completed_trips_arr = []
 
     for d in dates:
-        history = arrival_history.get_by_date(agency.id, route_id, d, version)
+        if show_scheduled:
+            history = timetables.get_by_date(agency.id, route_id, d, version)
+        else:
+            history = arrival_history.get_by_date(agency.id, route_id, d, version)
 
         start_time = util.get_timestamp_or_none(d, start_time_str, tz)
         end_time = util.get_timestamp_or_none(d, end_time_str, tz)
 
-        s1_df = history.get_data_frame(s1, start_time = start_time, end_time = end_time)
-        s2_df = history.get_data_frame(s2, start_time = start_time)
+        s1_df = history.get_data_frame(stop_id=s1, start_time = start_time, end_time = end_time)
+        s2_df = history.get_data_frame(stop_id=s2, start_time = start_time)
 
         s1_df['trip_min'], s1_df['dest_arrival_time'] = trip_times.get_matching_trips_and_arrival_times(
             s1_df['TRIP'].values,
             s1_df['DEPARTURE_TIME'].values,
             s2_df['TRIP'].values,
             s2_df['TIME'].values,
+            is_loop
         )
 
-        s1_df['DATE_TIME'] = s1_df['TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
+        s1_df['DATE_TIME'] = s1_df['DEPARTURE_TIME'].apply(lambda t: datetime.fromtimestamp(t, tz))
 
         if s1_df.empty:
             print(f"no arrival times found for stop {s1} on {d}")
@@ -111,7 +118,11 @@ if __name__ == '__main__':
                 dest_arrival_time = row.dest_arrival_time
                 dest_arrival_time_str = datetime.fromtimestamp(dest_arrival_time, tz).time() if dest_arrival_time is not None and not np.isnan(dest_arrival_time) else None
 
-                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time}) vid:{row.VID}  #{row.TRIP}   trip_minutes:{round(row.trip_min, 1)}")
+                trip_str = f'#{row.TRIP}'.rjust(5)
+
+                vid_str = f'vid:{row.VID}' if not show_scheduled else ''
+
+                print(f"s1_t={row.DATE_TIME.date()} {row.DATE_TIME.time()} ({row.DEPARTURE_TIME}) s2_t={dest_arrival_time_str} ({dest_arrival_time})  {vid_str}  {trip_str}   {round(row.trip_min, 1)} min trip")
 
             completed_trips_arr.append(s1_df.trip_min[s1_df.trip_min.notnull()])
 

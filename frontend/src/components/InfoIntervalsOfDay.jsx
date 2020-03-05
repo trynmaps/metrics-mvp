@@ -100,14 +100,21 @@ class InfoIntervalsOfDay extends Component {
   }
 
   render() {
-    const { intervalData, intervalError } = this.props;
+    const { tripMetrics } = this.props;
 
-    const intervals = intervalData;
+    const intervals = tripMetrics.timeRanges;
+    const intervals2 = tripMetrics.timeRanges2;
     this.waitData = intervals
       ? intervals.map(this.mapInterval('waitTimes'))
       : null;
     this.tripData = intervals
       ? intervals.map(this.mapInterval('tripTimes'))
+      : null;
+    this.waitData2 = intervals2
+      ? intervals2.map(this.mapInterval('waitTimes'))
+      : null;
+    this.tripData2 = intervals2
+      ? intervals2.map(this.mapInterval('tripTimes'))
       : null;
 
     const legendItems = [
@@ -167,11 +174,31 @@ class InfoIntervalsOfDay extends Component {
               <YAxis hideLine />
 
               <VerticalBarSeries
+                cluster="first"
                 data={this.waitData}
                 color={CHART_COLORS[0]}
                 onNearestX={this.onNearestX}
               />
-              <VerticalBarSeries data={this.tripData} color={CHART_COLORS[1]} />
+              <VerticalBarSeries
+                cluster="first"
+                data={this.tripData}
+                color={CHART_COLORS[1]}
+              />
+              {this.waitData2 ? (
+                <VerticalBarSeries
+                  cluster="second"
+                  data={this.waitData2}
+                  color={CHART_COLORS[2]}
+                  onNearestX={this.onNearestX}
+                />
+              ) : null}
+              {this.waitData2 ? (
+                <VerticalBarSeries
+                  cluster="second"
+                  data={this.tripData2}
+                  color={CHART_COLORS[3]}
+                />
+              ) : null}
 
               <ChartLabel
                 text="minutes"
@@ -185,7 +212,8 @@ class InfoIntervalsOfDay extends Component {
                 }}
               />
 
-              {this.state.crosshairValues.length > 0 && (
+              {this.state.crosshairValues.length >
+                0 /* TODO: add second cluster values */ && (
                 <Crosshair
                   values={this.state.crosshairValues}
                   style={REACT_VIS_CROSSHAIR_NO_LINE}
@@ -209,11 +237,9 @@ class InfoIntervalsOfDay extends Component {
             />
           </div>
         ) : null}
-        <code>{intervalError || ''}</code>
       </div>
     );
   }
 }
-
 
 export default InfoIntervalsOfDay;

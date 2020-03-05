@@ -14,8 +14,8 @@ import InfoIcon from '@material-ui/icons/InfoOutlined';
 import Rating from '@material-ui/lab/Rating';
 import Box from '@material-ui/core/Box';
 import {
-  quartileBackgroundColor,
-  quartileContrastColor,
+  scoreBackgroundColor,
+  scoreContrastColor,
 } from '../helpers/routeCalculations';
 
 /**
@@ -25,8 +25,7 @@ import {
  */
 export default function InfoScoreCard(props) {
   const {
-    grades,
-    gradeName,
+    score,
     hideRating,
     title,
     largeValue,
@@ -54,25 +53,18 @@ export default function InfoScoreCard(props) {
     setAnchorEl(null);
   }
 
-  const cardStyle = (myGrades, myGradeName) => {
-    return {
-      background: myGrades
-        ? quartileBackgroundColor(myGrades[myGradeName] / 100.0)
-        : 'gray',
-      color: myGrades
-        ? quartileContrastColor(myGrades[myGradeName] / 100.0)
-        : 'black',
-      margin: 4,
-    };
+  const cardStyle = {
+    background: score != null ? scoreBackgroundColor(score) : 'gray',
+    color: score != null ? scoreContrastColor(score) : 'black',
+    margin: 4,
   };
 
-  const rating = grades
-    ? Math.max(Math.round(grades[gradeName] / 10.0) / 2.0, 0.5)
-    : 0;
+  const rating =
+    score != null ? Math.max(Math.round(score / 10.0) / 2.0, 0.5) : 0;
 
   return (
     <Fragment>
-      <Grid item xs component={Paper} style={cardStyle(grades, gradeName)}>
+      <Grid item xs component={Paper} style={cardStyle}>
         <Box
           display="flex"
           flexDirection="column"

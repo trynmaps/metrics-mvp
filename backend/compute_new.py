@@ -1,15 +1,13 @@
 import argparse
 import json
 import requests
-from datetime import datetime, timedelta, time
-import pytz
+from datetime import datetime, timedelta
 import boto3
 
-from models import config, util, wait_times
+from models import config, util
 
 from compute_arrivals import compute_arrivals
-from compute_trip_times import compute_trip_times
-from compute_wait_times import compute_wait_times
+from compute_stats import compute_stats
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = '')
@@ -73,11 +71,8 @@ if __name__ == '__main__':
             print(f'computing arrivals for {d}')
             compute_arrivals(d, agency, route_ids)
 
-            print(f'computing trip times for {d}')
-            compute_trip_times(d, agency, routes)
-
-            print(f'computing wait times for {d}')
-            compute_wait_times(d, agency, routes)
+            print(f'computing stats for {d}')
+            compute_stats(d, agency, routes)
 
             date_str = str(d)
 

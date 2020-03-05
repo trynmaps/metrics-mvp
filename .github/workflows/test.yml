@@ -1,0 +1,17 @@
+name: test
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Build Docker flask image
+      run: docker build --target flask -t opentransit/flask:latest .
+    - name: Run tests
+      run: docker run opentransit/flask:latest python -m unittest discover -s tests
+    - name: Build Docker react-dev image
+      run: docker build --target react-dev -t opentransit/react-dev:latest .
+    - name: Run lint:check
+      run: docker run opentransit/react-dev:latest npm run lint:check

@@ -7,33 +7,35 @@ import { connect } from 'react-redux';
 import { Agencies } from '../config';
 import MapSpider from '../components/MapSpider';
 import RouteTable from '../components/RouteTable';
+import AppBarLogo from '../components/AppBarLogo';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
 import { fetchRoutes, handleGraphParams } from '../actions';
 
 function Dashboard(props) {
-  const { routes, myFetchRoutes, myHandleGraphParams } = props;
+  const { routes } = props;
+  const myFetchRoutes = props.fetchRoutes;
+  const myHandleGraphParams = props.handleGraphParams;
 
-  // for now, only supports 1 agency at a time.
-  // todo: support multiple agencies on one map
   const agency = Agencies[0];
 
   useEffect(() => {
-    myHandleGraphParams({agencyId: agency.id}); // temporary hack, probably should remove once frontend can show routes from multiple agencies at once
-
     if (!routes) {
-      myFetchRoutes({agencyId: agency.id});
+      myFetchRoutes();
     }
-  }, [routes, myFetchRoutes, myHandleGraphParams, agency]); // like componentDidMount, this runs only on first render
+    // trigger action to fetch precomputed stats for initial graphParams
+    myHandleGraphParams({});
+  }, [routes, myFetchRoutes, myHandleGraphParams]); // like componentDidMount, this runs only on first render
 
   return (
     <div className="flex-screen">
       <AppBar position="relative">
         <Toolbar>
           <SidebarButton />
+          <AppBarLogo />
           <div className="page-title">{agency.title}</div>
-          <DateTimePanel />
+          <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
       <Grid container spacing={0} className="grid-container">
@@ -42,7 +44,13 @@ function Dashboard(props) {
           {/* map and table are both full width for 640px windows or smaller, else half width */}
           <MapSpider />
         </Grid>
-        <Grid item xs={12} sm={6} style={{ padding: 12 }} className="grid-info-box">
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          style={{ padding: 12 }}
+          className="grid-info-box"
+        >
           {/* Doing the spacing between Grid items ourselves.  See previous comment. */}
           <RouteTable routes={routes} />
         </Grid>
@@ -52,12 +60,12 @@ function Dashboard(props) {
 }
 
 const mapStateToProps = state => ({
-  routes: state.routes.routes,
+  routes: state.routes.data,
 });
 
 const mapDispatchToProps = dispatch => ({
-  myFetchRoutes: props => dispatch(fetchRoutes(props)),
-  myHandleGraphParams: props => dispatch(handleGraphParams(props)),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
+  handleGraphParams: params => dispatch(handleGraphParams(params)),
 });
 
 export default connect(
