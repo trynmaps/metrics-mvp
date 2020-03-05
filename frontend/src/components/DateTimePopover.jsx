@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Moment from 'moment';
 import { makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -71,17 +71,20 @@ function DateTimePopover(props) {
     graphParams[targetRange] || initialGraphParams.firstDateRange,
   );
 
-  function resetLocalDateRangeParams() {
+  // React wants this method to be memoized via useCallback, otherwise
+  // an exhaustive-deps warning is issued for the useEffect call below.
+
+  const resetLocalDateRangeParams = useCallback(() => {
     setLocalDateRangeParams(
       graphParams[targetRange] || initialGraphParams.firstDateRange,
     );
-  }
+  }, [graphParams, targetRange]);
 
   // Whenever targetRange changes, we need to resync our local state with Redux
 
   useEffect(() => {
     resetLocalDateRangeParams();
-  }, [targetRange, graphParams]);
+  }, [targetRange, graphParams, resetLocalDateRangeParams]);
 
   const classes = useStyles();
   const maxDate = Moment(Date.now()).format('YYYY-MM-DD');
