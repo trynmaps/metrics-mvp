@@ -33,6 +33,13 @@ You can run command line scripts like `backend/compute_arrivals.py` and `backend
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
 
+### Troubleshooting
+
+| Error message | Solution |
+| --- | --- |
+| `Module not found: can't resolve ...` | Run `docker-compose build` |
+
+
 ## Configuring the displayed transit agency
 
 By default, the app shows statistics for San Francisco Muni. You can configure the transit agency displayed in the web app by setting the OPENTRANSIT_AGENCY_IDS environment variable.
@@ -168,4 +175,3 @@ deploying to AWS.
 
 See [agencies.md](docs/agencies.md) for configuring for different agencies, and how the front end gets the
 configuration information.  Important for testing with other devices against your dev machine.
-
