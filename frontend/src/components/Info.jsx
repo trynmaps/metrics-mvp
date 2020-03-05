@@ -43,14 +43,6 @@ function Info(props) {
     tripMetrics && tripMetrics.interval2
       ? tripMetrics.interval2.tripTimes
       : null;
-  /*
-   * By day data is not requested for the second date range.
-   *
-   * The second range can have the same data the first, as they are using the same GraphQL query API.
-   * It gets tricky for the "by day" tab, because how do you chart two date ranges by day when they
-   * could have different numbers of days in them?  Does this chart only work when the ranges have
-   * the same number of days?  Do we "scale" the time axis so both are the full width of the chart?
-   */
 
   const headwayData =
     headways && headways.histogram
@@ -134,6 +126,10 @@ function Info(props) {
 
   function handleTabChange(event, newValue) {
     setTabValue(newValue);
+    // This is a workaround to trigger the react-vis resize listeners,
+    // because the hidden flexible width charts are all width zero, and
+    // stay width zero when unhidden.
+    window.dispatchEvent(new Event('resize'));
   }
 
   function a11yProps(index) {
