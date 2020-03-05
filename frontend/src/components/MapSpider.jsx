@@ -199,7 +199,29 @@ class MapSpider extends Component {
     const selectedStops = props.stops;
 
     if (selectedStops) {
-      items = this.getDownstreamLayers(selectedStops);
+      items = selectedStops.map(startMarker => {
+        const downstreamStops = startMarker.downstreamStops;
+
+        const polylines = [];
+
+        const waitScaled = this.getWaitScale(startMarker);
+
+        // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
+        // when selecting a line.
+        for (let i = 0; i < downstreamStops.length - 1; i++) {
+          // for each stop
+          polylines.push(this.generatePolyline(startMarker, waitScaled, i));
+        }
+
+        // Add a solid circle at the terminal stop.
+        polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
+
+        // Add a route shield next to the terminal stop.
+        polylines.push(this.generateShield(startMarker, waitScaled));
+
+        return polylines;
+      });
+      return items;
     }
 
     return <Fragment>{items}</Fragment>;
@@ -210,14 +232,16 @@ class MapSpider extends Component {
    */
   HoveredLine = () => {
     const { routes, spiderSelection } = this.props;
-    const hoveredLayers = [];
+    const startMarkers = [];
+    const outlineLayers = [];
+    let routeStops;
 
     if (spiderSelection.tableHoverRoute) {
       // index from entire routes array required for proper route color
       const routeIndex = filterRoutes(routes).findIndex(
         route => route.id === spiderSelection.tableHoverRoute.id,
       );
-      let routeStops = this.populateStops(
+      routeStops = this.populateStops(
         spiderSelection.tableHoverRoute,
         routeIndex,
         spiderSelection.latLng,
@@ -234,66 +258,46 @@ class MapSpider extends Component {
         );
       }
 
+      const outlineWeight = 2;
+
       routeStops.forEach(stop => {
         this.addDownstreamStops(stop);
-      });
-      if (spiderSelection.latLng) {
-        routeStops.forEach((startMarker, index) => {
-          const waitScaled = this.getWaitScale(startMarker);
-          // 7 + wait scale replaces the default radius of 8 so it better suits the weight of the polyline
-          const radius = 7 + waitScaled;
-          // White start marker outline
-          hoveredLayers.push(
-            this.getStartMarkers(startMarker, index, radius + 2, 1, '#ffffff'),
-          );
-          hoveredLayers.push(this.getStartMarkers(startMarker, index, radius));
-        });
-      }
-      hoveredLayers.push(this.getDownstreamLayers(routeStops));
-    }
-    return <Fragment>{hoveredLayers}</Fragment>;
-  };
-
-  /**
-   * Get downstream markers and polylines for all given stops
-   */
-  getDownstreamLayers = selectedStops => {
-    const {
-      spiderSelection: { tableHoverRoute },
-    } = this.props;
-    const items = selectedStops.map(startMarker => {
-      const downstreamStops = startMarker.downstreamStops;
-
-      const polylines = [];
-
-      const waitScaled = this.getWaitScale(startMarker);
-
-      // Add white polylines under other layers of hovered route
-      if (tableHoverRoute) {
-        const outlineScale = waitScaled + 4;
+        const downstreamStops = stop.downstreamStops;
+        const outlineScale = this.getWaitScale(stop) + outlineWeight * 2;
+        // Add white polylines under other layers of hovered route
         for (let i = 0; i < downstreamStops.length - 1; i++) {
-          polylines.push(
-            this.generatePolyline(startMarker, outlineScale, i, '#ffffff'),
+          outlineLayers.push(
+            this.generatePolyline(stop, outlineScale, i, '#ffffff'),
           );
         }
+      });
+
+      if (spiderSelection.latLng) {
+        routeStops.forEach((startMarker, index) => {
+          // Replaces the default radius of 8 so it better suits the weight of the polyline
+          const radius = 7 + this.getWaitScale(startMarker);
+          // White start marker outline
+          outlineLayers.push(
+            this.getStartMarkers(
+              startMarker,
+              index,
+              radius + outlineWeight,
+              1,
+              '#ffffff',
+            ),
+          );
+          startMarkers.push(this.getStartMarkers(startMarker, index, radius));
+        });
       }
+    }
 
-      // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
-      // when selecting a line.
-      for (let i = 0; i < downstreamStops.length - 1; i++) {
-        // for each stop
-        polylines.push(this.generatePolyline(startMarker, waitScaled, i));
-      }
-
-      // Add a solid circle at the terminal stop.
-      polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
-
-      // Add a route shield next to the terminal stop.
-      polylines.push(this.generateShield(startMarker, waitScaled));
-
-      return polylines;
-    });
-    return items;
+    return (
+      <Fragment>
+        {outlineLayers}
+        {startMarkers}
+        <this.DownstreamLines stops={routeStops} />
+      </Fragment>
+    );
   };
 
   /**
