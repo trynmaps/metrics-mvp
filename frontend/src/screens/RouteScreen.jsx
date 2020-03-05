@@ -141,7 +141,6 @@ function RouteScreen(props) {
 
   const classes = useStyles();
   const { breadCrumbStyling, breadCrumbsWrapper } = classes;
-  debugger;
   return (
     <Fragment>
       <AppBar position="relative">
@@ -154,12 +153,12 @@ function RouteScreen(props) {
           <AppBarLogo />
           <div className="page-title">{agency ? agency.title : null}</div>
           <div style={{ flexGrow: 1 }} />
-          <div style={{paddingRight: '2rem'}}>
-              <Share />
-            </div>
-            <div>
-              <DateTimePanel dateRangeSupported />
-            </div>
+          <div style={{ paddingRight: '2rem' }}>
+            <Share />
+          </div>
+          <div>
+            <DateTimePanel dateRangeSupported />
+          </div>
         </Toolbar>
       </AppBar>
       <Paper className={breadCrumbsWrapper}>
