@@ -218,6 +218,7 @@ def find_arrivals(agency: config.Agency, route_state: dict, route_config: routec
 
         dir_stops = dir_info.get_stop_ids()
         num_dir_stops = len(dir_stops)
+        is_loop = dir_info.is_loop()
 
         for stop_index, stop_id in enumerate(dir_stops):
             stop_info = route_config.get_stop_info(stop_id)
@@ -228,14 +229,14 @@ def find_arrivals(agency: config.Agency, route_state: dict, route_config: routec
 
             is_terminal = (stop_index == 0) or (stop_index == num_dir_stops - 1)
 
-            if stop_index > 0:
-                prev_stop_id = dir_stops[stop_index - 1]
-                if prev_stop_id not in adjacent_stop_ids:
-                    adjacent_stop_ids.append(prev_stop_id)
-            if stop_index < num_dir_stops - 1:
-                next_stop_id = dir_stops[stop_index + 1]
-                if next_stop_id not in adjacent_stop_ids:
-                    adjacent_stop_ids.append(next_stop_id)
+            if is_loop:
+                adjacent_stop_ids.append(dir_stops[(stop_index + num_dir_stops - 1) % num_dir_stops])
+                adjacent_stop_ids.append(dir_stops[(stop_index + 1) % num_dir_stops])
+            else:
+                if stop_index > 0:
+                    adjacent_stop_ids.append(dir_stops[stop_index - 1])
+                if stop_index < num_dir_stops - 1:
+                    adjacent_stop_ids.append(dir_stops[stop_index + 1])
 
             for adjacent_stop_id in adjacent_stop_ids:
                 adjacent_stop_info = route_config.get_stop_info(adjacent_stop_id)
@@ -428,7 +429,7 @@ def clean_arrivals(possible_arrivals: pd.DataFrame, buses: pd.DataFrame, route_c
 
         nonlocal start_trip
 
-        debug = False #vehicle_id == '8513' and direction_id == '1' # and obs_group == 1
+        debug = False #vehicle_id == 'S005' and direction_id == '0' # and obs_group == 1
 
         if debug:
             print(f"vehicle_id = {vehicle_id}, direction_id = {direction_id}, obs_group = {obs_group}")
@@ -468,10 +469,14 @@ class StopSequence:
     def __init__(self):
         self.last_stop_index = None
         self.last_departure_time = None
+        self.num_loops = 0
         self.stop_indexes = []
         self.row_indexes = []
 
     def append(self, row_index, stop_index, departure_time):
+        if self.last_stop_index is not None and stop_index < self.last_stop_index:
+            self.num_loops += 1
+
         self.last_stop_index = stop_index
         self.last_departure_time = departure_time
         self.stop_indexes.append(stop_index)
@@ -483,6 +488,7 @@ class StopSequence:
         other.last_departure_time = self.last_departure_time
         other.stop_indexes = self.stop_indexes.copy()
         other.row_indexes = self.row_indexes.copy()
+        other.num_loops = self.num_loops
         return other
 
 def get_arrivals_with_ascending_stop_index(
@@ -556,9 +562,11 @@ def get_arrivals_with_ascending_stop_index(
 
     reset_possible_sequences()
 
+    is_loop = dir_info.is_loop()
+
     def print_sequences():
         for sequence_key, sequence in possible_sequences.items():
-            print(f'{sequence_key}: {sequence.stop_indexes} {sequence.row_indexes}')
+            print(f'{sequence_key}: {sequence.stop_indexes} {sequence.row_indexes}{f" ({sequence.num_loops} loops)" if is_loop else ""}')
         print('-')
 
     all_row_indexes = []
@@ -567,7 +575,6 @@ def get_arrivals_with_ascending_stop_index(
     row_index = 0
 
     dir_stop_ids = dir_info.get_stop_ids()
-    is_loop = dir_info.is_loop()
     num_stops = len(dir_stop_ids)
     terminal_stop_index = num_stops if is_loop else (num_stops - 1) # never reaches terminal_stop_index for loop routes
 
@@ -704,6 +711,29 @@ def get_arrivals_with_ascending_stop_index(
                 # If there are multiple possible sequences, remove sequences that appear to be worse than
                 # other sequences in order to avoid creating a large number of possible sequences
 
+                if is_loop:
+                    # If this is a loop route, remove sequences with extra loops
+                    # (can happen in certain geometries due to passing stops out of order, like TriMet route 50)
+                    min_loops_by_stop_index = {}
+                    for sequence_key, sequence in possible_sequences.items():
+                        num_loops = sequence.num_loops
+                        last_stop_index = sequence.last_stop_index
+
+                        if last_stop_index not in min_loops_by_stop_index:
+                            min_loops_by_stop_index[last_stop_index] = num_loops
+                        else:
+                            best_num_loops = min_loops_by_stop_index[last_stop_index]
+                            if num_loops < best_num_loops:
+                                min_loops_by_stop_index[last_stop_index] = num_loops
+
+                    extra_loop_sequence_keys = []
+                    for sequence_key, sequence in possible_sequences.items():
+                        if min_loops_by_stop_index[sequence.last_stop_index] < sequence.num_loops:
+                            extra_loop_sequence_keys.append(sequence_key)
+
+                    for sequence_key in extra_loop_sequence_keys:
+                        del possible_sequences[sequence_key]
+
                 terminal_sequence_keys = []
 
                 longest_sequence_len = 0
@@ -766,8 +796,16 @@ def get_arrivals_with_ascending_stop_index(
                                 smallest_last_index_keys_by_length[seq_len] = sequence_key
                             else:
                                 smallest_last_index_key = smallest_last_index_keys_by_length[seq_len]
+                                best_sequence = possible_sequences[smallest_last_index_key]
 
-                                if last_stop_index < possible_sequences[smallest_last_index_key].last_stop_index:
+                                # For loop routes, different sequences may contain a different number of loops.
+                                # In this case, the one with the smallest last_stop_index for a particular length
+                                # isn't necessarily the best one, since it may contain more loops than another sequence.
+                                # To handle this case, add the total number of stops in each loop for each sequence.
+                                total_stops = num_stops * sequence.num_loops + last_stop_index
+                                best_total_stops = num_stops * best_sequence.num_loops + best_sequence.last_stop_index
+
+                                if total_stops < best_total_stops:
                                     smallest_last_index_keys_by_length[seq_len] = sequence_key
 
                 unneded_sequence_keys = set(possible_sequences.keys()) - set(smallest_last_index_keys_by_length.values())

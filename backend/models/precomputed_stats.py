@@ -1,5 +1,6 @@
 from . import util, config
 from datetime import date
+import sys
 import re
 import requests
 from pathlib import Path
@@ -12,6 +13,11 @@ DefaultVersion = 'v2'
 class StatIds:
     Combined = 'combined'
     MedianTripTimes = 'median-trip-times'
+
+AllStatIds = [
+    StatIds.Combined,
+    StatIds.MedianTripTimes,
+]
 
 class PrecomputedStats:
     def __init__(self, data):
@@ -81,8 +87,8 @@ class PrecomputedStats:
     def get_on_time_rate(self, route_id, direction_id):
         return self.get_direction_stat_value(route_id, direction_id, 'onTimeRate')
 
-def get_precomputed_stats(agency_id, stat_id: str, d: date, start_time_str = None, end_time_str = None, version = DefaultVersion) -> PrecomputedStats:
-    cache_path = get_cache_path(agency_id, stat_id, d, start_time_str, end_time_str, version)
+def get_precomputed_stats(agency_id, stat_id: str, d: date, start_time_str = None, end_time_str = None, scheduled = False, version = DefaultVersion) -> PrecomputedStats:
+    cache_path = get_cache_path(agency_id, stat_id, d, start_time_str, end_time_str, scheduled, version)
 
     try:
         with open(cache_path, "r") as f:
@@ -92,7 +98,7 @@ def get_precomputed_stats(agency_id, stat_id: str, d: date, start_time_str = Non
         pass
 
     s3_bucket = config.s3_bucket
-    s3_path = get_s3_path(agency_id, stat_id, d, start_time_str, end_time_str, version)
+    s3_path = get_s3_path(agency_id, stat_id, d, start_time_str, end_time_str, scheduled, version)
 
     s3_url = f"http://{s3_bucket}.s3.amazonaws.com/{s3_path}"
     r = requests.get(s3_url)
@@ -121,13 +127,14 @@ def get_time_range_path(start_time_str, end_time_str):
     else:
         return f'_{start_time_str.replace(":","")}_{end_time_str.replace(":","")}'
 
-def get_s3_path(agency_id: str, stat_id: str, d: date, start_time_str, end_time_str, version = DefaultVersion) -> str:
+def get_s3_path(agency_id: str, stat_id: str, d: date, start_time_str, end_time_str, scheduled=False, version = DefaultVersion) -> str:
     time_range_path = get_time_range_path(start_time_str, end_time_str)
     date_str = str(d)
     date_path = d.strftime("%Y/%m/%d")
-    return f"precomputed-stats/{version}/{agency_id}/{date_path}/precomputed-stats_{version}_{agency_id}_{stat_id}_{date_str}{time_range_path}.json.gz"
+    prefix = "scheduled-stats" if scheduled else "observed-stats"
+    return f"{prefix}/{version}/{agency_id}/{date_path}/{prefix}_{version}_{agency_id}_{stat_id}_{date_str}{time_range_path}.json.gz"
 
-def get_cache_path(agency_id: str, stat_id: str, d: date, start_time_str, end_time_str, version = DefaultVersion) -> str:
+def get_cache_path(agency_id: str, stat_id: str, d: date, start_time_str, end_time_str, scheduled=False, version = DefaultVersion) -> str:
     time_range_path = get_time_range_path(start_time_str, end_time_str)
 
     date_str = str(d)
@@ -146,9 +153,10 @@ def get_cache_path(agency_id: str, stat_id: str, d: date, start_time_str, end_ti
     if re.match('^[\w\-\+]*$', time_range_path) is None:
         raise Exception(f"Invalid time range: {time_range_path}")
 
-    return f'{util.get_data_dir()}/precomputed-stats_{version}_{agency_id}/{date_str}/precomputed-stats_{version}_{agency_id}_{stat_id}_{date_str}{time_range_path}.json'
+    prefix = "scheduled-stats" if scheduled else "observed-stats"
+    return f'{util.get_data_dir()}/{prefix}_{version}_{agency_id}/{date_str}/{prefix}_{version}_{agency_id}_{stat_id}_{date_str}{time_range_path}.json'
 
-def save_stats(agency_id, stat_id, d, start_time_str, end_time_str, data, save_to_s3=False):
+def save_stats(agency_id, stat_id, d, start_time_str, end_time_str, scheduled, data, save_to_s3=False):
     data_str = json.dumps({
         'version': DefaultVersion,
         'stat_id': stat_id,
@@ -157,7 +165,7 @@ def save_stats(agency_id, stat_id, d, start_time_str, end_time_str, data, save_t
         **data
     }, separators=(',', ':'))
 
-    cache_path = get_cache_path(agency_id, stat_id, d, start_time_str, end_time_str)
+    cache_path = get_cache_path(agency_id, stat_id, d, start_time_str, end_time_str, scheduled)
 
     cache_dir = Path(cache_path).parent
     if not cache_dir.exists():
@@ -169,7 +177,7 @@ def save_stats(agency_id, stat_id, d, start_time_str, end_time_str, data, save_t
 
     if save_to_s3:
         s3 = boto3.resource('s3')
-        s3_path = get_s3_path(agency_id, stat_id, d, start_time_str, end_time_str)
+        s3_path = get_s3_path(agency_id, stat_id, d, start_time_str, end_time_str, scheduled)
         s3_bucket = config.s3_bucket
         print(f'saving to s3://{s3_bucket}/{s3_path}')
         object = s3.Object(s3_bucket, s3_path)

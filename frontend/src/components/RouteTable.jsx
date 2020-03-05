@@ -86,37 +86,8 @@ function stableSort(array, sortOrder, orderBy) {
   return stabilizedThis.map(el => el[0]);
 }
 
-const headRows = [
-  { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
-  { id: 'totalScore', numeric: true, disablePadding: true, label: 'Score' },
-  {
-    id: 'medianWaitTime',
-    numeric: true,
-    disablePadding: true,
-    label: 'Median Wait',
-  },
-  {
-    id: 'onTimeRate',
-    numeric: true,
-    disablePadding: true,
-    label: 'On-Time %',
-  },
-  {
-    id: 'averageSpeed',
-    numeric: true,
-    disablePadding: true,
-    label: 'Average Speed',
-  },
-  {
-    id: 'travelTimeVariability',
-    numeric: true,
-    disablePadding: true,
-    label: 'Travel Time Variability',
-  },
-];
-
 function EnhancedTableHead(props) {
-  const { order, orderBy, onRequestSort } = props;
+  const { order, orderBy, onRequestSort, columns } = props;
   const createSortHandler = property => event => {
     onRequestSort(event, property);
   };
@@ -124,20 +95,20 @@ function EnhancedTableHead(props) {
   return (
     <TableHead>
       <TableRow>
-        {headRows.map(row => (
+        {columns.map(column => (
           <TableCell
-            key={row.id}
-            align={row.numeric ? 'right' : 'left'}
-            padding={row.disablePadding ? 'none' : 'default'}
-            style={{ paddingRight: 12 }}
-            sortDirection={orderBy === row.id ? order : false}
+            key={column.id}
+            align={column.numeric ? 'right' : 'left'}
+            padding="none"
+            style={{ paddingRight: 6, paddingBottom: 3 }}
+            sortDirection={orderBy === column.id ? order : false}
           >
             <TableSortLabel
-              active={orderBy === row.id}
+              active={orderBy === column.id}
               direction={order}
-              onClick={createSortHandler(row.id)}
+              onClick={createSortHandler(column.id)}
             >
-              {row.label}
+              {column.label}
             </TableSortLabel>
           </TableCell>
         ))}
@@ -184,7 +155,7 @@ const useToolbarStyles = makeStyles(theme => ({
 
 const EnhancedTableToolbar = props => {
   const classes = useToolbarStyles();
-  const { numSelected } = props;
+  const { numSelected, columns } = props;
 
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -239,23 +210,11 @@ const EnhancedTableToolbar = props => {
         }}
       >
         <div className={classes.popover}>
-          <b>Score</b> is the average of subscores (0-100) for median wait, long
-          wait probability, average speed, and travel time variability. Click on
-          a route to see its metrics and explanations of how the subscores are
-          calculated.
-          <p />
-          <b>Median Wait</b> is the 50th percentile (typical) wait time for a
-          rider arriving randomly at a stop while the route is running.
-          <p />
-          <b>Long wait probability</b> is the chance a rider has of a wait of
-          twenty minutes or longer after arriving randomly at a stop.
-          <p />
-          <b>Average speed</b> is the speed of the 50th percentile (typical) end
-          to end trip, averaged for all directions.
-          <p />
-          <b>Travel time variability</b> is the 90th percentile end to end
-          travel time minus the 10th percentile travel time. This measures how
-          much extra travel time is needed for some trips.
+          {columns.map(column => {
+            return column.helpContent ? (
+              <p key={column.id}>{column.helpContent}</p>
+            ) : null;
+          })}
         </div>
       </Popover>
     </Toolbar>
@@ -275,6 +234,18 @@ const useStyles = makeStyles(theme => ({
     overflowX: 'auto',
   },
 }));
+
+function makeChip(label, score) {
+  return (
+    <Chip
+      style={{
+        color: scoreContrastColor(score),
+        backgroundColor: scoreBackgroundColor(score),
+      }}
+      label={label}
+    />
+  );
+}
 
 function RouteTable(props) {
   const classes = useStyles();
@@ -308,9 +279,134 @@ function RouteTable(props) {
     };
   });
 
+  const columns = [
+    {
+      id: 'title',
+      numeric: false,
+      label: 'Name',
+      rowValue: row => {
+        return (
+          <Navlink
+            style={{
+              color: theme.palette.primary.dark,
+              textDecoration: 'none',
+            }}
+            to={{
+              type: 'ROUTESCREEN',
+              payload: {
+                agencyId: row.route.agencyId,
+                routeId: row.route.id,
+              },
+              query: props.query,
+            }}
+          >
+            {row.route.title}
+          </Navlink>
+        );
+      },
+    },
+    {
+      id: 'totalScore',
+      numeric: true,
+      label: 'Score',
+      rowValue: row => {
+        return makeChip(
+          row.totalScore == null ? '--' : row.totalScore,
+          row.totalScore,
+        );
+      },
+      helpContent: (
+        <Fragment>
+          <b>Score</b> is the average of subscores (0-100) for median wait,
+          on-time %, average speed, and travel time variability. Click on a
+          route to see its metrics and explanations of how the subscores are
+          calculated.
+        </Fragment>
+      ),
+    },
+    {
+      id: 'medianWaitTime',
+      numeric: true,
+      label: 'Median Wait',
+      rowValue: row => {
+        return makeChip(
+          row.medianWaitTime == null
+            ? '--'
+            : `${row.medianWaitTime.toFixed(0)} min`,
+          row.medianWaitScore,
+        );
+      },
+      helpContent: (
+        <Fragment>
+          <b>Median Wait</b> is the 50th percentile (typical) wait time for a
+          rider arriving randomly at a stop while the route is running.
+        </Fragment>
+      ),
+    },
+    {
+      id: 'onTimeRate',
+      numeric: true,
+      label: 'On-Time %',
+      rowValue: row => {
+        return makeChip(
+          row.onTimeRate == null
+            ? '--'
+            : `${(row.onTimeRate * 100).toFixed(0)}%`,
+          row.onTimeRateScore,
+        );
+      },
+      helpContent: (
+        <Fragment>
+          <b>On-Time %</b> is the percentage of scheduled departure times where
+          a vehicle departed less than 5 minutes after the scheduled departure
+          time or less than 1 minute before the scheduled departure time.
+        </Fragment>
+      ),
+    },
+    {
+      id: 'averageSpeed',
+      numeric: true,
+      label: 'Average Speed',
+      rowValue: row => {
+        return makeChip(
+          row.averageSpeed == null
+            ? '--'
+            : `${row.averageSpeed.toFixed(0)} mph`,
+          row.speedScore,
+        );
+      },
+      helpContent: (
+        <Fragment>
+          <b>Average Speed</b> is the speed of the 50th percentile (typical) end
+          to end trip, averaged for all directions.
+        </Fragment>
+      ),
+    },
+    {
+      id: 'travelTimeVariability',
+      numeric: true,
+      label: 'Travel Time Variability',
+      rowValue: row => {
+        return makeChip(
+          row.travelTimeVariability == null
+            ? '--'
+            : `\u00b1 ${(row.travelTimeVariability / 2).toFixed(0)} min`,
+          row.travelVarianceScore,
+        );
+      },
+      helpContent: (
+        <Fragment>
+          <b>Travel time variability</b> is the 90th percentile end to end
+          travel time minus the 10th percentile travel time. This measures how
+          much extra travel time is needed for some trips.
+        </Fragment>
+      ),
+    },
+  ];
+
   return (
     <div>
-      <EnhancedTableToolbar numSelected={0} />
+      <EnhancedTableToolbar columns={columns} numSelected={0} />
       <div className={classes.tableWrapper}>
         <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
           <EnhancedTableHead
@@ -318,165 +414,36 @@ function RouteTable(props) {
             orderBy={orderBy}
             onRequestSort={handleRequestSort}
             rowCount={displayedRouteStats.length}
+            columns={columns}
           />
           <TableBody>
-            {stableSort(displayedRouteStats, order, orderBy).map(
-              (row, index) => {
-                const labelId = `enhanced-table-checkbox-${index}`;
-
-                return (
-                  <TableRow
-                    hover
-                    role="checkbox"
-                    tabIndex={-1}
-                    key={row.route.id}
-                  >
-                    <TableCell
-                      component="th"
-                      id={labelId}
-                      scope="row"
-                      padding="none"
-                      style={{
-                        border: 'none',
-                        paddingTop: 6,
-                        paddingBottom: 6,
-                      }}
-                    >
-                      <Navlink
+            {stableSort(displayedRouteStats, order, orderBy).map(row => {
+              return (
+                <TableRow
+                  hover
+                  role="checkbox"
+                  tabIndex={-1}
+                  key={row.route.id}
+                >
+                  {columns.map(column => {
+                    return (
+                      <TableCell
+                        key={column.id}
+                        align={column.numeric ? 'right' : 'left'}
+                        padding="none"
                         style={{
-                          color: theme.palette.primary.dark,
-                          textDecoration: 'none',
-                        }}
-                        to={{
-                          type: 'ROUTESCREEN',
-                          payload: {
-                            agencyId: row.route.agencyId,
-                            routeId: row.route.id,
-                          },
-                          query: props.query,
+                          border: 'none',
+                          paddingTop: 6,
+                          paddingBottom: 6,
                         }}
                       >
-                        {row.route.title}
-                      </Navlink>
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      padding="none"
-                      style={{
-                        border: 'none',
-                        paddingTop: 6,
-                        paddingBottom: 6,
-                      }}
-                    >
-                      <Chip
-                        style={{
-                          color: scoreContrastColor(row.totalScore),
-                          backgroundColor: scoreBackgroundColor(row.totalScore),
-                        }}
-                        label={row.totalScore == null ? '--' : row.totalScore}
-                      />
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      padding="none"
-                      style={{
-                        border: 'none',
-                        paddingTop: 6,
-                        paddingBottom: 6,
-                      }}
-                    >
-                      <Chip
-                        style={{
-                          color: scoreContrastColor(row.medianWaitScore),
-                          backgroundColor: scoreBackgroundColor(
-                            row.medianWaitScore,
-                          ),
-                        }}
-                        label={
-                          row.medianWaitTime == null
-                            ? '--'
-                            : `${row.medianWaitTime.toFixed(0)} min`
-                        }
-                      />
-                    </TableCell>
-
-                    <TableCell
-                      align="right"
-                      style={{ border: 'none' }}
-                      padding="none"
-                    >
-                      <Chip
-                        style={{
-                          color: scoreContrastColor(row.onTimeRateScore),
-                          backgroundColor: scoreBackgroundColor(
-                            row.onTimeRateScore,
-                          ),
-                        }}
-                        label={
-                          row.onTimeRate == null ? (
-                            '--'
-                          ) : (
-                            <Fragment>
-                              {(row.onTimeRate * 100).toFixed(0)}
-                              {'%'}
-                            </Fragment>
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      padding="none"
-                      style={{
-                        border: 'none',
-                        paddingTop: 6,
-                        paddingBottom: 6,
-                      }}
-                    >
-                      <Chip
-                        style={{
-                          color: scoreContrastColor(row.speedScore),
-                          backgroundColor: scoreBackgroundColor(row.speedScore),
-                        }}
-                        label={
-                          row.averageSpeed == null
-                            ? '--'
-                            : `${row.averageSpeed.toFixed(0)} mph`
-                        }
-                      />
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      padding="none"
-                      style={{
-                        border: 'none',
-                        paddingTop: 6,
-                        paddingBottom: 6,
-                      }}
-                    >
-                      <Chip
-                        style={{
-                          color: scoreContrastColor(row.travelVarianceScore),
-                          backgroundColor: scoreBackgroundColor(
-                            row.travelVarianceScore,
-                          ),
-                        }}
-                        label={
-                          row.travelTimeVariability == null ? (
-                            '--'
-                          ) : (
-                            <Fragment>
-                              {'\u00b1'}{' '}
-                              {(row.travelTimeVariability / 2).toFixed(0)} min
-                            </Fragment>
-                          )
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              },
-            )}
+                        {column.rowValue(row)}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

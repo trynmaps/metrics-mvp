@@ -243,6 +243,11 @@ class GtfsScraper:
         return dates_map
 
     def save_timetables(self, save_to_s3=False, skip_existing=False):
+        # If skip_existing is true, this will only save timetables if the GTFS feed contains any
+        # new dates for which timetables haven't already been saved.
+        #
+        # Returns true if any new timetables were saved, and false otherwise.
+
         agency_id = self.agency_id
 
         dates_map = self.get_services_by_date()
@@ -276,7 +281,7 @@ class GtfsScraper:
 
         if skip_existing and date_keys == old_date_keys:
             print("No new dates in GTFS feed, skipping")
-            return
+            return False
 
         trips_df = self.get_gtfs_trips()
 
@@ -383,6 +388,8 @@ class GtfsScraper:
                 ContentEncoding='gzip',
                 ACL='public-read'
             )
+
+        return True
 
     def get_custom_direction_id(self, custom_directions_arr, gtfs_direction_id, stop_ids):
 
@@ -495,6 +502,9 @@ class GtfsScraper:
         last_stop_id = stop_ids[0] + "-2"
 
         sort_key = lambda arr: arr['t']
+
+        if (first_stop_id not in direction_arrivals) or (last_stop_id not in direction_arrivals):
+            return
 
         first_stop_arrivals = sorted(direction_arrivals[first_stop_id], key=sort_key)
         last_stop_arrivals = sorted(direction_arrivals[last_stop_id], key=sort_key)
@@ -884,6 +894,7 @@ class GtfsScraper:
         url = route.route_url if hasattr(route, 'route_url') and isinstance(route.route_url, str) else None
         color = route.route_color if hasattr(route, 'route_color') and isinstance(route.route_color, str) else None
         text_color = route.route_text_color if hasattr(route, 'route_text_color') and isinstance(route.route_text_color, str) else None
+        sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
 
         route_id = getattr(route, agency.route_id_gtfs_field)
 
@@ -905,6 +916,7 @@ class GtfsScraper:
             'color': color,
             'text_color': text_color,
             'gtfs_route_id': gtfs_route_id,
+            'sort_order': sort_order,
             'stops': {},
         }
 
@@ -957,39 +969,46 @@ class GtfsScraper:
 
         return route_data
 
-    def save_routes(self, save_to_s3=True):
+    def sort_routes(self, routes_data):
         agency = self.agency
-        agency_id = agency.id
-
-        routes_data = []
-
-        routes_df = self.get_gtfs_routes()
-
         if agency.provider == 'nextbus':
-            nextbus_route_order = [route.id for route in nextbus.get_route_list(agency.nextbus_id)]
-
-        for route in routes_df.itertuples():
-            route_data = self.get_route_data(route)
-
+            nextbus_route_order = [
+                route.id for route in nextbus.get_route_list(agency.nextbus_id)
+            ]
+        use_sort_order = False
+        for route_data in routes_data:
             if agency.provider == 'nextbus':
                 try:
                     sort_order = nextbus_route_order.index(route_data['id'])
+                    use_sort_order = True
                 except ValueError as ex:
                     print(ex)
                     sort_order = None
             else:
-                sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
+                if route_data['sort_order'] is not None:
+                    use_sort_order = True
 
-            route_data['sort_order'] = sort_order
+        def get_sort_key(route_data):
+            if use_sort_order:
+                if route_data['sort_order'] is None:
+                    if route_data['type'] == 1:
+                        # place subways at the front if they don't have a sort_order
+                        return 0
+                    return 9999
+                return route_data['sort_order']
+            return route_data['title']
+        return sorted(routes_data, key=get_sort_key)
 
-            routes_data.append(route_data)
+    def save_routes(self, save_to_s3=True):
+        agency = self.agency
+        agency_id = agency.id
 
-        if routes_data[0]['sort_order'] is not None:
-            sort_key = lambda route_data: route_data['sort_order']
-        else:
-            sort_key = lambda route_data: route_data['id']
-
-        routes_data = sorted(routes_data, key=sort_key)
+        routes_df = self.get_gtfs_routes()
+        routes_data = [
+            self.get_route_data(route)
+            for route in routes_df.itertuples()
+        ]
+        routes_data = self.sort_routes(routes_data)
 
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 

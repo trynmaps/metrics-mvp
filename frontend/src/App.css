@@ -44,6 +44,7 @@
 .page-title
 {
     flex-grow:1;
+    font-size:18px;
 }
 
 .flex-screen
