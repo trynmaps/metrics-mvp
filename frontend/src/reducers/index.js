@@ -7,6 +7,7 @@ import {
 } from '../helpers/routeCalculations';
 
 export { default as loading } from './loadingReducer';
+export { default as title } from './titleReducer';
 export { default as page } from './page';
 
 const momentYesterday = Moment(Date.now() - 24 * 60 * 60 * 1000);
