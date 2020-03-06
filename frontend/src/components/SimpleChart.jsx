@@ -61,8 +61,6 @@ export default function SimpleChart(props) {
     props.yDomain ||
     (stackBy === 'y' ? null : getDefaultYDomain(series, stackBy));
 
-  const SeriesComponent = component;
-
   const getDataValues = xValue => {
     return series.map(s => (s.data ? s.data.find(d => d.x === xValue) : null));
   };
@@ -105,16 +103,19 @@ export default function SimpleChart(props) {
           tickFormat={yFormat}
           style={{ text: { fontSize: '13px' } }}
         />
-        {series.map((s, index) => (
-          <SeriesComponent
-            key={index}
-            getNull={d => d.y !== null}
-            onNearestX={!dataHasX0 ? onNearestX : null}
-            onValueMouseOver={dataHasX0 ? onValueMouseOver : null}
-            onValueMouseOut={dataHasX0 ? onMouseLeave : null}
-            {...s}
-          />
-        ))}
+        {series.map((s, index) => {
+          const SeriesComponent = s.component || component;
+          return (
+            <SeriesComponent
+              key={index}
+              getNull={d => d.y !== null}
+              onNearestX={!dataHasX0 ? onNearestX : null}
+              onValueMouseOver={dataHasX0 ? onValueMouseOver : null}
+              onValueMouseOut={dataHasX0 ? onMouseLeave : null}
+              {...s}
+            />
+          );
+        })}
         {yUnits ? (
           <ChartLabel
             text={yUnits}

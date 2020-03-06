@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 import Moment from 'moment';
 import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
 import { getPercentileValue } from '../helpers/graphData';
-import SimpleLineMarkChart from './SimpleLineMarkChart';
+import SimpleVerticalBarChart from './SimpleVerticalBarChart';
 import '../../node_modules/react-vis/dist/style.css';
 
 const AVERAGE_TIME = 'average_time';
@@ -122,7 +122,7 @@ function TripTimesByDayChart(props) {
           />
         </div>
       </FormControl>
-      <SimpleLineMarkChart
+      <SimpleVerticalBarChart
         width={500}
         height={250}
         xFormat={i =>
@@ -156,7 +156,7 @@ function TripTimesByDayChart(props) {
             data: scheduledWaitData,
             cluster: 'second',
             size: 0,
-            opacity: 0.5,
+            // opacity: 0.5,
           },
           {
             title: 'Travel Time (Scheduled)',
@@ -164,7 +164,7 @@ function TripTimesByDayChart(props) {
             data: scheduledTripData,
             cluster: 'second',
             size: 0,
-            opacity: 0.5,
+            // opacity: 0.5,
           },
         ]}
       />

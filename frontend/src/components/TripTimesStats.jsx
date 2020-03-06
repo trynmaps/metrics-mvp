@@ -15,8 +15,8 @@ function TripTimesStats(props) {
 
   return (
     <>
-      <TripTimesByTimeChart />
       <TripTimesByDayChart />
+      <TripTimesByTimeChart />
       <WaitTimesHistogram />
       <TravelTimesHistogram />
       <TravelTimeChart />
