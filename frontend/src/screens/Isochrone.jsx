@@ -37,6 +37,7 @@ import {
   RoutesVersion,
 } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
+import { getRouteColor } from '../helpers/routeCalculations';
 
 import './Isochrone.css';
 
@@ -186,9 +187,10 @@ class Isochrone extends React.Component {
     if (routes && map) {
       routes.forEach(route => {
         if (this.state.enabledRoutes[route.id] !== false) {
+          const color = getRouteColor(route);
           return route.directions.map(direction => {
             const routeLayer = L.polyline(getTripPoints(route, direction), {
-              color: '#0177BF',
+              color,
               opacity: 0.2,
               weight: 1.5,
             }).addTo(map);

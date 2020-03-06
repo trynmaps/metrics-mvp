@@ -297,8 +297,9 @@ export function fetchRoutes() {
         .get(generateRoutesURL(agencyId))
         .then(response => {
           const routes = response.data.routes;
-          routes.forEach(route => {
+          routes.forEach((route, i) => {
             route.agencyId = agencyId;
+            route.routeIndex = i;
           });
           dispatch({
             type: 'RECEIVED_ROUTES',

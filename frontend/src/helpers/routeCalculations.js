@@ -116,3 +116,18 @@ export function addAveragesForAllDirections(routeStats, property) {
   });
   routeStats[property] = count > 0 ? total / count : null;
 }
+
+/**
+ * A function that returns one of ten colors given a route index.
+ * (index modulo 10).
+ */
+const routeColorOptions = d3.scaleQuantize([0, 9], d3.schemeCategory10);
+
+/**
+ * Gets color associated with route or one of routeColorOptions
+ */
+export function getRouteColor(route) {
+  return route.color
+    ? `#${route.color}`
+    : routeColorOptions(route.routeIndex % 10);
+}

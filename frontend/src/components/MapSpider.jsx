@@ -12,14 +12,17 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
-import * as d3 from 'd3';
 import { Snackbar } from '@material-ui/core';
 import {
   getDownstreamStopIds,
   getTripPoints,
   isInServiceArea,
 } from '../helpers/mapGeometry';
-import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
+import {
+  filterRoutes,
+  milesBetween,
+  getRouteColor,
+} from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
 
@@ -38,12 +41,6 @@ function ValidLocationAlert(props) {
 }
 
 class MapSpider extends Component {
-  /**
-   * A function that returns one of ten colors given a route index.
-   * (index modulo 10).
-   */
-  routeColorOptions = d3.scaleQuantize([0, 9], d3.schemeCategory10);
-
   constructor(props) {
     super(props);
 
@@ -103,18 +100,6 @@ class MapSpider extends Component {
   };
 
   /**
-   * Gets color associated with route or one of routeColorOptions
-   */
-
-  getLineColor = lineInfo => {
-    const lineColor = lineInfo.route.color
-      ? `#${lineInfo.route.color}`
-      : this.routeColorOptions(lineInfo.routeIndex % 10);
-
-    return lineColor;
-  };
-
-  /**
    * Creates a clickable Marker with a custom svg icon (MapShield) for the route
    * represented by lineInfo.
    *
@@ -130,7 +115,7 @@ class MapSpider extends Component {
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
       html: MapShield({
         waitScaled,
-        color: this.getLineColor(lineInfo),
+        color: getRouteColor(lineInfo.route),
         routeText: lineInfo.route.id,
       }),
     });
@@ -178,7 +163,7 @@ class MapSpider extends Component {
             key={`startMarker-${index}`}
             center={position}
             radius="8"
-            fillColor={this.getLineColor(nearbyLine)}
+            fillColor={getRouteColor(nearbyLine.route)}
             fillOpacity={0.2}
             stroke={false}
           >
@@ -255,7 +240,7 @@ class MapSpider extends Component {
         key={`startMarker-${lineInfo.route.id}-terminal-${lastStop.id}`}
         center={terminalPosition}
         radius={3.0 + waitScaled / 2.0}
-        fillColor={this.getLineColor(lineInfo)}
+        fillColor={getRouteColor(lineInfo.route)}
         fillOpacity={0.75}
         stroke={false}
       ></CircleMarker>
@@ -278,7 +263,7 @@ class MapSpider extends Component {
           downstreamStops[i].id,
           downstreamStops[i + 1].id,
         )}
-        color={this.getLineColor(lineInfo)}
+        color={getRouteColor(lineInfo.route)}
         opacity={0.5}
         weight={computedWeight}
         onMouseOver={e => {
@@ -360,9 +345,10 @@ class MapSpider extends Component {
 
     if (routes && map) {
       filterRoutes(routes).forEach(route => {
+        const color = getRouteColor(route);
         route.directions.forEach(direction => {
           const routeLayer = L.polyline(getTripPoints(route, direction), {
-            color: '#0177BF',
+            color,
             opacity: 0.2,
             weight: 1.5,
           }).addTo(map);
@@ -430,7 +416,7 @@ class MapSpider extends Component {
 
     if (routes) {
       // eslint-disable-next-line no-loop-func
-      filterRoutes(routes).forEach((route, i) => {
+      filterRoutes(routes).forEach(route => {
         if (route.directions) {
           // eslint-disable-next-line no-loop-func
           route.directions.forEach(direction => {
@@ -443,7 +429,6 @@ class MapSpider extends Component {
             if (nearest != null) {
               nearest.direction = direction;
               nearest.route = route;
-              nearest.routeIndex = i;
 
               // Add the downstream stops to the terminal.
               const downstreamStopIds = getDownstreamStopIds(
