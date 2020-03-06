@@ -86,6 +86,18 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+/*
+ * Renders a control that allows the user to select a date range,
+ * and updates the query string.
+ *
+ * It appears like a Material UI dropdown/select control, but clicking
+ * it opens a panel with custom UI for selecting a date range.
+ *
+ * If the targetRange prop is 'secondDateRange', updates the
+ * second date range used for comparison.
+ *
+ * This control preserves the time ranges selected via the TimeRangeControl.
+ */
 function DateRangeControl(props) {
   const { graphParams } = props;
 

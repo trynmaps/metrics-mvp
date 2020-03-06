@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-// import { makeStyles } from '@material-ui/core/styles';
 import FormControl from '@material-ui/core/FormControl';
 import Tooltip from '@material-ui/core/Tooltip';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -12,19 +11,10 @@ import TimeRangeControl from './TimeRangeControl';
 import { fullQueryFromParams } from '../routesMap';
 
 /*
-const useStyles = makeStyles(() => ({
-  backspaceIcon: {
-    color: red[900],
-    fontSize: 19,
-    verticalAlign: '-4px',
-    opacity: 0.6,
-    '&:hover': {
-      opacity: 1.0,
-    },
-  },
-}));
-*/
-
+ * Renders dropdowns with labels for selecting date/time ranges.
+ *
+ * If the compareSupported prop is true, allows adding a second date range for comparison.
+ */
 function DateTimeRangeControls(props) {
   const { compareSupported, graphParams, currentLocation } = props;
 

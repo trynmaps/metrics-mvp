@@ -162,7 +162,6 @@ const EnhancedTableToolbar = props => {
   return (
     <>
       <div className={classes.title}>
-        {/* {dateLabel}{timeLabel ? (" - " + timeLabel) : null}{' '} */}
         <span
           style={{
             fontWeight: 'normal',

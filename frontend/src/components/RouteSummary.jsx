@@ -1,14 +1,18 @@
 import React from 'react';
-
 import { connect } from 'react-redux';
-
 import { Table, TableBody, TableHead } from '@material-ui/core';
-
 import SummaryRow from './SummaryRow';
 import SummaryHeaderRow from './SummaryHeaderRow';
 import { metersToMiles } from '../helpers/routeCalculations';
 import { renderDateRange } from '../helpers/dateTime';
 
+/*
+ * Renders the Summary tab on the RouteScreen when a route and optional direction are selected,
+ * but start/end stops are not selected.
+ *
+ * When a single date range is selected, displays a table comparing observed and scheduled metrics.
+ * When two date ranges are selected, displays a table comparing observed metrics from both date ranges.
+ */
 function RouteSummary(props) {
   const { graphParams, routeMetrics, routes } = props;
 

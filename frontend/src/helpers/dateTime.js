@@ -33,6 +33,11 @@ export function renderDateString(ymdString) {
   return date.toLocaleDateString('en', { timeZone: 'UTC' });
 }
 
+/**
+ * Returns the short label for the given time range.
+ *
+ * @param {String} value - string in the format "startTime-endTime".
+ */
 export function getTimeRangeShortLabel(value) {
   const timeRange = TIME_RANGES.find(r => r.value === value);
   return timeRange ? timeRange.shortLabel : value;
@@ -87,6 +92,9 @@ export function getDaysOfTheWeekLabel(daysOfTheWeek) {
   return checkedLabels.join();
 }
 
+/**
+ * Returns a string describing the given date/time range parameters.
+ */
 export function renderDateRange(dateRangeParams) {
   const dateLabel = renderDateString(dateRangeParams.date);
   let res = '';

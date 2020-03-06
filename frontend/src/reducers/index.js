@@ -208,6 +208,7 @@ const initialRouteMetrics = {
   variablesJson: null,
   data: null,
   segmentsMap: {},
+  error: null,
 };
 
 function addAveragedRouteMetricsForAllDirections(intervalMetrics) {
@@ -238,13 +239,21 @@ export function routeMetrics(state = initialRouteMetrics, action) {
         variablesJson: action.variablesJson,
         data: action.data,
         segmentsMap: makeSegmentsMap(action.data),
+        error: null,
       };
     case 'REQUEST_ROUTE_METRICS':
       return {
         ...state,
         variablesJson: action.variablesJson,
         data: null,
+        error: null,
         segmentsMap: {},
+      };
+    case 'ERROR_ROUTE_METRICS':
+      return {
+        ...state,
+        error: action.error,
+        data: null,
       };
     default:
       return state;

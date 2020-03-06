@@ -4,6 +4,9 @@ import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { isLoadingRequest } from '../reducers/loadingReducer';
 
+/*
+ * Renders a spinning progress icon when any requests are loading.
+ */
 function LoadingIndicator(props) {
   return props.isLoading ? (
     <Box p={1}>

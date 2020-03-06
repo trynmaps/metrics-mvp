@@ -29,6 +29,13 @@ function getDefaultYDomain(series) {
   return [yMin, yMax];
 }
 
+/*
+ * Wrapper around react-vis XYPlot that makes it easier to create line charts, bar charts, histograms, etc.
+ * with consistent UI.
+ *
+ * SimpleChart automatically manages crosshairs and positions labels, so that it isn't necessary to
+ * handle this behavior directly via the low-level APIs provided by react-vis.
+ */
 export default function SimpleChart(props) {
   const {
     series,

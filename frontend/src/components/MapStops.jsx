@@ -419,8 +419,7 @@ class MapStops extends Component {
     });
   };
 
-  // Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
-  // case make the map half height.
+  // Make the map full height unless the window is smaller than the md breakpoint (1050px).
   //
   // TODO: Need to convert this component to a functional component.  Then we can use the useTheme
   // hook to programatically access the breakpoint widths.
@@ -429,7 +428,7 @@ class MapStops extends Component {
   //
 
   computeHeight() {
-    return window.innerWidth >= 600
+    return window.innerWidth >= 1050
       ? window.innerHeight - 48 - 64 - 49
       : window.innerHeight * 0.65;
   }
@@ -458,24 +457,6 @@ class MapStops extends Component {
     if (routes && graphParams) {
       selectedRoute = routes.find(route => route.id === graphParams.routeId);
 
-      /*
-      const otherRoutes = filterRoutes(routes).map(route => {
-        if (route.id != graphParams.routeId) {
-            const direction = route.directions[0];
-            return <Polyline
-                key={`poly-${route.id}-${direction.id}`}
-                positions={getTripPoints(route, direction)}
-                color="#0177BF"
-                opacity={0.2}
-                weight={1}
-              >
-              </Polyline>;
-        }
-      });
-
-        items.push(otherRoutes);
-        */
-
       if (selectedRoute) {
         selectedRoute.directions.forEach(direction => {
           // plot only the selected direction if we have one, or else all directions
@@ -495,22 +476,6 @@ class MapStops extends Component {
         });
       }
     }
-
-    /*
-    function getMapInstruction() {
-      if (!graphParams.directionId) {
-        return 'Select a direction to show stops in that direction.';
-      }
-      if (!graphParams.startStopId) {
-        return 'Select origin and destination stops to show statistics for a particular trip.';
-      }
-      if (!graphParams.endStopId) {
-        return 'Select a destination stop to show statistics for a particular trip.';
-      }
-      return '';
-    }  */
-
-    // const mapInstruction = getMapInstruction();
 
     return (
       <Map

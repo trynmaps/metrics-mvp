@@ -1,17 +1,17 @@
-/**
- * Stop to stop trip summary component.
- */
-
 import React from 'react';
 import { connect } from 'react-redux';
-
 import { Table, TableBody, TableHead } from '@material-ui/core';
-
 import { getDistanceInMiles, getTripStops } from '../helpers/mapGeometry';
 import { renderDateRange } from '../helpers/dateTime';
 import SummaryRow from './SummaryRow';
 import SummaryHeaderRow from './SummaryHeaderRow';
 
+/*
+ * Renders the Summary tab on the RouteScreen when a route, direction, start stop, and end stop are selected.
+ *
+ * When a single date range is selected, displays a table comparing observed and scheduled metrics.
+ * When two date ranges are selected, displays a table comparing observed metrics from both date ranges.
+ */
 function TripSummary(props) {
   const { tripMetrics, graphParams, routes } = props;
 

@@ -8,6 +8,15 @@ import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
 import { dateQueryFromDateRangeParams } from '../routesMap';
 import { updateQuery } from '../actions';
 
+/*
+ * Renders a dropdown that allows the user to select a time range,
+ * and updates the query string.
+ *
+ * If the targetRange prop is 'secondDateRange', updates the
+ * second time range used for comparison.
+ *
+ * This control preserves the dates selected via the DateRangeControl.
+ */
 function TimeRangeControl(props) {
   const { graphParams } = props;
 

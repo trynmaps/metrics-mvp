@@ -20,6 +20,10 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
+/*
+ * Renders controls for selecting a route, direction, start/end stops, and date range(s),
+ * so that the user can select the metrics displayed on the route screen.
+ */
 function ControlPanel(props) {
   const { routes, graphParams } = props;
   let secondStopList = [];
@@ -327,7 +331,6 @@ function ControlPanel(props) {
   );
 }
 
-// for this entire component, now using graphParams values in Redux instead of local state.
 const mapStateToProps = state => ({
   graphParams: state.graphParams,
   query: state.location.query,

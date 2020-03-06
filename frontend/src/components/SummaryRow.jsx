@@ -7,6 +7,22 @@ import IconButton from '@material-ui/core/IconButton';
 import Popover from '@material-ui/core/Popover';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 
+/*
+ * Renders a row of a table that renders two columns of data
+ * with particular units and precision, and another column comparing the two data values.
+ * Can be used for displaying and comparing observed/scheduled metrics,
+ * or metrics from two date ranges.
+ *
+ * The `columns` prop is an array of two strings that are arbitrary prop names (e.g. ["observed","scheduled"]).
+ * with values that will be rendered in that order.
+ *
+ * The optional `baseColumn` prop is one of the two names in the `columns` array, which will be used as the basis for
+ * comparing the other column's value.
+ *
+ * `goodDiffDirection` should be 1 if it is better to have higher numbers, or -1 if it is better to have lower numbers.
+ * `positiveDiffDesc` will be used to describe numbers that are higher than the base value (e.g. "faster","more","longer")
+ * `negativeDiffDesc` will be used to describe numbers that are smaller than the base value (e.g. "slower","fewer","shorter")
+ */
 export default function SummaryRow(props) {
   const {
     columns,

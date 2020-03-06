@@ -2,6 +2,9 @@ import React from 'react';
 
 import { TableCell, TableRow } from '@material-ui/core';
 
+/*
+ * Renders a header row for a table containing SummaryRow components.
+ */
 export default function SummaryHeaderRow(props) {
   const { headers } = props;
   const headerCellStyle = { padding: 6, fontSize: 16 };

@@ -3,11 +3,9 @@ import { connect } from 'react-redux';
 
 import { makeStyles } from '@material-ui/core/styles';
 import { AppBar, Tab, Tabs, Box, Paper, Grid } from '@material-ui/core';
-
 import MapStops from '../components/MapStops';
 import ControlPanel from '../components/ControlPanel';
-import RouteSummary from '../components/RouteSummary';
-import TripSummary from '../components/TripSummary';
+import SummaryStats from '../components/SummaryStats';
 import TripTimesStats from '../components/TripTimesStats';
 import ServiceFrequencyStats from '../components/ServiceFrequencyStats';
 import OnTimePerformanceStats from '../components/OnTimePerformanceStats';
@@ -23,27 +21,48 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-// tab values
-const SUMMARY = 'summary';
-const TRIP_TIMES = 'trip_times';
-const SERVICE_FREQUENCY = 'service_frequency';
-const ON_TIME_PERFORMANCE = 'otp';
-const TRIP_CHART = 'trip_chart';
-
 function RouteScreen(props) {
-  const { graphParams, routes, tripMetricsError, tripMetricsLoading } = props;
+  const {
+    graphParams,
+    routes,
+    tripMetricsError,
+    tripMetricsLoading,
+    routeMetricsError,
+    routeMetricsLoading,
+  } = props;
 
-  const [tabValue, setTabValue] = React.useState(SUMMARY);
+  const tabs = [
+    {
+      value: 'summary',
+      label: 'Summary',
+      component: SummaryStats,
+    },
+    {
+      value: 'trip_times',
+      label: 'Trip Times',
+      component: TripTimesStats,
+    },
+    {
+      value: 'service_freq',
+      label: 'Service Frequency',
+      component: ServiceFrequencyStats,
+    },
+    {
+      value: 'otp',
+      label: 'On-Time Performance',
+      component: OnTimePerformanceStats,
+    },
+    {
+      value: 'trip_chart',
+      label: 'Trip Chart',
+      component: MareyChart,
+    },
+  ];
+
+  const [tabValue, setTabValue] = React.useState(tabs[0].value);
 
   function handleTabChange(event, newValue) {
     setTabValue(newValue);
-  }
-
-  function a11yProps(myTabValue) {
-    return {
-      id: `simple-tab-${myTabValue}`,
-      'aria-controls': `simple-tabpanel-${myTabValue}`,
-    };
   }
 
   const myFetchRoutes = props.fetchRoutes;
@@ -58,6 +77,8 @@ function RouteScreen(props) {
   const classes = useStyles();
 
   const tripSelected = graphParams.startStopId && graphParams.endStopId;
+  const loading = tripSelected ? tripMetricsLoading : routeMetricsLoading;
+  const error = tripSelected ? tripMetricsError : routeMetricsError;
 
   return (
     <>
@@ -72,60 +93,34 @@ function RouteScreen(props) {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab
-            style={{ minWidth: 72 }}
-            label="Summary"
-            value={SUMMARY}
-            {...a11yProps(SUMMARY)}
-          />
-          <Tab
-            style={{ minWidth: 72 }}
-            label="Trip Times"
-            value={TRIP_TIMES}
-            {...a11yProps(TRIP_TIMES)}
-          />
-          <Tab
-            style={{ minWidth: 72 }}
-            label="Service Frequency"
-            value={SERVICE_FREQUENCY}
-            {...a11yProps(SERVICE_FREQUENCY)}
-          />
-          <Tab
-            style={{ minWidth: 72 }}
-            label="On-Time Performance"
-            value={ON_TIME_PERFORMANCE}
-            {...a11yProps(ON_TIME_PERFORMANCE)}
-          />
-          <Tab
-            style={{ minWidth: 72 }}
-            label="Trip Chart"
-            value={TRIP_CHART}
-            {...a11yProps(TRIP_CHART)}
-          />
+          {tabs.map(tab => {
+            return (
+              <Tab
+                key={tab.value}
+                style={{ minWidth: 72 }}
+                label={tab.label}
+                value={tab.value}
+                id={`simple-tab-${tab.value}`}
+                aria-controls={`simple-tabpanel-${tab.value}`}
+              />
+            );
+          })}
         </Tabs>
       </AppBar>
       <Grid container spacing={0}>
         <Grid item xs={12} md={6}>
           <Box p={2} style={{ overflowX: 'auto' }}>
             {/* control panel and map are full width for 1050px windows or smaller, else half width */}
-            {tripMetricsLoading ? 'Loading...' : null}
-            {tripMetricsError ? `Error: ${tripMetricsError}` : null}
-            {!tripMetricsError && !tripMetricsLoading ? (
-              <>
-                {tabValue === SUMMARY && tripSelected ? <TripSummary /> : null}
-                {tabValue === SUMMARY && !tripSelected ? (
-                  <RouteSummary />
-                ) : null}
-                {tabValue === TRIP_TIMES ? <TripTimesStats /> : null}
-                {tabValue === ON_TIME_PERFORMANCE ? (
-                  <OnTimePerformanceStats />
-                ) : null}
-                {tabValue === SERVICE_FREQUENCY ? (
-                  <ServiceFrequencyStats />
-                ) : null}
-                {tabValue === TRIP_CHART ? <MareyChart /> : null}
-              </>
-            ) : null}
+            {loading ? 'Loading...' : null}
+            {error ? `Error: ${error}` : null}
+            {!error && !loading
+              ? tabs.map(tab => {
+                  const TabComponent = tab.component;
+                  return tabValue === tab.value ? (
+                    <TabComponent key={tab.value} />
+                  ) : null;
+                })
+              : null}
           </Box>
         </Grid>
         <Grid item xs={12} md={6}>
@@ -141,6 +136,8 @@ const mapStateToProps = state => ({
   graphParams: state.graphParams,
   tripMetricsError: state.tripMetrics.error,
   tripMetricsLoading: state.loading.TRIP_METRICS,
+  routeMetricsError: state.routeMetrics.error,
+  routeMetricsLoading: state.loading.ROUTE_METRICS,
 });
 
 const mapDispatchToProps = dispatch => ({

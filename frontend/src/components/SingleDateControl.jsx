@@ -6,6 +6,9 @@ import { TextField } from '@material-ui/core';
 import { updateQuery } from '../actions';
 import { dateQueryFromDateRangeParams } from '../routesMap';
 
+/*
+ * Renders an input field that allows changing the app's date range to a single date.
+ */
 function SingleDateControl(props) {
   const { graphParams } = props;
 

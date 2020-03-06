@@ -377,8 +377,7 @@ class MapSpider extends Component {
     this.setState({ height });
   }
 
-  /* Make the map full height unless the window is smaller than the sm breakpoint (600px), in which
-   * case make the map half height.
+  /* Make the map full height unless the window is smaller than the md breakpoint (1050px).
    *
    * TODO: Need to convert this component to a functional component.  Then we can use the useTheme
    * hook to programatically access the breakpoint widths.
@@ -387,7 +386,7 @@ class MapSpider extends Component {
    */
 
   computeHeight() {
-    return window.innerWidth >= 600
+    return window.innerWidth >= 1050
       ? window.innerHeight - 48 /* blue app bar */
       : Math.min(window.innerHeight, 500);
   }
