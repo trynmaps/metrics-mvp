@@ -39,7 +39,7 @@ function RouteSummary(props) {
       ? routeIntervalMetrics2.directions.find(directionIdFilter)
       : null;
 
-    dirInfo = route ? route.directions.find(directionIdFilter) : null;
+    dirInfo = route ? route.directions.find(d => d.id === directionId) : null;
   } else {
     intervalMetrics = routeIntervalMetrics;
     intervalMetrics2 = routeIntervalMetrics2;
