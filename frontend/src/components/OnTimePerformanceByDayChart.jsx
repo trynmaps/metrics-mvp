@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Moment from 'moment';
-import { Typography } from '@material-ui/core';
 import { getOnTimePercent } from '../helpers/graphData';
 import SimpleLineMarkChart from './SimpleLineMarkChart';
 import { CHART_COLORS } from '../UIConstants';

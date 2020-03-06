@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Typography } from '@material-ui/core';
 import { CHART_COLORS } from '../UIConstants';
 import { renderDateRange } from '../helpers/dateTime';
 import { getHistogramChartData } from '../helpers/graphData';
