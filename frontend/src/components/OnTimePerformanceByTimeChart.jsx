@@ -31,8 +31,8 @@ function OnTimePerformanceByTimeChart(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">On-Time Performance by Time of Day</Typography>
       <SimpleVerticalBarChart
+        title="On-Time Performance by Time of Day"
         width={500}
         height={250}
         yDomain={[0, 100]}

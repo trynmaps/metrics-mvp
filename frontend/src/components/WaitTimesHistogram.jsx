@@ -26,8 +26,8 @@ function WaitTimesHistogram(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">Distribution of Wait Times</Typography>
       <SimpleVerticalRectChart
+        title="Distribution of Wait Times"
         width={500}
         height={250}
         yFormat={v => `${Math.round(v)}%`}

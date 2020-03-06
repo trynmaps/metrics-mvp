@@ -31,8 +31,8 @@ function TravelTimesHistogram(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">Distribution of Travel Times</Typography>
       <SimpleVerticalRectChart
+        title="Distribution of Travel Times"
         width={500}
         height={250}
         yFormat={v => `${Math.round(v)}%`}

@@ -34,8 +34,8 @@ function ServiceFrequencyGapHistogram(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">Distribution of Bunches/Gaps</Typography>
       <SimpleVerticalRectChart
+        title="Distribution of Bunches/Gaps"
         width={500}
         height={250}
         yFormat={v => `${Math.round(v)}%`}

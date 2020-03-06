@@ -76,7 +76,7 @@ function TripTimesByTimeChart(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">Trip Times by Time of Day</Typography>
+      <Typography variant="h6">Trip Times by Time of Day</Typography>
       <FormControl>
         <div className="controls">
           <FormControlLabel

@@ -1,6 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 import React, { useState } from 'react';
-
+import { Typography } from '@material-ui/core';
 import {
   XYPlot,
   HorizontalGridLines,
@@ -46,6 +46,7 @@ export default function SimpleChart(props) {
     yUnits,
     xUnits,
     stackBy,
+    title,
   } = props;
 
   const [crosshairValues, setCrosshairValues] = useState(null);
@@ -90,6 +91,7 @@ export default function SimpleChart(props) {
 
   return (
     <>
+      {title ? <Typography variant="h6">{title}</Typography> : null}
       <XYPlot
         height={height}
         width={width}

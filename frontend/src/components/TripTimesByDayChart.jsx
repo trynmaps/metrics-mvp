@@ -92,7 +92,7 @@ function TripTimesByDayChart(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">Trip Times by Day</Typography>
+      <Typography variant="h6">Trip Times by Day</Typography>
       <FormControl>
         <div className="controls">
           <FormControlLabel

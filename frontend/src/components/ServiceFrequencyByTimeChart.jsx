@@ -33,10 +33,8 @@ function ServiceFrequencyByTimeChart(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">
-        Median Service Frequency by Time of Day
-      </Typography>
       <SimpleVerticalBarChart
+        title="Median Service Frequency by Time of Day"
         width={500}
         height={250}
         xType="ordinal"

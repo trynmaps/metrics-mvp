@@ -30,10 +30,8 @@ function ServiceFrequencyHistogram(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">
-        Distribution of Headways (Time Between Vehicles)
-      </Typography>
       <SimpleVerticalRectChart
+        title="Distribution of Headways (Time Between Vehicles)"
         width={500}
         height={250}
         yFormat={v => `${Math.round(v)}%`}

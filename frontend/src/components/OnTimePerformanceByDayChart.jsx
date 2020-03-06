@@ -34,8 +34,8 @@ function OnTimePerformanceByDayChart(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">On-Time Performance By Day</Typography>
       <SimpleLineMarkChart
+        title="On-Time Performance By Day"
         width={500}
         height={250}
         yDomain={[0, 100]}

@@ -34,10 +34,8 @@ function OnTimePerformanceHistogram(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">
-        Distribution of Early/Late Departures
-      </Typography>
       <SimpleVerticalRectChart
+        title="Distribution of Early/Late Departures"
         width={500}
         height={250}
         xAxisMaxTicks={20}

@@ -169,7 +169,7 @@ function TravelTimeChart(props) {
 
   return (
     <div className="chart-section">
-      <Typography variant="h5">Median travel time along route</Typography>
+      <Typography variant="h6">Median travel time along route</Typography>
       Median travel time:{' '}
       {tripTimeForDirection > 0 ? tripTimeForDirection.toFixed(0) : '?'} min
       &nbsp;&nbsp; Average speed:{' '}

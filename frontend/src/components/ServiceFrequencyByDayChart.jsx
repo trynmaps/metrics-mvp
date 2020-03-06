@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Typography } from '@material-ui/core';
 import Moment from 'moment';
 import { CHART_COLORS } from '../UIConstants';
 import SimpleLineMarkChart from './SimpleLineMarkChart';
@@ -31,8 +30,8 @@ function ServiceFrequencyByDayChart(props) {
   }
   return (
     <div className="chart-section">
-      <Typography variant="h5">Median Service Frequency By Day</Typography>
       <SimpleLineMarkChart
+        title="Median Service Frequency By Day"
         width={500}
         height={250}
         xFormat={i =>

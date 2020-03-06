@@ -174,3 +174,8 @@
 {
     padding-bottom:25px;
 }
+
+.MuiTypography-root.MuiTypography-h6
+{
+    font-weight:normal;
+}
