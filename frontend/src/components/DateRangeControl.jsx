@@ -114,7 +114,15 @@ function DateRangeControl(props) {
   }
 
   function setDateRangeParams(newDateRangeParams) {
+    if (
+      JSON.stringify(newDateRangeParams) ===
+      JSON.stringify(graphParams[targetRange])
+    ) {
+      return;
+    }
+
     const newGraphParams = { ...graphParams };
+
     newGraphParams[targetRange] = newDateRangeParams;
     props.updateQuery(fullQueryFromParams(newGraphParams));
   }

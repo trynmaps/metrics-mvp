@@ -2,7 +2,7 @@
  * Helper functions for manipulating date and time.
  */
 
-import { WEEKDAYS, WEEKENDS } from '../UIConstants';
+import { WEEKDAYS, WEEKENDS, TIME_RANGES } from '../UIConstants';
 
 /**
  * Whether all of array's entries in the dictionary are false.
@@ -31,6 +31,11 @@ export const allTrue = (dictionary, array) => {
 export function renderDateString(ymdString) {
   const date = new Date(ymdString);
   return date.toLocaleDateString('en', { timeZone: 'UTC' });
+}
+
+export function getTimeRangeShortLabel(value) {
+  const timeRange = TIME_RANGES.find(r => r.value === value);
+  return timeRange ? timeRange.shortLabel : value;
 }
 
 /**
@@ -83,13 +88,25 @@ export function getDaysOfTheWeekLabel(daysOfTheWeek) {
 }
 
 export function renderDateRange(dateRangeParams) {
-  let dateLabel = renderDateString(dateRangeParams.date);
-  let smallLabel = '';
+  const dateLabel = renderDateString(dateRangeParams.date);
+  let res = '';
 
   if (dateRangeParams.startDate !== dateRangeParams.date) {
-    dateLabel = `${renderDateString(dateRangeParams.startDate)} - ${dateLabel}`;
-    smallLabel = `${getDaysOfTheWeekLabel(dateRangeParams.daysOfTheWeek)}`;
+    res = `${renderDateString(dateRangeParams.startDate)} - ${dateLabel}`;
+    const daysOfTheWeekLabel = getDaysOfTheWeekLabel(
+      dateRangeParams.daysOfTheWeek,
+    );
+    if (daysOfTheWeekLabel) {
+      res += ` ${daysOfTheWeekLabel}`;
+    }
+  } else {
+    res = dateLabel;
   }
 
-  return dateLabel + smallLabel;
+  if (dateRangeParams.startTime) {
+    res += ` ${getTimeRangeShortLabel(
+      `${dateRangeParams.startTime}-${dateRangeParams.endTime}`,
+    )}`;
+  }
+  return res;
 }

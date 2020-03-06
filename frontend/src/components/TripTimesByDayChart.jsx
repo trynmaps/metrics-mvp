@@ -1,36 +1,66 @@
 import React, { useState } from 'react';
-import { FormControl, FormControlLabel, Radio } from '@material-ui/core';
 import {
-  XYPlot,
-  HorizontalGridLines,
-  XAxis,
-  YAxis,
-  LineSeries,
-  VerticalBarSeries,
-  ChartLabel,
-  Crosshair,
-} from 'react-vis';
-import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
+  FormControl,
+  FormControlLabel,
+  Radio,
+  Typography,
+} from '@material-ui/core';
+import { connect } from 'react-redux';
 import Moment from 'moment';
-import {
-  CHART_COLORS,
-  PLANNING_PERCENTILE,
-  REACT_VIS_CROSSHAIR_NO_LINE,
-} from '../UIConstants';
+import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
 import { getPercentileValue } from '../helpers/graphData';
+import SimpleLineMarkChart from './SimpleLineMarkChart';
 import '../../node_modules/react-vis/dist/style.css';
 
+const AVERAGE_TIME = 'average_time';
+const PLANNING_TIME = 'planning_time';
+
 /**
- * Bar chart of average and planning percentile wait and time across the day.
+ * Returns a react-vis XYPlot data series from interval data.
+ * Example of interval data is shown at end of this file.
+ * Mapping function is for either wait time or trip time, and for either average or planning percentile time.
+ *
+ * It's possible that an interval will have null wait/travel times due to lack of data (no vehicles
+ * running in that interval), in which case we replace with zero values (best effort).
  */
+function getChartData(byDayData, property, selectedOption) {
+  return byDayData
+    ? byDayData.map((day, i) => {
+        let y = 0;
+
+        if (day[property] != null) {
+          if (selectedOption === AVERAGE_TIME) {
+            y = day[property].median;
+          } else if (selectedOption === PLANNING_TIME) {
+            y = getPercentileValue(day[property], 90);
+          }
+        }
+
+        if (y === undefined) {
+          y = 0;
+        }
+
+        return {
+          x: i,
+          y,
+        };
+      })
+    : null;
+}
+
 function TripTimesByDayChart(props) {
-  const AVERAGE_TIME = 'average_time';
-  const PLANNING_TIME = 'planning_time';
+  const { graphParams, tripMetrics } = props;
 
   const [selectedOption, setSelectedOption] = useState(AVERAGE_TIME); // radio button starts on average time
-  const [crosshairValues, setCrosshairValues] = useState([]); // tooltip starts out empty
 
-  const { byDayData } = props;
+  const byDayData = tripMetrics ? tripMetrics.byDay : null;
+
+  if (
+    graphParams.firstDateRange.date === graphParams.firstDateRange.startDate ||
+    !byDayData
+  ) {
+    return null;
+  }
 
   /**
    * Event handler for radio buttons
@@ -41,201 +71,110 @@ function TripTimesByDayChart(props) {
     setSelectedOption(changeEvent.target.value);
   };
 
-  /**
-   * Event handler for onMouseLeave.
-   * @private
-   */
-  const onMouseLeave = () => {
-    setCrosshairValues([]);
-  };
+  const waitData = getChartData(byDayData, 'waitTimes', selectedOption);
+  const scheduledWaitData = getChartData(
+    byDayData,
+    'scheduledWaitTimes',
+    selectedOption,
+  );
+  const tripData = getChartData(byDayData, 'tripTimes', selectedOption);
+  const scheduledTripData = getChartData(
+    byDayData,
+    'scheduledTripTimes',
+    selectedOption,
+  );
 
-  /**
-   * Returns a mapping function for creating a react-vis XYPlot data series out of interval data.
-   * Example of interval data is shown at end of this file.
-   * Mapping function is for either wait time or trip time, and for either average or planning percentile time.
-   *
-   * It's possible that an interval will have null wait/travel times due to lack of data (no vehicles
-   * running in that interval), in which case we replace with zero values (best effort).
-   *
-   * @param {intervalField} One of wait_times or travel_times.
-   */
-  const mapDays = (field, attribute) => {
-    return day => {
-      let y = 0;
+  const getMaxY = arr =>
+    arr ? arr.reduce((max, value) => (max > value.y ? max : value.y), 0) : 0;
 
-      if (day[field] != null) {
-        if (attribute === AVERAGE_TIME) {
-          y = day[field].median;
-        } else if (attribute === PLANNING_TIME) {
-          y = getPercentileValue(day[field], 90);
-        }
-      }
-
-      if (y === undefined) {
-        y = 0;
-      }
-
-      return {
-        x: Moment(day.dates[0]).format('dd MM/DD'),
-        y,
-      };
-    };
-  };
-
-  const waitData =
-    byDayData && byDayData.map(mapDays('waitTimes', selectedOption));
-
-  const tripData =
-    byDayData && byDayData.map(mapDays('tripTimes', selectedOption));
-
-  const meanWait =
-    waitData &&
-    waitData.length > 0 &&
-    waitData.reduce((accum, value) => accum + value.y, 0) / waitData.length;
-  const meanTrip =
-    tripData &&
-    tripData.length > 0 &&
-    tripData.reduce((accum, value) => accum + value.y, 0) / tripData.length;
-  const meanWaitData = [
-    { x: waitData[0].x, y: meanWait },
-    { x: waitData[waitData.length - 1].x, y: meanWait },
-  ];
-  const meanTripData = [
-    { x: tripData[0].x, y: meanWait + meanTrip },
-    { x: tripData[tripData.length - 1].x, y: meanWait + meanTrip },
-  ];
-
-  const maxWait =
-    waitData &&
-    waitData.length > 0 &&
-    waitData.reduce((max, value) => (max > value.y ? max : value.y), 0);
-  const maxTrip =
-    tripData &&
-    tripData.length > 0 &&
-    tripData.reduce((max, value) => (max > value.y ? max : value.y), 0);
-
-  const legendItems = [
-    { title: 'Travel time', color: CHART_COLORS[1], strokeWidth: 10 },
-    { title: 'Wait time', color: CHART_COLORS[0], strokeWidth: 10 },
-  ];
-
-  // Non-default chart margins for rotated x-axis tick marks.
-  // Default is {left: 40, right: 10, top: 10, bottom: 40}
-
-  const chartMargins = { left: 40, right: 10, top: 10, bottom: 60 };
-
-  /**
-   * Event handler for onNearestX.
-   * @param {Object} value Selected value.
-   * @param {index} index Index of the value in the data array.
-   * @private
-   */
-  const onNearestX = (_value, { index }) => {
-    setCrosshairValues([waitData[index], tripData[index]]);
-  };
+  const maxWait = Math.max(getMaxY(waitData), getMaxY(scheduledWaitData));
+  const maxTrip = Math.max(getMaxY(tripData), getMaxY(scheduledTripData));
 
   return (
-    <div>
-      {byDayData ? (
-        <div>
-          <FormControl>
-            <div className="controls">
-              <FormControlLabel
-                control={
-                  <Radio
-                    id="average_time"
-                    type="radio"
-                    value={AVERAGE_TIME}
-                    checked={selectedOption === AVERAGE_TIME}
-                    onChange={handleOptionChange}
-                  />
-                }
-                label="Median"
+    <div className="chart-section">
+      <Typography variant="h5">Trip Times by Day</Typography>
+      <FormControl>
+        <div className="controls">
+          <FormControlLabel
+            control={
+              <Radio
+                id="average_time"
+                type="radio"
+                value={AVERAGE_TIME}
+                checked={selectedOption === AVERAGE_TIME}
+                onChange={handleOptionChange}
               />
+            }
+            label="Median"
+          />
 
-              <FormControlLabel
-                control={
-                  <Radio
-                    id="planning_time"
-                    type="radio"
-                    value={PLANNING_TIME}
-                    checked={selectedOption === PLANNING_TIME}
-                    onChange={handleOptionChange}
-                  />
-                }
-                label={`Planning (${PLANNING_PERCENTILE}th percentile)`}
+          <FormControlLabel
+            control={
+              <Radio
+                id="planning_time"
+                type="radio"
+                value={PLANNING_TIME}
+                checked={selectedOption === PLANNING_TIME}
+                onChange={handleOptionChange}
               />
-            </div>
-          </FormControl>
-          <XYPlot
-            xType="ordinal"
-            height={300}
-            width={400}
-            margin={chartMargins}
-            stackBy="y"
-            yDomain={[0, maxWait + maxTrip]}
-            onMouseLeave={onMouseLeave}
-          >
-            <HorizontalGridLines />
-            <XAxis tickLabelAngle={-90} />
-            <YAxis hideLine />
-
-            <VerticalBarSeries
-              data={waitData}
-              color={CHART_COLORS[0]}
-              onNearestX={onNearestX}
-              stack
-            />
-            <VerticalBarSeries data={tripData} color={CHART_COLORS[1]} stack />
-            <LineSeries
-              data={meanWaitData}
-              color={CHART_COLORS[2]}
-              strokeDasharray="5, 5"
-            />
-            <LineSeries
-              data={meanTripData}
-              color={CHART_COLORS[3]}
-              strokeDasharray="5, 5"
-            />
-
-            <ChartLabel
-              text="minutes"
-              className="alt-y-label"
-              includeMargin={false}
-              xPercent={0.06}
-              yPercent={0.06}
-              style={{
-                transform: 'rotate(-90)',
-                textAnchor: 'end',
-              }}
-            />
-
-            {crosshairValues.length > 0 && (
-              <Crosshair
-                values={crosshairValues}
-                style={REACT_VIS_CROSSHAIR_NO_LINE}
-              >
-                <div className="rv-crosshair__inner__content">
-                  <p>
-                    Onboard time:{' '}
-                    {crosshairValues[1] ? Math.round(crosshairValues[1].y) : ''}
-                  </p>
-                  <p>Wait time: {Math.round(crosshairValues[0].y)}</p>
-                </div>
-              </Crosshair>
-            )}
-          </XYPlot>
-          <DiscreteColorLegend
-            orientation="horizontal"
-            width={300}
-            items={legendItems}
+            }
+            label={`Planning (${PLANNING_PERCENTILE}th percentile)`}
           />
         </div>
-      ) : (
-        <code>No data.</code>
-      )}
+      </FormControl>
+      <SimpleLineMarkChart
+        width={500}
+        height={250}
+        xFormat={i =>
+          i === Math.round(i)
+            ? Moment(byDayData[i].dates[0]).format('ddd M/D')
+            : ''
+        }
+        xAxisMaxTicks={5}
+        yFormat={v => `${Math.round(v)}`}
+        yUnits="minutes"
+        stackBy="y"
+        yDomain={[0, maxWait + maxTrip]}
+        series={[
+          {
+            title: 'Wait Time (Observed)',
+            color: CHART_COLORS[1],
+            data: waitData,
+            cluster: 'first',
+            size: 4,
+          },
+          {
+            title: 'Travel Time (Observed)',
+            color: CHART_COLORS[3],
+            data: tripData,
+            cluster: 'first',
+            size: 4,
+          },
+          {
+            title: 'Wait Time (Scheduled)',
+            color: CHART_COLORS[0],
+            data: scheduledWaitData,
+            cluster: 'second',
+            size: 0,
+            opacity: 0.5,
+          },
+          {
+            title: 'Travel Time (Scheduled)',
+            color: CHART_COLORS[2],
+            data: scheduledTripData,
+            cluster: 'second',
+            size: 0,
+            opacity: 0.5,
+          },
+        ]}
+      />
     </div>
   );
 }
 
-export default TripTimesByDayChart;
+const mapStateToProps = state => ({
+  tripMetrics: state.tripMetrics.data,
+  graphParams: state.graphParams,
+});
+
+export default connect(mapStateToProps)(TripTimesByDayChart);

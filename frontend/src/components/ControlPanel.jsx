@@ -51,6 +51,10 @@ function ControlPanel(props) {
   function onSelectFirstStop(option) {
     const startStopId = option.value;
 
+    if (startStopId === graphParams.startStopId) {
+      return;
+    }
+
     props.dispatch({
       type: 'ROUTESCREEN',
       payload: {
@@ -63,6 +67,10 @@ function ControlPanel(props) {
 
   function onSelectSecondStop(option) {
     const endStopId = option.value;
+
+    if (endStopId === graphParams.endStopId) {
+      return;
+    }
 
     props.dispatch({
       type: 'ROUTESCREEN',
@@ -314,9 +322,7 @@ function ControlPanel(props) {
           </FormControl>
         </>
       ) : null}
-      <DateTimeRangeControls
-        compareSupported={graphParams.startStopId && graphParams.endStopId}
-      />
+      <DateTimeRangeControls compareSupported />
     </div>
   );
 }

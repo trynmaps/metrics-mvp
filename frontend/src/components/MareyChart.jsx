@@ -72,7 +72,8 @@ function MareyChart(props) {
   const agency = getAgency(graphParams.agencyId);
   const timezoneId = agency ? agency.timezoneId : 'UTC';
 
-  const mareyChartSupported = graphParams.date === graphParams.startDate;
+  const mareyChartSupported =
+    graphParams.date === graphParams.startDate && !graphParams.secondDateRange;
 
   // Request missing arrival data lazily, only when this chart is tabbed into view.
   // This makes the app more responsive to route and date changes if we are hidden.

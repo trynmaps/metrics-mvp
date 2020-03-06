@@ -136,10 +136,11 @@ export function spiderSelection(state = initialSpiderSelection, action) {
   }
 }
 
-function makeStatsByRouteId(agencyMetricsData) {
-  const routesStats = agencyMetricsData
-    ? agencyMetricsData.interval.routes
-    : [];
+function makeStatsByRouteId(agencyMetricsData, intervalName) {
+  const routesStats =
+    agencyMetricsData && agencyMetricsData[intervalName]
+      ? agencyMetricsData[intervalName].routes
+      : [];
 
   const averagedProperties = [
     'medianWaitTime',
@@ -174,7 +175,8 @@ export function agencyMetrics(state = initialAgencyMetrics, action) {
         ...state,
         variablesJson: action.variablesJson,
         data: action.data,
-        statsByRouteId: makeStatsByRouteId(action.data),
+        statsByRouteId: makeStatsByRouteId(action.data, 'interval'),
+        statsByRouteId2: makeStatsByRouteId(action.data, 'interval2'),
       };
     case 'REQUEST_AGENCY_METRICS':
       return {
@@ -208,22 +210,29 @@ const initialRouteMetrics = {
   segmentsMap: {},
 };
 
+function addAveragedRouteMetricsForAllDirections(intervalMetrics) {
+  if (!intervalMetrics) {
+    return;
+  }
+  const averagedProperties = [
+    'medianHeadway',
+    'medianWaitTime',
+    'averageSpeed',
+    'onTimeRate',
+    'scheduledMedianHeadway',
+    'scheduledMedianWaitTime',
+    'scheduledAverageSpeed',
+  ];
+  averagedProperties.forEach(function(property) {
+    addAveragesForAllDirections(intervalMetrics, property);
+  });
+}
+
 export function routeMetrics(state = initialRouteMetrics, action) {
   switch (action.type) {
     case 'RECEIVED_ROUTE_METRICS':
-      addAveragesForAllDirections(
-        action.data.interval,
-        'scheduledMedianWaitTime',
-      );
-      addAveragesForAllDirections(
-        action.data.interval,
-        'scheduledMedianHeadway',
-      );
-      addAveragesForAllDirections(
-        action.data.interval,
-        'scheduledAverageSpeed',
-      );
-
+      addAveragedRouteMetricsForAllDirections(action.data.interval);
+      addAveragedRouteMetricsForAllDirections(action.data.interval2);
       return {
         ...state,
         variablesJson: action.variablesJson,

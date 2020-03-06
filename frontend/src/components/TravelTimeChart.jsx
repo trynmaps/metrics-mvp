@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from 'react';
+import React, { useState } from 'react';
 
 import {
   XYPlot,
@@ -163,8 +163,12 @@ function TravelTimeChart(props) {
     { title: 'Scheduled', color: scheduledColor, strokeWidth: 10 },
   ];
 
-  return directionId ? (
-    <Fragment>
+  if (!directionId) {
+    return null;
+  }
+
+  return (
+    <div className="chart-section">
       <Typography variant="h5">Median travel time along route</Typography>
       Median travel time:{' '}
       {tripTimeForDirection > 0 ? tripTimeForDirection.toFixed(0) : '?'} min
@@ -191,7 +195,9 @@ function TravelTimeChart(props) {
           0,
           observedData.reduce(
             (max, coord) => (coord.y > max ? coord.y : max),
-            numStops > 0 ? scheduledData[numStops - 1].y : 0,
+            scheduledData.length > 0
+              ? scheduledData[scheduledData.length - 1].y
+              : 0,
           ),
         ]}
         onMouseLeave={onMouseLeave}
@@ -278,9 +284,7 @@ function TravelTimeChart(props) {
         width={300}
         items={legendItems}
       />
-    </Fragment>
-  ) : (
-    <Fragment>Select a direction to see the travel time chart.</Fragment>
+    </div>
   );
 }
 

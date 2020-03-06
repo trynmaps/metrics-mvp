@@ -17,6 +17,14 @@ function TimeRangeControl(props) {
 
   function applyDateRangeParams(payload) {
     const newDateRangeParams = { ...dateRangeParams, ...payload };
+
+    if (
+      JSON.stringify(newDateRangeParams) ===
+      JSON.stringify(graphParams[targetRange])
+    ) {
+      return;
+    }
+
     props.updateQuery({
       [targetRange]: dateQueryFromDateRangeParams(newDateRangeParams),
     });

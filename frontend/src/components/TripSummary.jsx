@@ -2,7 +2,7 @@
  * Stop to stop trip summary component.
  */
 
-import React, { Fragment } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 
 import { Table, TableBody, TableHead } from '@material-ui/core';
@@ -104,7 +104,7 @@ function TripSummary(props) {
   }
 
   return (
-    <Fragment>
+    <>
       <div>
         <Table aria-labelledby="tableTitle">
           <TableHead>
@@ -124,10 +124,10 @@ function TripSummary(props) {
               negativeDiffDesc="shorter"
               goodDiffDirection={-1}
               infoContent={
-                <Fragment>
+                <>
                   This is the median (50th percentile) time between vehicles
                   during the service period.
-                </Fragment>
+                </>
               }
             />
             <SummaryRow
@@ -143,12 +143,12 @@ function TripSummary(props) {
               negativeDiffDesc="shorter"
               goodDiffDirection={-1}
               infoContent={
-                <Fragment>
+                <>
                   This is the median time you would expect to wait at the origin
                   stop for the next vehicle to depart, assuming you arrived at a
                   random time during the service period without using timetables
                   or predictions.
-                </Fragment>
+                </>
               }
             />
             <SummaryRow
@@ -164,10 +164,10 @@ function TripSummary(props) {
               negativeDiffDesc="shorter"
               goodDiffDirection={-1}
               infoContent={
-                <Fragment>
+                <>
                   This is the median (50th percentile) travel time between the
                   origin stop and the destination stop.
-                </Fragment>
+                </>
               }
             />
             <SummaryRow
@@ -183,10 +183,10 @@ function TripSummary(props) {
               negativeDiffDesc="slower"
               goodDiffDirection={1}
               infoContent={
-                <Fragment>
+                <>
                   This is the average speed corresponding to the median travel
                   time (not counting wait time).
-                </Fragment>
+                </>
               }
             />
             <SummaryRow
@@ -221,7 +221,7 @@ function TripSummary(props) {
               goodDiffDirection={1}
             /> */}
             <SummaryRow
-              label="On-Time Departure %"
+              label="On-Time Departure Rate"
               columns={columns}
               baseColumn={baseColumn}
               observed={getOnTimePercent(departureScheduleAdherence)}
@@ -229,16 +229,16 @@ function TripSummary(props) {
               units="%"
               precision={0}
               infoContent={
-                <Fragment>
+                <>
                   This is the percentage of scheduled departure times where a
                   vehicle departed less than 5 minutes after the scheduled
                   departure time or less than 1 minute before the scheduled
                   departure time.
-                </Fragment>
+                </>
               }
             />
             <SummaryRow
-              label="On-Time Arrival %"
+              label="On-Time Arrival Rate"
               columns={columns}
               baseColumn={baseColumn}
               observed={getOnTimePercent(arrivalScheduleAdherence)}
@@ -265,7 +265,7 @@ function TripSummary(props) {
           </TableBody>
         </Table>
       </div>
-    </Fragment>
+    </>
   );
 }
 

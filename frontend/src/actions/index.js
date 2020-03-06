@@ -48,7 +48,7 @@ function computeDates(dateRangeParams) {
 
 // S3 URL to route configuration
 export function generateRoutesURL(agencyId) {
-  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?u`;
+  return `https://${S3Bucket}.s3.amazonaws.com/routes/${RoutesVersion}/routes_${RoutesVersion}_${agencyId}.json.gz?w`;
 }
 
 /**
@@ -75,43 +75,134 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
  * @param params {Object} The query parameters from Redux state.
  */
 export function fetchTripMetrics(params) {
-  const singleDateRangeQuery = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
-    $directionId:String, $dates:[String!], $startTime:String, $endTime:String) {
+  const query = `
+fragment intervalFields on TripIntervalMetrics {
+      departures
+      scheduledDepartures
+      arrivals
+      scheduledArrivals
+      headways {
+        count median max
+        histogram { binStart binEnd count }
+      }
+      headwayScheduleDeltas {
+          count
+          histogram { binStart binEnd count }
+      }
+      scheduledHeadways {
+        count median max
+        histogram { binStart binEnd count }
+      }
+      tripTimes {
+        count median max
+        percentiles(percentiles:[90]) { percentile value }
+        histogram { binStart binEnd count }
+      }
+      scheduledTripTimes {
+        count median max
+        percentiles(percentiles:[90]) { percentile value }
+        histogram { binStart binEnd count }
+      }
+      waitTimes {
+        median max
+        percentiles(percentiles:[90]) { percentile value }
+        histogram { binStart binEnd count }
+      }
+      scheduledWaitTimes {
+        median max
+        percentiles(percentiles:[90]) { percentile value }
+        histogram { binStart binEnd count }
+      }
+      departureScheduleAdherence {
+        onTimeCount
+        scheduledCount
+        closestDeltas {
+          histogram(min:-5, max:15, binSize:1) { binStart binEnd count }
+          count
+        }
+      }
+      arrivalScheduleAdherence {
+        onTimeCount
+        scheduledCount
+      }
+}
+fragment timeRangeFields on TripIntervalMetrics {
+  startTime endTime
+  waitTimes {
+    percentiles(percentiles:[50,90]) { percentile value }
+  }
+  tripTimes {
+    percentiles(percentiles:[50,90]) { percentile value }
+  }
+  scheduledWaitTimes {
+    percentiles(percentiles:[50,90]) { percentile value }
+  }
+  scheduledTripTimes {
+    percentiles(percentiles:[50,90]) { percentile value }
+  }
+  headways {
+    median
+  }
+  scheduledHeadways {
+    median
+  }
+  departureScheduleAdherence {
+    onTimeCount
+    scheduledCount
+  }
+  arrivalScheduleAdherence {
+    onTimeCount
+    scheduledCount
+  }
+}
+
+query($agencyId:String!, $routeId:String!,
+      $startStopId:String!, $endStopId:String, $directionId:String,
+      $dates:[String!], $startTime:String, $endTime:String,
+      $dates2:[String!], $startTime2:String, $endTime2:String,
+      $includeByDay:Boolean!,
+      $includeTimeRanges:Boolean!, $includeTimeRanges2:Boolean!,
+      $dualDateRange:Boolean!) {
   agency(agencyId:$agencyId) {
     route(routeId:$routeId) {
       trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
         interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
-          departures
-          scheduledDepartures
-          arrivals
-          scheduledArrivals
+          ...intervalFields
+        }
+        interval2: interval(dates:$dates2, startTime:$startTime2, endTime:$endTime2) @include(if: $dualDateRange) {
+          ...intervalFields
+        }
+        timeRanges(dates:$dates) @include(if: $includeTimeRanges) {
+          ...timeRangeFields
+        }
+        timeRanges2: timeRanges(dates:$dates2) @include(if: $includeTimeRanges2) {
+          ...timeRangeFields
+        }
+        byDay(dates:$dates, startTime:$startTime, endTime:$endTime) @include(if: $includeByDay) {
+          dates
+          startTime
+          endTime
           headways {
-            count median max
-            histogram { binStart binEnd count }
+            median
           }
           scheduledHeadways {
-            count median max
-            histogram { binStart binEnd count }
+            median
           }
           tripTimes {
-            count median max
+            median
             percentiles(percentiles:[90]) { percentile value }
-            histogram { binStart binEnd count }
+           }
+          waitTimes {
+            median
+            percentiles(percentiles:[90]) { percentile value }
           }
           scheduledTripTimes {
-            count median max
+            median
             percentiles(percentiles:[90]) { percentile value }
-            histogram { binStart binEnd count }
-          }
-          waitTimes {
-            median max
-            percentiles(percentiles:[90]) { percentile value }
-            histogram { binStart binEnd count }
-          }
+           }
           scheduledWaitTimes {
-            median max
+            median
             percentiles(percentiles:[90]) { percentile value }
-            histogram { binStart binEnd count }
           }
           departureScheduleAdherence {
             onTimeCount
@@ -122,137 +213,42 @@ export function fetchTripMetrics(params) {
             scheduledCount
           }
         }
-        byDay(dates:$dates, startTime:$startTime, endTime:$endTime) {
-          dates
-          startTime
-          endTime
-          tripTimes {
-            median
-            percentiles(percentiles:[10,90]) { percentile value }
-           }
-          waitTimes {
-            median
-            percentiles(percentiles:[90]) { percentile value }
-          }
-          departureScheduleAdherence {
-            onTimeCount
-            scheduledCount
-          }
-        }
-        timeRanges(dates:$dates) {
-          startTime endTime
-          waitTimes {
-            percentiles(percentiles:[50,90]) { percentile value }
-          }
-          tripTimes {
-            percentiles(percentiles:[50,90]) { percentile value }
-          }
-        }
       }
     }
   }
-}`;
+}
+  `.replace(/\s+/g, ' ');
 
-  const dualDateRangeQuery = `
-    fragment intervalFields on TripIntervalMetrics {
-        headways {
-          count median max
-          percentiles(percentiles:[90]) { percentile value }
-          histogram { binStart binEnd count }
-        }
-        tripTimes {
-          count median avg max
-          percentiles(percentiles:[90]) { percentile value }
-          histogram { binStart binEnd count }
-        }
-        waitTimes {
-          median max
-          percentiles(percentiles:[90]) { percentile value }
-          histogram { binStart binEnd count }
-        }
-        departureScheduleAdherence {
-          onTimeCount
-          scheduledCount
-        }
-        arrivalScheduleAdherence {
-          onTimeCount
-          scheduledCount
-        }
-    }
-
-    fragment timeRangeFields on TripIntervalMetrics {
-        startTime endTime
-        waitTimes {
-          percentiles(percentiles:[50,90]) { percentile value }
-        }
-        tripTimes {
-          percentiles(percentiles:[50,90]) { percentile value }
-        }
-    }
-
-    query($agencyId:String!, $routeId:String!,
-      $startStopId:String!, $endStopId:String, $directionId:String,
-      $dates:[String!], $startTime:String, $endTime:String,
-      $dates2:[String!], $startTime2:String, $endTime2:String) {
-
-    agency(agencyId:$agencyId) {
-      route(routeId:$routeId) {
-        trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
-          interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
-              ...intervalFields
-          }
-          interval2: interval(dates:$dates2, startTime:$startTime2, endTime:$endTime2) {
-              ...intervalFields
-          }
-          timeRanges(dates:$dates) {
-              ...timeRangeFields
-          }
-          timeRanges2: timeRanges(dates:$dates2) {
-              ...timeRangeFields
-          }
-        }
-      }
-    }
-  }
-
-  `;
+  const dates = computeDates(params.firstDateRange);
 
   return function(dispatch) {
-    const firstDays = computeDates(params.firstDateRange);
-    const secondDays =
-      params.secondDateRange && computeDates(params.secondDateRange);
-
-    let query = secondDays ? dualDateRangeQuery : singleDateRangeQuery;
-
-    const queryParams = Object.assign(
-      {
-        dates: firstDays,
-        startTime: params.firstDateRange.startTime,
-        endTime: params.firstDateRange.endTime,
-      },
-      secondDays
-        ? {
-            dates2: secondDays,
-            startTime2: params.secondDateRange.startTime,
-            endTime2: params.secondDateRange.endTime,
-          }
-        : null,
-      params,
-    );
-
-    // remove unneeded object references in params
-
-    delete queryParams.firstDateRange;
-    delete queryParams.secondDateRange;
-
-    query = query.replace(/\s+/g, ' ');
+    const variables = {
+      agencyId: params.agencyId,
+      routeId: params.routeId,
+      directionId: params.directionId,
+      startStopId: params.startStopId,
+      endStopId: params.endStopId,
+      dates,
+      startTime: params.firstDateRange.startTime,
+      endTime: params.firstDateRange.endTime,
+      includeTimeRanges: !params.firstDateRange.startTime,
+      includeByDay: !params.secondDateRange && dates.length > 1,
+      includeTimeRanges2:
+        !!params.secondDateRange && !params.secondDateRange.startTime,
+      dualDateRange: !!params.secondDateRange,
+    };
+    if (params.secondDateRange) {
+      variables.dates2 = computeDates(params.secondDateRange);
+      variables.startTime2 = params.secondDateRange.startTime;
+      variables.endTime2 = params.secondDateRange.endTime;
+    }
 
     dispatch({ type: 'REQUEST_TRIP_METRICS' });
     axios
       .get('/api/graphql', {
         params: {
           query,
-          variables: JSON.stringify(queryParams),
+          variables: JSON.stringify(variables),
         }, // computed dates aren't in graphParams so add here
         baseURL: MetricsBaseURL,
       })
@@ -321,44 +317,68 @@ export function fetchRouteMetrics(params) {
   const dates = computeDates(params.firstDateRange);
 
   return function(dispatch, getState) {
-    const query = `query($agencyId:String!, $routeId:String!, $dates:[String!], $startTime:String, $endTime:String) {
+    const query = `
+fragment intervalFields on RouteIntervalMetrics {
+  directions {
+    directionId
+    medianHeadway
+    medianWaitTime
+    averageSpeed(units:"mph")
+    completedTrips
+    onTimeRate
+    scheduledMedianHeadway
+    scheduledMedianWaitTime
+    scheduledAverageSpeed(units:"mph")
+    scheduledCompletedTrips
+    segments {
+      fromStopId
+      toStopId
+      medianTripTime
+      trips
+    }
+    cumulativeSegments {
+      fromStopId
+      toStopId
+      medianTripTime
+      scheduledMedianTripTime
+      trips
+      scheduledTrips
+    }
+  }
+}
+
+query($agencyId:String!, $routeId:String!,
+    $dates:[String!], $startTime:String, $endTime:String,
+    $dates2:[String!], $startTime2:String, $endTime2:String,
+    $dualDateRange:Boolean!
+) {
   agency(agencyId:$agencyId) {
     route(routeId:$routeId) {
       interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
-        directions {
-          directionId
-          scheduledMedianHeadway
-          scheduledMedianWaitTime
-          scheduledAverageSpeed(units:"mph")
-          completedTrips
-          scheduledCompletedTrips
-          segments {
-            fromStopId
-            toStopId
-            medianTripTime
-            trips
-          }
-          cumulativeSegments {
-            fromStopId
-            toStopId
-            medianTripTime
-            scheduledMedianTripTime
-            trips
-            scheduledTrips
-          }
-        }
+         ...intervalFields
+      }
+      interval2: interval(dates:$dates2, startTime:$startTime2, endTime:$endTime2) @include(if: $dualDateRange) {
+         ...intervalFields
       }
     }
   }
 }`.replace(/\s+/g, ' ');
 
-    const variablesJson = JSON.stringify({
+    const variables = {
       agencyId: Agencies[0].id,
       routeId: params.routeId,
       dates,
       startTime: params.firstDateRange.startTime,
       endTime: params.firstDateRange.endTime,
-    });
+      dualDateRange: !!params.secondDateRange,
+    };
+    if (params.secondDateRange) {
+      variables.dates2 = computeDates(params.secondDateRange);
+      variables.startTime2 = params.secondDateRange.startTime;
+      variables.endTime2 = params.secondDateRange.endTime;
+    }
+
+    const variablesJson = JSON.stringify(variables);
 
     if (getState().routeMetrics.variablesJson !== variablesJson) {
       dispatch({
@@ -427,8 +447,8 @@ export function fetchAgencyMetrics(params) {
     const variablesJson = JSON.stringify({
       agencyId: Agencies[0].id,
       dates,
-      startTime: params.startTime,
-      endTime: params.endTime,
+      startTime: params.firstDateRange.startTime,
+      endTime: params.firstDateRange.endTime,
     });
 
     if (getState().agencyMetrics.variablesJson !== variablesJson) {
