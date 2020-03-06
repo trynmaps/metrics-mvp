@@ -107,7 +107,6 @@ function TripTimesByDayChart(props) {
             }
             label="Median"
           />
-
           <FormControlLabel
             control={
               <Radio
