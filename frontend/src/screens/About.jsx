@@ -24,7 +24,7 @@ export default function About() {
             Transit advocates, to get data to help advocate for transit service
             improvements
           </li>
-          <li>Journalists, as a data source for news articles about transit</li>
+          <li>Researchers and journalists, as a source for data about transit performance</li>
           <li>
             Transit agencies, to gain insights about their own performance to
             help improve service
