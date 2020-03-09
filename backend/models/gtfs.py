@@ -987,13 +987,12 @@ class GtfsScraper:
         dates_map = self.get_services_by_date(ignore_day_of_week=True)
         before_service_ids = []
         after_service_ids = []
-        for _d in dates_map:
-            if _d < d:
-                before_service_ids += dates_map[d]
-            elif _d > d:
-                after_service_ids += dates_map[d]
+        for service_date in dates_map:
+            if service_date <= d:
+                before_service_ids += dates_map[service_date]
+            elif service_date >= d:
+                after_service_ids += dates_map[service_date]
         active_services = set.intersection(
-            set(dates_map[d]),
             set(before_service_ids),
             set(after_service_ids),
         )
@@ -1002,7 +1001,14 @@ class GtfsScraper:
                 if service_id in active_services:
                     return True
             return False
-        active_routes_df = trips_df.groupby('route_id').agg({
+        # Obtain is_active_routes_df by grouping trips_df, then join
+        # with routes_df to add in the route columns.
+        # Only return active routes from is_active_routes_df.
+        #
+        # Note that route_id represents the GTFS route_id, which is
+        # unique and is not necessarily the route number,
+        # as is the case for Muni.
+        is_active_routes_df = trips_df.groupby('route_id').agg({
             'service_id': has_active_service_id,
         }).merge(
             routes_df.set_index('route_id'),
@@ -1012,8 +1018,8 @@ class GtfsScraper:
         ).rename(columns={
             'service_id': 'has_active_service_id',
         }).reset_index()
-        active_routes_df = active_routes_df[
-            active_routes_df['has_active_service_id']
+        active_routes_df = is_active_routes_df[
+            is_active_routes_df['has_active_service_id']
         ]
         active_routes_df = active_routes_df.drop(
             columns='has_active_service_id'
