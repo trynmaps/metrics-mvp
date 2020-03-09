@@ -4,6 +4,7 @@
 
 import React, { Fragment, useState } from 'react';
 
+// import Chip from '@material-ui/core/Chip';
 import { Typography } from '@material-ui/core';
 import IconButton from '@material-ui/core/IconButton';
 import Paper from '@material-ui/core/Paper';
@@ -15,7 +16,7 @@ import InfoIcon from '@material-ui/icons/InfoOutlined';
 import Rating from '@material-ui/lab/Rating';
 import Box from '@material-ui/core/Box';
 import {
-  scoreBackgroundColor,
+  // scoreBackgroundColor,
   scoreContrastColor,
 } from '../helpers/routeCalculations';
 import { NO_VALUE } from '../UIConstants';
@@ -28,6 +29,7 @@ import { NO_VALUE } from '../UIConstants';
 export default function InfoScoreCard(props) {
   const {
     score,
+    higherIsBetter,
     hideRating,
     preserveRatingSpace,
     title,
@@ -74,16 +76,55 @@ export default function InfoScoreCard(props) {
     return (100 * (1 - b / a)).toFixed(0);
   }
 
-  /*  function percentContent(a, b) {
+  function percentContent(a, b, myScore) {
     const percent = percentDifference(a, b);
+    const differenceColor = scoreContrastColor(
+      /* 0 */ myScore,
+      percent,
+      higherIsBetter,
+    );
+
+    return (
+      <>
+        <Typography
+          variant="h4"
+          style={{ color: differenceColor }}
+          display="inline"
+        >
+          {percent}
+        </Typography>
+        <Typography
+          variant="h5"
+          style={{ color: differenceColor }}
+          display="inline"
+        >
+          %
+        </Typography>
+      </>
+    );
+
+    /*    
            
-    return  <Typography variant="h3" display="inline">
+    return  <Chip
+      style={{
+        color: scoreContrastColor(score),
+        backgroundColor: 'white',//scoreBackgroundColor(score),
+      }}
+      label={<>
+    <Typography variant="h4" style={{color:differenceColor}} display="inline">
+    {percent}
+    </Typography>
+      <Typography variant="h5" style={{color:differenceColor}} display="inline">
+        %
+      </Typography>
+      </>
+      }
+      /> */
   }
-  */
 
   const cardStyle = {
-    background: score !== NO_VALUE ? scoreBackgroundColor(score) : 'white',
-    color: score !== NO_VALUE ? scoreContrastColor(score) : 'black',
+    background: 'white', // score !== NO_VALUE ? scoreBackgroundColor(score) : 'white',
+    color: score !== NO_VALUE ? scoreContrastColor(0 /* score */) : 'black',
     width: '100%',
     height: '100%',
     display: 'inline-block',
@@ -99,14 +140,7 @@ export default function InfoScoreCard(props) {
 
   const hasSecondValue = secondValue !== NO_VALUE;
   const largeContent = hasSecondValue ? (
-    <Fragment>
-      <Typography variant="h4" display="inline">
-        {percentDifference(firstValue, secondValue)}
-      </Typography>
-      <Typography variant="h5" display="inline">
-        %
-      </Typography>
-    </Fragment>
+    percentContent(firstValue, secondValue, 0 /* score */)
   ) : (
     <Fragment>
       <Typography variant="h4" display="inline">
@@ -141,9 +175,17 @@ export default function InfoScoreCard(props) {
               {largeContent}
               {hasSecondValue ? (
                 <Typography variant="body2">
+                  {/* <Chip
+      style={{
+        color: scoreContrastColor(score),
+        backgroundColor: scoreBackgroundColor(score),
+      }}
+      label={`${valuePrefix ? valuePrefix:''}${firstValue}${valueSuffix}`}
+    /> */}
                   {valuePrefix}
                   {firstValue}
-                  {valueSuffix} vs {valuePrefix}
+                  {valueSuffix}
+                  &nbsp;vs {valuePrefix}
                   {secondValue}
                   {valueSuffix}
                 </Typography>

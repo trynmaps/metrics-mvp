@@ -386,6 +386,7 @@ export default function InfoTripSummary(props) {
               <InfoScoreCard
                 score={scores.medianWaitScore}
                 title="Median Wait"
+                higherIsBetter={false}
                 hideRating={waitTimes2}
                 firstValue={Math.round(waitTimes.median)}
                 secondValue={
@@ -425,6 +426,7 @@ export default function InfoTripSummary(props) {
               />
               <InfoScoreCard
                 score={scores.travelVarianceScore}
+                higherIsBetter={false}
                 title="Travel Time Variability"
                 hideRating={tripTimes2}
                 firstValue={travelTimeVariabilityHalved}

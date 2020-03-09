@@ -124,11 +124,38 @@ const contrastColorScale = d3
   .domain([0.25, 0.5, 0.75])
   .range(['rgba(0,0,0,0.87)', 'rgba(0,0,0,0.87)', 'white', 'white']);
 
-export const scoreContrastColor = score => {
+const contrastGreenColorScale = d3
+  .scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range([
+    green[900] /* '#0c2f10' */,
+    green[900] /* '#0c2f10' */,
+    green[100],
+    green[100],
+  ]);
+
+const contrastRedColorScale = d3
+  .scaleThreshold()
+  .domain([0.25, 0.5, 0.75])
+  .range([red[900], red[900], red[100], red[100]]);
+
+export const scoreContrastColor = (score, diff = 0, higherIsBetter = true) => {
   if (score == null || Number.isNaN(score)) {
     return 'black';
   }
-  return contrastColorScale(score / HighestPossibleScore);
+  const normalizedScore = score / HighestPossibleScore;
+
+  if (diff === 0 || diff === '0') {
+    return contrastColorScale(normalizedScore);
+  }
+  if (diff > 0) {
+    return higherIsBetter
+      ? contrastGreenColorScale(normalizedScore)
+      : contrastRedColorScale(normalizedScore);
+  }
+  return higherIsBetter
+    ? contrastRedColorScale(normalizedScore)
+    : contrastGreenColorScale(normalizedScore);
 };
 
 /**
