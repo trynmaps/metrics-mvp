@@ -35,7 +35,15 @@ const useStyles = makeStyles(theme => ({
   },
   breadCrumbsWrapper: {
     padding: '1%',
-    paddingRight: '0',
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  externalLink: {
+    color: 'rgba(0, 0, 0, 0.54)',
+  },
+  officialLink: {
+    display: 'flex',
+    alignItems: 'center',
   },
 }));
 
@@ -141,7 +149,14 @@ function RouteScreen(props) {
       : null;
 
   const classes = useStyles();
-  const { breadCrumbStyling, breadCrumbsWrapper } = classes;
+  const {
+    breadCrumbStyling,
+    breadCrumbsWrapper,
+    externalLink,
+    officialLink,
+  } = classes;
+  const officialInfoUrl = selectedRoute && selectedRoute.url;
+
   return (
     <Fragment>
       <AppBar position="relative">
@@ -186,6 +201,18 @@ function RouteScreen(props) {
             classes,
           )}
         </Breadcrumbs>
+        {officialInfoUrl && (
+          <div className={officialLink}>
+            <a
+              href={officialInfoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={externalLink}
+            >
+              Official Site
+            </a>
+          </div>
+        )}
       </Paper>
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
@@ -227,7 +254,4 @@ const mapDispatchToProps = dispatch => ({
   fetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(RouteScreen);
+export default connect(mapStateToProps, mapDispatchToProps)(RouteScreen);
