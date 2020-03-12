@@ -14,11 +14,13 @@ import TimelineRoundedIcon from '@material-ui/icons/TimelineRounded';
 import CodeRoundedIcon from '@material-ui/icons/CodeRounded';
 import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
 import Divider from '@material-ui/core/Divider';
+import { useTheme } from '@material-ui/core/styles';
 import { components } from '../reducers/page';
 
 function SidebarButton(props) {
   const currentPage = props.currentPage;
   const [drawerOpen, setDrawer] = React.useState(false);
+  const theme = useTheme();
 
   function toggleDrawer() {
     setDrawer(!drawerOpen);
@@ -26,7 +28,7 @@ function SidebarButton(props) {
 
   const activeStyle = {
     fontWeight: 'bold',
-    color: '#3f51b5',
+    color: theme.palette.primary.dark,
     textDecoration: 'none',
     cursor: 'default',
   };

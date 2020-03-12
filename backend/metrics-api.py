@@ -1,9 +1,8 @@
 import os
-from flask import Flask, send_from_directory, request, Response
+from flask import Flask, send_from_directory, Response
 from flask_cors import CORS
 import json
-import sys
-from models import schema, config, wait_times, trip_times, routeconfig, arrival_history, precomputed_stats
+from models import schema, config, routeconfig, arrival_history, precomputed_stats
 from flask_graphql import GraphQLView
 #import cProfile
 
@@ -22,6 +21,8 @@ CORS(app)
 @app.route('/api/ping', methods=['GET'])
 def ping():
     return "pong"
+
+app.add_url_rule('/api/graphiql', view_func = GraphQLView.as_view('graphiql', schema = schema.metrics_api, graphiql = True))
 
 graphql_view = GraphQLView.as_view('metrics_api', schema = schema.metrics_api, graphiql = False)
 

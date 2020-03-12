@@ -1,9 +1,6 @@
 import argparse
-import json
-import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from models import config, arrival_history, util, metrics, timetables
-import pytz
 import time
 import numpy as np
 import pandas as pd

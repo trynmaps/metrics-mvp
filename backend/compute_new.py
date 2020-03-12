@@ -1,11 +1,10 @@
 import argparse
 import json
 import requests
-from datetime import datetime, timedelta, time
-import pytz
+from datetime import datetime, timedelta
 import boto3
 
-from models import config, util, wait_times
+from models import config, util
 
 from compute_arrivals import compute_arrivals
 from compute_stats import compute_stats

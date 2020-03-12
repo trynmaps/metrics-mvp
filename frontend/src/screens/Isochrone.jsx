@@ -16,6 +16,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
+import AppBarLogo from '../components/AppBarLogo';
 import SidebarButton from '../components/SidebarButton';
 import DateTimePanel from '../components/DateTimePanel';
 
@@ -655,6 +656,7 @@ class Isochrone extends React.Component {
         <AppBar position="relative">
           <Toolbar>
             <SidebarButton />
+            <AppBarLogo />
             <div className="page-title">Isochrone</div>
             <DateTimePanel />
           </Toolbar>
@@ -752,9 +754,9 @@ class Isochrone extends React.Component {
 
 const mapStateToProps = state => ({
   routes: state.routes.data,
-  date: state.graphParams.date,
-  startTime: state.graphParams.startTime,
-  endTime: state.graphParams.endTime,
+  date: state.graphParams.firstDateRange.date,
+  startTime: state.graphParams.firstDateRange.startTime,
+  endTime: state.graphParams.firstDateRange.endTime,
 });
 
 const mapDispatchToProps = dispatch => ({

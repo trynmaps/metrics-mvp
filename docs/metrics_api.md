@@ -34,6 +34,9 @@ Queries can also be sent via POST, with the Content-Type `application/json`, and
 }
 ```
 
+For ease of testing the GraphQL API, there is another endpoint, `/api/graphiql`, that provides a web user interface for making GraphQL queries from your browser.
+In a development environment, the URL is http://localhost:5000/api/graphiql .
+
 For more information about calling GraphQL APIs over HTTP, see https://graphql.org/learn/serving-over-http/ . For more information about GraphQL in general, see https://graphql.org/learn/ .
 
 # Structure of a GraphQL Query
@@ -458,7 +461,7 @@ Metrics for a particular transit agency.
 
 | Parameter Name | Type | Description |
 | --- | --- | --- |
-| `dates` | `[String]` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
+| `dates` | `[String]!` | List of dates to return metrics data from. Dates use `MMMM-DD-YY` format.  |
 | `startTime` | `String` | Start time for each date to return metrics data from. Times use `HH:MM` format with an optional suffix "+1" to indicate times after midnight that are associated with the previous day;  e.g. `00:00`, `23:59`, `03:00+1`. |
 | `endTime` | `String` | End time for each date to return metrics data from. |
 
@@ -480,17 +483,22 @@ Metrics for a particular transit agency.
 | Field Name | Type | Description |
 | --- | --- | --- |
 | `directionId` | `String` | ID of the direction. |
-| `medianWaitTime` | `Float` | Median wait time for the median stop on this direction for the given interval, in minutes. |
-| `averageSpeed` | `Float` | Average speed corresponding to the the median end-to-end trip time for this direction for the given interval. |
+| `medianWaitTime` | `Float` | Median observed wait time for the median stop on this direction for the given interval, in minutes. |
+| `scheduledMedianWaitTime` | `Float` | Median scheduled wait time for the median stop on this direction for the given interval, in minutes. |
+| `medianHeadway` | `Float` | Median observed departure headway for the median stop on this direction for the given interval, in minutes. |
+| `scheduledMedianHeadway` | `Float` | Median scheduled departure headway for the median stop on this direction for the given interval, in minutes. |
+| `averageSpeed` | `Float` | Average speed corresponding to the the median observed end-to-end trip time for this direction for the given interval. |
+| `scheduledAverageSpeed` | `Float` | Average speed corresponding to the the median scheduled end-to-end trip time for this direction for the given interval. |
 | `travelTimeVariability` | `Float` | Difference between 90th percentile end-to-end trip time and 10th percentile end-to-end trip time, in minutes. |
 | `onTimeRate` | `Float` | Fraction of scheduled trips for the median stop for which a vehicle departed within a specified interval of the scheduled departure time. |
-| `numCompletedTrips` | `Float` | Total number of completed trips for this direction in the given interval. |
+| `completedTrips` | `Float` | Total observed number of completed trips for this direction in the given interval. |
+| `scheduledCompletedTrips` | `Float` | Total scheduled number of completed trips for this direction in the given interval. |
 | `segments` | [`[SegmentIntervalMetrics]`](#segmentintervalmetrics) | Contains metrics data for each pair of adjacent stops in this direction for the given time interval. |
 | `cumulativeSegments` | [`[SegmentIntervalMetrics]`](#segmentintervalmetrics) | Contains metrics data between the first stop in this direction and each subsequent stop on the route for the given time interval. For some routes, the "first" stop may another stop near the beginning of the route with more representative data than the actual first stop. |
 
 Note: If the interval spans multiple dates, the `medianWaitTime`, `averageSpeed`, `travelTimeVariability`, and `onTimeRate` stats are the median of the statistics for each date.
 
-#### Parameters for `averageSpeed`
+#### Parameters for `averageSpeed` and `scheduledAverageSpeed`
 
 | Parameter Name | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -504,8 +512,10 @@ Contains metrics for a pair of stops in one direction of a route for a particula
 | --- | --- | --- |
 | `fromStopId` | `String` | ID of the origin stop. |
 | `toStopId` | `String` | ID of the destination stop. |
-| `medianTripTime` | `Float` | Median travel time in minutes between the two stops. If the interval spans multiple days, this is the median of the median travel times for each day. |
-| `numTrips` | `Int` | Total number of completed trips between the two stops. |
+| `medianTripTime` | `Float` | Median observed travel time in minutes between the two stops. If the interval spans multiple days, this is the median of the median travel times for each day. |
+| `scheduledMedianTripTime` | `Float` | Median scheduled travel time in minutes between the two stops. If the interval spans multiple days, this is the median of the median travel times for each day. |
+| `trips` | `Int` | Total observed number of completed trips between the two stops. |
+| `scheduledTrips` | `Int` | Total scheduled number of completed trips between the two stops. |
 
 ### RouteMetrics
 

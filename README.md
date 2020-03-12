@@ -12,10 +12,10 @@ of Muni bus and light rail lines in San Francisco.
 If you're visiting this repo and looking to contribute, [check out our onboarding doc!](http://bit.ly/opentransit-onboarding)
 
 ## Building the app
+To start, you'll need to make a local clone of this repository.
+Then get Docker for your local environment (to run the application from that local code): Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
 
-To start, you'll need to get Docker. Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
-
-Build and run the Docker containers:
+Build and run the Docker containers - run this on your local terminal from the root of your local repository clone:
 
 ```sh
 docker-compose up
@@ -32,6 +32,13 @@ To start a shell within the Flask Docker container, run `./docker-shell.sh` (Lin
 You can run command line scripts like `backend/compute_arrivals.py` and `backend/headways.py` from the shell in the Docker container.
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
+
+### Troubleshooting
+
+| Error message | Solution |
+| --- | --- |
+| `Module not found: can't resolve ...` | Run `docker-compose build` |
+
 
 ## Configuring the displayed transit agency
 
@@ -168,4 +175,3 @@ deploying to AWS.
 
 See [agencies.md](docs/agencies.md) for configuring for different agencies, and how the front end gets the
 configuration information.  Important for testing with other devices against your dev machine.
-
