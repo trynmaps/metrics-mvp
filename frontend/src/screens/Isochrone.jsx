@@ -76,6 +76,7 @@ class Isochrone extends React.Component {
     // for now, only supports 1 agency at a time.
     // todo: support multiple agencies on one map
     const agency = Agencies[0];
+    this.agency = Agencies[0];
     this.agencyId = agency.id;
 
     this.initialZoom = agency.initialMapZoom;
@@ -155,7 +156,8 @@ class Isochrone extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.routes !== this.props.routes) this.getUserLocation();
+    // computeIsochrones requires loaded routes
+    if (prevProps.routes !== this.props.routes) this.setInitialLocation();
     if (
       this.props.date !== prevProps.date ||
       this.props.startTime !== prevProps.startTime ||
@@ -192,16 +194,22 @@ class Isochrone extends React.Component {
     alert(message);
   }
 
-  getUserLocation() {
-    navigator.geolocation.getCurrentPosition(position => {
-      this.computeIsochrones(
-        {
+  setInitialLocation() {
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        // assign current user's location
+        let latlng = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        },
-        null,
-      );
-    });
+        };
+        // reassign to central latlng if user's location is out of bounds
+        if (!isInServiceArea(this.agencyId, latlng)) {
+          latlng = this.agency.defaultIsochroneCenter;
+        }
+        this.computeIsochrones(latlng, null);
+      },
+      err => this.computeIsochrones(this.agency.defaultIsochroneCenter, null),
+    );
   }
 
   handleMapClick(event) {

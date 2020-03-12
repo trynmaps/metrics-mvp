@@ -86,6 +86,7 @@ custom_day_start_hours:
     routes: ['272'] # PDX night bus runs from about 1am-4:30am
 js_properties:
   title: TriMet
+  defaultIsochroneCenter: { lat: 45.51858, lng: -122.67764 }
   initialMapCenter: { lat: 45.525, lng: -122.677 }
   initialMapZoom: 12
   routeHeuristics: {
