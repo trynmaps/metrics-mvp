@@ -12,7 +12,7 @@ If you'd like to work with us, get in touch on our Slack channel! [Join the Code
 
 This repo is for [our flagship app](http://muni.opentransit.city/), which uses historical transit data to help riders, transit advocates, and transit planners understand how well -- or how poorly -- transit systems are doing and find ways to improve them.
 
-The app currently supports San Francisco and Portland, but it can be easily configured to support new cities.
+The app currently supports San Francisco and Portland, but we're working to generalize it to work easily for other cities.
 
 ## Getting involved
 
