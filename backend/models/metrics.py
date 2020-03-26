@@ -186,7 +186,7 @@ class RouteMetrics:
 
         if len(compared_timetable_arr) == 1:
             return compared_timetable_arr[0]
-        else:
+        elif len(compared_timetable_arr) != 0:
             return pd.concat(compared_timetable_arr)
 
     def get_headway_schedule_deltas(self, direction_id, stop_id, rng: Range):
@@ -289,7 +289,7 @@ class RouteMetrics:
 
         if len(completed_trips_arr) == 1:
             return completed_trips_arr[0]
-        else:
+        elif len(completed_trips_arr) != 0:
             return np.concatenate(completed_trips_arr)
 
     def get_headways(self, direction_id, stop_id, rng: Range, scheduled=False):
@@ -315,7 +315,7 @@ class RouteMetrics:
 
         if len(headway_min_arr) == 1:
             return headway_min_arr[0]
-        else:
+        elif len(headway_min_arr) != 0:
             return np.concatenate(headway_min_arr)
 
 class TripMetrics:
