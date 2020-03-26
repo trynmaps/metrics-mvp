@@ -1,11 +1,11 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import Link from 'redux-first-router-link';
 
 export default function NotFound() {
   return (
-    <Fragment>
+    <div style={{ padding: '0px 20px' }}>
       <h2>
-        This train went off the rails!{' '}
+        This train went off the rails! &nbsp;
         <span role="img" aria-label="train-crash">
           🚈💥
         </span>
@@ -19,6 +19,6 @@ export default function NotFound() {
       <p>
         Try going <Link to="/">back to the main page</Link>.
       </p>
-    </Fragment>
+    </div>
   );
 }
