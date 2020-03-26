@@ -20,7 +20,7 @@ import {
   isInServiceArea,
 } from '../helpers/mapGeometry';
 import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
-import { handleSpiderMapClick } from '../actions';
+import { handleSpiderMapClick, handleSpiderHover } from '../actions';
 import { Agencies } from '../config';
 
 import MapShield from './MapShield';
@@ -61,6 +61,8 @@ class MapSpider extends Component {
     this.mapRef = createRef(); // used for geolocating
 
     this.handleLocationFound = this.handleLocationFound.bind(this);
+
+    this.MemoizedDownstreamLines = React.memo(this.DownstreamLines);
   }
 
   componentDidMount() {
@@ -113,9 +115,11 @@ class MapSpider extends Component {
    */
 
   generateShield = (startMarker, waitScaled) => {
+    const { tableHoverRoute } = this.props.spiderSelection;
     const lastStop =
       startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
+    const zIndex = tableHoverRoute ? 200 : 0;
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
@@ -132,6 +136,7 @@ class MapSpider extends Component {
         position={shieldPosition}
         icon={icon}
         riseOnHover
+        zIndexOffset={zIndex}
         onClick={e => {
           e.originalEvent.view.L.DomEvent.stopPropagation(e);
           this.props.dispatch({
@@ -152,53 +157,46 @@ class MapSpider extends Component {
   /**
    * Rendering of stops nearest to click or current location
    */
-
-  getStartMarkers = () => {
-    let items = null;
-
-    /* eslint-disable react/no-array-index-key */
-
-    const selectedStops = this.props.spiderSelection.stops;
-
-    if (selectedStops) {
-      items = selectedStops.map((startMarker, index) => {
-        const position = [startMarker.stop.lat, startMarker.stop.lon];
-
-        return (
-          <CircleMarker
-            key={`startMarker-${index}`}
-            center={position}
-            radius="8"
-            fillColor={this.getRouteColor(startMarker)}
-            fillOpacity={0.2}
-            stroke={false}
-          >
-            <Tooltip>
-              {startMarker.routeTitle}
-              <br />
-              {startMarker.direction.title}
-              <br />
-              {startMarker.stop.title}
-              <br />
-              {Math.round(startMarker.miles * 5280)} feet
-            </Tooltip>
-          </CircleMarker>
-        );
-      });
+  getStartMarkers = (startMarker, index, radius = 8, opacity = 0.2, color) => {
+    const position = [startMarker.stop.lat, startMarker.stop.lon];
+    let routeColor = this.getRouteColor(startMarker);
+    let outlineKey = '';
+    // Used by white outline of hovered route
+    if (color) {
+      routeColor = color;
+      outlineKey = '-outline';
     }
-    return items;
+
+    return (
+      <CircleMarker
+        key={`startMarker-${index}${outlineKey}`}
+        center={position}
+        radius={radius}
+        fillColor={routeColor}
+        fillOpacity={opacity}
+        stroke={false}
+      >
+        <Tooltip>
+          {startMarker.routeTitle}
+          <br />
+          {startMarker.direction.title}
+          <br />
+          {startMarker.stop.title}
+          <br />
+          {Math.round(startMarker.miles * 5280)} feet
+        </Tooltip>
+      </CircleMarker>
+    );
   };
 
-  // Rendering of route from nearest stop to terminal.
-
-  DownstreamLines = () => {
-    const statsByRouteId = this.props.statsByRouteId;
-
+  /**
+   * Rendering of route from nearest stop to terminal.
+   */
+  DownstreamLines = props => {
     // One polyline for each start marker
-
     let items = null;
 
-    const selectedStops = this.props.spiderSelection.stops;
+    const selectedStops = props.stops;
 
     if (selectedStops) {
       items = selectedStops.map(startMarker => {
@@ -206,15 +204,10 @@ class MapSpider extends Component {
 
         const polylines = [];
 
+        const waitScaled = this.getWaitScale(startMarker);
+
         // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
         // when selecting a line.
-
-        const stats = statsByRouteId[startMarker.routeId] || {};
-
-        const waitScaled = stats.waitRankCount
-          ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
-          : 0;
-
         for (let i = 0; i < downstreamStops.length - 1; i++) {
           // for each stop
           polylines.push(this.generatePolyline(startMarker, waitScaled, i));
@@ -228,9 +221,94 @@ class MapSpider extends Component {
 
         return polylines;
       });
+      return items;
     }
 
     return <Fragment>{items}</Fragment>;
+  };
+
+  /**
+   * Rendering of polylines and markers of hovered table route
+   */
+  HoveredLine = () => {
+    const { routes, spiderSelection } = this.props;
+    const startMarkers = [];
+    const outlineLayers = [];
+    let routeStops;
+
+    if (spiderSelection.tableHoverRoute) {
+      // index from entire routes array required for proper route color
+      const routeIndex = filterRoutes(routes).findIndex(
+        route => route.id === spiderSelection.tableHoverRoute.id,
+      );
+      routeStops = this.populateStops(
+        spiderSelection.tableHoverRoute,
+        routeIndex,
+        spiderSelection.latLng,
+      );
+
+      // only retain directions already on the spider
+      if (spiderSelection.stops.length) {
+        routeStops = routeStops.filter(stop =>
+          spiderSelection.stops.find(
+            spiderStop =>
+              spiderStop.routeId === stop.routeId &&
+              spiderStop.direction.id === stop.direction.id,
+          ),
+        );
+      }
+
+      const outlineWeight = 2;
+
+      routeStops.forEach(stop => {
+        this.addDownstreamStops(stop);
+        const downstreamStops = stop.downstreamStops;
+        const outlineScale = this.getWaitScale(stop) + outlineWeight * 2;
+        // Add white polylines under other layers of hovered route
+        for (let i = 0; i < downstreamStops.length - 1; i++) {
+          outlineLayers.push(
+            this.generatePolyline(stop, outlineScale, i, '#ffffff'),
+          );
+        }
+      });
+
+      if (spiderSelection.latLng) {
+        routeStops.forEach((startMarker, index) => {
+          // Replaces the default radius of 8 so it better suits the weight of the polyline
+          const radius = 7 + this.getWaitScale(startMarker);
+          // White start marker outline
+          outlineLayers.push(
+            this.getStartMarkers(
+              startMarker,
+              index,
+              radius + outlineWeight,
+              1,
+              '#ffffff',
+            ),
+          );
+          startMarkers.push(this.getStartMarkers(startMarker, index, radius));
+        });
+      }
+    }
+
+    return (
+      <Fragment>
+        {outlineLayers}
+        {startMarkers}
+        <this.DownstreamLines stops={routeStops} />
+      </Fragment>
+    );
+  };
+
+  /**
+   * Get scale for leaflet layers based on wait rank
+   */
+  getWaitScale = startMarker => {
+    const { statsByRouteId } = this.props;
+    const stats = statsByRouteId[startMarker.routeId] || {};
+    return stats.waitRankCount
+      ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
+      : 0;
   };
 
   // Creates a circle at the terminal of a route.
@@ -252,28 +330,42 @@ class MapSpider extends Component {
     );
   };
 
-  // Creates a line between two stops.
-
-  generatePolyline = (startMarker, waitScaled, i) => {
+  /**
+   * Creates a line between two stops.
+   */
+  generatePolyline = (startMarker, waitScaled, i, color) => {
+    const { onSpiderHover } = this.props;
     const downstreamStops = startMarker.downstreamStops;
 
     const computedWeight = waitScaled * 1.5 + 3;
 
+    let routeColor = this.getRouteColor(startMarker);
+
+    let opacity = 0.5;
+    let outlineKey = '';
+    // Used by white outline polylines of hovered route
+    if (color) {
+      routeColor = color;
+      opacity = 1;
+      outlineKey = '-outline';
+    }
+
     return (
       <Polyline
-        key={`poly-${startMarker.routeId}-${downstreamStops[i].id}`}
+        key={`poly-${startMarker.routeId}-${downstreamStops[i].id}${outlineKey}`}
         positions={getTripPoints(
           startMarker.routeInfo,
           startMarker.direction,
           downstreamStops[i].id,
           downstreamStops[i + 1].id,
         )}
-        color={this.getRouteColor(startMarker)}
-        opacity={0.5}
+        color={routeColor}
+        opacity={opacity}
         weight={computedWeight}
         onMouseOver={e => {
           // on hover, draw segment wider
           e.target.setStyle({ opacity: 1, weight: computedWeight + 4 });
+          onSpiderHover(startMarker.routeId);
           return true;
         }}
         onFocus={e => {
@@ -281,6 +373,7 @@ class MapSpider extends Component {
         }}
         onMouseOut={e => {
           e.target.setStyle({ opacity: 0.5, weight: computedWeight });
+          onSpiderHover(null);
           return true;
         }}
         onBlur={e => {
@@ -415,27 +508,14 @@ class MapSpider extends Component {
    */
   findStops(latLng) {
     const { routes } = this.props;
-    const latLon = { lat: latLng.lat, lon: latLng.lng };
     let stopsByRouteAndDir = [];
 
     const filteredRoutes = filterRoutes(routes);
     for (let i = 0; i < filteredRoutes.length; i++) {
       // optimize this on back end
       const route = filteredRoutes[i];
-
-      if (route.directions) {
-        // eslint-disable-next-line no-loop-func
-        route.directions.forEach(direction => {
-          const stopList = direction.stops;
-          const nearest = this.findNearestStop(latLon, stopList, route.stops);
-          nearest.routeId = route.id;
-          nearest.routeIndex = i;
-          nearest.routeTitle = route.title;
-          nearest.direction = direction;
-          nearest.routeInfo = route;
-          stopsByRouteAndDir.push(nearest);
-        });
-      }
+      const routeStops = this.populateStops(route, i, latLng);
+      stopsByRouteAndDir.push(...routeStops);
     }
     // truncate by distance (CLICK_RADIUS_MI miles) and then sort
 
@@ -445,6 +525,36 @@ class MapSpider extends Component {
     stopsByRouteAndDir.sort((a, b) => a.miles - b.miles);
 
     return stopsByRouteAndDir;
+  }
+
+  /**
+   * Initialize starting stops in each direction of a given route
+   */
+  populateStops(route, index, latLng) {
+    const routeStops = [];
+
+    if (route.directions) {
+      // eslint-disable-next-line no-loop-func
+      route.directions.forEach(direction => {
+        const stopList = direction.stops;
+        let nearest;
+        if (latLng) {
+          const latLon = { lat: latLng.lat, lon: latLng.lng };
+          nearest = this.findNearestStop(latLon, stopList, route.stops);
+        } else {
+          // only used by HoveredLine when there is no spider
+          nearest = { stop: route.stops[stopList[0]], stopId: stopList[0] };
+        }
+        nearest.routeId = route.id;
+        nearest.routeIndex = index;
+        nearest.routeTitle = route.title;
+        nearest.direction = direction;
+        nearest.routeInfo = route;
+        routeStops.push(nearest);
+      });
+    }
+
+    return routeStops;
   }
 
   /**
@@ -468,10 +578,12 @@ class MapSpider extends Component {
    * Main React render method.
    */
   render() {
-    const { position, zoom, spiderSelection } = this.props;
+    const { position, zoom, spiderSelection, statsByRouteId } = this.props;
     const { isValidLocation } = this.state;
     const mapClass = { width: '100%', height: this.state.height };
-    const startMarkers = this.getStartMarkers();
+    const startMarkers = spiderSelection.stops.map((startMarker, index) =>
+      this.getStartMarkers(startMarker, index),
+    );
 
     return (
       <div>
@@ -492,7 +604,14 @@ class MapSpider extends Component {
             opacity={0.3}
           />
           {/* see http://maps.stamen.com for details */}
-          <this.DownstreamLines />
+
+          <this.HoveredLine />
+          {/* Props are shallow compared with previous props and skips re-rendering if they are equal */}
+          <this.MemoizedDownstreamLines
+            latLng={spiderSelection.latLng}
+            stops={spiderSelection.stops}
+            statsByRouteId={statsByRouteId}
+          />
           {startMarkers}
           <this.SpiderOriginMarker spiderLatLng={spiderSelection.latLng} />
           <Control position="topright">
@@ -542,6 +661,7 @@ const mapDispatchToProps = dispatch => {
   return {
     onSpiderMapClick: (stops, latLng) =>
       dispatch(handleSpiderMapClick(stops, latLng)),
+    onSpiderHover: routeId => dispatch(handleSpiderHover(routeId)),
     dispatch,
   };
 };

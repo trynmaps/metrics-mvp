@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState, Fragment, useEffect } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles, useTheme } from '@material-ui/core/styles';
@@ -24,6 +24,7 @@ import {
   scoreBackgroundColor,
   scoreContrastColor,
 } from '../helpers/routeCalculations';
+import { handleTableRowHover } from '../actions';
 
 function getComparisonFunction(order, orderBy) {
   // Sort null values to bottom regardless of ascending/descending
@@ -230,6 +231,9 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     marginTop: theme.spacing(3),
   },
+  artificialHover: {
+    backgroundColor: 'rgba(0, 0, 0, 0.07)',
+  },
   tableWrapper: {
     overflowX: 'auto',
   },
@@ -254,7 +258,12 @@ function RouteTable(props) {
   const dense = true;
   const theme = useTheme();
 
-  const { statsByRouteId } = props;
+  const { statsByRouteId, onTableRowHover, spiderSelection } = props;
+
+  // Null hovered route on mount and unmount to prevent route being already highlighted when entering Dashboard
+  useEffect(() => {
+    return () => onTableRowHover(null);
+  }, [onTableRowHover]);
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
@@ -416,14 +425,21 @@ function RouteTable(props) {
             rowCount={displayedRouteStats.length}
             columns={columns}
           />
-          <TableBody>
+          <TableBody onMouseLeave={() => onTableRowHover(null)}>
             {stableSort(displayedRouteStats, order, orderBy).map(row => {
+              let hover;
+              if (row.route.id === spiderSelection.routeId) {
+                hover = classes.artificialHover;
+              }
+
               return (
                 <TableRow
                   hover
                   role="checkbox"
                   tabIndex={-1}
                   key={row.route.id}
+                  onMouseEnter={() => onTableRowHover(row.route)}
+                  classes={{ root: hover }}
                 >
                   {columns.map(column => {
                     return (
@@ -457,4 +473,11 @@ const mapStateToProps = state => ({
   query: state.location.query,
 });
 
-export default connect(mapStateToProps)(RouteTable);
+const mapDispatchToProps = dispatch => ({
+  onTableRowHover: route => dispatch(handleTableRowHover(route)),
+});
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(RouteTable);

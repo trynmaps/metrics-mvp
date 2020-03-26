@@ -486,6 +486,18 @@ export function handleSpiderMapClick(stops, latLng) {
   };
 }
 
+export function handleTableRowHover(tableHoverRoute) {
+  return function(dispatch) {
+    dispatch({ type: 'RECEIVED_TABLE_ROW_HOVER', tableHoverRoute });
+  };
+}
+
+export function handleSpiderHover(routeId) {
+  return function(dispatch) {
+    dispatch({ type: 'RECEIVED_SPIDER_HOVER', routeId });
+  };
+}
+
 export function handleGraphParams(params) {
   return function(dispatch, getState) {
     const oldParams = getState().graphParams;
