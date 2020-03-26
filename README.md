@@ -24,7 +24,7 @@ Our Slack is very active, so don't hesitate to ask there if you need guidance or
 
 If you're non-technical, ask on Slack -- there's a lot of product management, marketing, design, and other work that we don't track on GitHub.
 
-## Building the app
+## Getting started
 
 First make a local clone of this repo.
 
@@ -54,28 +54,9 @@ If you need to install some new dependencies in the Docker images, you can rebui
 | --- | --- |
 | `Module not found: can't resolve ...` | Run `docker-compose build` |
 
+## Your first pull request
 
-## Configuring the displayed transit agency
-
-By default, the app shows statistics for San Francisco Muni. You can configure the transit agency displayed in the web app by setting the OPENTRANSIT_AGENCY_IDS environment variable.
-
-Other available agency IDs include:
-- `trimet` (TriMet in Portland, Oregon)
-- `portland-sc` (Portland Streetcar)
-
-To set this environment variable in development when using Docker, create a file named docker-compose.override.yml file in the root directory of this repository, like so:
-
-```
-version: "3.7"
-services:
-  flask-dev:
-    environment:
-      OPENTRANSIT_AGENCY_IDS: trimet
-```
-
-After changing docker-compose.override.yml, you will need to re-run `docker-compose up` for the changes to take effect.
-
-## Code Style
+### Code style
 
 This repository uses eslint to enforce a consistent style for frontend JavaScript code.
 
@@ -83,7 +64,7 @@ Before committing, run `dev/docker-lint.sh` (Mac/Linux) or `dev\docker-lint.bat`
 
 GitHub automatically runs tests for each push to check for eslint errors. If eslint reports any style errors, pull requests will show a failing check.
 
-## Deploying to Heroku
+### Deploying to Heroku
 
 When you make a Pull Request, we would suggest you deploy your branch to Heroku so that other
 team members can try out your feature.
@@ -107,7 +88,7 @@ git push heroku local-branch-name:master
 
 Then copy the link to this app and paste it in the PR.
 
-## How Deployment Works
+#### How Deployment Works
 
 Once a PR is merged into master, Google Cloud Build  will automatically build
 the latest code and deploy it to a cluster on Google Kubernetes Engine (GKE).
@@ -175,10 +156,28 @@ services:
 This setting is not in the main docker-compose.yml file because CHOKIDAR_USEPOLLING causes high CPU/battery usage for developers using Mac OS X,
 and CHOKIDAR_USEPOLLING is not necessary on Mac OS X to automatically recompile the frontend code when it changes.
 
+### Configuring the displayed transit agency
+
+By default, the app shows statistics for San Francisco Muni. You can configure the transit agency displayed in the web app by setting the OPENTRANSIT_AGENCY_IDS environment variable.
+
+Other available agency IDs include:
+- `trimet` (TriMet in Portland, Oregon)
+- `portland-sc` (Portland Streetcar)
+
+To set this environment variable in development when using Docker, create a file named docker-compose.override.yml file in the root directory of this repository, like so:
+
+```
+version: "3.7"
+services:
+  flask-dev:
+    environment:
+      OPENTRANSIT_AGENCY_IDS: trimet
+```
+
+After changing docker-compose.override.yml, you will need to re-run `docker-compose up` for the changes to take effect.
+
 ### Advanced Concepts
 
-Please see [ADVANCED_DEV.md](docs/ADVANCED_DEV.md) for advanced information like computing arrival times and
-deploying to AWS.
+Please see [ADVANCED_DEV.md](docs/ADVANCED_DEV.md) for even more advanced information like computing arrival times and deploying to AWS.
 
-See [agencies.md](docs/agencies.md) for configuring for different agencies, and how the front end gets the
-configuration information.  Important for testing with other devices against your dev machine.
+See [agencies.md](docs/agencies.md) for configuring for different agencies, and how the front end gets the configuration information.  Important for testing with other devices against your dev machine.
