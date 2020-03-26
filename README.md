@@ -6,6 +6,8 @@ Founded in 2017, we're a team of dozens of engineers, transit junkies, data enth
 
 [Learn more at our official website](http://bit.ly/opentransitsf) or learn about our parent organization, [Code for America](https://www.codeforamerica.org/).
 
+If you'd like to work with us, get in touch on our Slack channel! [Join the Code for SF Slack](http://c4sf.me/slack) and find the `#opentransit` channel. We're excited to partner with transit agencies, journalists, and other data junkies across the world. See below for instructions on joining our team of contributors.
+
 ## About this repository
 
 This repo is for [our flagship app](http://muni.opentransit.city/), which uses historical transit data to help riders, transit advocates, and transit planners understand how well -- or how poorly -- transit systems are doing and find ways to improve them.
