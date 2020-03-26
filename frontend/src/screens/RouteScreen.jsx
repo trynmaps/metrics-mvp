@@ -91,9 +91,17 @@ function RouteScreen(props) {
         const updatedPayload = Object.assign({ ...link.payload }, payload);
         link = Object.assign({ ...link }, { payload: updatedPayload });
         const { label, specialLabel } = labels(param, path.title);
+
+        // For SEO purposes, make the very first breadcrumb (which is the
+        // route name) render as an H1, but be styled like everything else
+        // (as a regular, small subtitle).
+        // if it's not the first one, render as default HTML tag.
+        const renderAsH1 = index === 0 ? 'h1' : null;
+
         return hasNextValue ? (
           <Typography
             variant="subtitle1"
+            component={renderAsH1}
             key={label}
             className={`${breadCrumbStyling} ${darkLinks}`}
           >
@@ -107,6 +115,7 @@ function RouteScreen(props) {
         ) : (
           <Typography
             variant="subtitle1"
+            component={renderAsH1}
             key={label}
             className={breadCrumbStyling}
           >
