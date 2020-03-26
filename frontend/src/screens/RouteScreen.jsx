@@ -96,12 +96,12 @@ function RouteScreen(props) {
         // route name) render as an H1, but be styled like everything else
         // (as a regular, small subtitle).
         // if it's not the first one, render as default HTML tag.
-        const renderAsTag = index === 0 ? 'h1' : null;
+        const renderAsH1 = index === 0 ? 'h1' : null;
 
         return hasNextValue ? (
           <Typography
             variant="subtitle1"
-            component={renderAsTag}
+            component={renderAsH1}
             key={label}
             className={`${breadCrumbStyling} ${darkLinks}`}
           >
@@ -115,7 +115,7 @@ function RouteScreen(props) {
         ) : (
           <Typography
             variant="subtitle1"
-            component={renderAsTag}
+            component={renderAsH1}
             key={label}
             className={breadCrumbStyling}
           >
