@@ -267,12 +267,12 @@ export function resetTripMetrics() {
 }
 
 export function fetchRoutes() {
-  return function(dispatch, getState) {
+  return async function(dispatch, getState) {
     const agencyId = Agencies[0].id;
 
     if (agencyId !== getState().routes.agencyId) {
       dispatch({ type: 'REQUEST_ROUTES', agencyId });
-      axios
+      await axios
         .get(generateRoutesURL(agencyId))
         .then(response => {
           const routes = response.data.routes;
