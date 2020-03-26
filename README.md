@@ -56,6 +56,10 @@ If you need to install some new dependencies in the Docker images, you can rebui
 
 ## Your first pull request
 
+Our usual workflow is for a GitHub contributor (once you're added to the GitHub organization; see the onboarding guide) to create a new branch for each pull request. Once you're ready, start a pull request to merge your branch back into master.
+
+Our pull request template will request that you fill out some key fields. It'll also automatically tag some repo maintainers to review your PR.
+
 ### Code style
 
 This repository uses eslint to enforce a consistent style for frontend JavaScript code.
