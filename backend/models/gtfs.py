@@ -189,15 +189,19 @@ class GtfsScraper:
 
         return self.stop_times_df
 
-    def get_services_by_date(self):
+    def get_services_by_date(self, ignore_day_of_week=False):
+        """Returns map of a date object to a list of service_ids.
+        Can optionally supply ignore_day_of_week, which includes all service_ids
+        that are active on a date within a date range provided in calendar.txt
+        regardless of the day of the week."""
         calendar_df = self.feed.calendar
         calendar_dates_df = self.feed.calendar_dates
 
         dates_map = {}
 
         for calendar_row in calendar_df.itertuples():
-
-            start_date = calendar_row.start_date # partridge library already parses date strings as Python date objects
+            # partridge library already parses date strings as Python date objects
+            start_date = calendar_row.start_date
             end_date = calendar_row.end_date
 
             weekdays = []
@@ -215,6 +219,9 @@ class GtfsScraper:
                 weekdays.append(5)
             if calendar_row.saturday == 1:
                 weekdays.append(6)
+
+            if ignore_day_of_week:
+                weekdays = [0, 1, 2, 3, 4, 5, 6]
 
             service_id = calendar_row.service_id
 
@@ -238,7 +245,10 @@ class GtfsScraper:
                     if service_id in dates_map[d]:
                         dates_map[d].remove(service_id)
                     else:
-                        print(f"error in GTFS feed: service {service_id} removed from {d}, but it was not scheduled on that date")
+                        print((
+                            f"error in GTFS feed: service {service_id} removed "
+                            f"from {d}, but it was not scheduled on that date"
+                        ))
 
         return dates_map
 
@@ -969,6 +979,53 @@ class GtfsScraper:
 
         return route_data
 
+    def get_active_routes(self, routes_df, d):
+        """Returns routes in routes_df whose service_ids all have a
+        start_date that is at or before and an end_date that is at or
+        after the given date."""
+        trips_df = self.get_gtfs_trips()
+        dates_map = self.get_services_by_date(ignore_day_of_week=True)
+        before_service_ids = []
+        after_service_ids = []
+        for service_date in dates_map:
+            if service_date <= d:
+                before_service_ids += dates_map[service_date]
+            elif service_date >= d:
+                after_service_ids += dates_map[service_date]
+        active_services = set.intersection(
+            set(before_service_ids),
+            set(after_service_ids),
+        )
+        def has_active_service_id(service_ids):
+            for (_, service_id) in service_ids.iteritems():
+                if service_id in active_services:
+                    return True
+            return False
+        # Obtain is_active_routes_df by grouping trips_df, then join
+        # with routes_df to add in the route columns.
+        # Only return active routes from is_active_routes_df.
+        #
+        # Note that route_id represents the GTFS route_id, which is
+        # unique and is not necessarily the route number,
+        # as is the case for Muni.
+        is_active_routes_df = trips_df.groupby('route_id').agg({
+            'service_id': has_active_service_id,
+        }).merge(
+            routes_df.set_index('route_id'),
+            left_index=True,
+            right_index=True,
+            validate='one_to_one',
+        ).rename(columns={
+            'service_id': 'has_active_service_id',
+        }).reset_index()
+        active_routes_df = is_active_routes_df[
+            is_active_routes_df['has_active_service_id']
+        ]
+        active_routes_df = active_routes_df.drop(
+            columns='has_active_service_id'
+        )
+        return active_routes_df
+
     def sort_routes(self, routes_data):
         agency = self.agency
         if agency.provider == 'nextbus':
@@ -999,11 +1056,11 @@ class GtfsScraper:
             return route_data['title']
         return sorted(routes_data, key=get_sort_key)
 
-    def save_routes(self, save_to_s3=True):
+    def save_routes(self, save_to_s3, d):
         agency = self.agency
         agency_id = agency.id
-
         routes_df = self.get_gtfs_routes()
+        routes_df = self.get_active_routes(routes_df, d)
         routes_data = [
             self.get_route_data(route)
             for route in routes_df.itertuples()
