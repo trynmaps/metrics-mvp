@@ -1,21 +1,36 @@
 # OpenTransit Metrics MVP
 
-Welcome to OpenTransit! We're passionate about using open data to improve
-public transit systems around the world.
+Welcome to OpenTransit! We're a team of volunteers that use open data to improve public transit systems around the world.
 
-This app uses historical transit data to help riders, transit advocates,
-and transit planners understand the quality of public transit systems.
+Founded in 2017, we're a team of dozens of engineers, transit junkies, data enthusiasts, product managers, marketers, and others scattered around the world, but with primary bases in San Francisco and Portland, Oregon.
 
-[Check out the app](http://muni.opentransit.city/) to see the performance
-of Muni bus and light rail lines in San Francisco.
+[Learn more at our official website](http://bit.ly/opentransitsf) or learn about our parent organization, [Code for America](https://www.codeforamerica.org/).
 
-If you're visiting this repo and looking to contribute, [check out our onboarding doc!](http://bit.ly/opentransit-onboarding)
+## About this repository
+
+This repo is for [our flagship app](http://muni.opentransit.city/), which uses historical transit data to help riders, transit advocates, and transit planners understand how well -- or how poorly -- transit systems are doing and find ways to improve them.
+
+The app currently supports San Francisco and Portland, but it can be easily configured to support new cities.
+
+## Getting involved
+
+[Our onboarding doc](http://bit.ly/opentransit-onboarding) is a great way to get started. It'll provide you instructions on joining our GitHub organization, our Slack, our Google Drive, etc.
+
+### Contributing
+
+Once you've followed the instructions on the onboarding doc, visit our Issues page and [identify good first issues](https://github.com/trynmaps/metrics-mvp/labels/Good%20First%20Issue) to find a good project to get started on.
+
+Our Slack is very active, so don't hesitate to ask there if you need guidance or suggestions on picking a project!
+
+If you're non-technical, ask on Slack -- there's a lot of product management, marketing, design, and other work that we don't track on GitHub.
 
 ## Building the app
-To start, you'll need to make a local clone of this repository.
+
+First make a local clone of this repo.
+
 Then get Docker for your local environment (to run the application from that local code): Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
 
-Build and run the Docker containers - run this on your local terminal from the root of your local repository clone:
+Build and run the Docker containers -- run this on your local terminal from the root of your local repository clone:
 
 ```sh
 docker-compose up
@@ -60,15 +75,7 @@ services:
 
 After changing docker-compose.override.yml, you will need to re-run `docker-compose up` for the changes to take effect.
 
-## Contributing
-
-Make sure you've been added to the trynmaps organization on GitHub.
-[Join the Code for SF Slack](http://c4sf.me/slack) and join the #opentransit channel,
-then you'll see a guide to get in.
-
-To get started, see the Issues page. You may want to [identify good first issues](https://github.com/trynmaps/metrics-mvp/labels/Good%20First%20Issue).
-
-### Code Style
+## Code Style
 
 This repository uses eslint to enforce a consistent style for frontend JavaScript code.
 
@@ -76,7 +83,7 @@ Before committing, run `dev/docker-lint.sh` (Mac/Linux) or `dev\docker-lint.bat`
 
 GitHub automatically runs tests for each push to check for eslint errors. If eslint reports any style errors, pull requests will show a failing check.
 
-### Deploying to Heroku
+## Deploying to Heroku
 
 When you make a Pull Request, we would suggest you deploy your branch to Heroku so that other
 team members can try out your feature.
