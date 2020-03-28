@@ -732,7 +732,7 @@ class Isochrone extends React.Component {
             <div ref={this.refContainer}>
               <FormControl className="inline-form-control">
                 <InputLabel shrink>Date-Time Range</InputLabel>
-                <div style={{ paddingTop: '10px' }}>
+                <div style={{ paddingTop: '15px' }}>
                   <SingleDateControl />
                 </div>
                 <div>

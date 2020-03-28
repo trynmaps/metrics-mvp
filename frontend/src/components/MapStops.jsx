@@ -429,7 +429,7 @@ class MapStops extends Component {
 
   computeHeight() {
     return window.innerWidth >= 1050
-      ? window.innerHeight - 48 - 64 - 49
+      ? window.innerHeight - 48 - 65 - 49
       : window.innerHeight * 0.65;
   }
 

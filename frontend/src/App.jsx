@@ -81,7 +81,7 @@ const App = props => {
               <Tab
                 label={
                   <div>
-                    <PollIcon style={{ verticalAlign: '-6px' }} />
+                    <PollIcon className='app-tab-icon' />
                     <span className="app-tab-text"> Metrics</span>
                   </div>
                 }
@@ -90,7 +90,7 @@ const App = props => {
               <Tab
                 label={
                   <div>
-                    <PersonPinCircleIcon style={{ verticalAlign: '-6px' }} />
+                    <PersonPinCircleIcon className='app-tab-icon'/>
                     <span className="app-tab-text"> Isochrone</span>
                   </div>
                 }
@@ -99,7 +99,7 @@ const App = props => {
               <Tab
                 label={
                   <div>
-                    <InfoRoundedIcon style={{ verticalAlign: '-6px' }} />
+                    <InfoRoundedIcon className='app-tab-icon' />
                     <span className="app-tab-text"> About</span>
                   </div>
                 }
@@ -108,7 +108,7 @@ const App = props => {
             </Tabs>
           </Toolbar>
         </AppBar>
-        <div style={{ height: 48 }}>&nbsp;</div>
+        <div className="app-toolbar-space">&nbsp;</div>
         <Screen />
       </div>
     </ThemeProvider>

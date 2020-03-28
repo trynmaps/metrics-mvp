@@ -75,6 +75,14 @@
     display:none;
 }
 
+.app-tab-icon {
+    vertical-align: -6px;
+}
+
+.app-toolbar-space {
+    height: 48px;
+}
+
 @media (min-width: 1050px)
 {
     .map-fixed-half {
@@ -91,7 +99,7 @@
 
 .MuiSvgIcon-root.clear-filter, .MuiSvgIcon-root.add-filter
 {
-  font-size: 19px;
+  font-size: 18px;
   vertical-align:-4px;
   opacity: 0.6;
 }
@@ -106,6 +114,17 @@
 
 .MuiFormControl-root.inline-form-control label {
     white-space: nowrap;
+}
+
+.MuiInputLabel-shrink.MuiInputLabel-root {
+    font-size: 13px;
+    display:inline-block;
+    line-height:1.5;
+    transform: translate(0, 0);
+}
+
+label + .MuiInput-formControl {
+    margin-top: 18px !important;
 }
 
 .MuiCheckbox-root

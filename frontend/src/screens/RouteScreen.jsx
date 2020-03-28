@@ -53,8 +53,8 @@ function RouteScreen(props) {
       component: OnTimePerformanceStats,
     },
     {
-      value: 'trip_chart',
-      label: 'Trip Chart',
+      value: 'td_chart',
+      label: 'Time-Distance Chart',
       component: MareyChart,
     },
   ];
