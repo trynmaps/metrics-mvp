@@ -81,7 +81,7 @@ const App = props => {
               <Tab
                 label={
                   <div>
-                    <PollIcon className='app-tab-icon' />
+                    <PollIcon className="app-tab-icon" />
                     <span className="app-tab-text"> Metrics</span>
                   </div>
                 }
@@ -90,7 +90,7 @@ const App = props => {
               <Tab
                 label={
                   <div>
-                    <PersonPinCircleIcon className='app-tab-icon'/>
+                    <PersonPinCircleIcon className="app-tab-icon" />
                     <span className="app-tab-text"> Isochrone</span>
                   </div>
                 }
@@ -99,7 +99,7 @@ const App = props => {
               <Tab
                 label={
                   <div>
-                    <InfoRoundedIcon className='app-tab-icon' />
+                    <InfoRoundedIcon className="app-tab-icon" />
                     <span className="app-tab-text"> About</span>
                   </div>
                 }
