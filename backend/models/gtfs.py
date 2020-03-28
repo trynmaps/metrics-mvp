@@ -107,6 +107,8 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
             pass
     return False
 
+class ShapeNotFoundException(Exception):
+    pass
 
 class GtfsScraper:
     def __init__(self, agency: config.Agency):
@@ -118,6 +120,7 @@ class GtfsScraper:
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
 
+        self.errors = []
         self.stop_times_by_trip = None
         self.stops_df = None
         self.trips_df = None
@@ -717,19 +720,19 @@ class GtfsScraper:
             if contains_included_stops(shape_stop_ids, included_stop_ids) and not contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
                 matching_shapes.append(shape)
 
-        if len(matching_shapes) != 1:
-            matching_shape_ids = [shape['shape_id'] for shape in matching_shapes]
-            error_message = f'{len(matching_shapes)} shapes found for route {route_id} with GTFS direction ID {gtfs_direction_id}'
+        if len(matching_shapes) == 0:
+            error_message = f'No shapes found for {self.agency_id} route {route_id} custom direction {direction_id} with GTFS direction ID {gtfs_direction_id}'
             if len(included_stop_ids) > 0:
                 error_message += f" including {','.join(included_stop_ids)}"
 
             if len(excluded_stop_ids) > 0:
                 error_message += f" excluding {','.join(excluded_stop_ids)}"
 
-            if len(matching_shape_ids) > 0:
-                error_message += f": {','.join(matching_shape_ids)}"
-
-            raise Exception(error_message)
+            self.errors.append(error_message)
+            print(f'  {error_message}')
+            return None
+        elif len(matching_shapes) > 1:
+            print("   multiple matching shapes found: " + ', '.join([f"{shape['shape_id']} ({shape['count']} times)" for shape in matching_shapes]))
 
         matching_shape = matching_shapes[0]
         matching_shape_id = matching_shape['shape_id']
@@ -923,10 +926,11 @@ class GtfsScraper:
         route_trips_df = trips_df[trips_df['route_id'] == gtfs_route_id]
 
         if route_id in agency.custom_directions:
-            route_data['directions'] = [
-                self.get_custom_direction_data(custom_direction_info, route_trips_df, route_id)
-                for custom_direction_info in agency.custom_directions[route_id]
-            ]
+            route_data['directions'] = []
+            for custom_direction_info in agency.custom_directions[route_id]:
+                custom_direction_data = self.get_custom_direction_data(custom_direction_info, route_trips_df, route_id)
+                if custom_direction_data is not None:
+                    route_data['directions'].append(custom_direction_data)
         else:
             route_data['directions'] = [
                 self.get_default_direction_data(direction_id, route_trips_df)

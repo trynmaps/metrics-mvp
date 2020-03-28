@@ -51,6 +51,8 @@ if __name__ == '__main__':
 
     save_to_s3 = args.s3
 
+    errors = []
+
     for agency in agencies:
         scraper = gtfs.GtfsScraper(agency)
         scraper.save_routes(save_to_s3)
@@ -61,3 +63,8 @@ if __name__ == '__main__':
             if timetables_updated and args.scheduled_stats:
                 dates = sorted(scraper.get_services_by_date().keys())
                 compute_stats_for_dates(dates, agency, scheduled=True, save_to_s3=save_to_s3)
+
+        errors += scraper.errors
+
+    if errors:
+        raise Exception("\n".join(errors))
