@@ -121,7 +121,7 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
         temp_cache_path = get_route_temp_cache_path(agency_id, route_id)
         if not os.path.exists(temp_cache_path):
-            return None
+            continue
 
         os.rename(temp_cache_path, cache_path)
 
