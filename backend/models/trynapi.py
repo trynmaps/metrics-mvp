@@ -17,6 +17,9 @@ class CachedState:
         self.cache_paths[route_id] = cache_path
 
     def get_for_route(self, route_id) -> pd.DataFrame:
+        if route_id not in self.cache_paths:
+            return None
+
         cache_path = self.cache_paths[route_id]
         print(f'loading state for route {route_id} from cache: {cache_path}')
         buses = pd.read_csv(
