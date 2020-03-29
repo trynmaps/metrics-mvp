@@ -124,7 +124,9 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
         temp_cache_path = get_route_temp_cache_path(agency_id, route_id)
         if not os.path.exists(temp_cache_path):
-            continue
+            # create empty cache file so that get_state doesn't need to request routes with no data again
+            # if it is called again later
+            write_csv_header(temp_cache_path)
 
         os.rename(temp_cache_path, cache_path)
 
@@ -220,6 +222,11 @@ def get_chunk_state(
 # used for writing and reading chunk states to and from CSV files
 vehicle_keys = ['vid', 'lat', 'lon', 'did', 'secsSinceReport']
 
+def write_csv_header(path):
+    header_keys = ['timestamp'] + vehicle_keys
+    with open(path, 'w+') as chunk_out:
+        chunk_out.writelines([','.join(header_keys) + '\n'])
+
 def write_chunk_state(chunk_state, agency_id):
     # TODO - use the write functions part of PR #578
     """Writes chunks to a CSV for the given route in the given directory.
@@ -229,10 +236,10 @@ def write_chunk_state(chunk_state, agency_id):
     states = chunk_state['states']
     if len(states) == 0:
         return
-    header_keys = ['timestamp'] + vehicle_keys
+
     if not os.path.exists(path):
-        with open(path, 'w+') as chunk_out:
-            chunk_out.writelines([','.join(header_keys) + '\n'])
+        write_csv_header(path)
+
     with open(path, 'a') as chunk_out:
         chunk_lines = []
         for state in states:
