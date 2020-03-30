@@ -15,11 +15,11 @@ custom_directions:
     - id: "1"
       title: "From NW Yeon & 44th to Gateway Transit Center"
       gtfs_direction_id: "1"
-      included_stop_ids: ["6470","749"]
+      included_stop_ids: ["6470"]
     - id: "1-T"
       title: "From NW Thurman & 28th to Gateway Transit Center"
       gtfs_direction_id: "1"
-      included_stop_ids: ["5837","749"]
+      included_stop_ids: ["5835"]
   '50':
     - id: "0"
       title: "Evening Loop"
@@ -56,11 +56,9 @@ custom_directions:
     - id: "0"
       title: "Evening Loop"
       gtfs_direction_id: "0"
-      included_stop_ids: ["9977"]
     - id: "1"
       title: "Morning Loop"
       gtfs_direction_id: "1"
-      included_stop_ids: ["9977"]
   '84':
     - id: "0"
       title: "Evening Loop"
