@@ -107,9 +107,6 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
             pass
     return False
 
-class ShapeNotFoundException(Exception):
-    pass
-
 class GtfsScraper:
     def __init__(self, agency: config.Agency):
         self.agency = agency
@@ -732,6 +729,7 @@ class GtfsScraper:
             print(f'  {error_message}')
             return None
         elif len(matching_shapes) > 1:
+            # Matching shapes already sorted by count in descending order
             print("   multiple matching shapes found: " + ', '.join([f"{shape['shape_id']} ({shape['count']} times)" for shape in matching_shapes]))
 
         matching_shape = matching_shapes[0]
