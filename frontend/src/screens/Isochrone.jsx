@@ -151,13 +151,17 @@ class Isochrone extends React.Component {
 
   componentDidMount() {
     if (!this.props.routes) {
-      this.props.fetchRoutes().then(() => this.setInitialLocation());
-    } else this.setInitialLocation();
+      this.props.fetchRoutes();
+    } else {
+      this.setInitialLocation();
+    }
   }
 
   componentDidUpdate(prevProps) {
     // computeIsochrones requires loaded routes
-    if (prevProps.routes !== this.props.routes) this.setInitialLocation();
+    if (prevProps.routes !== this.props.routes) {
+      this.setInitialLocation();
+    }
     if (
       this.props.date !== prevProps.date ||
       this.props.startTime !== prevProps.startTime ||
