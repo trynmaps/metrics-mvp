@@ -134,7 +134,7 @@ export default function InfoTripSummary(props) {
           speed,
           travelTimeVariability,
         )
-      : null;
+      : {};
 
   const scores2 =
     speed2 && waitTimes2.median
