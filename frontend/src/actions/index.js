@@ -12,16 +12,16 @@ import { MAX_DATE_RANGE } from '../UIConstants';
 /**
  * Helper function to compute the list of days for the GraphQL query.
  *
- * @param graphParams Current UI state.
+ * @param dateRangeParams Current UI state.
  * @returns {Array} List of days to query for.
  */
-function computeDates(graphParams) {
-  let endMoment = Moment(graphParams.date);
+function computeDates(dateRangeParams) {
+  let endMoment = Moment(dateRangeParams.date);
 
   // If this is a custom date range, compute the number of days back
   // based on the start date.
 
-  const startMoment = Moment(graphParams.startDate);
+  const startMoment = Moment(dateRangeParams.startDate);
   const deltaDays = endMoment.diff(startMoment, 'days');
   let numberOfDaysBack = Math.abs(deltaDays) + 1; // add one for the end date itself
   if (deltaDays < 0) {
@@ -38,7 +38,7 @@ function computeDates(graphParams) {
 
   const dates = [];
   for (let i = 0; i < numberOfDaysBack; i++) {
-    if (graphParams.daysOfTheWeek[startMoment.day()]) {
+    if (dateRangeParams.daysOfTheWeek[startMoment.day()]) {
       dates.push(startMoment.format('YYYY-MM-DD'));
     }
     startMoment.add(1, 'days');
@@ -64,11 +64,18 @@ export function generateArrivalsURL(agencyId, dateStr, routeId) {
   )}/arrivals_${ArrivalsVersion}_${agencyId}_${dateStr}_${routeId}.json.gz?ai`;
 }
 
-export function fetchTripMetrics(params) {
-  const dates = computeDates(params);
+/**
+ * The functions below here are Redux "thunks" (see https://github.com/reduxjs/redux-thunk),
+ * a kind of Redux action that can do asynchronous processing.
+ */
 
-  return function(dispatch) {
-    const query = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
+/**
+ * Redux "thunk" that calls the GraphQL API and then processes the results.
+ *
+ * @param params {Object} The query parameters from Redux state.
+ */
+export function fetchTripMetrics(params) {
+  const singleDateRangeQuery = `query($agencyId:String!, $routeId:String!, $startStopId:String!, $endStopId:String,
     $directionId:String, $dates:[String!], $startTime:String, $endTime:String) {
   agency(agencyId:$agencyId) {
     route(routeId:$routeId) {
@@ -123,14 +130,104 @@ export function fetchTripMetrics(params) {
       }
     }
   }
-}`.replace(/\s+/g, ' ');
+}`;
+
+  const dualDateRangeQuery = `
+    fragment intervalFields on TripIntervalMetrics {
+        headways {
+          count median max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        tripTimes {
+          count median avg max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        waitTimes {
+          median max
+          percentiles(percentiles:[90]) { percentile value }
+          histogram { binStart binEnd count }
+        }
+        departureScheduleAdherence {
+          onTimeCount
+          scheduledCount
+        }
+    }
+
+    fragment timeRangeFields on TripIntervalMetrics {
+        startTime endTime
+        waitTimes {
+          percentiles(percentiles:[50,90]) { percentile value }
+        }
+        tripTimes {
+          percentiles(percentiles:[50,90]) { percentile value }
+        }
+    }
+
+    query($agencyId:String!, $routeId:String!,
+      $startStopId:String!, $endStopId:String, $directionId:String,
+      $dates:[String!], $startTime:String, $endTime:String,
+      $dates2:[String!], $startTime2:String, $endTime2:String) {
+
+    agency(agencyId:$agencyId) {
+      route(routeId:$routeId) {
+        trip(startStopId:$startStopId, endStopId:$endStopId, directionId:$directionId) {
+          interval(dates:$dates, startTime:$startTime, endTime:$endTime) {
+              ...intervalFields
+          }
+          interval2: interval(dates:$dates2, startTime:$startTime2, endTime:$endTime2) {
+              ...intervalFields
+          }
+          timeRanges(dates:$dates) {
+              ...timeRangeFields
+          }
+          timeRanges2: timeRanges(dates:$dates2) {
+              ...timeRangeFields
+          }
+        }
+      }
+    }
+  }
+
+  `;
+
+  return function(dispatch) {
+    const firstDays = computeDates(params.firstDateRange);
+    const secondDays =
+      params.secondDateRange && computeDates(params.secondDateRange);
+
+    let query = secondDays ? dualDateRangeQuery : singleDateRangeQuery;
+
+    const queryParams = Object.assign(
+      {
+        dates: firstDays,
+        startTime: params.firstDateRange.startTime,
+        endTime: params.firstDateRange.endTime,
+      },
+      secondDays
+        ? {
+            dates2: secondDays,
+            startTime2: params.secondDateRange.startTime,
+            endTime2: params.secondDateRange.endTime,
+          }
+        : null,
+      params,
+    );
+
+    // remove unneeded object references in params
+
+    delete queryParams.firstDateRange;
+    delete queryParams.secondDateRange;
+
+    query = query.replace(/\s+/g, ' ');
 
     dispatch({ type: 'REQUEST_TRIP_METRICS' });
     axios
       .get('/api/graphql', {
         params: {
           query,
-          variables: JSON.stringify({ ...params, dates }),
+          variables: JSON.stringify(queryParams),
         }, // computed dates aren't in graphParams so add here
         baseURL: MetricsBaseURL,
       })
@@ -196,7 +293,7 @@ export function fetchRoutes() {
 }
 
 export function fetchRouteMetrics(params) {
-  const dates = computeDates(params);
+  const dates = computeDates(params.firstDateRange);
 
   return function(dispatch, getState) {
     const query = `query($agencyId:String!, $routeId:String!, $dates:[String!], $startTime:String, $endTime:String) {
@@ -227,8 +324,8 @@ export function fetchRouteMetrics(params) {
       agencyId: Agencies[0].id,
       routeId: params.routeId,
       dates,
-      startTime: params.startTime,
-      endTime: params.endTime,
+      startTime: params.firstDateRange.startTime,
+      endTime: params.firstDateRange.endTime,
     });
 
     if (getState().routeMetrics.variablesJson !== variablesJson) {
@@ -274,7 +371,7 @@ export function fetchRouteMetrics(params) {
 }
 
 export function fetchAgencyMetrics(params) {
-  const dates = computeDates(params);
+  const dates = computeDates(params.firstDateRange);
 
   return function(dispatch, getState) {
     const query = `query($agencyId:String!, $dates:[String!], $startTime:String, $endTime:String) {
@@ -298,8 +395,8 @@ export function fetchAgencyMetrics(params) {
     const variablesJson = JSON.stringify({
       agencyId: Agencies[0].id,
       dates,
-      startTime: params.startTime,
-      endTime: params.endTime,
+      startTime: params.firstDateRange.startTime,
+      endTime: params.firstDateRange.endTime,
     });
 
     if (getState().agencyMetrics.variablesJson !== variablesJson) {
@@ -351,7 +448,7 @@ export function fetchAgencyMetrics(params) {
  */
 export function fetchArrivals(params) {
   return function(dispatch, getState) {
-    const dateStr = params.date;
+    const dateStr = params.firstDateRange.date;
     const agencyId = params.agencyId;
 
     const s3Url = generateArrivalsURL(agencyId, dateStr, params.routeId);
@@ -396,7 +493,7 @@ export function handleGraphParams(params) {
     const graphParams = getState().graphParams;
 
     if (
-      oldParams.date !== graphParams.date ||
+      oldParams.firstDateRange.date !== graphParams.firstDateRange.date ||
       oldParams.routeId !== graphParams.routeId ||
       oldParams.agencyId !== graphParams.agencyId
     ) {
@@ -405,17 +502,15 @@ export function handleGraphParams(params) {
       dispatch(resetArrivals());
     }
 
-    // for debugging: console.log('hGP: ' + graphParams.routeId + ' dirid: ' + graphParams.directionId + " start: " + graphParams.startStopId + " end: " + graphParams.endStopId);
-    // fetch graph data if all params provided
-    // TODO: fetch route summary data if all we have is a route ID.
-
-    if (graphParams.date) {
+    if (graphParams.firstDateRange.date) {
       dispatch(fetchAgencyMetrics(graphParams));
     }
 
     if (graphParams.agencyId && graphParams.routeId) {
       dispatch(fetchRouteMetrics(graphParams));
     }
+
+    // fetch graph data if all params provided
 
     if (
       graphParams.agencyId &&

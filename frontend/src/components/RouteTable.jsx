@@ -211,7 +211,9 @@ const EnhancedTableToolbar = props => {
       >
         <div className={classes.popover}>
           {columns.map(column => {
-            return column.helpContent ? <p>{column.helpContent}</p> : null;
+            return column.helpContent ? (
+              <p key={column.id}>{column.helpContent}</p>
+            ) : null;
           })}
         </div>
       </Popover>
@@ -426,6 +428,7 @@ function RouteTable(props) {
                   {columns.map(column => {
                     return (
                       <TableCell
+                        key={column.id}
                         align={column.numeric ? 'right' : 'left'}
                         padding="none"
                         style={{

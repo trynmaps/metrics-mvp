@@ -7,6 +7,7 @@ import {
 } from '../helpers/routeCalculations';
 
 export { default as loading } from './loadingReducer';
+export { default as title } from './titleReducer';
 export { default as page } from './page';
 
 const momentYesterday = Moment(Date.now() - 24 * 60 * 60 * 1000);
@@ -17,21 +18,24 @@ export const initialGraphParams = {
   directionId: null,
   startStopId: null,
   endStopId: null,
-  startTime: null,
-  endTime: null,
-  date: momentYesterday.format('YYYY-MM-DD'), // used where date ranges are not supported
-  startDate: momentYesterday.format('YYYY-MM-DD'),
-  // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
-  daysOfTheWeek: {
-    ...WEEKDAYS.reduce((map, obj) => {
-      map[obj.value] = true;
-      return map;
-    }, {}),
-    ...WEEKENDS.reduce((map, obj) => {
-      map[obj.value] = true;
-      return map;
-    }, {}),
+  firstDateRange: {
+    startTime: null,
+    endTime: null,
+    date: momentYesterday.format('YYYY-MM-DD'), // used where date ranges are not supported
+    startDate: momentYesterday.format('YYYY-MM-DD'),
+    // days of the week is an Object, where the keys are the day's values (0-6), and the value is true for enabled
+    daysOfTheWeek: {
+      ...WEEKDAYS.reduce((map, obj) => {
+        map[obj.value] = true;
+        return map;
+      }, {}),
+      ...WEEKENDS.reduce((map, obj) => {
+        map[obj.value] = true;
+        return map;
+      }, {}),
+    },
   },
+  secondDateRange: null,
 };
 
 export function graphParams(state = initialGraphParams, action) {

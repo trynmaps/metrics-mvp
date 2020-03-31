@@ -107,7 +107,6 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
             pass
     return False
 
-
 class GtfsScraper:
     def __init__(self, agency: config.Agency):
         self.agency = agency
@@ -118,6 +117,7 @@ class GtfsScraper:
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
 
+        self.errors = []
         self.stop_times_by_trip = None
         self.stops_df = None
         self.trips_df = None
@@ -189,15 +189,19 @@ class GtfsScraper:
 
         return self.stop_times_df
 
-    def get_services_by_date(self):
+    def get_services_by_date(self, ignore_day_of_week=False):
+        """Returns map of a date object to a list of service_ids.
+        Can optionally supply ignore_day_of_week, which includes all service_ids
+        that are active on a date within a date range provided in calendar.txt
+        regardless of the day of the week."""
         calendar_df = self.feed.calendar
         calendar_dates_df = self.feed.calendar_dates
 
         dates_map = {}
 
         for calendar_row in calendar_df.itertuples():
-
-            start_date = calendar_row.start_date # partridge library already parses date strings as Python date objects
+            # partridge library already parses date strings as Python date objects
+            start_date = calendar_row.start_date
             end_date = calendar_row.end_date
 
             weekdays = []
@@ -215,6 +219,9 @@ class GtfsScraper:
                 weekdays.append(5)
             if calendar_row.saturday == 1:
                 weekdays.append(6)
+
+            if ignore_day_of_week:
+                weekdays = [0, 1, 2, 3, 4, 5, 6]
 
             service_id = calendar_row.service_id
 
@@ -238,7 +245,10 @@ class GtfsScraper:
                     if service_id in dates_map[d]:
                         dates_map[d].remove(service_id)
                     else:
-                        print(f"error in GTFS feed: service {service_id} removed from {d}, but it was not scheduled on that date")
+                        print((
+                            f"error in GTFS feed: service {service_id} removed "
+                            f"from {d}, but it was not scheduled on that date"
+                        ))
 
         return dates_map
 
@@ -717,19 +727,20 @@ class GtfsScraper:
             if contains_included_stops(shape_stop_ids, included_stop_ids) and not contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
                 matching_shapes.append(shape)
 
-        if len(matching_shapes) != 1:
-            matching_shape_ids = [shape['shape_id'] for shape in matching_shapes]
-            error_message = f'{len(matching_shapes)} shapes found for route {route_id} with GTFS direction ID {gtfs_direction_id}'
+        if len(matching_shapes) == 0:
+            error_message = f'No shapes found for {self.agency_id} route {route_id} custom direction {direction_id} with GTFS direction ID {gtfs_direction_id}'
             if len(included_stop_ids) > 0:
                 error_message += f" including {','.join(included_stop_ids)}"
 
             if len(excluded_stop_ids) > 0:
                 error_message += f" excluding {','.join(excluded_stop_ids)}"
 
-            if len(matching_shape_ids) > 0:
-                error_message += f": {','.join(matching_shape_ids)}"
-
-            raise Exception(error_message)
+            self.errors.append(error_message)
+            print(f'  {error_message}')
+            return None
+        elif len(matching_shapes) > 1:
+            # Matching shapes already sorted by count in descending order
+            print("   multiple matching shapes found: " + ', '.join([f"{shape['shape_id']} ({shape['count']} times)" for shape in matching_shapes]))
 
         matching_shape = matching_shapes[0]
         matching_shape_id = matching_shape['shape_id']
@@ -894,6 +905,7 @@ class GtfsScraper:
         url = route.route_url if hasattr(route, 'route_url') and isinstance(route.route_url, str) else None
         color = route.route_color if hasattr(route, 'route_color') and isinstance(route.route_color, str) else None
         text_color = route.route_text_color if hasattr(route, 'route_text_color') and isinstance(route.route_text_color, str) else None
+        sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
 
         route_id = getattr(route, agency.route_id_gtfs_field)
 
@@ -915,16 +927,18 @@ class GtfsScraper:
             'color': color,
             'text_color': text_color,
             'gtfs_route_id': gtfs_route_id,
+            'sort_order': sort_order,
             'stops': {},
         }
 
         route_trips_df = trips_df[trips_df['route_id'] == gtfs_route_id]
 
         if route_id in agency.custom_directions:
-            route_data['directions'] = [
-                self.get_custom_direction_data(custom_direction_info, route_trips_df, route_id)
-                for custom_direction_info in agency.custom_directions[route_id]
-            ]
+            route_data['directions'] = []
+            for custom_direction_info in agency.custom_directions[route_id]:
+                custom_direction_data = self.get_custom_direction_data(custom_direction_info, route_trips_df, route_id)
+                if custom_direction_data is not None:
+                    route_data['directions'].append(custom_direction_data)
         else:
             route_data['directions'] = [
                 self.get_default_direction_data(direction_id, route_trips_df)
@@ -967,39 +981,93 @@ class GtfsScraper:
 
         return route_data
 
-    def save_routes(self, save_to_s3=True):
+    def get_active_routes(self, routes_df, d):
+        """Returns routes in routes_df whose service_ids all have a
+        start_date that is at or before and an end_date that is at or
+        after the given date."""
+        trips_df = self.get_gtfs_trips()
+        dates_map = self.get_services_by_date(ignore_day_of_week=True)
+        before_service_ids = []
+        after_service_ids = []
+        for service_date in dates_map:
+            if service_date <= d:
+                before_service_ids += dates_map[service_date]
+            elif service_date >= d:
+                after_service_ids += dates_map[service_date]
+        active_services = set.intersection(
+            set(before_service_ids),
+            set(after_service_ids),
+        )
+        def has_active_service_id(service_ids):
+            for (_, service_id) in service_ids.iteritems():
+                if service_id in active_services:
+                    return True
+            return False
+        # Obtain is_active_routes_df by grouping trips_df, then join
+        # with routes_df to add in the route columns.
+        # Only return active routes from is_active_routes_df.
+        #
+        # Note that route_id represents the GTFS route_id, which is
+        # unique and is not necessarily the route number,
+        # as is the case for Muni.
+        is_active_routes_df = trips_df.groupby('route_id').agg({
+            'service_id': has_active_service_id,
+        }).merge(
+            routes_df.set_index('route_id'),
+            left_index=True,
+            right_index=True,
+            validate='one_to_one',
+        ).rename(columns={
+            'service_id': 'has_active_service_id',
+        }).reset_index()
+        active_routes_df = is_active_routes_df[
+            is_active_routes_df['has_active_service_id']
+        ]
+        active_routes_df = active_routes_df.drop(
+            columns='has_active_service_id'
+        )
+        return active_routes_df
+
+    def sort_routes(self, routes_data):
         agency = self.agency
-        agency_id = agency.id
-
-        routes_data = []
-
-        routes_df = self.get_gtfs_routes()
-
         if agency.provider == 'nextbus':
-            nextbus_route_order = [route.id for route in nextbus.get_route_list(agency.nextbus_id)]
-
-        for route in routes_df.itertuples():
-            route_data = self.get_route_data(route)
-
+            nextbus_route_order = [
+                route.id for route in nextbus.get_route_list(agency.nextbus_id)
+            ]
+        use_sort_order = False
+        for route_data in routes_data:
             if agency.provider == 'nextbus':
                 try:
                     sort_order = nextbus_route_order.index(route_data['id'])
+                    use_sort_order = True
                 except ValueError as ex:
                     print(ex)
                     sort_order = None
             else:
-                sort_order = int(route.route_sort_order) if hasattr(route, 'route_sort_order') else None
+                if route_data['sort_order'] is not None:
+                    use_sort_order = True
 
-            route_data['sort_order'] = sort_order
+        def get_sort_key(route_data):
+            if use_sort_order:
+                if route_data['sort_order'] is None:
+                    if route_data['type'] == 1:
+                        # place subways at the front if they don't have a sort_order
+                        return 0
+                    return 9999
+                return route_data['sort_order']
+            return route_data['title']
+        return sorted(routes_data, key=get_sort_key)
 
-            routes_data.append(route_data)
-
-        if routes_data[0]['sort_order'] is not None:
-            sort_key = lambda route_data: route_data['sort_order']
-        else:
-            sort_key = lambda route_data: route_data['id']
-
-        routes_data = sorted(routes_data, key=sort_key)
+    def save_routes(self, save_to_s3, d):
+        agency = self.agency
+        agency_id = agency.id
+        routes_df = self.get_gtfs_routes()
+        routes_df = self.get_active_routes(routes_df, d)
+        routes_data = [
+            self.get_route_data(route)
+            for route in routes_df.itertuples()
+        ]
+        routes_data = self.sort_routes(routes_data)
 
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 

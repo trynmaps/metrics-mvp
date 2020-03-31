@@ -75,12 +75,14 @@ const BreadCrumbHomeLink = props => {
 };
 
 const BreadCrumbLink = props => {
-  const { hasNextValue, label, specialLabel, link } = props;
+  const { hasNextValue, label, specialLabel, link, renderAsH1 } = props;
   const { breadCrumbStyling, darkLinks } = useStyles();
+
   return hasNextValue ? (
     <Typography
       variant="subtitle1"
       className={`${breadCrumbStyling} ${darkLinks}`}
+      component={renderAsH1}
     >
       {' '}
       {specialLabel}{' '}
@@ -132,12 +134,20 @@ function BreadCrumbBar(props) {
         const updatedPayload = Object.assign({ ...link.payload }, payload);
         link = Object.assign({ ...link }, { payload: updatedPayload });
         const { label, specialLabel } = getLabel(param, path.title);
+
+        // For SEO purposes, make the very first breadcrumb (which is the
+        // route name) render as an H1, but be styled like everything else
+        // (as a regular, small subtitle).
+        // if it's not the first one, render as default HTML tag.
+        const renderAsH1 = index === 0 ? 'h1' : null;
+
         return (
           <BreadCrumbLink
             hasNextValue={hasNextValue}
             label={label}
             specialLabel={specialLabel}
             link={link}
+            renderAsH1={renderAsH1}
             key={label}
           />
         );
