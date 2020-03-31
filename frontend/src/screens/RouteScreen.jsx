@@ -1,24 +1,20 @@
 import React, { Fragment, useEffect } from 'react';
-
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import HomeIcon from '@material-ui/icons/Home';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
-import IconButton from '@material-ui/core/IconButton';
-import ArrowBackIcon from '@material-ui/icons/ArrowBack';
-import Link, { NavLink } from 'redux-first-router-link';
+import Link from 'redux-first-router-link';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Typography from '@material-ui/core/Typography';
-
 import { connect } from 'react-redux';
 import AppBarLogo from '../components/AppBarLogo';
 import Info from '../components/Info';
 import MapStops from '../components/MapStops';
 import DateTimePanel from '../components/DateTimePanel';
-
+import SidebarButton from '../components/SidebarButton';
 import { getAgency } from '../config';
 import ControlPanel from '../components/ControlPanel';
 import RouteSummary from '../components/RouteSummary';
@@ -38,90 +34,139 @@ const useStyles = makeStyles(theme => ({
     padding: '1%',
     paddingRight: '0',
   },
+  homeIcon: {
+    color: 'gray',
+    fontSize: 20,
+    alignSelf: 'center',
+    marginRight: '5px',
+  },
+  linkContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignSelf: 'flex-start',
+    textDecorationColor: theme.palette.primary.dark,
+  },
 }));
 
 const BreadCrumbHomeLink = props => {
-  const { breadCrumbStyling, darkLinks } = props.styleClasses;
-  const iconStyle = {
-    alignSelf: 'center',
-  };
+  const { agencyId } = props;
+  const { breadCrumbStyling, darkLinks, homeIcon, linkContainer } = useStyles();
+  const agency = getAgency(agencyId);
+  const agencyTitle = agency.title;
   return (
+    <Fragment>
+      <Link
+        className={linkContainer}
+        to={{ type: 'DASHBOARD', query: props.query }}
+        exact
+        strict
+      >
+        <HomeIcon className={homeIcon} />
+        <Typography
+          variant="subtitle1"
+          className={`${breadCrumbStyling} ${darkLinks}`}
+        >
+          {agencyTitle}
+        </Typography>
+      </Link>
+    </Fragment>
+  );
+};
+
+const BreadCrumbLink = props => {
+  const { hasNextValue, label, specialLabel, link } = props;
+  const { breadCrumbStyling, darkLinks } = useStyles();
+  return hasNextValue ? (
     <Typography
       variant="subtitle1"
-      key="asdad"
       className={`${breadCrumbStyling} ${darkLinks}`}
     >
-      <Link to={{ type: 'DASHBOARD', query: props.query }} exact strict>
-        <HomeIcon
-          style={iconStyle}
-          className={`${breadCrumbStyling} ${darkLinks}`}
-        />
-      </Link>
+      {' '}
+      {specialLabel}{' '}
+      <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
+        {' '}
+        {label}{' '}
+      </Link>{' '}
+    </Typography>
+  ) : (
+    <Typography variant="subtitle1" className={breadCrumbStyling}>
+      {' '}
+      {specialLabel} {label}{' '}
     </Typography>
   );
 };
 
-const breadCrumbs = (paths, styleClasses, linkQuery) => {
-  const { breadCrumbStyling, darkLinks } = styleClasses;
+function BreadCrumbBar(props) {
+  const { direction, selectedRoute, linkQuery, agencyId } = props;
+  const { startStopInfo, endStopInfo } = props;
+  const classes = useStyles();
+  const { breadCrumbStyling, breadCrumbsWrapper } = classes;
 
-  let link = {
-    type: 'ROUTESCREEN',
-    query: linkQuery,
-  };
-
-  const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
-  const labels = (param, title) => {
-    const specialLabels = {};
-    specialLabels.startStopId = 'from ';
-    specialLabels.endStopId = 'to ';
-    return {
-      label: title,
-      specialLabel: specialLabels[param] ? specialLabels[param] : null,
+  const renderBreadCrumbs = paths => {
+    let link = {
+      type: 'ROUTESCREEN',
+      query: linkQuery,
     };
-  };
-  paths = paths
-    .filter(path => {
-      // return paths with non null values
-      return !!path;
-    })
-    .map((path, index) => {
-      const hasNextValue = paths[index + 1];
-      const param = params[index];
-      const payload = {};
-      payload[param] = path.id;
-      const updatedPayload = Object.assign({ ...link.payload }, payload);
-      console.log(updatedPayload, 'payload');
-      link = Object.assign({ ...link }, { payload: updatedPayload });
-      console.log(link, 'final');
-      const { label, specialLabel } = labels(param, path.title);
-      return hasNextValue ? (
-        <Typography
-          variant="subtitle1"
-          key={label}
-          className={`${breadCrumbStyling} ${darkLinks}`}
-        >
-          {' '}
-          {specialLabel}{' '}
-          <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
-            {' '}
-            {label}{' '}
-          </Link>{' '}
-        </Typography>
-      ) : (
-        <Typography
-          variant="subtitle1"
-          key={label}
-          className={breadCrumbStyling}
-        >
-          {' '}
-          {specialLabel} {label}{' '}
-        </Typography>
-      );
-    });
 
-  paths.unshift(<BreadCrumbHomeLink styleClasses />);
-  return paths;
-};
+    const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
+    const getLabel = (param, title) => {
+      const specialLabels = {};
+      specialLabels.startStopId = 'from: ';
+      specialLabels.endStopId = 'to: ';
+      return {
+        label: title,
+        specialLabel: specialLabels[param] ? specialLabels[param] : null,
+      };
+    };
+    const bradCrumbLinks = paths
+      .filter(path => {
+        // return paths with non null values
+        return !!path;
+      })
+      .map((path, index) => {
+        const hasNextValue = paths[index + 1];
+        const param = params[index];
+        const payload = {};
+        payload[param] = path.id;
+        const updatedPayload = Object.assign({ ...link.payload }, payload);
+        link = Object.assign({ ...link }, { payload: updatedPayload });
+        const { label, specialLabel } = getLabel(param, path.title);
+        return (
+          <BreadCrumbLink
+            hasNextValue={hasNextValue}
+            label={label}
+            specialLabel={specialLabel}
+            link={link}
+            key={label}
+          />
+        );
+      });
+    return [<BreadCrumbHomeLink agencyId={agencyId} />, ...bradCrumbLinks];
+  };
+
+  return (
+    <Fragment>
+      <Paper className={breadCrumbsWrapper}>
+        <Breadcrumbs
+          separator={
+            <NavigateNextIcon
+              fontSize="default"
+              className={breadCrumbStyling}
+            />
+          }
+        >
+          {renderBreadCrumbs([
+            selectedRoute,
+            direction,
+            startStopInfo,
+            endStopInfo,
+          ])}
+        </Breadcrumbs>
+      </Paper>
+    </Fragment>
+  );
+}
 
 function RouteScreen(props) {
   const {
@@ -134,15 +179,6 @@ function RouteScreen(props) {
   const myFetchRoutes = props.fetchRoutes;
   const agencyId = graphParams ? graphParams.agencyId : null;
   const linkQuery = props.query;
-
-  useEffect(() => {
-    if (!routes && agencyId) {
-      myFetchRoutes({ agencyId });
-    }
-  }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
-
-  const agency = getAgency(agencyId);
-  const backArrowStyle = { color: '#ffffff' };
   const selectedRoute =
     routes && graphParams && graphParams.routeId
       ? routes.find(
@@ -157,63 +193,49 @@ function RouteScreen(props) {
           myDirection => myDirection.id === graphParams.directionId,
         )
       : null;
+
   const startStopInfo =
     direction && graphParams.startStopId
-      ? selectedRoute.stops[graphParams.startStopId]
+      ? Object.assign(
+          { ...selectedRoute.stops[graphParams.startStopId] },
+          { id: graphParams.startStopId },
+        )
       : null;
   const endStopInfo =
     direction && graphParams.endStopId
-      ? selectedRoute.stops[graphParams.endStopId]
+      ? Object.assign(
+          { ...selectedRoute.stops[graphParams.endStopId] },
+          { id: graphParams.endStopId },
+        )
       : null;
 
-  const classes = useStyles();
-  const { breadCrumbStyling, breadCrumbsWrapper } = classes;
+  useEffect(() => {
+    if (!routes && agencyId) {
+      myFetchRoutes({ agencyId });
+    }
+  }, [agencyId, routes, myFetchRoutes]);
+
+  const agency = getAgency(agencyId);
+
   return (
     <Fragment>
       <AppBar position="relative">
         <Toolbar>
-          <NavLink to={{ type: 'DASHBOARD', query: props.query }} exact strict>
-            <IconButton aria-label="Back to dashboard" edge="start">
-              <ArrowBackIcon style={backArrowStyle} />
-            </IconButton>
-          </NavLink>
+          <SidebarButton />
           <AppBarLogo />
           <div className="page-title">{agency ? agency.title : null}</div>
           <div style={{ flexGrow: 1 }} />
           <DateTimePanel dateRangeSupported />
         </Toolbar>
       </AppBar>
-      <Paper className={breadCrumbsWrapper}>
-        <Breadcrumbs
-          separator={
-            <NavigateNextIcon
-              fontSize="default"
-              className={breadCrumbStyling}
-            />
-          }
-        >
-          {breadCrumbs(
-            [
-              selectedRoute,
-              direction,
-              startStopInfo
-                ? Object.assign(
-                    { ...startStopInfo },
-                    { id: graphParams.startStopId },
-                  )
-                : null,
-              endStopInfo
-                ? Object.assign(
-                    { ...endStopInfo },
-                    { id: graphParams.endStopInfo },
-                  )
-                : null,
-            ],
-            classes,
-            linkQuery,
-          )}
-        </Breadcrumbs>
-      </Paper>
+      <BreadCrumbBar
+        selectedRoute={selectedRoute}
+        startStopInfo={startStopInfo}
+        endStopInfo={endStopInfo}
+        linkQuery={linkQuery}
+        direction={direction}
+        agencyId={agencyId}
+      />
       <Grid container spacing={0}>
         <Grid item xs={12} sm={6}>
           <MapStops routes={routes} />
