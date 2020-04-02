@@ -1062,9 +1062,13 @@ class GtfsScraper:
         agency = self.agency
         agency_id = agency.id
         routes_df = self.get_gtfs_routes()
-        active_routes_df = self.get_active_routes(routes_df, d)
-        if len(active_routes_df) > 0:
-            routes_df = active_routes_df
+        routes_df = self.get_active_routes(routes_df, d)
+        if len(routes_df) == 0:
+            self.errors.append((
+                f'Zero active routes for {agency_id}, the routes config was not updated. '
+                f'Ensure the GTFS is active for the given date {d}'
+            ))
+            return
 
         routes_data = [
             self.get_route_data(route)
