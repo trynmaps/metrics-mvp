@@ -180,9 +180,6 @@ def remove_route_temp_cache(agency_id: str):
         if path.endswith('_temp_cache.csv'):
             os.remove(os.path.join(dir, path))
 
-def get_temp_dir(agency_id):
-    return f"state_v2_{agency_id}"
-
 def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> str:
     validate_agency_route_path_attributes(agency_id, route_id)
     return os.path.join(
