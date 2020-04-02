@@ -992,7 +992,7 @@ class GtfsScraper:
         for service_date in dates_map:
             if service_date <= d:
                 before_service_ids += dates_map[service_date]
-            elif service_date >= d:
+            if service_date >= d:
                 after_service_ids += dates_map[service_date]
         active_services = set.intersection(
             set(before_service_ids),
@@ -1062,7 +1062,10 @@ class GtfsScraper:
         agency = self.agency
         agency_id = agency.id
         routes_df = self.get_gtfs_routes()
-        routes_df = self.get_active_routes(routes_df, d)
+        active_routes_df = self.get_active_routes(routes_df, d)
+        if len(active_routes_df) > 0:
+            routes_df = active_routes_df
+
         routes_data = [
             self.get_route_data(route)
             for route in routes_df.itertuples()
