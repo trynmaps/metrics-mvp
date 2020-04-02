@@ -94,6 +94,11 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
     chunk_start_time = start_time
     allow_chunk_error = True # allow up to one trynapi error before raising an exception
+
+    state_cache_dir = Path(get_state_cache_dir(agency_id))
+    if not state_cache_dir.exists():
+        state_cache_dir.mkdir(parents = True, exist_ok = True)
+
     remove_route_temp_cache(agency_id)
     while chunk_start_time < end_time:
         # download trynapi data in chunks; each call return data for all routes
@@ -135,23 +140,32 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
     return state
 
 
-def validate_agency_route_path_attributes(agency_id: str, route_id: str):
+def validate_agency_id(agency_id: str):
     if re.match('^[\w\-]+$', agency_id) is None:
         raise Exception(f"Invalid agency: {agency_id}")
+
+def validate_agency_route_path_attributes(agency_id: str, route_id: str):
+    validate_agency_id(agency_id)
 
     if re.match('^[\w\-]+$', route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
 
+def get_state_cache_dir(agency_id):
+    validate_agency_id(agency_id)
+    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    return os.path.join(
+        source_dir,
+        'data',
+        f"state_v2_{agency_id}",
+    )
 
 def get_route_temp_cache_path(agency_id: str, route_id: str) -> str:
     validate_agency_route_path_attributes(agency_id, route_id)
     source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     return os.path.join(
-        source_dir,
-        'data',
-        f"state_v2_{agency_id}/state_{agency_id}_{route_id}_temp_cache.csv",
+        get_state_cache_dir(agency_id),
+        f"state_{agency_id}_{route_id}_temp_cache.csv",
     )
-
 
 def remove_route_temp_cache(agency_id: str):
     """Removes all files with the ending temp_cache.csv in the
@@ -166,14 +180,14 @@ def remove_route_temp_cache(agency_id: str):
         if path.endswith('_temp_cache.csv'):
             os.remove(os.path.join(dir, path))
 
+def get_temp_dir(agency_id):
+    return f"state_v2_{agency_id}"
 
 def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> str:
     validate_agency_route_path_attributes(agency_id, route_id)
-    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     return os.path.join(
-        source_dir,
-        'data',
-        f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.csv",
+        get_state_cache_dir(agency_id),
+        f"{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.csv",
     )
 
 
