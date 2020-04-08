@@ -96,7 +96,7 @@ function DateTimePopover(props) {
     const dates = [];
     let currentDate = startDate;
     const addDays = function(days) {
-      const date = new Date(this.valueOf());
+      const date = new Date();
       date.setDate(date.getDate() + days);
       return date;
     };
@@ -112,7 +112,7 @@ function DateTimePopover(props) {
    */
   function applyGraphParams() {
     let i;
-    let dowsUsed = [false, false, false, false, false, false, false];
+    const dowsUsed = [false, false, false, false, false, false, false];
 
     const newGraphParams = Object.assign({}, graphParams);
     newGraphParams[targetRange] = localDateRangeParams;
@@ -139,9 +139,11 @@ function DateTimePopover(props) {
     let atLeastOneDaySelected = false;
 
     for (i = 0; i < 7; i++) {
-      if (        newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
-        dowsUsed[i] === true ) {
-             atLeastOneDaySelected = true;
+      if (
+	  newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
+        dowsUsed[i] === true
+       ) {
+		  atLeastOneDaySelected = true;
       }
     }
 
