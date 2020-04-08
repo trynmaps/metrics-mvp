@@ -93,10 +93,10 @@ function DateTimePopover(props) {
    * Returns an array of dates between the two dates.
    */
   function getDates(startDate, endDate) {
-    let dates = [],
-      currentDate = startDate,
-      addDays = function(days) {
-        let date = new Date(this.valueOf());
+    const dates = [];
+    let currentDate = startDate;
+    const addDays = function(days) {
+        const date = new Date(this.valueOf());
         date.setDate(date.getDate() + days);
         return date;
       };
@@ -107,14 +107,13 @@ function DateTimePopover(props) {
     return dates;
   }
 
-
   /**
    * Compute and dispatch new graph params.
    */
   function applyGraphParams() {
-    var i;
-    var dowsUsed = [ false, false, false, false, false, false, false];
-	
+    let i;
+    let dowsUsed = [false, false, false, false, false, false, false];
+
     const newGraphParams = Object.assign({}, graphParams);
     newGraphParams[targetRange] = localDateRangeParams;
     const year = newGraphParams.firstDateRange.startDate.substring(0, 4);
@@ -140,8 +139,9 @@ function DateTimePopover(props) {
     let atLeastOneDaySelected = false;
 
     for (i = 0; i < 7; i++) {
-        if (newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
-                                                    dowsUsed[i] === true) {
+      if (
+        newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
+        dowsUsed[i] === true) {
              atLeastOneDaySelected = true;
       }
     }
