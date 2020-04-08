@@ -34,7 +34,7 @@
     "redux-thunk": "^2.3.0"
   },
   "devDependencies": {
-    "babel-eslint": "10.0.2",
+    "babel-eslint": "10.1.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb": "^17.1.1",
     "eslint-config-prettier": "^4.3.0",
