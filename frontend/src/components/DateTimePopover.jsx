@@ -92,20 +92,20 @@ function DateTimePopover(props) {
   /**
    * Returns an array of dates between the two dates.
    */
-  function  getDates(startDate, endDate) {
-	var dates = [],
+  function getDates(startDate, endDate) {
+    let dates = [],
       currentDate = startDate,
       addDays = function(days) {
-        var date = new Date(this.valueOf());
+        let date = new Date(this.valueOf());
         date.setDate(date.getDate() + days);
         return date;
       };
-	while (currentDate <= endDate) {
-		dates.push(currentDate);
-		currentDate = addDays.call(currentDate, 1);
-	}
-	return dates;
-	};
+    while (currentDate <= endDate) {
+        dates.push(currentDate);
+        currentDate = addDays.call(currentDate, 1);
+    }
+    return dates;
+    };
 
 
   /**
@@ -115,45 +115,44 @@ function DateTimePopover(props) {
     const newGraphParams = Object.assign({}, graphParams);
     newGraphParams[targetRange] = localDateRangeParams;
 
-	var myStartDate = newGraphParams['firstDateRange']['startDate'];
-	var myEndDate = newGraphParams['firstDateRange']['date'];
-	var year = myStartDate.substring(0, 4);
-	var month = myStartDate.substring(5, 7);
-	// month starts at 0 for January so subtract 1
-	month = month - 1;
-	var day = myStartDate.substring(8, 10);	
-	var endYear = myEndDate.substring(0, 4);
-	var endMonth = myEndDate.substring(5, 7);
-	// month starts at 0 for January so subtract 1
-	endMonth = endMonth - 1;
-	var endDay = myEndDate.substring(8, 10);		
-	
-	myStartDate = new Date(year, month, day);
-	myEndDate = new Date(endYear, endMonth, endDay);
+    let myStartDate = newGraphParams['firstDateRange']['startDate'];
+    var myEndDate = newGraphParams['firstDateRange']['date'];
+    var year = myStartDate.substring(0, 4);
+    var month = myStartDate.substring(5, 7);
+    // month starts at 0 for January so subtract 1
+    month = month - 1;
+    var day = myStartDate.substring(8, 10);	
+    var endYear = myEndDate.substring(0, 4);
+    var endMonth = myEndDate.substring(5, 7);
+    // month starts at 0 for January so subtract 1
+    endMonth = endMonth - 1;
+    var endDay = myEndDate.substring(8, 10);		
 
-	var dates = getDates(new Date(year,month,day), new Date(endYear,endMonth,endDay));
-	var dows_used = [false,false,false,false,false,false,false];
-	for (var i = 0; i < dates.length; i++) {
-		dows_used[dates[i].getDay()] = true;
-	}
+    myStartDate = new Date(year, month, day);
+    myEndDate = new Date(endYear, endMonth, endDay);
 
-	// dows_selected[0]...dows_selected[6] is whether a Sunday...Saturday checkbox is checked.
-	var dows_selected = [false,false,false,false,false,false,false];
-	// If the combination of the daterange and the days of the week result in
-	// at least one day being selected, atLeastOneDaySelected = true
-	var atLeastOneDaySelected = false;
-	
+    var dates = getDates(new Date(year,month,day), new Date(endYear,endMonth,endDay));
+    var dows_used = [false,false,false,false,false,false,false];
+    for (var i = 0; i < dates.length; i++) {
+        dows_used[dates[i].getDay()] = true;
+    }
 
-	for (i = 0; i < 7; i++) {
-		if (newGraphParams['firstDateRange']['daysOfTheWeek'][i] == true &&
-													dows_used[i] == true) {
-			atLeastOneDaySelected = true;}
-	}	
-	
-	if (atLeastOneDaySelected == false) {
-		alert('Please select at least one day of week overlapping with the date range.');
-	}
-	
+    // dows_selected[0]...dows_selected[6] is whether a Sunday...Saturday checkbox is checked.
+    var dows_selected = [false,false,false,false,false,false,false];
+    // If the combination of the daterange and the days of the week result in
+    // at least one day being selected, atLeastOneDaySelected = true
+    var atLeastOneDaySelected = false;
+
+    for (i = 0; i < 7; i++) {
+        if (newGraphParams['firstDateRange']['daysOfTheWeek'][i] == true &&
+                                                    dows_used[i] == true) {
+            atLeastOneDaySelected = true;}
+    }
+
+    if (atLeastOneDaySelected == false) {
+        alert('Please select at least one day of week overlapping with the date range.');
+    }
+
     const currentType = typeForPage(props.currentPage);
 
     props.dispatch({
