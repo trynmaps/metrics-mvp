@@ -22,7 +22,6 @@ import '../../node_modules/react-vis/dist/style.css';
  * Bar chart of average and planning percentile wait and time across the day.
  */
 class InfoIntervalsOfDay extends Component {
-  static PLANNING_TIME = 'planning_time';
 
   constructor(props) {
     super(props);
@@ -63,8 +62,10 @@ class InfoIntervalsOfDay extends Component {
       crosshairValues: [this.waitData[index], this.tripData[index]],
     });
   };
-  
+
   static AVERAGE_TIME = 'average_time';
+  static PLANNING_TIME = 'planning_time';
+
   /**
    * Returns a mapping function for creating a react-vis XYPlot data series out of interval data.
    * Example of interval data is shown at end of this file.
