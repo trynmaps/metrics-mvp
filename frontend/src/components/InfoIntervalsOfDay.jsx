@@ -22,7 +22,6 @@ import '../../node_modules/react-vis/dist/style.css';
  * Bar chart of average and planning percentile wait and time across the day.
  */
 class InfoIntervalsOfDay extends Component {
-
   constructor(props) {
     super(props);
 
@@ -64,6 +63,7 @@ class InfoIntervalsOfDay extends Component {
   };
 
   static AVERAGE_TIME = 'average_time';
+
   static PLANNING_TIME = 'planning_time';
 
   /**
