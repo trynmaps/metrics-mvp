@@ -140,10 +140,10 @@ function DateTimePopover(props) {
 
     for (i = 0; i < 7; i++) {
       if (
-	  newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
+        newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
         dowsUsed[i] === true
-       ) {
-		  atLeastOneDaySelected = true;
+      ) {
+        atLeastOneDaySelected = true;
       }
     }
 
