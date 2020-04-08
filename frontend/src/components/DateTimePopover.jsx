@@ -101,11 +101,11 @@ function DateTimePopover(props) {
         return date;
       };
     while (currentDate <= endDate) {
-        dates.push(currentDate);
-        currentDate = addDays.call(currentDate, 1);
+      dates.push(currentDate);
+      currentDate = addDays.call(currentDate, 1);
     }
     return dates;
-    };
+  }
 
 
   /**
@@ -115,23 +115,26 @@ function DateTimePopover(props) {
     const newGraphParams = Object.assign({}, graphParams);
     newGraphParams[targetRange] = localDateRangeParams;
 
-    let myStartDate = newGraphParams['firstDateRange']['startDate'];
-    var myEndDate = newGraphParams['firstDateRange']['date'];
-    var year = myStartDate.substring(0, 4);
-    var month = myStartDate.substring(5, 7);
+    let myStartDate = newGraphParams.firstDateRange.startDate;
+    var myEndDate = newGraphParams.firstDateRange.date;
+    let year = myStartDate.substring(0, 4);
+    let month = myStartDate.substring(5, 7);
     // month starts at 0 for January so subtract 1
-    month = month - 1;
-    var day = myStartDate.substring(8, 10);	
-    var endYear = myEndDate.substring(0, 4);
-    var endMonth = myEndDate.substring(5, 7);
+    month -= month;
+    let day = myStartDate.substring(8, 10);
+    let endYear = myEndDate.substring(0, 4);
+    let endMonth = myEndDate.substring(5, 7);
     // month starts at 0 for January so subtract 1
-    endMonth = endMonth - 1;
-    var endDay = myEndDate.substring(8, 10);		
+    endMonth -= 1;
+    let endDay = myEndDate.substring(8, 10);
 
     myStartDate = new Date(year, month, day);
     myEndDate = new Date(endYear, endMonth, endDay);
 
-    var dates = getDates(new Date(year,month,day), new Date(endYear,endMonth,endDay));
+    let dates = getDates(
+      new Date(year,month,day),
+      new Date(endYear,endMonth,endDay),
+    );
     var dows_used = [false,false,false,false,false,false,false];
     for (var i = 0; i < dates.length; i++) {
         dows_used[dates[i].getDay()] = true;
@@ -144,7 +147,7 @@ function DateTimePopover(props) {
     var atLeastOneDaySelected = false;
 
     for (i = 0; i < 7; i++) {
-        if (newGraphParams['firstDateRange']['daysOfTheWeek'][i] == true &&
+        if (newGraphParams.firstDateRange.daysOfTheWeek[i] == true &&
                                                     dows_used[i] == true) {
             atLeastOneDaySelected = true;}
     }
