@@ -139,7 +139,8 @@ function DateTimePopover(props) {
     let atLeastOneDaySelected = false;
 
     for (i = 0; i < 7; i++) {
-      if (newGraphParams.firstDateRange.daysOfTheWeek[i] === true && dowsUsed[i] === true) {
+      if (        newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
+        dowsUsed[i] === true ) {
              atLeastOneDaySelected = true;
       }
     }
@@ -554,7 +555,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(DateTimePopover);
+export default connect(mapStateToProps, mapDispatchToProps)(DateTimePopover);
