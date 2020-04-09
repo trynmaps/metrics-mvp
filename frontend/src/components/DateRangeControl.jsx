@@ -192,8 +192,7 @@ function DateRangeControl(props) {
         // at least one day being selected, atLeastOneDaySelected = true
         let atLeastOneDaySelected = false;
 
-    	/* change to dowsUsed.length */
-        for (i = 0; i < 7; i++) {
+        for (i = 0; i < dowsUsed.length; i++) {
           if (
             newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
             dowsUsed[i] === true
@@ -205,7 +204,7 @@ function DateRangeControl(props) {
 
 
 
-          if (atLeastOneDaySelected === false) {	
+          if (atLeastOneDaySelected === false) {
               alert(
                 'Please select at least one day of week overlapping with the date range.',
               );
