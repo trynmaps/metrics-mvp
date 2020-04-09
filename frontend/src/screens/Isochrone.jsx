@@ -280,7 +280,7 @@ class Isochrone extends React.Component {
         if (defaultLatLng) {
           this.computeIsochrones(this.agency.defaultIsochroneCenter, null);
         }
-      }
+      },
     );
   }
 
