@@ -125,25 +125,19 @@ function DateRangeControl(props) {
     setAnchorEl(event.currentTarget);
   }
 
-  // brians changes 2
   /**
    * Returns an array of dates between the two dates.
    */
-  function getDatesBetween(startDate, endDate) {
-    const dates = [];
-    let currentDate = startDate;
-    const addDays = function(days) {
-      const date = new Date();
-      date.setDate(date.getDate() + days);
-      return date;
-    };
-    while (currentDate <= endDate) {
-      dates.push(currentDate);
-      currentDate = addDays.call(currentDate, 1);
+  function enumerateDaysBetweenDates(startDate, endDate) {
+    const date = [];
+    while (Moment(startDate) <= Moment(endDate)) {
+      date.push(startDate);
+      startDate = Moment(startDate)
+        .add(1, 'days')
+        .format('YYYY-MM-DD');
     }
-    return dates;
+    return date;
   }
-  // end of brians changes 2
 
   function setDateRangeParams(newDateRangeParams) {
     if (
@@ -173,7 +167,7 @@ function DateRangeControl(props) {
     const endMonth = newGraphParams.firstDateRange.date.substring(5, 7) - 1;
     const endDay = newGraphParams.firstDateRange.date.substring(8, 10);
 
-    const dates = getDatesBetween(
+    const dates = enumerateDaysBetweenDates(
       new Date(year, month, day),
       new Date(endYear, endMonth, endDay),
     );
