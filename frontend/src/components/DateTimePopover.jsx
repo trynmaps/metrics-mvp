@@ -500,7 +500,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(DateTimePopover);
+export default connect(mapStateToProps, mapDispatchToProps)(DateTimePopover);
