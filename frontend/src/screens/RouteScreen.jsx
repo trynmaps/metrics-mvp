@@ -1,52 +1,69 @@
-import React, { Fragment, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { connect } from 'react-redux';
 
 import { makeStyles } from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
-import Toolbar from '@material-ui/core/Toolbar';
-import AppBar from '@material-ui/core/AppBar';
-import IconButton from '@material-ui/core/IconButton';
-import ArrowBackIcon from '@material-ui/icons/ArrowBack';
-import Link, { NavLink } from 'redux-first-router-link';
-import NavigateNextIcon from '@material-ui/icons/NavigateNext';
-import Breadcrumbs from '@material-ui/core/Breadcrumbs';
-import Typography from '@material-ui/core/Typography';
-
-import { connect } from 'react-redux';
-import AppBarLogo from '../components/AppBarLogo';
-import Info from '../components/Info';
+import { AppBar, Tab, Tabs, Box, Paper, Grid } from '@material-ui/core';
 import MapStops from '../components/MapStops';
-import DateTimePanel from '../components/DateTimePanel';
-
-import { getAgency } from '../config';
 import ControlPanel from '../components/ControlPanel';
-import RouteSummary from '../components/RouteSummary';
-
+import SummaryStats from '../components/SummaryStats';
+import TripTimesStats from '../components/TripTimesStats';
+import ServiceFrequencyStats from '../components/ServiceFrequencyStats';
+import OnTimePerformanceStats from '../components/OnTimePerformanceStats';
+import MareyChart from '../components/MareyChart';
 import { fetchRoutes } from '../actions';
 
 const useStyles = makeStyles(theme => ({
-  breadCrumbStyling: {
-    fontWeight: 'bold',
-    textTransform: 'initial',
-    display: 'inline',
-  },
   darkLinks: {
     color: theme.palette.primary.dark,
   },
   breadCrumbsWrapper: {
-    padding: '1%',
-    paddingRight: '0',
+    padding: '0',
   },
 }));
 
 function RouteScreen(props) {
   const {
-    tripMetrics,
-    tripMetricsLoading,
-    tripMetricsError,
     graphParams,
     routes,
+    tripMetricsError,
+    tripMetricsLoading,
+    routeMetricsError,
+    routeMetricsLoading,
   } = props;
+
+  const tabs = [
+    {
+      value: 'summary',
+      label: 'Summary',
+      component: SummaryStats,
+    },
+    {
+      value: 'trip_times',
+      label: 'Trip Times',
+      component: TripTimesStats,
+    },
+    {
+      value: 'service_freq',
+      label: 'Service Frequency',
+      component: ServiceFrequencyStats,
+    },
+    {
+      value: 'otp',
+      label: 'On-Time Performance',
+      component: OnTimePerformanceStats,
+    },
+    {
+      value: 'td_chart',
+      label: 'Time-Distance Chart',
+      component: MareyChart,
+    },
+  ];
+
+  const [tabValue, setTabValue] = React.useState(tabs[0].value);
+
+  function handleTabChange(event, newValue) {
+    setTabValue(newValue);
+  }
 
   const myFetchRoutes = props.fetchRoutes;
   const agencyId = graphParams ? graphParams.agencyId : null;
@@ -57,179 +74,70 @@ function RouteScreen(props) {
     }
   }, [agencyId, routes, myFetchRoutes]); // like componentDidMount, this runs only on first render
 
-  const agency = getAgency(agencyId);
-
-  const backArrowStyle = { color: '#ffffff' };
-
-  const breadCrumbs = (paths, classes) => {
-    const { breadCrumbStyling, darkLinks } = classes;
-
-    let link = {
-      type: 'ROUTESCREEN',
-      query: props.query,
-    };
-    const params = ['routeId', 'directionId', 'startStopId', 'endStopId'];
-    const labels = (param, title) => {
-      const specialLabels = {};
-      specialLabels.startStopId = 'from ';
-      specialLabels.endStopId = 'to ';
-      return {
-        label: title,
-        specialLabel: specialLabels[param] ? specialLabels[param] : null,
-      };
-    };
-    return paths
-      .filter(path => {
-        // return paths with non null values
-        return !!path;
-      })
-      .map((path, index) => {
-        const hasNextValue = paths[index + 1];
-        const param = params[index];
-        const payload = {};
-        payload[param] = path.id;
-        const updatedPayload = Object.assign({ ...link.payload }, payload);
-        link = Object.assign({ ...link }, { payload: updatedPayload });
-        const { label, specialLabel } = labels(param, path.title);
-
-        // For SEO purposes, make the very first breadcrumb (which is the
-        // route name) render as an H1, but be styled like everything else
-        // (as a regular, small subtitle).
-        // if it's not the first one, render as default HTML tag.
-        const renderAsH1 = index === 0 ? 'h1' : null;
-
-        return hasNextValue ? (
-          <Typography
-            variant="subtitle1"
-            component={renderAsH1}
-            key={label}
-            className={`${breadCrumbStyling} ${darkLinks}`}
-          >
-            {' '}
-            {specialLabel}{' '}
-            <Link to={link} className={`${breadCrumbStyling} ${darkLinks}`}>
-              {' '}
-              {label}{' '}
-            </Link>{' '}
-          </Typography>
-        ) : (
-          <Typography
-            variant="subtitle1"
-            component={renderAsH1}
-            key={label}
-            className={breadCrumbStyling}
-          >
-            {' '}
-            {specialLabel} {label}{' '}
-          </Typography>
-        );
-      });
-  };
-
-  const selectedRoute =
-    routes && graphParams && graphParams.routeId
-      ? routes.find(
-          route =>
-            route.id === graphParams.routeId && route.agencyId === agencyId,
-        )
-      : null;
-
-  const direction =
-    selectedRoute && graphParams.directionId
-      ? selectedRoute.directions.find(
-          myDirection => myDirection.id === graphParams.directionId,
-        )
-      : null;
-  const startStopInfo =
-    direction && graphParams.startStopId
-      ? selectedRoute.stops[graphParams.startStopId]
-      : null;
-  const endStopInfo =
-    direction && graphParams.endStopId
-      ? selectedRoute.stops[graphParams.endStopId]
-      : null;
-
   const classes = useStyles();
-  const { breadCrumbStyling, breadCrumbsWrapper } = classes;
+
+  const tripSelected = graphParams.startStopId && graphParams.endStopId;
+  const loading = tripSelected ? tripMetricsLoading : routeMetricsLoading;
+  const error = tripSelected ? tripMetricsError : routeMetricsError;
+
   return (
-    <Fragment>
-      <AppBar position="relative">
-        <Toolbar>
-          <NavLink to={{ type: 'DASHBOARD', query: props.query }} exact strict>
-            <IconButton aria-label="Back to dashboard" edge="start">
-              <ArrowBackIcon style={backArrowStyle} />
-            </IconButton>
-          </NavLink>
-          <AppBarLogo />
-          <div className="page-title">{agency ? agency.title : null}</div>
-          <div style={{ flexGrow: 1 }} />
-          <DateTimePanel dateRangeSupported />
-        </Toolbar>
-      </AppBar>
-      <Paper className={breadCrumbsWrapper}>
-        <Breadcrumbs
-          separator={
-            <NavigateNextIcon
-              fontSize="default"
-              className={breadCrumbStyling}
-            />
-          }
-        >
-          {breadCrumbs(
-            [
-              selectedRoute,
-              direction,
-              startStopInfo
-                ? Object.assign(
-                    { ...startStopInfo },
-                    { id: graphParams.startStopId },
-                  )
-                : null,
-              endStopInfo
-                ? Object.assign(
-                    { ...endStopInfo },
-                    { id: graphParams.endStopInfo },
-                  )
-                : null,
-            ],
-            classes,
-          )}
-        </Breadcrumbs>
+    <>
+      <Paper className={classes.breadCrumbsWrapper}>
+        <ControlPanel routes={routes} />
       </Paper>
+      <AppBar position="static" color="default">
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          aria-label="tab bar"
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          {tabs.map(tab => {
+            return (
+              <Tab
+                key={tab.value}
+                style={{ minWidth: 72 }}
+                label={tab.label}
+                value={tab.value}
+                id={`simple-tab-${tab.value}`}
+                aria-controls={`simple-tabpanel-${tab.value}`}
+              />
+            );
+          })}
+        </Tabs>
+      </AppBar>
       <Grid container spacing={0}>
-        <Grid item xs={12} sm={6}>
-          <MapStops routes={routes} />
+        <Grid item xs={12} md={6}>
+          <Box p={2} style={{ overflowX: 'auto' }}>
+            {/* control panel and map are full width for 1050px windows or smaller, else half width */}
+            {loading ? 'Loading...' : null}
+            {error ? `Error: ${error}` : null}
+            {!error && !loading
+              ? tabs.map(tab => {
+                  const TabComponent = tab.component;
+                  return tabValue === tab.value ? (
+                    <TabComponent key={tab.value} />
+                  ) : null;
+                })
+              : null}
+          </Box>
         </Grid>
-        <Grid item xs={12} sm={6}>
-          {/* control panel and map are full width for 640px windows or smaller, else half width */}
-          <ControlPanel routes={routes} />
-          {tripMetrics ||
-          tripMetricsError ||
-          tripMetricsLoading /* if we have trip metrics or an error, then show the info component */ ? (
-            <Info
-              tripMetrics={tripMetrics}
-              tripMetricsError={tripMetricsError}
-              tripMetricsLoading={tripMetricsLoading}
-              graphParams={graphParams}
-              routes={routes}
-            />
-          ) : (
-            /* if no graph data, show the info summary component */
-            <RouteSummary />
-          )}
+        <Grid item xs={12} md={6}>
+          <MapStops />
         </Grid>
       </Grid>
-    </Fragment>
+    </>
   );
 }
 
 const mapStateToProps = state => ({
-  tripMetrics: state.tripMetrics.data,
-  tripMetricsError: state.tripMetrics.error,
-  tripMetricsLoading: state.loading.TRIP_METRICS,
   routes: state.routes.data,
   graphParams: state.graphParams,
-  query: state.location.query,
+  tripMetricsError: state.tripMetrics.error,
+  tripMetricsLoading: state.loading.TRIP_METRICS,
+  routeMetricsError: state.routeMetrics.error,
+  routeMetricsLoading: state.loading.ROUTE_METRICS,
 });
 
 const mapDispatchToProps = dispatch => ({

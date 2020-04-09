@@ -568,11 +568,11 @@ class DirectionIntervalMetrics:
         last_stop_geometry = dir_info.get_stop_geometry(last_stop_id)
 
         if first_stop_geometry is None or last_stop_geometry is None:
-            raise Exception("Missing stop geometry")
+            return None
 
         dist = last_stop_geometry['distance'] - first_stop_geometry['distance']
         if dist <= 0:
-            raise Exception(f'invalid distance {dist} between {first_stop_id} and {last_stop_id} in route_id {route_id} direction {direction_id}') # file=sys.stderr)
+            return None
 
         rng = self.rng
         for d in rng.dates:
