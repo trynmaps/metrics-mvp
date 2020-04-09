@@ -162,8 +162,8 @@ function DateRangeControl(props) {
     let i;
     const dowsUsed = [false, false, false, false, false, false, false];
 
-    //// const newGraphParams = Object.assign({}, graphParams);
-    //// newGraphParams[targetRange] = localDateRangeParams;
+    // // const newGraphParams = Object.assign({}, graphParams);
+    // // newGraphParams[targetRange] = localDateRangeParams;
     const year = newGraphParams.firstDateRange.startDate.substring(0, 4);
     // month starts at 0 for January so subtract 1
     const month = newGraphParams.firstDateRange.startDate.substring(5, 7) - 1;
@@ -179,7 +179,7 @@ function DateRangeControl(props) {
     );
 
     for (i = 0; i < dates.length; i++) {
-          dowsUsed[dates[i].getDay()] = true;
+      dowsUsed[dates[i].getDay()] = true;
     }
 
     // If the combination of the daterange and the days of the week result in
@@ -187,14 +187,19 @@ function DateRangeControl(props) {
     let atLeastOneDaySelected = false;
 
     for (i = 0; i < dowsUsed.length; i++) {
-      if (newGraphParams.firstDateRange.daysOfTheWeek[i] === true && dowsUsed[i] === true) {
-            atLeastOneDaySelected = true;
+      if (
+        newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
+        dowsUsed[i] === true
+      ) {
+        atLeastOneDaySelected = true;
       }
     }
 
-        if (atLeastOneDaySelected === false) {
-              alert('Please select at least one day of week overlapping with the date range.');
-        }
+    if (atLeastOneDaySelected === false) {
+      alert(
+        'Please select at least one day of week overlapping with the date range.',
+      );
+    }
 
     /* end brians changes */
 
