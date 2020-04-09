@@ -2,25 +2,17 @@
 
 # test notebook
 /backend/models/test.ipynb
-# locally cached timetable/routeconfig data
-/backend/data/**/*.csv
-/backend/data/**/*.json
 
 # local cache
 backend/data/*.json
 backend/data/*.csv
-backend/data/arrivals_*
-backend/data/state_*
-backend/data/wait-times_*
-backend/data/trip-times_*
-backend/data/gtfs-*
+backend/data/*.zip
+backend/data/*/
 
 docker-compose.override.yml
 
 .aws/
 .vscode/
-
-
 
 # Created by https://www.gitignore.io/api/node,macos,flask,python,eclipse,intellij
 # Edit at https://www.gitignore.io/?templates=node,macos,flask,python,eclipse,intellij

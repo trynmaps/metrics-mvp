@@ -1,8 +1,6 @@
 import React, { useState, Fragment } from 'react';
-import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles, useTheme } from '@material-ui/core/styles';
-import Chip from '@material-ui/core/Chip';
 import Popover from '@material-ui/core/Popover';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -10,20 +8,13 @@ import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableSortLabel from '@material-ui/core/TableSortLabel';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
 
-import FilterListIcon from '@material-ui/icons/FilterList';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
-import {
-  filterRoutes,
-  scoreBackgroundColor,
-  scoreContrastColor,
-} from '../helpers/routeCalculations';
+import { filterRoutes } from '../helpers/routeCalculations';
+import DateTimeRangeControls from './DateTimeRangeControls';
 
 function getComparisonFunction(order, orderBy) {
   // Sort null values to bottom regardless of ascending/descending
@@ -146,6 +137,7 @@ const useToolbarStyles = makeStyles(theme => ({
   },
   title: {
     flex: '0 0 auto',
+    fontSize: '15px',
   },
   popover: {
     padding: theme.spacing(2),
@@ -155,7 +147,7 @@ const useToolbarStyles = makeStyles(theme => ({
 
 const EnhancedTableToolbar = props => {
   const classes = useToolbarStyles();
-  const { numSelected, columns } = props;
+  const { columns } = props;
 
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -168,32 +160,37 @@ const EnhancedTableToolbar = props => {
   }
 
   return (
-    <Toolbar
-      className={clsx(classes.root, {
-        [classes.highlight]: numSelected > 0,
-      })}
-    >
+    <>
       <div className={classes.title}>
-        {numSelected > 0 ? (
-          <Typography color="inherit" variant="subtitle1">
-            {numSelected} selected
-          </Typography>
-        ) : (
-          <Typography variant="h6" id="tableTitle">
-            Routes
-            <IconButton size="small" onClick={handleClick}>
-              <InfoIcon fontSize="small" />
-            </IconButton>
-          </Typography>
-        )}
+        <span
+          style={{
+            fontWeight: 'normal',
+            display: 'inline-block',
+            paddingTop: '2px',
+          }}
+        >
+          Observed Metrics
+        </span>
+        <IconButton
+          size="small"
+          style={{ verticalAlign: 'top', marginLeft: '5px' }}
+          onClick={handleClick}
+        >
+          <InfoIcon fontSize="small" />
+        </IconButton>
       </div>
+      <div>
+        <DateTimeRangeControls />
+      </div>
+
       <div className={classes.spacer} />
       <div className={classes.actions}>
+        {/*
         <Tooltip title="Filter list">
           <IconButton aria-label="Filter list">
             <FilterListIcon />
           </IconButton>
-        </Tooltip>
+        </Tooltip> */}
       </div>
 
       <Popover
@@ -210,6 +207,11 @@ const EnhancedTableToolbar = props => {
         }}
       >
         <div className={classes.popover}>
+          <div>
+            Observed metrics are computed from the GPS locations periodically
+            reported by transit vehicles. Metrics may be inaccurate if the raw
+            GPS data is missing or inaccurate.
+          </div>
           {columns.map(column => {
             return column.helpContent ? (
               <p key={column.id}>{column.helpContent}</p>
@@ -217,12 +219,8 @@ const EnhancedTableToolbar = props => {
           })}
         </div>
       </Popover>
-    </Toolbar>
+    </>
   );
-};
-
-EnhancedTableToolbar.propTypes = {
-  numSelected: PropTypes.number.isRequired,
 };
 
 const useStyles = makeStyles(theme => ({
@@ -235,23 +233,10 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function makeChip(label, score) {
-  return (
-    <Chip
-      style={{
-        color: scoreContrastColor(score),
-        backgroundColor: scoreBackgroundColor(score),
-      }}
-      label={label}
-    />
-  );
-}
-
 function RouteTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('title');
-  const dense = true;
   const theme = useTheme();
 
   const { statsByRouteId } = props;
@@ -263,12 +248,12 @@ function RouteTable(props) {
   }
 
   let routes = props.routes ? filterRoutes(props.routes) : [];
-  const spiderStops = props.spiderSelection.stops;
+  const spiderLines = props.spiderSelection.nearbyLines;
 
   // filter the route list down to the spider routes if needed
 
-  if (spiderStops && spiderStops.length > 0) {
-    const spiderRouteIds = spiderStops.map(spider => spider.routeId);
+  if (spiderLines && spiderLines.length > 0) {
+    const spiderRouteIds = spiderLines.map(spider => spider.route.id);
     routes = routes.filter(myRoute => spiderRouteIds.includes(myRoute.id));
   }
 
@@ -283,7 +268,7 @@ function RouteTable(props) {
     {
       id: 'title',
       numeric: false,
-      label: 'Name',
+      label: 'Route',
       rowValue: row => {
         return (
           <Navlink
@@ -306,60 +291,35 @@ function RouteTable(props) {
       },
     },
     {
-      id: 'totalScore',
+      id: 'medianHeadway',
       numeric: true,
-      label: 'Score',
+      label: 'Median Service Frequency',
       rowValue: row => {
-        return makeChip(
-          row.totalScore == null ? '--' : row.totalScore,
-          row.totalScore,
-        );
+        return row.medianHeadway == null
+          ? '--'
+          : `${row.medianHeadway.toFixed(0)} min`;
       },
       helpContent: (
         <Fragment>
-          <b>Score</b> is the average of subscores (0-100) for median wait,
-          on-time %, average speed, and travel time variability. Click on a
-          route to see its metrics and explanations of how the subscores are
-          calculated.
+          <b>Median Service Frequency</b> is the 50th percentile (typical) time
+          between vehicles while the route is running.
         </Fragment>
       ),
     },
     {
       id: 'medianWaitTime',
       numeric: true,
-      label: 'Median Wait',
+      label: 'Median Wait Time',
       rowValue: row => {
-        return makeChip(
-          row.medianWaitTime == null
-            ? '--'
-            : `${row.medianWaitTime.toFixed(0)} min`,
-          row.medianWaitScore,
-        );
+        return row.medianWaitTime == null
+          ? '--'
+          : `${row.medianWaitTime.toFixed(0)} min`;
       },
       helpContent: (
         <Fragment>
-          <b>Median Wait</b> is the 50th percentile (typical) wait time for a
-          rider arriving randomly at a stop while the route is running.
-        </Fragment>
-      ),
-    },
-    {
-      id: 'onTimeRate',
-      numeric: true,
-      label: 'On-Time %',
-      rowValue: row => {
-        return makeChip(
-          row.onTimeRate == null
-            ? '--'
-            : `${(row.onTimeRate * 100).toFixed(0)}%`,
-          row.onTimeRateScore,
-        );
-      },
-      helpContent: (
-        <Fragment>
-          <b>On-Time %</b> is the percentage of scheduled departure times where
-          a vehicle departed less than 5 minutes after the scheduled departure
-          time or less than 1 minute before the scheduled departure time.
+          <b>Median Wait Time</b> is the 50th percentile (typical) wait time for
+          a rider arriving randomly at a stop while the route is running,
+          without using schedules or predictions.
         </Fragment>
       ),
     },
@@ -368,12 +328,9 @@ function RouteTable(props) {
       numeric: true,
       label: 'Average Speed',
       rowValue: row => {
-        return makeChip(
-          row.averageSpeed == null
-            ? '--'
-            : `${row.averageSpeed.toFixed(0)} mph`,
-          row.speedScore,
-        );
+        return row.averageSpeed == null
+          ? '--'
+          : `${row.averageSpeed.toFixed(0)} mph`;
       },
       helpContent: (
         <Fragment>
@@ -383,22 +340,19 @@ function RouteTable(props) {
       ),
     },
     {
-      id: 'travelTimeVariability',
+      id: 'onTimeRate',
       numeric: true,
-      label: 'Travel Time Variability',
+      label: 'On\u2011Time %',
       rowValue: row => {
-        return makeChip(
-          row.travelTimeVariability == null
-            ? '--'
-            : `\u00b1 ${(row.travelTimeVariability / 2).toFixed(0)} min`,
-          row.travelVarianceScore,
-        );
+        return row.onTimeRate == null
+          ? '--'
+          : `${(row.onTimeRate * 100).toFixed(0)}%`;
       },
       helpContent: (
         <Fragment>
-          <b>Travel time variability</b> is the 90th percentile end to end
-          travel time minus the 10th percentile travel time. This measures how
-          much extra travel time is needed for some trips.
+          <b>On-Time %</b> is the percentage of scheduled departure times where
+          a vehicle departed less than 5 minutes after the scheduled departure
+          time or less than 1 minute before the scheduled departure time.
         </Fragment>
       ),
     },
@@ -406,9 +360,9 @@ function RouteTable(props) {
 
   return (
     <div>
-      <EnhancedTableToolbar columns={columns} numSelected={0} />
+      <EnhancedTableToolbar columns={columns} />
       <div className={classes.tableWrapper}>
-        <Table aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
+        <Table aria-labelledby="tableTitle" size="small">
           <EnhancedTableHead
             order={order}
             orderBy={orderBy}
@@ -433,8 +387,8 @@ function RouteTable(props) {
                         padding="none"
                         style={{
                           border: 'none',
-                          paddingTop: 6,
-                          paddingBottom: 6,
+                          padding: 6,
+                          fontSize: 16,
                         }}
                       >
                         {column.rowValue(row)}

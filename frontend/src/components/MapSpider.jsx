@@ -12,20 +12,23 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
-import * as d3 from 'd3';
 import { Snackbar } from '@material-ui/core';
 import {
   getDownstreamStopIds,
   getTripPoints,
   isInServiceArea,
 } from '../helpers/mapGeometry';
-import { filterRoutes, milesBetween } from '../helpers/routeCalculations';
+import {
+  filterRoutes,
+  milesBetween,
+  getRouteColor,
+} from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
 
 import MapShield from './MapShield';
 
-const CLICK_RADIUS_MI = 0.25; // maximum radius for stops near a point
+const CLICK_RADIUS_MI = 0.5; // maximum radius for stops near a point
 
 // Displays alert when an invalid location is set
 function ValidLocationAlert(props) {
@@ -38,13 +41,6 @@ function ValidLocationAlert(props) {
 }
 
 class MapSpider extends Component {
-  /**
-   * A function that returns one of ten colors given a route index.
-   * (index modulo 10).
-   */
-
-  routeColorOptions = d3.scaleQuantize([0, 9], d3.schemeCategory10);
-
   constructor(props) {
     super(props);
 
@@ -58,6 +54,8 @@ class MapSpider extends Component {
       height: this.computeHeight(),
     };
 
+    this.routeLayers = [];
+
     this.mapRef = createRef(); // used for geolocating
 
     this.handleLocationFound = this.handleLocationFound.bind(this);
@@ -66,6 +64,14 @@ class MapSpider extends Component {
   componentDidMount() {
     this.boundUpdate = this.updateDimensions.bind(this);
     window.addEventListener('resize', this.boundUpdate);
+
+    this.updateRouteLayers();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.routes !== prevProps.routes) {
+      this.updateRouteLayers();
+    }
   }
 
   componentWillUnmount() {
@@ -94,41 +100,29 @@ class MapSpider extends Component {
   };
 
   /**
-   * Gets color associated with route or one of routeColorOptions
-   */
-
-  getRouteColor = startMarker => {
-    const routeColor = startMarker.routeInfo.color
-      ? `#${startMarker.routeInfo.color}`
-      : this.routeColorOptions(startMarker.routeIndex % 10);
-
-    return routeColor;
-  };
-
-  /**
    * Creates a clickable Marker with a custom svg icon (MapShield) for the route
-   * represented by startMarker.
+   * represented by lineInfo.
    *
    * https://medium.com/@nikjohn/creating-a-dynamic-jsx-marker-with-react-leaflet-f75fff2ddb9
    */
 
-  generateShield = (startMarker, waitScaled) => {
+  generateShield = (lineInfo, waitScaled) => {
     const lastStop =
-      startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
+      lineInfo.downstreamStops[lineInfo.downstreamStops.length - 1];
     const shieldPosition = [lastStop.lat, lastStop.lon];
 
     const icon = L.divIcon({
       className: 'custom-icon', // this is needed to turn off the default icon styling (blank square)
       html: MapShield({
         waitScaled,
-        color: this.getRouteColor(startMarker),
-        routeText: startMarker.routeId,
+        color: getRouteColor(lineInfo.route),
+        routeText: lineInfo.route.id,
       }),
     });
 
     return (
       <Marker
-        key={`${startMarker.routeId}-${startMarker.direction.id}-Shield`}
+        key={`${lineInfo.route.id}-${lineInfo.direction.id}-Shield`}
         position={shieldPosition}
         icon={icon}
         riseOnHover
@@ -137,10 +131,10 @@ class MapSpider extends Component {
           this.props.dispatch({
             type: 'ROUTESCREEN',
             payload: {
-              routeId: startMarker.routeId,
-              directionId: startMarker.direction.id,
-              startStopId: startMarker.stopId,
-              endStopId: lastStop.stopId,
+              routeId: lineInfo.route.id,
+              directionId: lineInfo.direction.id,
+              startStopId: lineInfo.stop.id,
+              endStopId: lastStop.id,
             },
             query: this.props.query,
           });
@@ -158,29 +152,29 @@ class MapSpider extends Component {
 
     /* eslint-disable react/no-array-index-key */
 
-    const selectedStops = this.props.spiderSelection.stops;
+    const nearbyLines = this.props.spiderSelection.nearbyLines;
 
-    if (selectedStops) {
-      items = selectedStops.map((startMarker, index) => {
-        const position = [startMarker.stop.lat, startMarker.stop.lon];
+    if (nearbyLines) {
+      items = nearbyLines.map((nearbyLine, index) => {
+        const position = [nearbyLine.stop.lat, nearbyLine.stop.lon];
 
         return (
           <CircleMarker
             key={`startMarker-${index}`}
             center={position}
             radius="8"
-            fillColor={this.getRouteColor(startMarker)}
+            fillColor={getRouteColor(nearbyLine.route)}
             fillOpacity={0.2}
             stroke={false}
           >
             <Tooltip>
-              {startMarker.routeTitle}
+              {nearbyLine.route.title}
               <br />
-              {startMarker.direction.title}
+              {nearbyLine.direction.title}
               <br />
-              {startMarker.stop.title}
+              {nearbyLine.stop.title}
               <br />
-              {Math.round(startMarker.miles * 5280)} feet
+              {nearbyLine.distance.toFixed(1)} mi
             </Tooltip>
           </CircleMarker>
         );
@@ -192,60 +186,61 @@ class MapSpider extends Component {
   // Rendering of route from nearest stop to terminal.
 
   DownstreamLines = () => {
-    const statsByRouteId = this.props.statsByRouteId;
-
-    // One polyline for each start marker
-
+    const { spiderSelection } = this.props;
     let items = null;
-
-    const selectedStops = this.props.spiderSelection.stops;
-
-    if (selectedStops) {
-      items = selectedStops.map(startMarker => {
-        const downstreamStops = startMarker.downstreamStops;
-
-        const polylines = [];
-
-        // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
-        // when selecting a line.
-
-        const stats = statsByRouteId[startMarker.routeId] || {};
-
-        const waitScaled = stats.waitRankCount
-          ? Math.trunc((1 - stats.waitRank / stats.waitRankCount) * 3)
-          : 0;
-
-        for (let i = 0; i < downstreamStops.length - 1; i++) {
-          // for each stop
-          polylines.push(this.generatePolyline(startMarker, waitScaled, i));
-        }
-
-        // Add a solid circle at the terminal stop.
-        polylines.push(this.generateTerminalCircle(startMarker, waitScaled));
-
-        // Add a route shield next to the terminal stop.
-        polylines.push(this.generateShield(startMarker, waitScaled));
-
-        return polylines;
+    if (spiderSelection.latLng) {
+      items = spiderSelection.nearbyLines.map(lineInfo => {
+        return this.generateLine(lineInfo);
       });
     }
-
     return <Fragment>{items}</Fragment>;
+  };
+
+  generateLine = lineInfo => {
+    const downstreamStops = lineInfo.downstreamStops;
+
+    // Add a base polyline connecting the stops.  One polyline between each stop gives better tooltips
+    // when selecting a line.
+
+    const statsByRouteId = this.props.statsByRouteId;
+    const stats = statsByRouteId[lineInfo.route.id] || {};
+
+    const medianHeadway = stats.medianHeadway;
+
+    let waitScaled = 0;
+    if (medianHeadway != null) {
+      waitScaled = Math.max((30 - medianHeadway) / 6, 0.5);
+    }
+
+    const polylines = [];
+
+    for (let i = 0; i < downstreamStops.length - 1; i++) {
+      // for each stop
+      polylines.push(this.generatePolyline(lineInfo, waitScaled, i));
+    }
+
+    // Add a solid circle at the terminal stop.
+    polylines.push(this.generateTerminalCircle(lineInfo, waitScaled));
+
+    // Add a route shield next to the terminal stop.
+    polylines.push(this.generateShield(lineInfo, waitScaled));
+
+    return polylines;
   };
 
   // Creates a circle at the terminal of a route.
 
-  generateTerminalCircle = (startMarker, waitScaled) => {
+  generateTerminalCircle = (lineInfo, waitScaled) => {
     const lastStop =
-      startMarker.downstreamStops[startMarker.downstreamStops.length - 1];
+      lineInfo.downstreamStops[lineInfo.downstreamStops.length - 1];
     const terminalPosition = [lastStop.lat, lastStop.lon];
 
     return (
       <CircleMarker
-        key={`startMarker-${startMarker.routeId}-terminal-${lastStop.id}`}
+        key={`startMarker-${lineInfo.route.id}-terminal-${lastStop.id}`}
         center={terminalPosition}
         radius={3.0 + waitScaled / 2.0}
-        fillColor={this.getRouteColor(startMarker)}
+        fillColor={getRouteColor(lineInfo.route)}
         fillOpacity={0.75}
         stroke={false}
       ></CircleMarker>
@@ -254,21 +249,21 @@ class MapSpider extends Component {
 
   // Creates a line between two stops.
 
-  generatePolyline = (startMarker, waitScaled, i) => {
-    const downstreamStops = startMarker.downstreamStops;
+  generatePolyline = (lineInfo, waitScaled, i) => {
+    const downstreamStops = lineInfo.downstreamStops;
 
     const computedWeight = waitScaled * 1.5 + 3;
 
     return (
       <Polyline
-        key={`poly-${startMarker.routeId}-${downstreamStops[i].id}`}
+        key={`poly-${lineInfo.route.id}-${downstreamStops[i].id}`}
         positions={getTripPoints(
-          startMarker.routeInfo,
-          startMarker.direction,
+          lineInfo.route,
+          lineInfo.direction,
           downstreamStops[i].id,
           downstreamStops[i + 1].id,
         )}
-        color={this.getRouteColor(startMarker)}
+        color={getRouteColor(lineInfo.route)}
         opacity={0.5}
         weight={computedWeight}
         onMouseOver={e => {
@@ -293,9 +288,9 @@ class MapSpider extends Component {
           this.props.dispatch({
             type: 'ROUTESCREEN',
             payload: {
-              routeId: startMarker.routeId,
-              directionId: startMarker.direction.id,
-              startStopId: startMarker.stopId,
+              routeId: lineInfo.route.id,
+              directionId: lineInfo.direction.id,
+              startStopId: lineInfo.stop.id,
               endStopId: downstreamStops[i + 1].id,
             },
             query: this.props.query,
@@ -304,9 +299,9 @@ class MapSpider extends Component {
       >
         <Tooltip>
           {/* should this hover text be a leaflet control in a fixed position? */}
-          {startMarker.routeTitle}
+          {lineInfo.route.title}
           <br />
-          {startMarker.direction.title}
+          {lineInfo.direction.title}
           <br />
           {downstreamStops[i + 1].title}
           <br />
@@ -336,13 +331,39 @@ class MapSpider extends Component {
     }
   };
 
+  updateRouteLayers() {
+    if (!this.mapRef.current) {
+      return;
+    }
+    const map = this.mapRef.current.leafletElement;
+    const routes = this.props.routes;
+
+    this.routeLayers.forEach(layer => {
+      layer.remove();
+    });
+    this.routeLayers = [];
+
+    if (routes && map) {
+      filterRoutes(routes).forEach(route => {
+        const color = getRouteColor(route);
+        route.directions.forEach(direction => {
+          const routeLayer = L.polyline(getTripPoints(route, direction), {
+            color,
+            opacity: 0.2,
+            weight: 1.5,
+          }).addTo(map);
+          this.routeLayers.push(routeLayer);
+        });
+      });
+    }
+  }
+
   updateDimensions() {
     const height = this.computeHeight();
     this.setState({ height });
   }
 
-  /* Make the map full height unless the window is smaller than the sm breakpoint (640px), in which
-   * case make the map half height.
+  /* Make the map full height unless the window is smaller than the md breakpoint (1050px).
    *
    * TODO: Need to convert this component to a functional component.  Then we can use the useTheme
    * hook to programatically access the breakpoint widths.
@@ -351,10 +372,9 @@ class MapSpider extends Component {
    */
 
   computeHeight() {
-    return (
-      (window.innerWidth >= 640 ? window.innerHeight : window.innerHeight / 2) -
-      64 /* blue app bar */
-    );
+    return window.innerWidth >= 1050
+      ? window.innerHeight - 48 /* blue app bar */
+      : Math.min(window.innerHeight, 500);
   }
 
   /**
@@ -375,90 +395,80 @@ class MapSpider extends Component {
     // Set whether the location is valid
     this.setState({ isValidLocation: isInServiceArea(this.agency.id, latlng) });
 
-    const stops = this.findStops(latlng); // note: all lowercase name in event.
-
-    // Add the downstream stops to the terminal.
-
-    stops.forEach(stop => {
-      this.addDownstreamStops(stop);
-    });
+    const nearbyLines = this.findNearbyLines(latlng, CLICK_RADIUS_MI);
 
     // Fire events here indicating that the route list should be filtered to just the
-    // routes corresponding to "stops".
+    // routes corresponding to nearbyLines.
 
     const { onSpiderMapClick } = this.props;
-    onSpiderMapClick(stops, latlng);
-  }
-
-  /**
-   * Append info about the downstream stops to the given stop object for plotting on the map.
-   */
-  addDownstreamStops(targetStop) {
-    const routeInfo = targetStop.routeInfo;
-
-    const stopIds = getDownstreamStopIds(
-      routeInfo,
-      targetStop.direction,
-      targetStop.stopId,
-    );
-    stopIds.unshift(targetStop.stopId);
-
-    targetStop.downstreamStops = stopIds.map(stopId => {
-      return routeInfo.stops[stopId];
-    });
+    onSpiderMapClick(nearbyLines, latlng);
   }
 
   /**
    * Use brute force iteration to find the nearest stop for each direction of each route.
    *
-   * Take only stops within CLICK_RADIUS_MI miles and sort by distance.
+   * Take only stops within maxDistance miles and sort by distance.
    */
-  findStops(latLng) {
+  findNearbyLines(latLng, maxDistance) {
     const { routes } = this.props;
     const latLon = { lat: latLng.lat, lon: latLng.lng };
-    let stopsByRouteAndDir = [];
+    let nearbyLines = [];
 
-    const filteredRoutes = filterRoutes(routes);
-    for (let i = 0; i < filteredRoutes.length; i++) {
-      // optimize this on back end
-      const route = filteredRoutes[i];
+    if (routes) {
+      // eslint-disable-next-line no-loop-func
+      filterRoutes(routes).forEach(route => {
+        if (route.directions) {
+          // eslint-disable-next-line no-loop-func
+          route.directions.forEach(direction => {
+            const nearest = this.findNearestStop(
+              latLon,
+              direction,
+              route,
+              maxDistance,
+            );
+            if (nearest != null) {
+              nearest.direction = direction;
+              nearest.route = route;
 
-      if (route.directions) {
-        // eslint-disable-next-line no-loop-func
-        route.directions.forEach(direction => {
-          const stopList = direction.stops;
-          const nearest = this.findNearestStop(latLon, stopList, route.stops);
-          nearest.routeId = route.id;
-          nearest.routeIndex = i;
-          nearest.routeTitle = route.title;
-          nearest.direction = direction;
-          nearest.routeInfo = route;
-          stopsByRouteAndDir.push(nearest);
-        });
-      }
+              // Add the downstream stops to the terminal.
+              const downstreamStopIds = getDownstreamStopIds(
+                route,
+                nearest.direction,
+                nearest.stop.id,
+              );
+              downstreamStopIds.unshift(nearest.stop.id); // include origin stop
+
+              nearest.downstreamStops = downstreamStopIds.map(stopId => {
+                return route.stops[stopId];
+              });
+
+              nearbyLines.push(nearest);
+            }
+          });
+        }
+      });
     }
-    // truncate by distance (CLICK_RADIUS_MI miles) and then sort
+    nearbyLines.sort((a, b) => a.distance - b.distance);
 
-    stopsByRouteAndDir = stopsByRouteAndDir.filter(
-      stop => stop.miles < CLICK_RADIUS_MI,
-    );
-    stopsByRouteAndDir.sort((a, b) => a.miles - b.miles);
+    const maxNearbyLines = 20;
+    if (nearbyLines.length > maxNearbyLines) {
+      nearbyLines = nearbyLines.slice(0, maxNearbyLines);
+    }
 
-    return stopsByRouteAndDir;
+    return nearbyLines;
   }
 
-  /**
-   * Returns the nearest stop Object to the given latLon coordinates.
-   *
-   * stopList is an array of strings (stop ids) that are keys into the stopHash,
-   * a dictionary of stops (as found in route config objects).
-   */
-  findNearestStop(latLon, stopList, stopHash) {
-    let nearest = { miles: -1, stop: null, stopId: null };
-    stopList.forEach(stop => {
-      const miles = milesBetween(latLon, stopHash[stop]);
-      if (nearest.miles === -1 || miles < nearest.miles) {
-        nearest = { miles, stop: stopHash[stop], stopId: stop };
+  findNearestStop(latLon, direction, route, maxDistance) {
+    const stopHash = route.stops;
+    let nearest = null;
+    direction.stops.forEach(stopId => {
+      const stop = stopHash[stopId];
+      const distance = milesBetween(latLon, stop);
+      if (
+        distance <= maxDistance &&
+        (nearest == null || distance < nearest.distance)
+      ) {
+        nearest = { distance, stop };
       }
     });
     return nearest;
@@ -470,7 +480,7 @@ class MapSpider extends Component {
   render() {
     const { position, zoom, spiderSelection } = this.props;
     const { isValidLocation } = this.state;
-    const mapClass = { width: '100%', height: this.state.height };
+    const mapStyle = { height: this.state.height };
     const startMarkers = this.getStartMarkers();
 
     return (
@@ -479,7 +489,8 @@ class MapSpider extends Component {
         <Map
           center={position || this.agency.initialMapCenter}
           zoom={zoom || this.agency.initialMapZoom}
-          style={mapClass}
+          className="map-fixed-half"
+          style={mapStyle}
           minZoom={5}
           maxZoom={18}
           onClick={this.handleMapClick}
@@ -489,7 +500,7 @@ class MapSpider extends Component {
           <TileLayer
             attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
             url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
-            opacity={0.3}
+            opacity={0.6}
           />
           {/* see http://maps.stamen.com for details */}
           <this.DownstreamLines />
@@ -499,26 +510,30 @@ class MapSpider extends Component {
             <div className="map-instructions">
               {spiderSelection.latLng && startMarkers && startMarkers.length
                 ? 'Click anywhere along a route to see statistics for trips between the two stops.'
-                : 'Click anywhere in the city to see the routes near that point.'}
+                : 'Click anywhere on the map to see the routes near that point.'}
             </div>
           </Control>
           <Control position="bottomleft">
             <Button
               variant="contained"
               color="primary"
+              size="small"
               onClick={this.handleGeoLocate}
             >
               <GpsIcon />
               &nbsp; Routes near me
             </Button>
             &nbsp;
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => this.props.onSpiderMapClick([], null)}
-            >
-              Clear map
-            </Button>
+            {spiderSelection.latLng ? (
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={() => this.props.onSpiderMapClick([], null)}
+              >
+                Clear map
+              </Button>
+            ) : null}
             <br />
             <br />
           </Control>
@@ -540,8 +555,8 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    onSpiderMapClick: (stops, latLng) =>
-      dispatch(handleSpiderMapClick(stops, latLng)),
+    onSpiderMapClick: (nearbyLines, latLng) =>
+      dispatch(handleSpiderMapClick(nearbyLines, latLng)),
     dispatch,
   };
 };
