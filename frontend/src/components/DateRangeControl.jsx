@@ -125,7 +125,7 @@ function DateRangeControl(props) {
     setAnchorEl(event.currentTarget);
   }
 
-// brians changes 2
+  // brians changes 2
   /**
    * Returns an array of dates between the two dates.
    */
@@ -143,7 +143,7 @@ function DateRangeControl(props) {
     }
     return dates;
   }
-// end of brians changes 2
+  // end of brians changes 2
 
   function setDateRangeParams(newDateRangeParams) {
     if (
@@ -155,10 +155,7 @@ function DateRangeControl(props) {
 
     const newGraphParams = { ...graphParams };
 
-
     newGraphParams[targetRange] = newDateRangeParams;
-
-
 
     /* start brians changes */
 
@@ -181,39 +178,25 @@ function DateRangeControl(props) {
       new Date(endYear, endMonth, endDay),
     );
 
-
-
-        for (i = 0; i < dates.length; i++) {
+    for (i = 0; i < dates.length; i++) {
           dowsUsed[dates[i].getDay()] = true;
-        }
+    }
 
-        // If the combination of the daterange and the days of the week result in
-        // at least one day being selected, atLeastOneDaySelected = true
-        let atLeastOneDaySelected = false;
+    // If the combination of the daterange and the days of the week result in
+    // at least one day being selected, atLeastOneDaySelected = true
+    let atLeastOneDaySelected = false;
 
-        for (i = 0; i < dowsUsed.length; i++) {
-          if (
-            newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
-            dowsUsed[i] === true
-          ) {
+    for (i = 0; i < dowsUsed.length; i++) {
+      if (newGraphParams.firstDateRange.daysOfTheWeek[i] === true && dowsUsed[i] === true) {
             atLeastOneDaySelected = true;
-          }
+      }
+    }
+
+        if (atLeastOneDaySelected === false) {
+              alert('Please select at least one day of week overlapping with the date range.');
         }
-
-
-
-
-          if (atLeastOneDaySelected === false) {
-              alert(
-                'Please select at least one day of week overlapping with the date range.',
-              );
-
-            }
-
-
 
     /* end brians changes */
-
 
     props.updateQuery(fullQueryFromParams(newGraphParams));
   }
