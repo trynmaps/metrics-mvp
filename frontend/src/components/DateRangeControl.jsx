@@ -125,19 +125,21 @@ function DateRangeControl(props) {
     setAnchorEl(event.currentTarget);
   }
 
+  // brians changes 2
   /**
    * Returns an array of dates between the two dates.
    */
-  function enumerateDaysBetweenDates(startDate, endDate) {
-    const date = [];
-    while (Moment(startDate) <= Moment(endDate)) {
-      date.push(startDate);
-      startDate = Moment(startDate)
-        .add(1, 'days')
-        .format('YYYY-MM-DD');
+  function enumerateDaysBetweenDates (startDate, endDate){
+      let dates = []
+      startDate = Moment(startDate).format();
+      while(Moment(startDate) <= Moment(endDate)){
+        dates.push(startDate);
+        //alert('pushed:' + startDate)
+        startDate = Moment(startDate).add(1, 'days').format();
+      }
+      return dates;
     }
-    return date;
-  }
+  // end of brians changes 2
 
   function setDateRangeParams(newDateRangeParams) {
     if (
@@ -156,24 +158,36 @@ function DateRangeControl(props) {
     let i;
     const dowsUsed = [false, false, false, false, false, false, false];
 
-    // // const newGraphParams = Object.assign({}, graphParams);
-    // // newGraphParams[targetRange] = localDateRangeParams;
-    const year = newGraphParams.firstDateRange.startDate.substring(0, 4);
-    // month starts at 0 for January so subtract 1
-    const month = newGraphParams.firstDateRange.startDate.substring(5, 7) - 1;
-    const day = newGraphParams.firstDateRange.startDate.substring(8, 10);
-    const endYear = newGraphParams.firstDateRange.date.substring(0, 4);
-    // month starts at 0 for January so subtract 1
-    const endMonth = newGraphParams.firstDateRange.date.substring(5, 7) - 1;
-    const endDay = newGraphParams.firstDateRange.date.substring(8, 10);
 
     const dates = enumerateDaysBetweenDates(
-      new Date(year, month, day),
-      new Date(endYear, endMonth, endDay),
+      new Date(
+        Moment(newGraphParams.firstDateRange.startDate, "YYYY-MM-DD").year(),
+        Moment(newGraphParams.firstDateRange.startDate, "YYYY-MM-DD").month(),
+        Moment(newGraphParams.firstDateRange.startDate, "YYYY-MM-DD").date()
+      ),
+      new Date(
+        Moment(newGraphParams.firstDateRange.date, "YYYY-MM-DD").year(),
+        Moment(newGraphParams.firstDateRange.date, "YYYY-MM-DD").month(),
+        Moment(newGraphParams.firstDateRange.date, "YYYY-MM-DD").date()
+      ),
     );
 
+    //alert(dates);
+
     for (i = 0; i < dates.length; i++) {
-      dowsUsed[dates[i].getDay()] = true;
+      //alert(dates[i]);
+      //alert('DOW');
+      /*
+      if(Moment(dates[i]).day() === 0){alert('sun');}
+      if(Moment(dates[i]).day() === 1){alert('mon');}
+      if(Moment(dates[i]).day() === 2){alert('tue');}
+      if(Moment(dates[i]).day() === 3){alert('wed');}
+      if(Moment(dates[i]).day() === 4){alert('thu');}
+      if(Moment(dates[i]).day() === 5){alert('fri');}
+      if(Moment(dates[i]).day() === 6){alert('sat');}
+      */
+      //alert(Moment(dates[i]).day());
+      dowsUsed[Moment(dates[i]).day()] = true;
     }
 
     // If the combination of the daterange and the days of the week result in
