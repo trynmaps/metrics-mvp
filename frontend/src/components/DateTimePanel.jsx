@@ -276,7 +276,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(DateTimePanel);
+export default connect(mapStateToProps, mapDispatchToProps)(DateTimePanel);
