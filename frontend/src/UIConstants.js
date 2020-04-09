@@ -92,3 +92,5 @@ export const WEEKENDS = [
 
 // Marey chart:  how long of a dwell at a stop results in a second data point for exit.
 export const DWELL_THRESHOLD_SECS = 120;
+
+export const APP_NAME = 'OpenTransit';

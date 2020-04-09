@@ -490,7 +490,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(MareyChart);
+export default connect(mapStateToProps, mapDispatchToProps)(MareyChart);

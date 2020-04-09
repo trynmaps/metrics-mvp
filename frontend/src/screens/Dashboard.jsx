@@ -44,7 +44,4 @@ const mapDispatchToProps = dispatch => ({
   handleGraphParams: params => dispatch(handleGraphParams(params)),
 });
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Dashboard);
+export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);

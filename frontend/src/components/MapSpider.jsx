@@ -561,7 +561,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(MapSpider);
+export default connect(mapStateToProps, mapDispatchToProps)(MapSpider);

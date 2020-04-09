@@ -546,7 +546,7 @@ export function handleGraphParams(params) {
     const graphParams = getState().graphParams;
 
     if (
-      oldParams.date !== graphParams.date ||
+      oldParams.firstDateRange.date !== graphParams.firstDateRange.date ||
       oldParams.routeId !== graphParams.routeId ||
       oldParams.agencyId !== graphParams.agencyId
     ) {

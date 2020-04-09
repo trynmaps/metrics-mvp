@@ -52,7 +52,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(SingleDateControl);
+export default connect(mapStateToProps, mapDispatchToProps)(SingleDateControl);
