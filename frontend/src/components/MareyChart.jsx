@@ -253,7 +253,7 @@ function MareyChart(props) {
 
   if (!mareyChartSupported) {
     return (
-      <div>The trip chart is only available when viewing a single date.</div>
+      <div>The time-distance chart is only available when viewing a single date.</div>
     );
   }
 
