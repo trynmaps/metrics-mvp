@@ -12,7 +12,7 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 
 import FormControl from '@material-ui/core/FormControl';
 import FormGroup from '@material-ui/core/FormGroup';
-import { List, ListItem } from '@material-ui/core';
+import { List, ListItem, Snackbar } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import IconButton from '@material-ui/core/IconButton';
@@ -86,6 +86,16 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+// Displays alert when an invalid location is set
+function NoDaysSelectedAlert(props) {
+  return (
+    <Snackbar
+      message="Please select at least one day of week overlapping with the date range."
+      open={props.showAlert}
+    />
+  );
+}
+
 /*
  * Renders a control that allows the user to select a date range,
  * and updates the query string.
@@ -125,7 +135,6 @@ function DateRangeControl(props) {
     setAnchorEl(event.currentTarget);
   }
 
-  // brians changes 2
   /**
    * Returns an array of dates between the two dates.
    */
@@ -134,14 +143,12 @@ function DateRangeControl(props) {
     let enumDate = Moment(startDate).format();
     while (Moment(enumDate) <= Moment(endDate)) {
       dates.push(enumDate);
-      // alert('pushed:' + startDate)
       enumDate = Moment(enumDate)
         .add(1, 'days')
         .format();
     }
     return dates;
   }
-  // end of brians changes 2
 
   function setDateRangeParams(newDateRangeParams) {
     if (
@@ -154,8 +161,6 @@ function DateRangeControl(props) {
     const newGraphParams = { ...graphParams };
 
     newGraphParams[targetRange] = newDateRangeParams;
-
-    /* start brians changes */
 
     let i;
     const dowsUsed = [false, false, false, false, false, false, false];
@@ -173,28 +178,13 @@ function DateRangeControl(props) {
       ),
     );
 
-    // alert(dates);
-
     for (i = 0; i < dates.length; i++) {
-      // alert(dates[i]);
-      // alert('DOW');
-      /*
-      if(Moment(dates[i]).day() === 0){alert('sun');}
-      if(Moment(dates[i]).day() === 1){alert('mon');}
-      if(Moment(dates[i]).day() === 2){alert('tue');}
-      if(Moment(dates[i]).day() === 3){alert('wed');}
-      if(Moment(dates[i]).day() === 4){alert('thu');}
-      if(Moment(dates[i]).day() === 5){alert('fri');}
-      if(Moment(dates[i]).day() === 6){alert('sat');}
-      */
-      // alert(Moment(dates[i]).day());
       dowsUsed[Moment(dates[i]).day()] = true;
     }
 
     // If the combination of the daterange and the days of the week result in
     // at least one day being selected, atLeastOneDaySelected = true
     let atLeastOneDaySelected = false;
-
     for (i = 0; i < dowsUsed.length; i++) {
       if (
         newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
@@ -205,17 +195,21 @@ function DateRangeControl(props) {
     }
 
     if (atLeastOneDaySelected === false) {
-      alert(
-        'Please select at least one day of week overlapping with the date range.',
-      );
+      newGraphParams.atLeastOneDaySelected = true;
+      graphParams.atLeastOneDaySelected = true;
+      // alert(
+      //  'Please select at least one day of week overlapping with the date range.',
+      // );
+    } else {
+      newGraphParams.atLeastOneDaySelected = false;
+      graphParams.atLeastOneDaySelected = false;
     }
-
-    /* end brians changes */
 
     props.updateQuery(fullQueryFromParams(newGraphParams));
   }
 
   function handleApply() {
+    localDateRangeParams.atLeastOneDaySelected = true;
     setDateRangeParams(localDateRangeParams);
     setAnchorEl(null);
   }
@@ -360,6 +354,7 @@ function DateRangeControl(props) {
 
   return (
     <>
+      <NoDaysSelectedAlert showAlert={graphParams.atLeastOneDaySelected} />
       <Button
         variant="outlined"
         color="inherit"
