@@ -129,16 +129,18 @@ function DateRangeControl(props) {
   /**
    * Returns an array of dates between the two dates.
    */
-  function enumerateDaysBetweenDates (startDate, endDate){
-      let dates = []
-      startDate = Moment(startDate).format();
-      while(Moment(startDate) <= Moment(endDate)){
-        dates.push(startDate);
-        //alert('pushed:' + startDate)
-        startDate = Moment(startDate).add(1, 'days').format();
-      }
-      return dates;
+  function enumerateDaysBetweenDates(startDate, endDate) {
+    const dates = [];
+    let enumDate = Moment(startDate).format();
+    while (Moment(enumDate) <= Moment(endDate)) {
+      dates.push(enumDate);
+      // alert('pushed:' + startDate)
+      enumDate = Moment(enumDate)
+        .add(1, 'days')
+        .format();
     }
+    return dates;
+  }
   // end of brians changes 2
 
   function setDateRangeParams(newDateRangeParams) {
@@ -158,25 +160,24 @@ function DateRangeControl(props) {
     let i;
     const dowsUsed = [false, false, false, false, false, false, false];
 
-
     const dates = enumerateDaysBetweenDates(
       new Date(
-        Moment(newGraphParams.firstDateRange.startDate, "YYYY-MM-DD").year(),
-        Moment(newGraphParams.firstDateRange.startDate, "YYYY-MM-DD").month(),
-        Moment(newGraphParams.firstDateRange.startDate, "YYYY-MM-DD").date()
+        Moment(newGraphParams.firstDateRange.startDate, 'YYYY-MM-DD').year(),
+        Moment(newGraphParams.firstDateRange.startDate, 'YYYY-MM-DD').month(),
+        Moment(newGraphParams.firstDateRange.startDate, 'YYYY-MM-DD').date(),
       ),
       new Date(
-        Moment(newGraphParams.firstDateRange.date, "YYYY-MM-DD").year(),
-        Moment(newGraphParams.firstDateRange.date, "YYYY-MM-DD").month(),
-        Moment(newGraphParams.firstDateRange.date, "YYYY-MM-DD").date()
+        Moment(newGraphParams.firstDateRange.date, 'YYYY-MM-DD').year(),
+        Moment(newGraphParams.firstDateRange.date, 'YYYY-MM-DD').month(),
+        Moment(newGraphParams.firstDateRange.date, 'YYYY-MM-DD').date(),
       ),
     );
 
-    //alert(dates);
+    // alert(dates);
 
     for (i = 0; i < dates.length; i++) {
-      //alert(dates[i]);
-      //alert('DOW');
+      // alert(dates[i]);
+      // alert('DOW');
       /*
       if(Moment(dates[i]).day() === 0){alert('sun');}
       if(Moment(dates[i]).day() === 1){alert('mon');}
@@ -186,7 +187,7 @@ function DateRangeControl(props) {
       if(Moment(dates[i]).day() === 5){alert('fri');}
       if(Moment(dates[i]).day() === 6){alert('sat');}
       */
-      //alert(Moment(dates[i]).day());
+      // alert(Moment(dates[i]).day());
       dowsUsed[Moment(dates[i]).day()] = true;
     }
 
