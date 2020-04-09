@@ -125,6 +125,27 @@ function DateRangeControl(props) {
     setAnchorEl(event.currentTarget);
   }
 
+// brians changes 2
+//improve name
+  /**
+   * Returns an array of dates between the two dates.
+   */
+  function getDates(startDate, endDate) {
+    const dates = [];
+    let currentDate = startDate;
+    const addDays = function(days) {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return date;
+    };
+    while (currentDate <= endDate) {
+      dates.push(currentDate);
+      currentDate = addDays.call(currentDate, 1);
+    }
+    return dates;
+  }
+// end of brians changes 2
+
   function setDateRangeParams(newDateRangeParams) {
     if (
       JSON.stringify(newDateRangeParams) ===
@@ -135,7 +156,66 @@ function DateRangeControl(props) {
 
     const newGraphParams = { ...graphParams };
 
+
     newGraphParams[targetRange] = newDateRangeParams;
+
+
+
+    /* start brians changes */
+
+    let i;
+    const dowsUsed = [false, false, false, false, false, false, false];
+
+    ////const newGraphParams = Object.assign({}, graphParams);
+    ////newGraphParams[targetRange] = localDateRangeParams;
+    const year = newGraphParams.firstDateRange.startDate.substring(0, 4);
+    // month starts at 0 for January so subtract 1
+    const month = newGraphParams.firstDateRange.startDate.substring(5, 7) - 1;
+    const day = newGraphParams.firstDateRange.startDate.substring(8, 10);
+    const endYear = newGraphParams.firstDateRange.date.substring(0, 4);
+    // month starts at 0 for January so subtract 1
+    const endMonth = newGraphParams.firstDateRange.date.substring(5, 7) - 1;
+    const endDay = newGraphParams.firstDateRange.date.substring(8, 10);
+
+    const dates = getDates(
+      new Date(year, month, day),
+      new Date(endYear, endMonth, endDay),
+    );
+
+
+
+        for (i = 0; i < dates.length; i++) {
+          dowsUsed[dates[i].getDay()] = true;
+        }
+
+        // If the combination of the daterange and the days of the week result in
+        // at least one day being selected, atLeastOneDaySelected = true
+        let atLeastOneDaySelected = false;
+
+    	/* change to dowsUsed.length */
+        for (i = 0; i < 7; i++) {
+          if (
+            newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
+            dowsUsed[i] === true
+          ) {
+            atLeastOneDaySelected = true;
+          }
+        }
+
+
+
+
+          if (atLeastOneDaySelected === false) {	
+              alert(
+                'Please select at least one day of week overlapping with the date range.',
+              );
+            }
+
+
+
+    /* end brians changes */
+
+
     props.updateQuery(fullQueryFromParams(newGraphParams));
   }
 
