@@ -96,6 +96,21 @@ function NoDaysSelectedAlert(props) {
   );
 }
 
+/**
+ * Returns an array of dates between the two dates.
+ */
+function enumerateDaysBetweenDates(startDate, endDate) {
+  const dates = [];
+  let enumDate = Moment(startDate).format();
+  while (Moment(enumDate) <= Moment(endDate)) {
+    dates.push(enumDate);
+    enumDate = Moment(enumDate)
+      .add(1, 'days')
+      .format();
+  }
+  return dates;
+}
+
 /*
  * Renders a control that allows the user to select a date range,
  * and updates the query string.
@@ -119,6 +134,37 @@ function DateRangeControl(props) {
     dateRangeParams,
   );
 
+  let j;
+  const dowsUsed = [false, false, false, false, false, false, false];
+  const dates = enumerateDaysBetweenDates(
+    new Date(
+      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').year(),
+      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').month(),
+      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').date(),
+    ),
+    new Date(
+      Moment(localDateRangeParams.date, 'YYYY-MM-DD').year(),
+      Moment(localDateRangeParams.date, 'YYYY-MM-DD').month(),
+      Moment(localDateRangeParams.date, 'YYYY-MM-DD').date(),
+    ),
+  );
+
+  for (j = 0; j < dates.length; j++) {
+    dowsUsed[Moment(dates[j]).day()] = true;
+  }
+
+  // If the combination of the daterange and the days of the week result in
+  // at least one day being selected, atLeastOneDaySelected = true
+  let atLeastOneDaySelected = false;
+  for (j = 0; j < dowsUsed.length; j++) {
+    if (
+      localDateRangeParams.daysOfTheWeek[j] === true &&
+      dowsUsed[j] === true
+    ) {
+      atLeastOneDaySelected = true;
+    }
+  }
+
   function resetLocalDateRangeParams() {
     setLocalDateRangeParams(dateRangeParams);
   }
@@ -135,21 +181,6 @@ function DateRangeControl(props) {
     setAnchorEl(event.currentTarget);
   }
 
-  /**
-   * Returns an array of dates between the two dates.
-   */
-  function enumerateDaysBetweenDates(startDate, endDate) {
-    const dates = [];
-    let enumDate = Moment(startDate).format();
-    while (Moment(enumDate) <= Moment(endDate)) {
-      dates.push(enumDate);
-      enumDate = Moment(enumDate)
-        .add(1, 'days')
-        .format();
-    }
-    return dates;
-  }
-
   function setDateRangeParams(newDateRangeParams) {
     if (
       JSON.stringify(newDateRangeParams) ===
@@ -161,55 +192,10 @@ function DateRangeControl(props) {
     const newGraphParams = { ...graphParams };
 
     newGraphParams[targetRange] = newDateRangeParams;
-
-    let i;
-    const dowsUsed = [false, false, false, false, false, false, false];
-
-    const dates = enumerateDaysBetweenDates(
-      new Date(
-        Moment(newGraphParams.firstDateRange.startDate, 'YYYY-MM-DD').year(),
-        Moment(newGraphParams.firstDateRange.startDate, 'YYYY-MM-DD').month(),
-        Moment(newGraphParams.firstDateRange.startDate, 'YYYY-MM-DD').date(),
-      ),
-      new Date(
-        Moment(newGraphParams.firstDateRange.date, 'YYYY-MM-DD').year(),
-        Moment(newGraphParams.firstDateRange.date, 'YYYY-MM-DD').month(),
-        Moment(newGraphParams.firstDateRange.date, 'YYYY-MM-DD').date(),
-      ),
-    );
-
-    for (i = 0; i < dates.length; i++) {
-      dowsUsed[Moment(dates[i]).day()] = true;
-    }
-
-    // If the combination of the daterange and the days of the week result in
-    // at least one day being selected, atLeastOneDaySelected = true
-    let atLeastOneDaySelected = false;
-    for (i = 0; i < dowsUsed.length; i++) {
-      if (
-        newGraphParams.firstDateRange.daysOfTheWeek[i] === true &&
-        dowsUsed[i] === true
-      ) {
-        atLeastOneDaySelected = true;
-      }
-    }
-
-    if (atLeastOneDaySelected === false) {
-      newGraphParams.atLeastOneDaySelected = true;
-      graphParams.atLeastOneDaySelected = true;
-      // alert(
-      //  'Please select at least one day of week overlapping with the date range.',
-      // );
-    } else {
-      newGraphParams.atLeastOneDaySelected = false;
-      graphParams.atLeastOneDaySelected = false;
-    }
-
     props.updateQuery(fullQueryFromParams(newGraphParams));
   }
 
   function handleApply() {
-    localDateRangeParams.atLeastOneDaySelected = true;
     setDateRangeParams(localDateRangeParams);
     setAnchorEl(null);
   }
@@ -354,7 +340,7 @@ function DateRangeControl(props) {
 
   return (
     <>
-      <NoDaysSelectedAlert showAlert={graphParams.atLeastOneDaySelected} />
+      <NoDaysSelectedAlert showAlert={!atLeastOneDaySelected} />
       <Button
         variant="outlined"
         color="inherit"
@@ -579,7 +565,12 @@ function DateRangeControl(props) {
               justify="space-between"
               direction="row"
             >
-              <Button onClick={handleApply} color="primary" variant="contained">
+              <Button
+                onClick={handleApply}
+                color="primary"
+                variant="contained"
+                disabled={!atLeastOneDaySelected}
+              >
                 Apply
               </Button>
               <Button onClick={handleReset}>Reset</Button>
