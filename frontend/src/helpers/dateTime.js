@@ -2,7 +2,7 @@
  * Helper functions for manipulating date and time.
  */
 
-import { WEEKDAYS, WEEKENDS } from '../UIConstants';
+import { WEEKDAYS, WEEKENDS, TIME_RANGES } from '../UIConstants';
 
 /**
  * Whether all of array's entries in the dictionary are false.
@@ -28,6 +28,21 @@ export const allTrue = (dictionary, array) => {
   return true;
 };
 
+export function renderDateString(ymdString) {
+  const date = new Date(ymdString);
+  return date.toLocaleDateString('en', { timeZone: 'UTC' });
+}
+
+/**
+ * Returns the short label for the given time range.
+ *
+ * @param {String} value - string in the format "startTime-endTime".
+ */
+export function getTimeRangeShortLabel(value) {
+  const timeRange = TIME_RANGES.find(r => r.value === value);
+  return timeRange ? timeRange.shortLabel : value;
+}
+
 /**
  * Returns a string describing the selected days of the week.
  *
@@ -40,7 +55,7 @@ export function getDaysOfTheWeekLabel(daysOfTheWeek) {
   const noWeekends = allFalse(daysOfTheWeek, WEEKENDS);
 
   if (weekdays && weekends) {
-    return 'Every day';
+    return '';
   }
   if (weekdays && noWeekends) {
     return 'Weekdays';
@@ -75,4 +90,31 @@ export function getDaysOfTheWeekLabel(daysOfTheWeek) {
     return accumulator;
   }, []);
   return checkedLabels.join();
+}
+
+/**
+ * Returns a string describing the given date/time range parameters.
+ */
+export function renderDateRange(dateRangeParams) {
+  const dateLabel = renderDateString(dateRangeParams.date);
+  let res = '';
+
+  if (dateRangeParams.startDate !== dateRangeParams.date) {
+    res = `${renderDateString(dateRangeParams.startDate)} - ${dateLabel}`;
+    const daysOfTheWeekLabel = getDaysOfTheWeekLabel(
+      dateRangeParams.daysOfTheWeek,
+    );
+    if (daysOfTheWeekLabel) {
+      res += ` ${daysOfTheWeekLabel}`;
+    }
+  } else {
+    res = dateLabel;
+  }
+
+  if (dateRangeParams.startTime) {
+    res += ` ${getTimeRangeShortLabel(
+      `${dateRangeParams.startTime}-${dateRangeParams.endTime}`,
+    )}`;
+  }
+  return res;
 }

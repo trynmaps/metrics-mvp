@@ -96,7 +96,7 @@ function processQuery(getState) {
  * @param params The graphParams subobject.
  * @returns The query subobject.
  */
-function dateQueryFromDateRangeParams(params) {
+export function dateQueryFromDateRangeParams(params) {
   const dateQuery = {};
   const initialDateRangeParams = initialGraphParams.firstDateRange;
 
@@ -134,24 +134,13 @@ function dateQueryFromDateRangeParams(params) {
 export function fullQueryFromParams(params) {
   const query = {};
   query.firstDateRange = dateQueryFromDateRangeParams(params.firstDateRange);
-  query.secondDateRange = dateQueryFromDateRangeParams(params.secondDateRange);
-
-  // Edge case:  second date range matches defaults and thus is empty.  Use a flag
-  // to signify that it is active.
-
-  if (
-    query.secondDateRange &&
-    Object.entries(query.secondDateRange).length === 0
-  ) {
-    // this goes in the query string just to get the second range populated
-    query.secondDateRange.isActive = true;
-  }
+  query.secondDateRange = params.secondDateRange || undefined;
   return query;
 }
 
 export default {
+  HOME: '/',
   ABOUT: '/about',
-  LANDING: '/landing',
   ISOCHRONE: {
     path: '/isochrone',
     thunk: async (dispatch, getState) => {
@@ -160,7 +149,7 @@ export default {
     },
   },
   DASHBOARD: {
-    path: '/',
+    path: '/metrics',
     thunk: async (dispatch, getState) => {
       const newParams = processQuery(getState);
       dispatch(handleGraphParams(newParams));

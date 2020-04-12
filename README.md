@@ -1,21 +1,38 @@
 # OpenTransit Metrics MVP
 
-Welcome to OpenTransit! We're passionate about using open data to improve
-public transit systems around the world.
+Welcome to OpenTransit! We're a team of volunteers that use open data to improve public transit systems around the world.
 
-This app uses historical transit data to help riders, transit advocates,
-and transit planners understand the quality of public transit systems.
+Founded in 2017, we're a team of dozens of engineers, transit junkies, data enthusiasts, product managers, marketers, and others scattered around the world, but with primary bases in San Francisco and Portland, Oregon.
 
-[Check out the app](http://muni.opentransit.city/) to see the performance
-of Muni bus and light rail lines in San Francisco.
+[Learn more at our official website](http://bit.ly/opentransitsf) or learn about our parent organization, [Code for America](https://www.codeforamerica.org/).
 
-If you're visiting this repo and looking to contribute, [check out our onboarding doc!](http://bit.ly/opentransit-onboarding)
+If you'd like to work with us, get in touch on our Slack channel! [Join the Code for SF Slack](http://c4sf.me/slack) and find the `#opentransit` channel. We're excited to partner with transit agencies, journalists, and other data junkies across the world. See below for instructions on joining our team of contributors.
 
-## Building the app
-To start, you'll need to make a local clone of this repository.
+## About this repository
+
+This repo is for [our flagship app](http://muni.opentransit.city/), which uses historical transit data to help riders, transit advocates, and transit planners understand how well -- or how poorly -- transit systems are doing and find ways to improve them.
+
+The app currently supports San Francisco and Portland, but we're working to generalize it to work easily for other cities.
+
+## Getting involved
+
+[Our onboarding doc](http://bit.ly/opentransit-onboarding) is a great way to get started. It'll provide you instructions on joining our GitHub organization, our Slack, our Google Drive, etc.
+
+### Contributing
+
+Once you've followed the instructions on the onboarding doc, visit our Issues page and [identify good first issues](https://github.com/trynmaps/metrics-mvp/labels/Good%20First%20Issue) to find a good project to get started on.
+
+Our Slack is very active, so don't hesitate to ask there if you need guidance or suggestions on picking a project!
+
+If you're non-technical, ask on Slack -- there's a lot of product management, marketing, design, and other work that we don't track on GitHub.
+
+## Getting started
+
+First make a local clone of this repo.
+
 Then get Docker for your local environment (to run the application from that local code): Install [Docker Desktop](https://www.docker.com/products/docker-desktop) or another Docker distribution for your platform.
 
-Build and run the Docker containers - run this on your local terminal from the root of your local repository clone:
+Build and run the Docker containers -- run this on your local terminal from the root of your local repository clone:
 
 ```sh
 docker-compose up
@@ -33,35 +50,19 @@ You can run command line scripts like `backend/compute_arrivals.py` and `backend
 
 If you need to install some new dependencies in the Docker images, you can rebuild them via `docker-compose build`.
 
-## Configuring the displayed transit agency
+### Troubleshooting
 
-By default, the app shows statistics for San Francisco Muni. You can configure the transit agency displayed in the web app by setting the OPENTRANSIT_AGENCY_IDS environment variable.
+| Error message | Solution |
+| --- | --- |
+| `Module not found: can't resolve ...` | Run `docker-compose build` |
 
-Other available agency IDs include:
-- `trimet` (TriMet in Portland, Oregon)
-- `portland-sc` (Portland Streetcar)
+## Your first pull request
 
-To set this environment variable in development when using Docker, create a file named docker-compose.override.yml file in the root directory of this repository, like so:
+Our usual workflow is for a GitHub contributor (once you're added to the GitHub organization; see the onboarding guide) to create a new branch for each pull request. Once you're ready, start a pull request to merge your branch back into master.
 
-```
-version: "3.7"
-services:
-  flask-dev:
-    environment:
-      OPENTRANSIT_AGENCY_IDS: trimet
-```
+Our pull request template will request that you fill out some key fields. It'll also automatically tag some repo maintainers to review your PR.
 
-After changing docker-compose.override.yml, you will need to re-run `docker-compose up` for the changes to take effect.
-
-## Contributing
-
-Make sure you've been added to the trynmaps organization on GitHub.
-[Join the Code for SF Slack](http://c4sf.me/slack) and join the #opentransit channel,
-then you'll see a guide to get in.
-
-To get started, see the Issues page. You may want to [identify good first issues](https://github.com/trynmaps/metrics-mvp/labels/Good%20First%20Issue).
-
-### Code Style
+### Code style
 
 This repository uses eslint to enforce a consistent style for frontend JavaScript code.
 
@@ -93,7 +94,7 @@ git push heroku local-branch-name:master
 
 Then copy the link to this app and paste it in the PR.
 
-## How Deployment Works
+#### How Deployment Works
 
 Once a PR is merged into master, Google Cloud Build  will automatically build
 the latest code and deploy it to a cluster on Google Kubernetes Engine (GKE).
@@ -161,11 +162,28 @@ services:
 This setting is not in the main docker-compose.yml file because CHOKIDAR_USEPOLLING causes high CPU/battery usage for developers using Mac OS X,
 and CHOKIDAR_USEPOLLING is not necessary on Mac OS X to automatically recompile the frontend code when it changes.
 
+### Configuring the displayed transit agency
+
+By default, the app shows statistics for San Francisco Muni. You can configure the transit agency displayed in the web app by setting the OPENTRANSIT_AGENCY_IDS environment variable.
+
+Other available agency IDs include:
+- `trimet` (TriMet in Portland, Oregon)
+- `portland-sc` (Portland Streetcar)
+
+To set this environment variable in development when using Docker, create a file named docker-compose.override.yml file in the root directory of this repository, like so:
+
+```
+version: "3.7"
+services:
+  flask-dev:
+    environment:
+      OPENTRANSIT_AGENCY_IDS: trimet
+```
+
+After changing docker-compose.override.yml, you will need to re-run `docker-compose up` for the changes to take effect.
+
 ### Advanced Concepts
 
-Please see [ADVANCED_DEV.md](docs/ADVANCED_DEV.md) for advanced information like computing arrival times and
-deploying to AWS.
+Please see [ADVANCED_DEV.md](docs/ADVANCED_DEV.md) for even more advanced information like computing arrival times and deploying to AWS.
 
-See [agencies.md](docs/agencies.md) for configuring for different agencies, and how the front end gets the
-configuration information.  Important for testing with other devices against your dev machine.
-
+See [agencies.md](docs/agencies.md) for configuring for different agencies, and how the front end gets the configuration information.  Important for testing with other devices against your dev machine.

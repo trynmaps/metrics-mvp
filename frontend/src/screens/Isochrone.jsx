@@ -1,24 +1,32 @@
-/* eslint-disable */
+/* eslint-disable react/sort-comp */
+/* eslint-disable no-console */
+/* eslint-disable no-alert */
+/* eslint-disable no-nested-ternary */
+/* eslint-disable max-len */
+/* eslint-disable no-continue */
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable react/no-access-state-in-setstate */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-unused-vars */
+/* eslint-disable array-callback-return */
+/* eslint-disable consistent-return */
 import React from 'react';
 import { connect } from 'react-redux';
 import { Map, TileLayer } from 'react-leaflet';
 import L, { DomEvent } from 'leaflet';
 import Control from 'react-leaflet-control';
 import Grid from '@material-ui/core/Grid';
-import Typography from '@material-ui/core/Typography';
-import FormGroup from '@material-ui/core/FormGroup';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-import Toolbar from '@material-ui/core/Toolbar';
-import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
-import AppBarLogo from '../components/AppBarLogo';
-import SidebarButton from '../components/SidebarButton';
-import DateTimePanel from '../components/DateTimePanel';
+import FormControl from '@material-ui/core/FormControl';
+import InputLabel from '@material-ui/core/InputLabel';
+import SingleDateControl from '../components/SingleDateControl';
+import TimeRangeControl from '../components/TimeRangeControl';
 
 import { fetchRoutes } from '../actions';
 import {
@@ -29,6 +37,7 @@ import {
   RoutesVersion,
 } from '../config';
 import { getTripPoints, isInServiceArea } from '../helpers/mapGeometry';
+import { getRouteColor } from '../helpers/routeCalculations';
 
 import './Isochrone.css';
 
@@ -76,13 +85,14 @@ class Isochrone extends React.Component {
     // for now, only supports 1 agency at a time.
     // todo: support multiple agencies on one map
     const agency = Agencies[0];
+    this.agency = Agencies[0];
     this.agencyId = agency.id;
 
     this.initialZoom = agency.initialMapZoom;
     this.initialCenter = agency.initialMapCenter;
     const defaultDisabledRoutes = agency.defaultDisabledRoutes || [];
 
-    this.state = {
+    const initialState = {
       maxTripMin: 90,
       computedMaxTripMin: null,
       computeId: null,
@@ -92,7 +102,14 @@ class Isochrone extends React.Component {
       tripInfo: null,
       enabledRoutes: {},
       noData: false,
+      height: this.computeHeight(),
     };
+
+    defaultDisabledRoutes.forEach(routeId => {
+      initialState.enabledRoutes[routeId] = false;
+    });
+
+    this.state = initialState;
 
     let workerUrl = `${
       process.env.PUBLIC_URL
@@ -115,11 +132,8 @@ class Isochrone extends React.Component {
     this.layers = [];
     this.isochroneLayers = [];
     this.tripLayers = [];
+    this.routeLayers = [];
     this.mapRef = React.createRef();
-
-    defaultDisabledRoutes.forEach(routeId => {
-      this.state.enabledRoutes[routeId] = false;
-    });
 
     this.handleMapClick = this.handleMapClick.bind(this);
     this.handleToggleRoute = this.handleToggleRoute.bind(this);
@@ -151,10 +165,64 @@ class Isochrone extends React.Component {
   componentDidMount() {
     if (!this.props.routes) {
       this.props.fetchRoutes();
+    } else {
+      this.setInitialLocation();
+    }
+    this.boundUpdate = this.updateDimensions.bind(this);
+    window.addEventListener('resize', this.boundUpdate);
+
+    this.updateRouteLayers();
+  }
+
+  updateRouteLayers() {
+    if (!this.mapRef.current) {
+      console.log('no map element');
+      return;
+    }
+    const map = this.mapRef.current.leafletElement;
+    const routes = this.props.routes;
+
+    this.routeLayers.forEach(layer => {
+      layer.remove();
+    });
+    this.routeLayers = [];
+
+    if (routes && map) {
+      routes.forEach(route => {
+        if (this.state.enabledRoutes[route.id] !== false) {
+          const color = getRouteColor(route);
+          return route.directions.map(direction => {
+            const routeLayer = L.polyline(getTripPoints(route, direction), {
+              color,
+              opacity: 0.2,
+              weight: 1.5,
+            }).addTo(map);
+            this.routeLayers.push(routeLayer);
+          });
+        }
+      });
     }
   }
 
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.updateDimensions.bind(this));
+  }
+
+  updateDimensions() {
+    const height = this.computeHeight();
+    this.setState({ height });
+  }
+
+  computeHeight() {
+    return window.innerHeight - 52;
+  }
+
   componentDidUpdate(prevProps) {
+    // computeIsochrones requires loaded routes
+    if (prevProps.routes !== this.props.routes) {
+      this.setInitialLocation();
+      this.updateRouteLayers();
+    }
     if (
       this.props.date !== prevProps.date ||
       this.props.startTime !== prevProps.startTime ||
@@ -191,6 +259,31 @@ class Isochrone extends React.Component {
     alert(message);
   }
 
+  setInitialLocation() {
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        // assign current user's location
+        let latlng = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        // reassign to central latlng if user's location is out of bounds
+        if (!isInServiceArea(this.agencyId, latlng)) {
+          latlng = this.agency.defaultIsochroneCenter;
+        }
+        if (latlng) {
+          this.computeIsochrones(latlng, null);
+        }
+      },
+      err => {
+        const defaultLatLng = this.agency.defaultIsochroneCenter;
+        if (defaultLatLng) {
+          this.computeIsochrones(this.agency.defaultIsochroneCenter, null);
+        }
+      },
+    );
+  }
+
   handleMapClick(event) {
     if (this.state.computeId) {
       return;
@@ -204,7 +297,7 @@ class Isochrone extends React.Component {
     const reachableCircles = data.circles;
     const geoJson = data.geoJson;
 
-    if (this.state.computeId !== data.computeId) {
+    if (this.state.computeId !== data.computeId || !this.mapRef.current) {
       return;
     }
 
@@ -510,7 +603,7 @@ class Isochrone extends React.Component {
 
     this.setState(
       { enabledRoutes: { ...this.state.enabledRoutes, [routeId]: checked } },
-      this.recomputeIsochrones,
+      this.enabledRoutesChanged,
     );
   }
 
@@ -579,7 +672,12 @@ class Isochrone extends React.Component {
       enabledRoutes[route.id] = enabled;
     });
 
-    this.setState({ enabledRoutes }, this.recomputeIsochrones);
+    this.setState({ enabledRoutes }, this.enabledRoutesChanged);
+  }
+
+  enabledRoutesChanged() {
+    this.updateRouteLayers();
+    this.recomputeIsochrones();
   }
 
   makeRouteToggle(route) {
@@ -597,6 +695,7 @@ class Isochrone extends React.Component {
               onChange={this.handleToggleRoute}
               value={route.id}
               color="primary"
+              size="small"
             />
           }
           label={route.id}
@@ -638,16 +737,10 @@ class Isochrone extends React.Component {
     }
     tripMins.push(90);
 
+    const mapStyle = { width: '100%', height: this.state.height };
+
     return (
-      <div className="flex-screen">
-        <AppBar position="relative">
-          <Toolbar>
-            <SidebarButton />
-            <AppBarLogo />
-            <div className="page-title">Isochrone</div>
-            <DateTimePanel />
-          </Toolbar>
-        </AppBar>
+      <>
         <Map
           center={this.initialCenter}
           zoom={this.initialZoom}
@@ -656,19 +749,28 @@ class Isochrone extends React.Component {
           maxZoom={18}
           onClick={this.handleMapClick}
           ref={this.mapRef}
+          style={mapStyle}
         >
           <TileLayer
             attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
             url="https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png"
+            opacity={0.6}
           />
           {/* see http://maps.stamen.com for details */}
-          <Control position="topleft" className="">
+          <Control position="topleft" className="isochrone-controls">
             <div ref={this.refContainer}>
-              <Grid container className="isochrone-controls" direction="column">
-                <Grid item>
-                  <Typography variant="subtitle1">Max Trip Time</Typography>
-                </Grid>
-                <Grid item>
+              <FormControl className="inline-form-control">
+                <InputLabel shrink>Date-Time Range</InputLabel>
+                <div style={{ paddingTop: '15px' }}>
+                  <SingleDateControl />
+                </div>
+                <div>
+                  <TimeRangeControl />
+                </div>
+              </FormControl>
+              <div>
+                <FormControl className="inline-form-control">
+                  <InputLabel shrink>Max Trip Time</InputLabel>
                   <Select
                     value={this.state.maxTripMin}
                     onChange={this.handleMaxTripMinChange}
@@ -679,24 +781,26 @@ class Isochrone extends React.Component {
                       </MenuItem>
                     ))}
                   </Select>
-                </Grid>
-              </Grid>
-              <Grid container className="isochrone-controls" direction="column">
-                <Grid item>
-                  <Typography variant="subtitle1">Routes</Typography>
-                </Grid>
-                <Grid container item direction="row" alignItems="flex-start">
+                </FormControl>
+              </div>
+              <div style={{ paddingTop: 8 }}>
+                <InputLabel shrink id="routesLabel">
+                  Routes
+                </InputLabel>
+                <Grid container direction="row" alignItems="flex-start">
                   <Grid item>
-                    <Button onClick={this.selectAllRoutesClicked}>all</Button>
-                    <Button onClick={this.selectNoRoutesClicked}>none</Button>
+                    <Button size="small" onClick={this.selectAllRoutesClicked}>
+                      all
+                    </Button>
+                    <Button size="small" onClick={this.selectNoRoutesClicked}>
+                      none
+                    </Button>
                   </Grid>
                 </Grid>
-                <Grid item>
-                  <List className="isochrone-routes">
-                    {(routes || []).map(route => this.makeRouteToggle(route))}
-                  </List>
-                </Grid>
-              </Grid>
+                <List className="isochrone-routes">
+                  {(routes || []).map(route => this.makeRouteToggle(route))}
+                </List>
+              </div>
             </div>
           </Control>
           <Control position="topright">
@@ -722,19 +826,22 @@ class Isochrone extends React.Component {
               <div className="isochrone-legend-times">{times}</div>
             </div>
           </Control>
-          <Control position="bottomleft">
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={this.resetMapClicked}
-            >
-              Clear map
-            </Button>
-            <br />
-            <br />
-          </Control>
+          {this.state.latLng ? (
+            <Control position="bottomleft">
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={this.resetMapClicked}
+              >
+                Clear map
+              </Button>
+              <br />
+              <br />
+            </Control>
+          ) : null}
         </Map>
-      </div>
+      </>
     );
   }
 }
@@ -750,7 +857,4 @@ const mapDispatchToProps = dispatch => ({
   fetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Isochrone);
+export default connect(mapStateToProps, mapDispatchToProps)(Isochrone);
