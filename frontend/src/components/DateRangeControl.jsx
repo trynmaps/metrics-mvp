@@ -136,17 +136,11 @@ function DateRangeControl(props) {
 
   let j;
   const dowsUsed = [false, false, false, false, false, false, false];
+  const startDate = Moment(localDateRangeParams.startDate, 'YYYY-MM-DD');
+  const endDate = Moment(localDateRangeParams.date, 'YYYY-MM-DD');
   const dates = enumerateDaysBetweenDates(
-    new Date(
-      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').year(),
-      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').month(),
-      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').date(),
-    ),
-    new Date(
-      Moment(localDateRangeParams.date, 'YYYY-MM-DD').year(),
-      Moment(localDateRangeParams.date, 'YYYY-MM-DD').month(),
-      Moment(localDateRangeParams.date, 'YYYY-MM-DD').date(),
-    ),
+    new Date(startDate.year(), startDate.month(), startDate.date()),
+    new Date(endDate.year(), endDate.month(), endDate.date()),
   );
 
   for (j = 0; j < dates.length; j++) {
