@@ -9,11 +9,12 @@ import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 import { Tab, Tabs } from '@material-ui/core';
 import PollIcon from '@material-ui/icons/Poll';
+import ShareIcon from '@material-ui/icons/Share';
 import PersonPinCircleIcon from '@material-ui/icons/PersonPinCircle';
 import InfoRoundedIcon from '@material-ui/icons/InfoRounded';
 import AppBarLogo from './components/AppBarLogo';
 import LoadingIndicator from './components/LoadingIndicator';
-
+import Share from './components/Share';
 import NotFound from './screens/NotFound';
 import Isochrone from './screens/Isochrone';
 import DataDiagnostic from './screens/DataDiagnostic';
@@ -50,7 +51,8 @@ const theme = createMuiTheme({
   },
 });
 
-const App = props => {
+function App(props) {
+  const [anchorEl, setAnchorEl] = React.useState(null);
   const { page, dispatch, type } = props;
   const Screen = Screens[page];
 
@@ -60,8 +62,16 @@ const App = props => {
   if (tabValue === 'ROUTESCREEN') {
     tabValue = 'DASHBOARD';
   }
-
+  const handleClose = (event) => {
+    event.stopPropagation();
+    setAnchorEl(null);
+  }
   const handleTabChange = (event, newValue) => {
+    event.stopPropagation();
+    if(newValue === 'SHARE') {
+      setAnchorEl(event.currentTarget)
+      return;
+    }
     dispatch({
       type: newValue,
       query: props.query,
@@ -95,6 +105,16 @@ const App = props => {
                   </div>
                 }
                 value="ISOCHRONE"
+              />
+              <Tab
+                label={
+                  <div>
+                    <ShareIcon className="app-tab-icon"/>
+                    <span className="app-tab-text"> Share</span>
+                    <Share anchorEl={anchorEl} handleClose={handleClose} />
+                  </div>
+                }
+                value="SHARE"
               />
               <Tab
                 label={

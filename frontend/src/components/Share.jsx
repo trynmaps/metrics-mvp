@@ -11,7 +11,6 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import ShareIcon from '@material-ui/icons/Share';
 
 import {
   TwitterShareButton,
@@ -44,7 +43,7 @@ const StyledMenu = withStyles({
 
 const StyledMenuItem = withStyles(theme => ({
   root: {
-    '&:focus': {
+    '&:hover': {
       backgroundColor: theme.palette.primary.main,
       '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
         color: theme.palette.common.white,
@@ -53,17 +52,22 @@ const StyledMenuItem = withStyles(theme => ({
   },
 }))(MenuItem);
 
-function Share() {
+const Share = props => {
+
+  const { anchorEl, handleClick, handleClose } = props;
+
   const shareComponents = {
     twitter: TwitterShareButton,
     reddit: RedditShareButton,
     facebook: FacebookShareButton,
   };
+
   const iconComponents = {
     twitter: TwitterIcon,
     reddit: RedditIcon,
     facebook: FacebookIcon,
   };
+
   const dropDownItems = [
     {
       shareComponent: shareComponents.twitter,
@@ -82,15 +86,6 @@ function Share() {
     },
   ];
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
-
-  const handleClick = event => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
   const useStyles = makeStyles({
     flex: {
       display: 'flex',
@@ -101,23 +96,13 @@ function Share() {
   const url = window.location.href;
   const theme = createMuiTheme({
     palette: {
-      primary: { main: grey[50] },
+      primary: { main: grey[500] },
     },
   });
+  debugger;
   return (
     <div>
-      <IconButton
-        aria-controls="customized-menu"
-        aria-haspopup="true"
-        color="primary"
-        onClick={handleClick}
-      >
-        <ThemeProvider theme={theme}>
-          <ShareIcon color="primary" />
-        </ThemeProvider>
-      </IconButton>
       <StyledMenu
-        id="customized-menu"
         anchorEl={anchorEl}
         keepMounted
         open={Boolean(anchorEl)}

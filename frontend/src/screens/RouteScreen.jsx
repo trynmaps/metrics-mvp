@@ -4,20 +4,12 @@ import { connect } from 'react-redux';
 import { makeStyles } from '@material-ui/core/styles';
 import { AppBar, Tab, Tabs, Box, Paper, Grid } from '@material-ui/core';
 import MapStops from '../components/MapStops';
-<<<<<<< HEAD
-import DateTimePanel from '../components/DateTimePanel';
-import Share from '../components/Share';
-import { getAgency } from '../config';
-import ControlPanel from '../components/ControlPanel';
-import RouteSummary from '../components/RouteSummary';
-=======
 import ControlPanel from '../components/ControlPanel';
 import SummaryStats from '../components/SummaryStats';
 import TripTimesStats from '../components/TripTimesStats';
 import ServiceFrequencyStats from '../components/ServiceFrequencyStats';
 import OnTimePerformanceStats from '../components/OnTimePerformanceStats';
 import MareyChart from '../components/MareyChart';
->>>>>>> 94cb424ba4a2495e6e59abecdd3a7eb7c19f4824
 import { fetchRoutes } from '../actions';
 
 const useStyles = makeStyles(theme => ({
@@ -89,60 +81,9 @@ function RouteScreen(props) {
   const error = tripSelected ? tripMetricsError : routeMetricsError;
 
   return (
-<<<<<<< HEAD
-    <Fragment>
-      <AppBar position="relative">
-        <Toolbar>
-          <NavLink to={{ type: 'DASHBOARD', query: props.query }} exact strict>
-            <IconButton aria-label="Back to dashboard" edge="start">
-              <ArrowBackIcon style={backArrowStyle} />
-            </IconButton>
-          </NavLink>
-          <AppBarLogo />
-          <div className="page-title">{agency ? agency.title : null}</div>
-          <div style={{ flexGrow: 1 }} />
-          <div style={{ paddingRight: '2rem' }}>
-            <Share />
-          </div>
-          <div>
-            <DateTimePanel dateRangeSupported />
-          </div>
-        </Toolbar>
-      </AppBar>
-      <Paper className={breadCrumbsWrapper}>
-        <Breadcrumbs
-          separator={
-            <NavigateNextIcon
-              fontSize="default"
-              className={breadCrumbStyling}
-            />
-          }
-        >
-          {breadCrumbs(
-            [
-              selectedRoute,
-              direction,
-              startStopInfo
-                ? Object.assign(
-                    { ...startStopInfo },
-                    { id: graphParams.startStopId },
-                  )
-                : null,
-              endStopInfo
-                ? Object.assign(
-                    { ...endStopInfo },
-                    { id: graphParams.endStopInfo },
-                  )
-                : null,
-            ],
-            classes,
-          )}
-        </Breadcrumbs>
-=======
     <>
       <Paper className={classes.breadCrumbsWrapper}>
         <ControlPanel routes={routes} />
->>>>>>> 94cb424ba4a2495e6e59abecdd3a7eb7c19f4824
       </Paper>
       <AppBar position="static" color="default">
         <Tabs
