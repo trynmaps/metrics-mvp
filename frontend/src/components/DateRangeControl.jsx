@@ -332,7 +332,6 @@ function DateRangeControl(props) {
 
   return (
     <>
-      <NoDaysSelectedAlert showAlert={!atLeastOneDaySelected} />
       <Button
         variant="outlined"
         color="inherit"
@@ -351,6 +350,8 @@ function DateRangeControl(props) {
           <ArrowDropDownIcon />
         </div>
       </Button>
+      <NoDaysSelectedAlert showAlert={!atLeastOneDaySelected} />
+
       <Popover
         id={id}
         open={open}
