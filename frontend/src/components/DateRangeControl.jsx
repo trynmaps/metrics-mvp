@@ -12,7 +12,7 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 
 import FormControl from '@material-ui/core/FormControl';
 import FormGroup from '@material-ui/core/FormGroup';
-import { List, ListItem } from '@material-ui/core';
+import { List, ListItem, Snackbar } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import IconButton from '@material-ui/core/IconButton';
@@ -86,6 +86,31 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+// Displays alert when an invalid location is set
+function NoDaysSelectedAlert(props) {
+  return (
+    <Snackbar
+      message="Please select at least one day of week overlapping with the date range."
+      open={props.showAlert}
+    />
+  );
+}
+
+/**
+ * Returns an array of dates between the two dates.
+ */
+function enumerateDaysBetweenDates(startDate, endDate) {
+  const dates = [];
+  let enumDate = Moment(startDate).format();
+  while (Moment(enumDate) <= Moment(endDate)) {
+    dates.push(enumDate);
+    enumDate = Moment(enumDate)
+      .add(1, 'days')
+      .format();
+  }
+  return dates;
+}
+
 /*
  * Renders a control that allows the user to select a date range,
  * and updates the query string.
@@ -108,6 +133,37 @@ function DateRangeControl(props) {
   const [localDateRangeParams, setLocalDateRangeParams] = useState(
     dateRangeParams,
   );
+
+  let j;
+  const dowsUsed = [false, false, false, false, false, false, false];
+  const dates = enumerateDaysBetweenDates(
+    new Date(
+      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').year(),
+      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').month(),
+      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').date(),
+    ),
+    new Date(
+      Moment(localDateRangeParams.date, 'YYYY-MM-DD').year(),
+      Moment(localDateRangeParams.date, 'YYYY-MM-DD').month(),
+      Moment(localDateRangeParams.date, 'YYYY-MM-DD').date(),
+    ),
+  );
+
+  for (j = 0; j < dates.length; j++) {
+    dowsUsed[Moment(dates[j]).day()] = true;
+  }
+
+  // If the combination of the daterange and the days of the week result in
+  // at least one day being selected, atLeastOneDaySelected = true
+  let atLeastOneDaySelected = false;
+  for (j = 0; j < dowsUsed.length; j++) {
+    if (
+      localDateRangeParams.daysOfTheWeek[j] === true &&
+      dowsUsed[j] === true
+    ) {
+      atLeastOneDaySelected = true;
+    }
+  }
 
   function resetLocalDateRangeParams() {
     setLocalDateRangeParams(dateRangeParams);
@@ -284,6 +340,7 @@ function DateRangeControl(props) {
 
   return (
     <>
+      <NoDaysSelectedAlert showAlert={!atLeastOneDaySelected} />
       <Button
         variant="outlined"
         color="inherit"
@@ -508,7 +565,12 @@ function DateRangeControl(props) {
               justify="space-between"
               direction="row"
             >
-              <Button onClick={handleApply} color="primary" variant="contained">
+              <Button
+                onClick={handleApply}
+                color="primary"
+                variant="contained"
+                disabled={!atLeastOneDaySelected}
+              >
                 Apply
               </Button>
               <Button onClick={handleReset}>Reset</Button>
