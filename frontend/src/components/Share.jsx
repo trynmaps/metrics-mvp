@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  withStyles,
-  makeStyles,
-  createMuiTheme,
-} from '@material-ui/core/styles';
-import { ThemeProvider } from '@material-ui/styles';
-import grey from '@material-ui/core/colors/grey';
-import IconButton from '@material-ui/core/IconButton';
+import { withStyles, makeStyles } from '@material-ui/core/styles';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
@@ -53,8 +46,7 @@ const StyledMenuItem = withStyles(theme => ({
 }))(MenuItem);
 
 const Share = props => {
-
-  const { anchorEl, handleClick, handleClose } = props;
+  const { anchorEl, handleClose } = props;
 
   const shareComponents = {
     twitter: TwitterShareButton,
@@ -94,12 +86,6 @@ const Share = props => {
   const classes = useStyles();
   const { flex } = classes;
   const url = window.location.href;
-  const theme = createMuiTheme({
-    palette: {
-      primary: { main: grey[500] },
-    },
-  });
-  debugger;
   return (
     <div>
       <StyledMenu
@@ -127,6 +113,6 @@ const Share = props => {
       </StyledMenu>
     </div>
   );
-}
+};
 
 export default Share;
