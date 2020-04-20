@@ -1,15 +1,7 @@
 import React, { useState, Fragment } from 'react';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles, useTheme } from '@material-ui/core/styles';
-import Popover from '@material-ui/core/Popover';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
-import IconButton from '@material-ui/core/IconButton';
-
+import { Popover, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, IconButton } from '@material-ui/core';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
@@ -77,7 +69,11 @@ function stableSort(array, sortOrder, orderBy) {
   return stabilizedThis.map(el => el[0]);
 }
 
-function EnhancedTableHead(props) {
+interface Props {
+  [key: string]: any;
+}
+
+const EnhancedTableHead: React.FC<Props> = (props: Props) => {
   const { order, orderBy, onRequestSort, columns } = props;
   const createSortHandler = property => event => {
     onRequestSort(event, property);
@@ -367,7 +363,7 @@ function RouteTable(props) {
             order={order}
             orderBy={orderBy}
             onRequestSort={handleRequestSort}
-            rowCount={displayedRouteStats.length}
+            // rowCount={displayedRouteStats.length}
             columns={columns}
           />
           <TableBody>

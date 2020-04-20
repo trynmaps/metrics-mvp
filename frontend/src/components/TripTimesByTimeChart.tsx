@@ -83,7 +83,7 @@ function TripTimesByTimeChart(props) {
             control={
               <Radio
                 id="average_time"
-                type="radio"
+                // type="radio"
                 value={AVERAGE_TIME}
                 checked={selectedOption === AVERAGE_TIME}
                 onChange={handleOptionChange}
@@ -96,7 +96,7 @@ function TripTimesByTimeChart(props) {
             control={
               <Radio
                 id="planning_time"
-                type="radio"
+                // type="radio"
                 value={PLANNING_TIME}
                 checked={selectedOption === PLANNING_TIME}
                 onChange={handleOptionChange}

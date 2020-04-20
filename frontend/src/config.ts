@@ -7,7 +7,7 @@
 export const MetricsBaseURL = process.env.REACT_APP_METRICS_BASE_URL;
 
 // index.html loads script tag from /api/js_config before React scripts, which sets window.OpentransitConfig object
-const config = window.OpentransitConfig;
+const config = (window as any).OpentransitConfig;
 
 if (!config) {
   throw new Error(`OpentransitConfig not defined (may be a server error)`);

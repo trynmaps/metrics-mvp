@@ -78,8 +78,29 @@ function getDirectionInfo(directionId, routeInfo) {
   return routeInfo.directions.find(dirInfo => dirInfo.id === directionId);
 }
 
-class Isochrone extends React.Component {
-  constructor(props) {
+interface Props {
+  [key: string]: any;
+}
+
+interface State {
+  [key: string]: any;
+}
+
+class Isochrone extends React.Component<Props, State> {
+  agency: any;
+  agencyId: any;
+  initialZoom: any;
+  initialCenter: any;
+  isochroneWorker: Worker;
+  layers: any[];
+  isochroneLayers: any[];
+  tripLayers: any[];
+  routeLayers: any[];
+  mapRef: React.RefObject<any>;
+  container: any;
+  boundUpdate: any;
+
+  constructor(props: Props) {
     super(props);
 
     // for now, only supports 1 agency at a time.
@@ -272,13 +293,13 @@ class Isochrone extends React.Component {
           latlng = this.agency.defaultIsochroneCenter;
         }
         if (latlng) {
-          this.computeIsochrones(latlng, null);
+          this.computeIsochrones(latlng);
         }
       },
       err => {
         const defaultLatLng = this.agency.defaultIsochroneCenter;
         if (defaultLatLng) {
-          this.computeIsochrones(this.agency.defaultIsochroneCenter, null);
+          this.computeIsochrones(this.agency.defaultIsochroneCenter);
         }
       },
     );
@@ -289,7 +310,7 @@ class Isochrone extends React.Component {
       return;
     }
     this.resetMap();
-    this.computeIsochrones(event.latlng, null);
+    this.computeIsochrones(event.latlng);
   }
 
   addReachableLocationsLayer(data) {
@@ -326,7 +347,7 @@ class Isochrone extends React.Component {
 
     diffLayer.on('dblclick', e => {
       this.resetMap();
-      this.computeIsochrones(e.latlng);
+      this.computeIsochrones(e.latlng, null);
     });
 
     this.isochroneLayers.push({ tripMin, layer: diffLayer });
@@ -472,7 +493,7 @@ class Isochrone extends React.Component {
     }
   }
 
-  computeIsochrones(latLng, endLatLng) {
+  computeIsochrones(latLng, endLatLng = []) {
     if (!isInServiceArea(this.agencyId, latLng)) {
       return;
     }
@@ -487,7 +508,7 @@ class Isochrone extends React.Component {
 
     const enabledRoutesArr = [];
 
-    this.props.routes.forEach(route => {
+    this.props?.routes?.forEach(route => {
       if (enabledRoutes[route.id] !== false) {
         enabledRoutesArr.push(route.id);
       }
@@ -520,7 +541,7 @@ class Isochrone extends React.Component {
       // event arg removed
       if (newLatLng) {
         this.resetMap();
-        this.computeIsochrones(newLatLng);
+        this.computeIsochrones(newLatLng, null);
       }
     });
     this.layers.push(marker);
@@ -647,7 +668,7 @@ class Isochrone extends React.Component {
 
     this.layers = [];
     this.isochroneLayers = [];
-    this.clearTripLayers();
+    this.clearTripLayers(true);
   }
 
   clearTripLayers(clearTripInfo) {
@@ -757,52 +778,54 @@ class Isochrone extends React.Component {
             opacity={0.6}
           />
           {/* see http://maps.stamen.com for details */}
-          <Control position="topleft" className="isochrone-controls">
-            <div ref={this.refContainer}>
-              <FormControl className="inline-form-control">
-                <InputLabel shrink>Date-Time Range</InputLabel>
-                <div style={{ paddingTop: '15px' }}>
-                  <SingleDateControl />
-                </div>
-                <div>
-                  <TimeRangeControl />
-                </div>
-              </FormControl>
-              <div>
+          <div className="isochrone-controls">
+            <Control position="topleft">
+              <div ref={this.refContainer}>
                 <FormControl className="inline-form-control">
-                  <InputLabel shrink>Max Trip Time</InputLabel>
-                  <Select
-                    value={this.state.maxTripMin}
-                    onChange={this.handleMaxTripMinChange}
-                  >
-                    {tripMins.map(tripMin => (
-                      <MenuItem key={tripMin} value={tripMin}>
-                        {tripMin} minutes
-                      </MenuItem>
-                    ))}
-                  </Select>
+                  <InputLabel shrink>Date-Time Range</InputLabel>
+                  <div style={{ paddingTop: '15px' }}>
+                    <SingleDateControl />
+                  </div>
+                  <div>
+                    <TimeRangeControl />
+                  </div>
                 </FormControl>
-              </div>
-              <div style={{ paddingTop: 8 }}>
-                <InputLabel shrink id="routesLabel">
-                  Routes
-                </InputLabel>
-                <Grid container direction="row" alignItems="flex-start">
-                  <Grid item>
-                    <Button size="small" onClick={this.selectAllRoutesClicked}>
-                      all
-                    </Button>
-                    <Button size="small" onClick={this.selectNoRoutesClicked}>
-                      none
-                    </Button>
+                <div>
+                  <FormControl className="inline-form-control">
+                    <InputLabel shrink>Max Trip Time</InputLabel>
+                    <Select
+                      value={this.state.maxTripMin}
+                      onChange={this.handleMaxTripMinChange}
+                    >
+                      {tripMins.map(tripMin => (
+                        <MenuItem key={tripMin} value={tripMin}>
+                          {tripMin} minutes
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </div>
+                <div style={{ paddingTop: 8 }}>
+                  <InputLabel shrink id="routesLabel">
+                    Routes
+                  </InputLabel>
+                  <Grid container direction="row" alignItems="flex-start">
+                    <Grid item>
+                      <Button size="small" onClick={this.selectAllRoutesClicked}>
+                        all
+                      </Button>
+                      <Button size="small" onClick={this.selectNoRoutesClicked}>
+                        none
+                      </Button>
+                    </Grid>
                   </Grid>
-                </Grid>
-                <List className="isochrone-routes">
-                  {(routes || []).map(route => this.makeRouteToggle(route))}
-                </List>
+                  <List className="isochrone-routes">
+                    {(routes || []).map(route => this.makeRouteToggle(route))}
+                  </List>
+                </div>
               </div>
-            </div>
-          </Control>
+            </Control>
+          </div>
           <Control position="topright">
             {this.state.tripInfo ? (
               <div className="isochrone-trip-info">{this.state.tripInfo}</div>
@@ -854,7 +877,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: params => dispatch(fetchRoutes(params)),
+  fetchRoutes: () => dispatch(fetchRoutes),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Isochrone);

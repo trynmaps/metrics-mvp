@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "outDir": "build",
+    "baseUrl": "src",
+    "allowJs": true,
+    "target": "es6",
+    "module": "commonjs",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom"],
+    "alwaysStrict": false,
+    "strictFunctionTypes": false,
+    "strictPropertyInitialization": false,
+    // temporary (need to fix)
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "strictNullChecks": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "build"]
+}

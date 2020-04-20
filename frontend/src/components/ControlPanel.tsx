@@ -112,9 +112,8 @@ function ControlPanel(props) {
 
       const hoverStop = selectedRoute ? selectedRoute.stops[stopId] : null;
 
-      mapNode.style.setProperty(
-        '--stop-name',
-        `"${hoverStop ? hoverStop.title : ''}"`,
+      mapNode.setAttribute("style",
+        `--stop-name: "${hoverStop ? hoverStop.title : ''}"`,
       );
     }
   }
@@ -155,7 +154,7 @@ function ControlPanel(props) {
 
   const directionStops = selectedDirection ? selectedDirection.stops : [];
 
-  const labelStyle = { whiteSpace: 'nowrap' };
+  const labelStyle: { [key: string]: any } = { whiteSpace: 'nowrap' };
 
   return (
     <div className={classes.root}>

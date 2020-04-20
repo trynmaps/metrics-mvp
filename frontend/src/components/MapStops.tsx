@@ -13,8 +13,19 @@ import { handleGraphParams } from '../actions';
 import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { Agencies } from '../config';
 
-class MapStops extends Component {
-  constructor(props) {
+interface Props {
+  [key: string]: any;
+}
+
+interface State {
+  [key: string]: any;
+}
+
+class MapStops extends Component<Props, State> {
+  agency: any;
+  boundUpdate: any;
+
+  constructor(props: Props) {
     super(props);
 
     this.agency = Agencies[0];

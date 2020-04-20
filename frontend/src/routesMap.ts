@@ -7,6 +7,13 @@ export const START_DATE = 'startDate';
 export const START_TIME = 'startTime';
 export const END_TIME = 'endTime';
 export const DAYS_OF_THE_WEEK = 'daysOfTheWeek';
+export interface DateRangeInterface {
+  startTime: any;
+  endTime: any;
+  date: string;
+  startDate: string;
+  daysOfTheWeek: any;
+}
 
 /**
  * Gets the string values from a date range object within a query string.
@@ -14,7 +21,7 @@ export const DAYS_OF_THE_WEEK = 'daysOfTheWeek';
  * @param dateRangeQuery A query subobject representing a date range.
  * @returns A graphParams subobject representing a date range.
  */
-function processDateRangeQuery(dateRangeQuery) {
+function processDateRangeQuery(dateRangeQuery): DateRangeInterface {
   const initialDateRangeParams = initialGraphParams.firstDateRange;
 
   if (!dateRangeQuery) {
@@ -25,11 +32,12 @@ function processDateRangeQuery(dateRangeQuery) {
   // If the values are missing, we must use the defaults, in case the user is changing
   // from a nondefault to default value.
 
-  const newDateRangeParams = {
+  const newDateRangeParams: DateRangeInterface = {
     date: date || initialDateRangeParams.date,
     startDate: startDate || initialDateRangeParams.startDate,
     startTime: startTime || null,
     endTime: endTime || null,
+    daysOfTheWeek: null,
   };
 
   if (daysOfTheWeek) {
@@ -97,7 +105,7 @@ function processQuery(getState) {
  * @returns The query subobject.
  */
 export function dateQueryFromDateRangeParams(params) {
-  const dateQuery = {};
+  const dateQuery: { [key: string]: any } = {};
   const initialDateRangeParams = initialGraphParams.firstDateRange;
 
   if (!params) {
@@ -132,7 +140,7 @@ export function dateQueryFromDateRangeParams(params) {
  * @returns The query object to dispatch.
  */
 export function fullQueryFromParams(params) {
-  const query = {};
+  const query: { [key: string]: any } = {};
   query.firstDateRange = dateQueryFromDateRangeParams(params.firstDateRange);
   query.secondDateRange = params.secondDateRange || undefined;
   return query;

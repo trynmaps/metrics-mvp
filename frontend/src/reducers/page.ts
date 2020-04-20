@@ -26,5 +26,5 @@ export function typeForPage(page) {
   return currentType;
 }
 
-export default (state = 'DASHBOARD', action = {}) =>
+export default (state = 'DASHBOARD', action: {type: string}) =>
   components[action.type] || state;

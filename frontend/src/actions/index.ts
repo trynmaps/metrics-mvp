@@ -222,7 +222,7 @@ query($agencyId:String!, $routeId:String!,
   const dates = computeDates(params.firstDateRange);
 
   return function(dispatch) {
-    const variables = {
+    const variables: { [key: string]: any } = {
       agencyId: params.agencyId,
       routeId: params.routeId,
       directionId: params.directionId,
@@ -365,7 +365,7 @@ query($agencyId:String!, $routeId:String!,
   }
 }`.replace(/\s+/g, ' ');
 
-    const variables = {
+    const variables: { [key: string]: any } = {
       agencyId: Agencies[0].id,
       routeId: params.routeId,
       dates,

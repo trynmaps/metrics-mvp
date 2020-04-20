@@ -3,7 +3,6 @@
 /* Note: Importing MomentTZ adds new methods to Moment.  MomentTZ is not meant to be used directly. */
 
 import React, { Fragment, useState, useEffect } from 'react';
-
 import {
   XYPlot,
   HorizontalGridLines,
@@ -16,20 +15,20 @@ import {
   Borders,
 } from 'react-vis';
 import '../../node_modules/react-vis/dist/style.css';
-
 import { connect } from 'react-redux';
-
 import { Radio, FormControl, FormControlLabel } from '@material-ui/core';
-
-import Moment from 'moment';
+import Moment from 'moment'
+// eslint-disable-next-line
 import MomentTZ from 'moment-timezone/builds/moment-timezone-with-data-10-year-range'; // this augments Moment
-
 import * as d3 from 'd3';
 import { fetchArrivals } from '../actions';
 import { getAgency } from '../config';
 import { DWELL_THRESHOLD_SECS } from '../UIConstants';
-
 import { metersToMiles } from '../helpers/routeCalculations';
+
+interface Props {
+  [key: string]: any;
+}
 
 /**
  * Within state.arrivals.data, the data is organized as follows:
@@ -56,7 +55,7 @@ import { metersToMiles } from '../helpers/routeCalculations';
  *
  * @param {Object} props
  */
-function MareyChart(props) {
+const MareyChart: React.FC<Props> = (props: Props) => {
   const INBOUND_AND_OUTBOUND = 'Inbound_and_outbound';
   const INBOUND = '1'; // same as directionInfo id
   const OUTBOUND = '0'; // same as directionInfo id
@@ -64,10 +63,10 @@ function MareyChart(props) {
   const { graphParams, arrivals, arrivalsErr, routes, hidden } = props;
   const myFetchArrivals = props.fetchArrivals;
 
-  const [hintValue, setHintValue] = useState();
-  const [tripHighlight, setTripHighlight] = useState();
-  const [processedArrivals, setProcessedArrivals] = useState(); // where the tripData gets stored
-  const [selectedOption, setSelectedOption] = useState(INBOUND_AND_OUTBOUND);
+  const [hintValue, setHintValue] = useState<any>();
+  const [tripHighlight, setTripHighlight] = useState<any>();
+  const [processedArrivals, setProcessedArrivals] = useState<any>(); // where the tripData gets stored
+  const [selectedOption, setSelectedOption] = useState<any>(INBOUND_AND_OUTBOUND);
 
   const agency = getAgency(graphParams.agencyId);
   const timezoneId = agency ? agency.timezoneId : 'UTC';
@@ -137,7 +136,7 @@ function MareyChart(props) {
         }
         distance = metersToMiles(distance);
 
-        const arrivalMoment = Moment.unix(arrival.t).tz(timezoneId);
+        const arrivalMoment = Moment.unix(arrival.t).utcOffset(timezoneId);
         const yValue = (arrival.t - startTime) / 60 / 60 + startHourOfDay; // time of arrival in fractional hours
 
         myTripData.byTripId[tripId].series.push({
@@ -167,7 +166,7 @@ function MareyChart(props) {
         // so we can see the vehicle's exit in the data series.
 
         if (arrival.e - arrival.t > DWELL_THRESHOLD_SECS) {
-          const exitMoment = Moment.unix(arrival.e).tz(timezoneId);
+          const exitMoment = Moment.unix(arrival.e).utcOffset(timezoneId);
           const exitYValue = (arrival.e - startTime) / 60 / 60 + startHourOfDay; // time of arrival in fractional hours
 
           myTripData.byTripId[tripId].series.push({
@@ -200,10 +199,7 @@ function MareyChart(props) {
 
       const stops = myArrivals.stops;
       const startTime = myArrivals.start_time;
-      const startHourOfDay = Moment.unix(startTime)
-        .tz(timezoneId)
-        .hour();
-
+      const startHourOfDay = Moment.unix(startTime).utcOffset(timezoneId).hour();
       const routeId = myArrivals.route_id;
       const route = myRoutes.find(myRoute => myRoute.id === routeId);
 
@@ -373,7 +369,7 @@ function MareyChart(props) {
             control={
               <Radio
                 id="inbound_and_outbound"
-                type="radio"
+                // type="radio"
                 value={INBOUND_AND_OUTBOUND}
                 checked={selectedOption === INBOUND_AND_OUTBOUND}
                 onChange={changeEvent =>
@@ -388,7 +384,7 @@ function MareyChart(props) {
             control={
               <Radio
                 id="inbound"
-                type="radio"
+                // type="radio"
                 value={INBOUND}
                 checked={selectedOption === INBOUND}
                 onChange={changeEvent =>
@@ -403,7 +399,7 @@ function MareyChart(props) {
             control={
               <Radio
                 id="outbound"
-                type="radio"
+                // type="radio"
                 value={OUTBOUND}
                 checked={selectedOption === OUTBOUND}
                 onChange={changeEvent =>

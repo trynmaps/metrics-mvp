@@ -13,7 +13,7 @@ const scrollHandlerDelay = 30;
 const theme = createMuiTheme({
   palette: {
     background: {
-      focus: 'rgba(0, 0, 0, 0.05)',
+      // focus: 'rgba(0, 0, 0, 0.05)',
     },
   },
 });
@@ -21,7 +21,7 @@ const useStyles = makeStyles({
   input: {
     display: 'flex',
     '&:focus': {
-      backgroundColor: theme.palette.background.focus,
+      // backgroundColor: theme.palette.background.focus,
     },
   },
   selectInput: {
@@ -94,14 +94,13 @@ function Control(props) {
       ref={textRef}
       fullWidth
       InputProps={{
-        inputComponent: 'div',
-        inputProps: {
-          children,
-          ...innerProps,
-          className: classes.input,
-          tabIndex: 0,
-          onKeyUp: handleTextKeyUp(props),
-        },
+        inputComponent: () => <div
+          children
+          { ...innerProps }
+          className={classes.input}
+          tabIndex={0}
+          onKeyUp={handleTextKeyUp(props)} 
+        />
       }}
       label={textFieldProps.label}
       InputLabelProps={inputLabelProps}
@@ -214,7 +213,7 @@ function Menu(props) {
       textFieldDOMRect,
     },
   } = props;
-  const menuStyle = {};
+  const menuStyle: { [key: string]: any } = {};
   const timeout = menuTransition.current ? transitionDuration : 0;
   const [menuStyleRight, setMenuStyleRight] = useState(0);
   const [menuStyleBottom, setMenuStyleBottom] = useState(0);
@@ -350,7 +349,7 @@ function Option(props) {
     data: { value },
     selectProps: { onItemMouseOver, onItemMouseOut },
   } = props;
-  const focusedStyle = {};
+  const focusedStyle: { [key: string]: any } = {};
 
   if (isFocused) {
     if (onItemMouseOver) {
@@ -401,7 +400,9 @@ function handleMenuClose(
 
   return () => {
     allowTransition.current = true;
-    document.activeElement.blur();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setMenuIsOpenTransition(false);
     setTimeout(() => setMenuIsOpen(false), transitionDuration);
 

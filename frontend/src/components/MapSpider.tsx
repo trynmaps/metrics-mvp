@@ -25,7 +25,6 @@ import {
 } from '../helpers/routeCalculations';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
-
 import MapShield from './MapShield';
 
 const CLICK_RADIUS_MI = 0.5; // maximum radius for stops near a point
@@ -40,8 +39,23 @@ function ValidLocationAlert(props) {
   );
 }
 
-class MapSpider extends Component {
-  constructor(props) {
+interface Props {
+  [key: string]: any;
+}
+
+interface State {
+  [key: string]: any;
+}
+
+class MapSpider extends Component<Props, State> {
+  agency: any;
+  routeLayers: any[];
+  mapRef: any;
+  boundUpdate: any;
+  onMouseOver: Function = (e: any) => {};
+  onMouseOut: Function = (e: any) => {};
+
+  constructor(props: Props) {
     super(props);
 
     // for now, only supports 1 agency at a time.

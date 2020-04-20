@@ -2,7 +2,7 @@ import { APP_NAME } from '../UIConstants';
 
 const DEFAULT = APP_NAME;
 
-export default (state = DEFAULT, action = {}) => {
+export default (state = DEFAULT, action: { type: string }) => {
   switch (action.type) {
     case 'DASHBOARD':
       return `Dashboard | ${DEFAULT}`;

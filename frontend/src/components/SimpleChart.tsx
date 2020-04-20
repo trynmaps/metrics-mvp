@@ -11,7 +11,7 @@ import {
 } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 
-function getDefaultYDomain(series) {
+function getDefaultYDomain(series, stackBy) {
   let yMin = 0;
   let yMax = 0;
 

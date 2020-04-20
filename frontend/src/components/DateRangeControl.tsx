@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Moment from 'moment';
-import { makeStyles } from '@material-ui/core/styles';
+import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 import Divider from '@material-ui/core/Divider';
 import Grid from '@material-ui/core/Grid';
@@ -35,7 +35,7 @@ import { initialGraphParams } from '../reducers';
 import { fullQueryFromParams } from '../routesMap';
 import { updateQuery } from '../actions';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme: Theme) => ({
   button: {
     textTransform: 'none',
     borderRadius: '0px',
@@ -58,9 +58,9 @@ const useStyles = makeStyles(theme => ({
     // color: theme.palette.text.secondary,
     textAlign: 'left',
   },
-  column: {
-    flexGrow: '1',
-  },
+  // column: {
+  //   flexGrow: '1',
+  // },
   dateTime: {
     whiteSpace: 'nowrap',
     display: 'flex',
@@ -253,7 +253,7 @@ function DateRangeControl(props) {
       const newMoment = Moment(newDate);
       const startMoment = Moment(dateRangeParams.startDate);
 
-      const payload = {
+      const payload: { [key: string]: any } = {
         date: newDate,
       };
 
@@ -284,7 +284,7 @@ function DateRangeControl(props) {
   };
 
   const setDateRange = daysBack => {
-    const date = initialGraphParams.date;
+    const date = initialGraphParams.firstDateRange.date;
     const startMoment = Moment(date).subtract(daysBack - 1, 'days'); // include end date
 
     updateLocalDateRangeParams({
@@ -391,7 +391,7 @@ function DateRangeControl(props) {
                       .format('YYYY-MM-DD'),
                   },
                 }}
-                className={classes.textField}
+                // className={classes.textField}
                 InputLabelProps={{
                   shrink: true,
                 }}
@@ -412,7 +412,7 @@ function DateRangeControl(props) {
                     max: maxDate,
                   },
                 }}
-                className={classes.textField}
+                // className={classes.textField}
                 InputLabelProps={{
                   shrink: true,
                 }}
