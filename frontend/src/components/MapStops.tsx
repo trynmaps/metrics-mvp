@@ -23,6 +23,7 @@ interface State {
 
 class MapStops extends Component<Props, State> {
   agency: any;
+
   boundUpdate: any;
 
   constructor(props: Props) {

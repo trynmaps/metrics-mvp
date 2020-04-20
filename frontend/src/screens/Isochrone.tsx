@@ -88,16 +88,27 @@ interface State {
 
 class Isochrone extends React.Component<Props, State> {
   agency: any;
+
   agencyId: any;
+
   initialZoom: any;
+
   initialCenter: any;
+
   isochroneWorker: Worker;
+
   layers: any[];
+
   isochroneLayers: any[];
+
   tripLayers: any[];
+
   routeLayers: any[];
+
   mapRef: React.RefObject<any>;
+
   container: any;
+
   boundUpdate: any;
 
   constructor(props: Props) {
@@ -503,16 +514,10 @@ class Isochrone extends React.Component<Props, State> {
     const endTimeStr = this.props.endTime;
     const timeStr =
       startTimeStr && endTimeStr ? `${startTimeStr}-${endTimeStr}` : '';
-
     const { maxTripMin, enabledRoutes } = this.state;
-
-    const enabledRoutesArr = [];
-
-    this.props?.routes?.forEach(route => {
-      if (enabledRoutes[route.id] !== false) {
-        enabledRoutesArr.push(route.id);
-      }
-    });
+    const enabledRoutesArr = this.props.routes
+      .filter(route => enabledRoutes[route.id] !== false)
+      .map(route => route.id);
 
     const computeId = [
       latLng.lat,
@@ -811,7 +816,10 @@ class Isochrone extends React.Component<Props, State> {
                   </InputLabel>
                   <Grid container direction="row" alignItems="flex-start">
                     <Grid item>
-                      <Button size="small" onClick={this.selectAllRoutesClicked}>
+                      <Button
+                        size="small"
+                        onClick={this.selectAllRoutesClicked}
+                      >
                         all
                       </Button>
                       <Button size="small" onClick={this.selectNoRoutesClicked}>

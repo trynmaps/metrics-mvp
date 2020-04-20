@@ -49,11 +49,12 @@ interface State {
 
 class MapSpider extends Component<Props, State> {
   agency: any;
+
   routeLayers: any[];
+
   mapRef: any;
+
   boundUpdate: any;
-  onMouseOver: Function = (e: any) => {};
-  onMouseOut: Function = (e: any) => {};
 
   constructor(props: Props) {
     super(props);
@@ -286,14 +287,16 @@ class MapSpider extends Component<Props, State> {
           return true;
         }}
         onFocus={e => {
-          this.onMouseOver(e);
+          e.target.setStyle({ opacity: 1, weight: computedWeight + 4 });
+          return true;
         }}
         onMouseOut={e => {
           e.target.setStyle({ opacity: 0.5, weight: computedWeight });
           return true;
         }}
         onBlur={e => {
-          this.onMouseOut(e);
+          e.target.setStyle({ opacity: 0.5, weight: computedWeight });
+          return true;
         }}
         // when this route segment is clicked, plot only the stops for this route/dir by setting the first stop
         onClick={e => {

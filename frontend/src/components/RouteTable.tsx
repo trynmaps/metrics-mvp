@@ -1,7 +1,16 @@
 import React, { useState, Fragment } from 'react';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles, useTheme } from '@material-ui/core/styles';
-import { Popover, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, IconButton } from '@material-ui/core';
+import {
+  Popover,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  IconButton,
+} from '@material-ui/core';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
@@ -102,7 +111,7 @@ const EnhancedTableHead: React.FC<Props> = (props: Props) => {
       </TableRow>
     </TableHead>
   );
-}
+};
 
 EnhancedTableHead.propTypes = {
   onRequestSort: PropTypes.func.isRequired,

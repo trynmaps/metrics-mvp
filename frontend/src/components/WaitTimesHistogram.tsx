@@ -65,7 +65,10 @@ function WaitTimesHistogram(props) {
                 {
                   title: 'Scheduled',
                   color: CHART_COLORS[0],
-                  data: getHistogramChartData(scheduledWaitTimes.histogram, null),
+                  data: getHistogramChartData(
+                    scheduledWaitTimes.histogram,
+                    null,
+                  ),
                   stroke: '#333',
                   cluster: 'second',
                   opacity: 0.25,

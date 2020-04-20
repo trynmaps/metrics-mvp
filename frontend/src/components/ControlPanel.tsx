@@ -112,7 +112,8 @@ function ControlPanel(props) {
 
       const hoverStop = selectedRoute ? selectedRoute.stops[stopId] : null;
 
-      mapNode.setAttribute("style",
+      mapNode.setAttribute(
+        'style',
         `--stop-name: "${hoverStop ? hoverStop.title : ''}"`,
       );
     }

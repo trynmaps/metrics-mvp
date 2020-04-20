@@ -94,13 +94,17 @@ function Control(props) {
       ref={textRef}
       fullWidth
       InputProps={{
-        inputComponent: () => <div
-          children
-          { ...innerProps }
-          className={classes.input}
-          tabIndex={0}
-          onKeyUp={handleTextKeyUp(props)} 
-        />
+        inputComponent: () => (
+          <div
+            {...innerProps}
+            role="button"
+            className={classes.input}
+            tabIndex={0}
+            onKeyUp={handleTextKeyUp(props)}
+          >
+            {{ children }}
+          </div>
+        ),
       }}
       label={textFieldProps.label}
       InputLabelProps={inputLabelProps}

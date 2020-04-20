@@ -17,7 +17,7 @@ import {
 import '../../node_modules/react-vis/dist/style.css';
 import { connect } from 'react-redux';
 import { Radio, FormControl, FormControlLabel } from '@material-ui/core';
-import Moment from 'moment'
+import Moment from 'moment';
 // eslint-disable-next-line
 import MomentTZ from 'moment-timezone/builds/moment-timezone-with-data-10-year-range'; // this augments Moment
 import * as d3 from 'd3';
@@ -66,7 +66,9 @@ const MareyChart: React.FC<Props> = (props: Props) => {
   const [hintValue, setHintValue] = useState<any>();
   const [tripHighlight, setTripHighlight] = useState<any>();
   const [processedArrivals, setProcessedArrivals] = useState<any>(); // where the tripData gets stored
-  const [selectedOption, setSelectedOption] = useState<any>(INBOUND_AND_OUTBOUND);
+  const [selectedOption, setSelectedOption] = useState<any>(
+    INBOUND_AND_OUTBOUND,
+  );
 
   const agency = getAgency(graphParams.agencyId);
   const timezoneId = agency ? agency.timezoneId : 'UTC';
@@ -199,7 +201,9 @@ const MareyChart: React.FC<Props> = (props: Props) => {
 
       const stops = myArrivals.stops;
       const startTime = myArrivals.start_time;
-      const startHourOfDay = Moment.unix(startTime).utcOffset(timezoneId).hour();
+      const startHourOfDay = Moment.unix(startTime)
+        .utcOffset(timezoneId)
+        .hour();
       const routeId = myArrivals.route_id;
       const route = myRoutes.find(myRoute => myRoute.id === routeId);
 
@@ -473,7 +477,7 @@ const MareyChart: React.FC<Props> = (props: Props) => {
   ) : (
     <Fragment>{arrivalsErr || 'Loading...'}</Fragment>
   );
-}
+};
 
 const mapStateToProps = state => ({
   routes: state.routes.data,

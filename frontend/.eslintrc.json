@@ -1,11 +1,17 @@
 {
-  "extends": ["airbnb", "prettier", "prettier/react"],
+  "extends": [
+    "airbnb",
+    "prettier",
+    "prettier/react",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/typescript"
+  ],
   "plugins": ["react", "prettier"],
   "env": {
     "browser": true,
     "jest": true
   },
-  "parser": "babel-eslint",
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 9,
     "sourceType": "module",
@@ -40,14 +46,30 @@
     "react/destructuring-assignment": "off",
     "react/jsx-filename-extension": [
       1,
-      { "extensions": [".js", ".jsx"] }
+      { "extensions": [".js", ".jsx", ".ts", ".tsx"] }
     ],
-    "react/prop-types": "off"
+    "react/prop-types": "off",
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+    ],
+    //remove in future
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-explicit-any":"off"
   },
   "settings": {
       "react": {
           "pragma": "React",
-          "version": "16.8.6"
-      }
+          "version": "detect"
+      },
+      "import/extensions": [
+        ".js", ".jsx", ".ts", ".tsx"
+      ]
   }
 }
