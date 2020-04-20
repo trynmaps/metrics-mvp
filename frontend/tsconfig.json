@@ -23,6 +23,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    // remove in the future
     "noImplicitAny": false,
     "noImplicitThis": false,
     "strictNullChecks": false,

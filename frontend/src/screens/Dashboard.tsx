@@ -37,7 +37,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: () => dispatch(fetchRoutes),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
   handleGraphParams: params => dispatch(handleGraphParams(params)),
 });
 

@@ -287,7 +287,7 @@ export function resetTripMetrics() {
   };
 }
 
-export function fetchRoutes() {
+export function fetchRoutes(params) {
   return function(dispatch, getState) {
     const agencyId = Agencies[0].id;
 

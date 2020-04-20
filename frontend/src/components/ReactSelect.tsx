@@ -93,13 +93,12 @@ function Control(props) {
         inputComponent: () => (
           <div
             {...innerProps}
+            children={children}
             role="button"
             className={classes.input}
             tabIndex={0}
             onKeyUp={handleTextKeyUp(props)}
-          >
-            {{ children }}
-          </div>
+          />
         ),
       }}
       label={textFieldProps.label}

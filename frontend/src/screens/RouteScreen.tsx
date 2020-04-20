@@ -142,7 +142,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  fetchRoutes: () => dispatch(fetchRoutes),
+  fetchRoutes: params => dispatch(fetchRoutes(params)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(RouteScreen);
