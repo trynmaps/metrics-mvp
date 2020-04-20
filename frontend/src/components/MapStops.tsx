@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Map, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet';
+import ReactDOMServer from 'react-dom/server';
 import * as d3 from 'd3';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
@@ -8,9 +9,8 @@ import StartStopIcon from '@material-ui/icons/DirectionsTransit';
 import EndStopIcon from '@material-ui/icons/Flag';
 import { withTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
-import ReactDOMServer from 'react-dom/server';
+import { getTripPoints, getDistanceInMiles } from 'helpers';
 import { handleGraphParams } from '../actions';
-import { getTripPoints, getDistanceInMiles } from '../helpers/mapGeometry';
 import { Agencies } from '../config';
 
 interface Props {

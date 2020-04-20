@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { VerticalRectSeries } from 'react-vis';
 import SimpleChart from './SimpleChart';
 

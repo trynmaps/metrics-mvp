@@ -1,0 +1,8 @@
+
+{
+  "paths": {
+    "@components": ["components"],
+    "@helpers": ["helpers"],
+    "@screens": ["screens"],
+  }
+}

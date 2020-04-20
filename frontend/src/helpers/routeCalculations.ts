@@ -6,11 +6,7 @@
  */
 
 import * as d3 from 'd3';
-import red from '@material-ui/core/colors/red';
-import green from '@material-ui/core/colors/green';
-import yellow from '@material-ui/core/colors/yellow';
-import lightGreen from '@material-ui/core/colors/lightGreen';
-
+import { red, green, yellow, lightGreen } from '@material-ui/core/colors';
 import { getAgency } from '../config';
 
 export function isIgnoredRoute(route) {

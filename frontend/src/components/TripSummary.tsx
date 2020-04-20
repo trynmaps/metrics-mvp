@@ -1,8 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Table, TableBody, TableHead } from '@material-ui/core';
-import { getDistanceInMiles, getTripStops } from '../helpers/mapGeometry';
-import { renderDateRange } from '../helpers/dateTime';
+import { getDistanceInMiles, getTripStops, renderDateRange } from 'helpers';
 import SummaryRow from './SummaryRow';
 import SummaryHeaderRow from './SummaryHeaderRow';
 

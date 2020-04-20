@@ -1,4 +1,5 @@
 import React, { useState, Fragment } from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { lighten, makeStyles, useTheme } from '@material-ui/core/styles';
 import {
@@ -12,9 +13,8 @@ import {
   IconButton,
 } from '@material-ui/core';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
-import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
-import { filterRoutes } from '../helpers/routeCalculations';
+import { filterRoutes } from 'helpers';
 import DateTimeRangeControls from './DateTimeRangeControls';
 
 function getComparisonFunction(order, orderBy) {

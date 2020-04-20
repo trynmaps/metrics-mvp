@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { LineMarkSeries } from 'react-vis';
 import SimpleChart from './SimpleChart';
 

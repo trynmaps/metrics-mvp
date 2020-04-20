@@ -1,10 +1,7 @@
 import React, { useEffect } from 'react';
-import Grid from '@material-ui/core/Grid';
-
 import { connect } from 'react-redux';
-import MapSpider from '../components/MapSpider';
-import RouteTable from '../components/RouteTable';
-
+import { Grid } from '@material-ui/core';
+import { MapSpider, RouteTable } from 'components';
 import { fetchRoutes, handleGraphParams } from '../actions';
 
 function Dashboard(props) {

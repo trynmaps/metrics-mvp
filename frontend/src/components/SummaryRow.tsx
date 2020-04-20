@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
-
-import { TableCell, TableRow } from '@material-ui/core';
-
+import { TableCell, TableRow, IconButton, Popover } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import IconButton from '@material-ui/core/IconButton';
-import Popover from '@material-ui/core/Popover';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 
 /*

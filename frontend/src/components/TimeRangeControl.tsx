@@ -1,9 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-
-import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
-
+import { MenuItem, Select } from '@material-ui/core';
 import { TIME_RANGES, TIME_RANGE_ALL_DAY } from '../UIConstants';
 import { dateQueryFromDateRangeParams } from '../routesMap';
 import { updateQuery } from '../actions';

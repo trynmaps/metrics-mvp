@@ -15,18 +15,19 @@ import { connect } from 'react-redux';
 import { Map, TileLayer } from 'react-leaflet';
 import L, { DomEvent } from 'leaflet';
 import Control from 'react-leaflet-control';
-import Grid from '@material-ui/core/Grid';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Checkbox from '@material-ui/core/Checkbox';
-import Select from '@material-ui/core/Select';
-import MenuItem from '@material-ui/core/MenuItem';
-import Button from '@material-ui/core/Button';
-import FormControl from '@material-ui/core/FormControl';
-import InputLabel from '@material-ui/core/InputLabel';
-import SingleDateControl from '../components/SingleDateControl';
-import TimeRangeControl from '../components/TimeRangeControl';
+import {
+  Grid,
+  List,
+  ListItem,
+  FormControlLabel,
+  Checkbox,
+  Select,
+  MenuItem,
+  Button,
+  FormControl,
+  InputLabel,
+} from '@material-ui/core';
+import { SingleDateControl, TimeRangeControl } from 'components';
 
 import { fetchRoutes } from '../actions';
 import {

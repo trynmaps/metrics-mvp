@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { getHistogramChartData } from '../helpers/graphData';
-import { renderDateRange } from '../helpers/dateTime';
+import { getHistogramChartData, renderDateRange } from 'helpers';
 import SimpleVerticalRectChart from './SimpleVerticalRectChart';
 import { CHART_COLORS } from '../UIConstants';
 

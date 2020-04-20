@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Moment from 'moment';
-import { CHART_COLORS } from '../UIConstants';
 import SimpleLineMarkChart from './SimpleLineMarkChart';
+import { CHART_COLORS } from '../UIConstants';
 
 function getMedianServiceFrequencyByDayChartData(byDayData, property) {
   return byDayData

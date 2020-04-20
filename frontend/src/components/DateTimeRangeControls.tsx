@@ -1,8 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import FormControl from '@material-ui/core/FormControl';
-import Tooltip from '@material-ui/core/Tooltip';
-import InputLabel from '@material-ui/core/InputLabel';
+import { FormControl, Tooltip, InputLabel } from '@material-ui/core';
 import Navlink from 'redux-first-router-link';
 import BackspaceIcon from '@material-ui/icons/Backspace';
 import AddCircleIcon from '@material-ui/icons/AddCircle';

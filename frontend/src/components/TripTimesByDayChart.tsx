@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
+import { connect } from 'react-redux';
 import {
   FormControl,
   FormControlLabel,
   Radio,
   Typography,
 } from '@material-ui/core';
-import { connect } from 'react-redux';
 import Moment from 'moment';
-import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
-import { getPercentileValue } from '../helpers/graphData';
+import { getPercentileValue } from 'helpers';
 import SimpleVerticalBarChart from './SimpleVerticalBarChart';
+import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
 import '../../node_modules/react-vis/dist/style.css';
 
 const AVERAGE_TIME = 'average_time';

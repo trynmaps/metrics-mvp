@@ -1,11 +1,10 @@
 /* eslint-disable react/prop-types */
 import React, { useState } from 'react';
 import { connect } from 'react-redux';
-import { makeStyles } from '@material-ui/core/styles';
-import FormControl from '@material-ui/core/FormControl';
 import Navlink from 'redux-first-router-link';
+import { makeStyles, FormControl } from '@material-ui/core';
 import BackspaceIcon from '@material-ui/icons/Backspace';
-import { getDownstreamStopIds } from '../helpers/mapGeometry';
+import { getDownstreamStopIds } from 'helpers';
 import ReactSelect from './ReactSelect';
 import DateTimeRangeControls from './DateTimeRangeControls';
 

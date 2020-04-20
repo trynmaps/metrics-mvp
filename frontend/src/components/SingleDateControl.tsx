@@ -1,8 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-
 import { TextField } from '@material-ui/core';
-
 import { updateQuery } from '../actions';
 import { dateQueryFromDateRangeParams } from '../routesMap';
 

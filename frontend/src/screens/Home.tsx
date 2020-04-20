@@ -1,5 +1,4 @@
 import React from 'react';
-
 import Navlink from 'redux-first-router-link';
 import { connect } from 'react-redux';
 

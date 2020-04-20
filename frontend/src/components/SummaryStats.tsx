@@ -1,7 +1,5 @@
 import React from 'react';
-
 import { connect } from 'react-redux';
-
 import RouteSummary from './RouteSummary';
 import TripSummary from './TripSummary';
 

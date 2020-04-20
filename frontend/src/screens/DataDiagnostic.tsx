@@ -1,9 +1,6 @@
 import React, { useEffect } from 'react';
-
 import { connect } from 'react-redux';
-
-import QuadrantChart from '../components/QuadrantChart';
-
+import { QuadrantChart } from 'components';
 import { fetchRoutes, handleGraphParams } from '../actions';
 
 /**

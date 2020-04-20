@@ -3,6 +3,7 @@
 /* Note: Importing MomentTZ adds new methods to Moment.  MomentTZ is not meant to be used directly. */
 
 import React, { Fragment, useState, useEffect } from 'react';
+import { connect } from 'react-redux';
 import {
   XYPlot,
   HorizontalGridLines,
@@ -15,16 +16,15 @@ import {
   Borders,
 } from 'react-vis';
 import '../../node_modules/react-vis/dist/style.css';
-import { connect } from 'react-redux';
 import { Radio, FormControl, FormControlLabel } from '@material-ui/core';
 import Moment from 'moment';
 // eslint-disable-next-line
 import MomentTZ from 'moment-timezone/builds/moment-timezone-with-data-10-year-range'; // this augments Moment
 import * as d3 from 'd3';
+import { metersToMiles } from 'helpers';
 import { fetchArrivals } from '../actions';
 import { getAgency } from '../config';
 import { DWELL_THRESHOLD_SECS } from '../UIConstants';
-import { metersToMiles } from '../helpers/routeCalculations';
 
 interface Props {
   [key: string]: any;

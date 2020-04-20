@@ -1,10 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Table, TableBody, TableHead } from '@material-ui/core';
+import { metersToMiles, renderDateRange } from 'helpers';
 import SummaryRow from './SummaryRow';
 import SummaryHeaderRow from './SummaryHeaderRow';
-import { metersToMiles } from '../helpers/routeCalculations';
-import { renderDateRange } from '../helpers/dateTime';
 
 /*
  * Renders the Summary tab on the RouteScreen when a route and optional direction are selected,

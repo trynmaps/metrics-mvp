@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { connect } from 'react-redux';
 import {
   XYPlot,
   HorizontalGridLines,
@@ -13,11 +13,8 @@ import {
 } from 'react-vis';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import '../../node_modules/react-vis/dist/style.css';
-
-import { connect } from 'react-redux';
-
-import Typography from '@material-ui/core/Typography';
-import { metersToMiles } from '../helpers/routeCalculations';
+import { Typography } from '@material-ui/core';
+import { metersToMiles } from 'helpers';
 
 /**
  * Returns an array of {x: stop index, y: time} objects for

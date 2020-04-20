@@ -1,5 +1,5 @@
 import React, { Component, createRef, Fragment } from 'react';
-import Button from '@material-ui/core/Button';
+import { Button, Snackbar } from '@material-ui/core';
 import GpsIcon from '@material-ui/icons/GpsFixed';
 import { connect } from 'react-redux';
 import {
@@ -12,20 +12,17 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import Control from 'react-leaflet-control';
-import { Snackbar } from '@material-ui/core';
 import {
   getDownstreamStopIds,
   getTripPoints,
   isInServiceArea,
-} from '../helpers/mapGeometry';
-import {
   filterRoutes,
   milesBetween,
   getRouteColor,
-} from '../helpers/routeCalculations';
+} from 'helpers';
+import MapShield from './MapShield';
 import { handleSpiderMapClick } from '../actions';
 import { Agencies } from '../config';
-import MapShield from './MapShield';
 
 const CLICK_RADIUS_MI = 0.5; // maximum radius for stops near a point
 

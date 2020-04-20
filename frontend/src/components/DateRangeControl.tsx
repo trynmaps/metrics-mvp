@@ -1,29 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import Moment from 'moment';
-import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
-import Checkbox from '@material-ui/core/Checkbox';
-import Divider from '@material-ui/core/Divider';
-import Grid from '@material-ui/core/Grid';
-import Popover from '@material-ui/core/Popover';
-import Typography from '@material-ui/core/Typography';
-import Button from '@material-ui/core/Button';
 import { connect } from 'react-redux';
+import Moment from 'moment';
+import { Theme, makeStyles } from '@material-ui/core/styles';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-
-import FormControl from '@material-ui/core/FormControl';
-import FormGroup from '@material-ui/core/FormGroup';
-import { List, ListItem, Snackbar } from '@material-ui/core';
-import TextField from '@material-ui/core/TextField';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
-
+import {
+  List,
+  ListItem,
+  Snackbar,
+  FormGroup,
+  FormControl,
+  TextField,
+  FormControlLabel,
+  IconButton,
+  Checkbox,
+  Divider,
+  Grid,
+  Popover,
+  Typography,
+  Button,
+} from '@material-ui/core';
 import {
   allFalse,
   allTrue,
   getDaysOfTheWeekLabel,
   renderDateString,
-} from '../helpers/dateTime';
+} from 'helpers';
 
 import {
   DATE_RANGES,

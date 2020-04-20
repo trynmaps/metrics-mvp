@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import Box from '@material-ui/core/Box';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import { Box, CircularProgress } from '@material-ui/core';
 import { isLoadingRequest } from '../reducers/loadingReducer';
 
 /*

@@ -1,15 +1,16 @@
 import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
-
 import { makeStyles } from '@material-ui/core/styles';
 import { AppBar, Tab, Tabs, Box, Paper, Grid } from '@material-ui/core';
-import MapStops from '../components/MapStops';
-import ControlPanel from '../components/ControlPanel';
-import SummaryStats from '../components/SummaryStats';
-import TripTimesStats from '../components/TripTimesStats';
-import ServiceFrequencyStats from '../components/ServiceFrequencyStats';
-import OnTimePerformanceStats from '../components/OnTimePerformanceStats';
-import MareyChart from '../components/MareyChart';
+import {
+  MapStops,
+  ControlPanel,
+  SummaryStats,
+  TripTimesStats,
+  ServiceFrequencyStats,
+  OnTimePerformanceStats,
+  MareyChart,
+} from 'components';
 import { fetchRoutes } from '../actions';
 
 const useStyles = makeStyles(theme => ({

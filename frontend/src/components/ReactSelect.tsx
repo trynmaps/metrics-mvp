@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Select, { components } from 'react-select';
 import { makeStyles, createMuiTheme } from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
-import Fade from '@material-ui/core/Fade';
-import Grow from '@material-ui/core/Grow';
-import TextField from '@material-ui/core/TextField';
-import MenuItem from '@material-ui/core/MenuItem';
+import { Paper, Fade, Grow, TextField, MenuItem } from '@material-ui/core';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 
 const transitionDuration = 350;

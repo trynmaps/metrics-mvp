@@ -1,7 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { getOnTimePercent } from '../helpers/graphData';
-import { renderDateRange, getTimeRangeShortLabel } from '../helpers/dateTime';
+import {
+  getOnTimePercent,
+  renderDateRange,
+  getTimeRangeShortLabel,
+} from 'helpers';
 import SimpleVerticalBarChart from './SimpleVerticalBarChart';
 import { CHART_COLORS } from '../UIConstants';
 

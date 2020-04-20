@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { CHART_COLORS } from '../UIConstants';
-import { renderDateRange, getTimeRangeShortLabel } from '../helpers/dateTime';
+import { renderDateRange, getTimeRangeShortLabel } from 'helpers';
 import SimpleVerticalBarChart from './SimpleVerticalBarChart';
+import { CHART_COLORS } from '../UIConstants';
 
 function getMedianServiceFrequencyByTimeRangeChartData(
   timeRangesData,

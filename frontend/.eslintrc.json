@@ -64,12 +64,15 @@
     "@typescript-eslint/no-explicit-any":"off"
   },
   "settings": {
-      "react": {
-          "pragma": "React",
-          "version": "detect"
-      },
-      "import/extensions": [
-        ".js", ".jsx", ".ts", ".tsx"
-      ]
+    "react": {
+      "pragma": "React",
+      "version": "detect"
+    },
+    "import/extensions": [
+      ".js", ".jsx", ".ts", ".tsx"
+    ],
+    "import/resolver": {
+      "typescript": {}
+    }
   }
 }

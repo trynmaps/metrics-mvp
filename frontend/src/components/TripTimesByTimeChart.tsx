@@ -6,10 +6,13 @@ import {
   Radio,
   Typography,
 } from '@material-ui/core';
-import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
-import { renderDateRange, getTimeRangeShortLabel } from '../helpers/dateTime';
+import {
+  renderDateRange,
+  getTimeRangeShortLabel,
+  getPercentileValue,
+} from 'helpers';
 import SimpleVerticalBarChart from './SimpleVerticalBarChart';
-import { getPercentileValue } from '../helpers/graphData';
+import { CHART_COLORS, PLANNING_PERCENTILE } from '../UIConstants';
 
 const AVERAGE_TIME = 'average_time';
 const PLANNING_TIME = 'planning_time';

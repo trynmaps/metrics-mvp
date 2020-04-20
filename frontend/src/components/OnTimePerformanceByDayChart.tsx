@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Moment from 'moment';
-import { getOnTimePercent } from '../helpers/graphData';
+import { getOnTimePercent } from 'helpers';
 import SimpleLineMarkChart from './SimpleLineMarkChart';
 import { CHART_COLORS } from '../UIConstants';
 

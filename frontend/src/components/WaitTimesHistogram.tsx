@@ -1,9 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { CHART_COLORS } from '../UIConstants';
-import { renderDateRange } from '../helpers/dateTime';
-import { getHistogramChartData } from '../helpers/graphData';
+import { renderDateRange, getHistogramChartData } from 'helpers';
 import SimpleVerticalRectChart from './SimpleVerticalRectChart';
+import { CHART_COLORS } from '../UIConstants';
 
 function WaitTimesHistogram(props) {
   const { tripMetrics, graphParams } = props;
