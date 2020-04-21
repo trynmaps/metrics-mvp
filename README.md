@@ -64,7 +64,7 @@ Our pull request template will request that you fill out some key fields. It'll 
 
 ### Code style
 
-This repository uses eslint to enforce a consistent style for frontend JavaScript code.
+This repository uses eslint to enforce a consistent style for frontend Typescript code.
 
 Before committing, run `dev/docker-lint.sh` (Mac/Linux) or `dev\docker-lint.bat` (Windows) to check for style errors and automatically fix formatting issues. (You will need to run `docker-compose up` or `docker-compose build` at least once before the docker-lint script will work.)
 
@@ -113,6 +113,7 @@ The build steps are defined in `cloudbuild.yaml`.
 package managers offer similar performance, we were already using NPM for backend
 package management, and the Yarn roadmap did not offer compelling
 improvements going forward.
+- **Typescript** - To enforce build time static typing and make our code more scalable.
 - **React** - Selected for popularity, simple view, and speedy virutal DOM. Code lives in the `/frontend` directory.  It was built using
 [Create React App](https://facebook.github.io/create-react-app/docs/folder-structure).
 - **Material UI** - which we use over Bootstrap since MUI doesn't rely on jQuery. It has a
@@ -122,7 +123,7 @@ popular React framework and looks great on mobile.
 - **React Hooks** - to manage interactions with state management.
 - **Functional Components** - We migrated away from ES6 React Components and toward React
 [Functional Components](https://reactjs.org/docs/components-and-props.html) due to the simpler component logic and the ability to use React Hooks that Functional Components offer.
-- **ESLint** - Linting set in the format of AirBNB Style.
+- **ESLint** - Linting set in the format of AirBNB Style + with Typescript additions.
 - **Prettier** - Code formatter to maintain standard code format for the frontend code.
 - **Husky** - Pre-commit hook to trigger Prettier auto formatting before pushing to Github.
 
