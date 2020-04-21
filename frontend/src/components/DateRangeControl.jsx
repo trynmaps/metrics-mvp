@@ -137,16 +137,8 @@ function DateRangeControl(props) {
   let j;
   const dowsUsed = [false, false, false, false, false, false, false];
   const dates = enumerateDaysBetweenDates(
-    new Date(
-      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').year(),
-      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').month(),
-      Moment(localDateRangeParams.startDate, 'YYYY-MM-DD').date(),
-    ),
-    new Date(
-      Moment(localDateRangeParams.date, 'YYYY-MM-DD').year(),
-      Moment(localDateRangeParams.date, 'YYYY-MM-DD').month(),
-      Moment(localDateRangeParams.date, 'YYYY-MM-DD').date(),
-    ),
+    Moment(localDateRangeParams.startDate, 'YYYY-MM-DD'),
+    Moment(localDateRangeParams.date, 'YYYY-MM-DD'),
   );
 
   for (j = 0; j < dates.length; j++) {
@@ -340,7 +332,6 @@ function DateRangeControl(props) {
 
   return (
     <>
-      <NoDaysSelectedAlert showAlert={!atLeastOneDaySelected} />
       <Button
         variant="outlined"
         color="inherit"
@@ -359,6 +350,8 @@ function DateRangeControl(props) {
           <ArrowDropDownIcon />
         </div>
       </Button>
+      <NoDaysSelectedAlert showAlert={!atLeastOneDaySelected} />
+
       <Popover
         id={id}
         open={open}
