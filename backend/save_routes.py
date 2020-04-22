@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     for agency in agencies:
         scraper = gtfs.GtfsScraper(agency)
-        scraper.save_routes(save_to_s3, d)
+        scraper.save_new_routes(save_to_s3, d)
 
         if args.timetables:
             timetables_updated = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)

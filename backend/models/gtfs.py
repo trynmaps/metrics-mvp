@@ -1058,7 +1058,7 @@ class GtfsScraper:
             return route_data['title']
         return sorted(routes_data, key=get_sort_key)
 
-    def save_routes(self, save_to_s3, d):
+    def save_new_routes(self, save_to_s3, d):
         agency = self.agency
         agency_id = agency.id
         routes_df = self.get_gtfs_routes()
@@ -1078,4 +1078,4 @@ class GtfsScraper:
 
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
-        routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)
+        routeconfig.new_save_routes(agency_id, routes, save_to_s3=save_to_s3)
