@@ -1100,4 +1100,4 @@ class GtfsScraper:
 
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
-        routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)
+        routeconfig.save_routes(agency_id, routes, save_to_s3=False)
