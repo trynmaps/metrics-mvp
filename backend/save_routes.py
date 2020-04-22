@@ -52,6 +52,8 @@ if __name__ == '__main__':
 
     save_to_s3 = args.s3
     d = date.today()
+    # dont forget to take this out so the date is truly today
+    # this fake date is for testing
     import datetime
     d = d + datetime.timedelta(days=3)
 

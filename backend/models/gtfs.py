@@ -1079,3 +1079,25 @@ class GtfsScraper:
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
         routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)
+
+    def save_old_routes(self, save_to_s3, d):
+        agency = self.agency
+        agency_id = agency.id
+        routes_df = self.get_gtfs_routes()
+        routes_df = self.get_active_routes(routes_df, d)
+        if len(routes_df) == 0:
+            self.errors.append((
+                f'Zero active routes for {agency_id}, the routes config was not updated. '
+                f'Ensure the GTFS is active for the given date {d}'
+            ))
+            return
+
+        routes_data = [
+            self.get_route_data(route)
+            for route in routes_df.itertuples()
+        ]
+        routes_data = self.sort_routes(routes_data)
+
+        routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
+
+        routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)
