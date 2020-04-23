@@ -50,12 +50,32 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
         'offset': int(best_offset) # distance in meters between this stop and the closest line segment of shape
     }
 
-def download_gtfs_data(agency: config.Agency, gtfs_cache_dir):
-    gtfs_url = agency.gtfs_url
+def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_old=False):
+    cache_dir = Path(gtfs_cache_dir)
+    zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
+    import os
+    if archiving_old == False:
+        gtfs_url = agency.gtfs_url
+    else:
+        '''
+        get an old GFTS file from 2020-02-19
+        https://transitfeeds.com/p/sfmta/60/20200219/download	
+        '''
+        gtfs_url = "https://transitfeeds.com/p/sfmta/60/20200219/download"
+        # need to delete existing zip file and directory in order
+        # to reuse for the archiving passes
+
+        if cache_dir.exists():	
+            import shutil
+            shutil.rmtree(cache_dir)
+            print('removed',cache_dir)
+            os.remove(zip_path)
+            print('removed',zip_path)					
+	
     if gtfs_url is None:
         raise Exception(f'agency {agency.id} does not have gtfs_url in config')
 
-    cache_dir = Path(gtfs_cache_dir)
+
     if not cache_dir.exists():
         print(f'downloading gtfs data from {gtfs_url}')
         r = requests.get(gtfs_url)
@@ -63,6 +83,7 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir):
         if r.status_code != 200:
             raise Exception(f"Error fetching {gtfs_url}: HTTP {r.status_code}: {r.text}")
 
+        ##bri## should not redefine
         zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
 
         with open(zip_path, 'wb') as f:
@@ -139,13 +160,13 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
     return False
 
 class GtfsScraper:
-    def __init__(self, agency: config.Agency):
+    def __init__(self, agency: config.Agency, archiving_old=False):
         self.agency = agency
         self.agency_id = agency_id = agency.id
         gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 
-        #download_gtfs_data(agency, gtfs_cache_dir)
-        download_old_gtfs_data(agency, gtfs_cache_dir)
+        download_gtfs_data(agency, gtfs_cache_dir, archiving_old=archiving_old)
+        #download_old_gtfs_data(agency, gtfs_cache_dir)
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
 

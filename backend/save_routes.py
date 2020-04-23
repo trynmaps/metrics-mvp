@@ -56,14 +56,12 @@ if __name__ == '__main__':
     # dont forget to take this out so the date is truly today
     # this fake date is for testing
     import datetime
-    #d = d + datetime.timedelta(days=3)
+    d = d + datetime.timedelta(days=3)
 
     errors = []
 
     for agency in agencies:
-        scraper = gtfs.GtfsScraper(agency)
-
-
+        scraper = gtfs.GtfsScraper(agency, archiving_old=False)
         scraper.save_routes(save_to_s3, d)
 		
         '''
@@ -73,8 +71,9 @@ if __name__ == '__main__':
         '''
 		##bri## set save_to_s3 to False for archived routes
         ##bri## figure out what date to really put in for d here
-        #scraper.save_old_routes(False, d)	
-        scraper.save_routes(False, d, version_date=d)			
+        #scraper.save_old_routes(False, d)
+        scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True)		
+        scraper_archiving.save_routes(False, d, version_date=d)			
 		
 
         if args.timetables:
@@ -85,6 +84,7 @@ if __name__ == '__main__':
                 compute_stats_for_dates(dates, agency, scheduled=True, save_to_s3=save_to_s3)
 
         errors += scraper.errors
+        errors += scraper_archiving.errors		
 
     if errors:
         raise Exception("\n".join(errors))
