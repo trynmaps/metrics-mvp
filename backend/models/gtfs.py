@@ -94,35 +94,6 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_old=Fals
 			
 			
 			
-
-
-def download_old_gtfs_data(agency: config.Agency, gtfs_cache_dir):
-    '''
-    get an old GFTS file from 2020-02-19
-    https://transitfeeds.com/p/sfmta/60/20200219/download	
-    '''
-    #gtfs_url = agency.gtfs_url
-    gtfs_url = "https://transitfeeds.com/p/sfmta/60/20200219/download"
-    if gtfs_url is None:
-        raise Exception(f'agency {agency.id} does not have gtfs_url in config')
-
-    cache_dir = Path(gtfs_cache_dir)
-    if not cache_dir.exists():
-        print(f'downloading gtfs data from {gtfs_url}')
-        r = requests.get(gtfs_url)
-
-        if r.status_code != 200:
-            raise Exception(f"Error fetching {gtfs_url}: HTTP {r.status_code}: {r.text}")
-
-        zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
-
-        with open(zip_path, 'wb') as f:
-            f.write(r.content)
-
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(gtfs_cache_dir)
-					
-
 def is_subsequence(smaller, bigger):
     smaller_len = len(smaller)
     bigger_len = len(bigger)

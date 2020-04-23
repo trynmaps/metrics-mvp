@@ -127,7 +127,7 @@ def get_cache_path(agency_id, version=DefaultVersion, version_date=None):
     if version_date == None:
         return f'{util.get_data_dir()}/routes_{version}_{agency_id}.json'
     else:
-        return f'{util.get_data_dir()}/routes_{version}_{agency_id}_dated_{version_date}/routes_{version}_{agency_id}_dated_{version_date}.json'
+        return f'{util.get_data_dir()}/routes_{version}_{agency_id}_{version_date}/routes_{version}_{agency_id}_{version_date}.json'
 		
 		
     ##bri##return f"{util.get_data_dir()}/datekeys_{version}_{agency_id}/datekeys_{version}_{agency_id}.json"		
