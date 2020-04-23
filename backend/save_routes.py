@@ -63,7 +63,7 @@ if __name__ == '__main__':
     for agency in agencies:
         scraper = gtfs.GtfsScraper(agency, archiving_old=False)
         scraper.save_routes(save_to_s3, d)
-		
+        errors += scraper.errors		
         '''
         use https://transitfeeds.com/api/swagger/ 
         to get old routes 
@@ -71,9 +71,17 @@ if __name__ == '__main__':
         '''
 		##bri## set save_to_s3 to False for archived routes
         ##bri## figure out what date to really put in for d here
-        scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True)		
+        archiving_url = 'https://transitfeeds.com/p/sfmta/60/20200219/download'
+        scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True, archiving_url=archiving_url)		
         #scraper_archiving.save_routes(False, d, version_date=d)	
         scraper_archiving.save_routes(False, d, version_date='2020-02-19')	
+        errors += scraper_archiving.errors			
+
+        archiving_url = 'https://transitfeeds.com/p/sfmta/60/20200409/download'
+        scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True, archiving_url=archiving_url)			
+        scraper_archiving.save_routes(False, d, version_date='2020-04-09')	
+        errors += scraper_archiving.errors	
+		
 		
 		
 
@@ -84,8 +92,8 @@ if __name__ == '__main__':
                 dates = sorted(scraper.get_services_by_date().keys())
                 compute_stats_for_dates(dates, agency, scheduled=True, save_to_s3=save_to_s3)
 
-        errors += scraper.errors
-        errors += scraper_archiving.errors		
+
+	
 
     if errors:
         raise Exception("\n".join(errors))
