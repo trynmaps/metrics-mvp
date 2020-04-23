@@ -71,9 +71,10 @@ if __name__ == '__main__':
         '''
 		##bri## set save_to_s3 to False for archived routes
         ##bri## figure out what date to really put in for d here
-        #scraper.save_old_routes(False, d)
         scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True)		
-        scraper_archiving.save_routes(False, d, version_date=d)			
+        #scraper_archiving.save_routes(False, d, version_date=d)	
+        scraper_archiving.save_routes(False, d, version_date='2020-02-19')	
+		
 		
 
         if args.timetables:
