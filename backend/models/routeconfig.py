@@ -125,7 +125,7 @@ def get_cache_path(agency_id, version=DefaultVersion, version_date=None):
     # version_date is for saving old versions of routes
     # It has nothing to do with version=DefaultVersion
     if version_date == None:
-        return f'{util.get_data_dir()}/routes_{version}_{agency_id}_notdated.json'
+        return f'{util.get_data_dir()}/routes_{version}_{agency_id}.json'
     else:
         return f'{util.get_data_dir()}/routes_{version}_{agency_id}_dated_{version_date}/routes_{version}_{agency_id}_dated_{version_date}.json'
 		
