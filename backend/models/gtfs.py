@@ -59,6 +59,8 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_old=Fals
         gtfs_url = agency.gtfs_url
     else:
         '''
+		need to set up a system for properly getting URLs for archiving routes
+		
         get an old GFTS file from 2020-02-19
         https://transitfeeds.com/p/sfmta/60/20200219/download	
         '''
