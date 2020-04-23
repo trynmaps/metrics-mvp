@@ -1,4 +1,5 @@
 import re, os, time, requests, json, boto3, gzip
+from pathlib import Path
 from . import util, config
 
 DefaultVersion = 'v3a'
@@ -195,8 +196,6 @@ def save_routes(agency_id, routes, save_to_s3=False, version_date=None):
     }, separators=(',', ':'))
 
     cache_path = get_cache_path(agency_id, version_date=version_date)
-	
-    from pathlib import Path
     cache_dir = Path(cache_path).parent
     if not cache_dir.exists():
         cache_dir.mkdir(parents = True, exist_ok = True)

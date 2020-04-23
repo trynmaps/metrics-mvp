@@ -8,6 +8,8 @@ import boto3
 import gzip
 import hashlib
 import zipfile
+import shutil
+import os
 
 from . import config, util, nextbus, routeconfig, timetables
 
@@ -53,7 +55,6 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
 def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_old=False):
     cache_dir = Path(gtfs_cache_dir)
     zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
-    import os
     if archiving_old == False:
         gtfs_url = agency.gtfs_url
     else:
@@ -66,7 +67,6 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_old=Fals
         # to reuse for the archiving passes
 
         if cache_dir.exists():	
-            import shutil
             shutil.rmtree(cache_dir)
             print('removed',cache_dir)
             os.remove(zip_path)
