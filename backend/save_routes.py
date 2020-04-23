@@ -52,18 +52,30 @@ if __name__ == '__main__':
 
     save_to_s3 = args.s3
     d = date.today()
+	##bri##
     # dont forget to take this out so the date is truly today
     # this fake date is for testing
     import datetime
-    d = d + datetime.timedelta(days=3)
+    #d = d + datetime.timedelta(days=3)
 
     errors = []
 
     for agency in agencies:
         scraper = gtfs.GtfsScraper(agency)
 
-        scraper.save_old_routes(False, d)
-        scraper.save_new_routes(save_to_s3, d)
+
+        scraper.save_routes(save_to_s3, d)
+		
+        '''
+        use https://transitfeeds.com/api/swagger/ 
+        to get old routes 
+        and cache them in date versioned folders
+        '''
+		##bri## set save_to_s3 to False for archived routes
+        ##bri## figure out what date to really put in for d here
+        #scraper.save_old_routes(False, d)	
+        scraper.save_routes(False, d, version_date=d)			
+		
 
         if args.timetables:
             timetables_updated = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)

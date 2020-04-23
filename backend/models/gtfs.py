@@ -70,6 +70,37 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir):
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(gtfs_cache_dir)
+			
+			
+			
+
+
+def download_old_gtfs_data(agency: config.Agency, gtfs_cache_dir):
+    '''
+    get an old GFTS file from 2020-02-19
+    https://transitfeeds.com/p/sfmta/60/20200219/download	
+    '''
+    #gtfs_url = agency.gtfs_url
+    gtfs_url = "https://transitfeeds.com/p/sfmta/60/20200219/download"
+    if gtfs_url is None:
+        raise Exception(f'agency {agency.id} does not have gtfs_url in config')
+
+    cache_dir = Path(gtfs_cache_dir)
+    if not cache_dir.exists():
+        print(f'downloading gtfs data from {gtfs_url}')
+        r = requests.get(gtfs_url)
+
+        if r.status_code != 200:
+            raise Exception(f"Error fetching {gtfs_url}: HTTP {r.status_code}: {r.text}")
+
+        zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
+
+        with open(zip_path, 'wb') as f:
+            f.write(r.content)
+
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(gtfs_cache_dir)
+					
 
 def is_subsequence(smaller, bigger):
     smaller_len = len(smaller)
@@ -113,7 +144,8 @@ class GtfsScraper:
         self.agency_id = agency_id = agency.id
         gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 
-        download_gtfs_data(agency, gtfs_cache_dir)
+        #download_gtfs_data(agency, gtfs_cache_dir)
+        download_old_gtfs_data(agency, gtfs_cache_dir)
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
 
@@ -1059,7 +1091,7 @@ class GtfsScraper:
             return route_data['title']
         return sorted(routes_data, key=get_sort_key)
 
-    def save_new_routes(self, save_to_s3, d):
+    def save_routes(self, save_to_s3, d, version_date=None):
         agency = self.agency
         agency_id = agency.id
         routes_df = self.get_gtfs_routes()
@@ -1079,26 +1111,4 @@ class GtfsScraper:
 
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
-        routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)
-
-    def save_old_routes(self, save_to_s3, d):
-        agency = self.agency
-        agency_id = agency.id
-        routes_df = self.get_gtfs_routes()
-        routes_df = self.get_active_routes(routes_df, d)
-        if len(routes_df) == 0:
-            self.errors.append((
-                f'Zero active routes for {agency_id}, the routes config was not updated. '
-                f'Ensure the GTFS is active for the given date {d}'
-            ))
-            return
-
-        routes_data = [
-            self.get_route_data(route)
-            for route in routes_df.itertuples()
-        ]
-        routes_data = self.sort_routes(routes_data)
-
-        routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
-
-        routeconfig.save_routes(agency_id, routes, save_to_s3=False, version_date=d)
+        routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3, version_date=version_date)
