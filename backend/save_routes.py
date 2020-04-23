@@ -70,23 +70,27 @@ if __name__ == '__main__':
         and cache them in date versioned folders
         '''
 		
-        archiving_urls = []
-        archiving_urls.append('https://transitfeeds.com/p/sfmta/60/20200219/download')
-        archiving_urls.append('https://transitfeeds.com/p/sfmta/60/20200409/download')		
+        archiving_dates = []
+        archiving_dates.append('2020-02-19')
+        archiving_dates.append('2020-04-09')
+        archiving_dates.append('2020-01-26')
+        archiving_dates.append('2020-03-28')		
+
+		
+        #archiving_urls = []
+        #archiving_urls.append('https://transitfeeds.com/p/sfmta/60/20200219/download')
+        #archiving_urls.append('https://transitfeeds.com/p/sfmta/60/20200409/download')		
 		##bri## set save_to_s3 to False for archived routes
         ##bri## figure out what date to really put in for d here
-        archiving_url = archiving_urls.pop()
-        scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True, archiving_url=archiving_url)		
-        #scraper_archiving.save_routes(False, d, version_date=d)	
-        scraper_archiving.save_routes(False, d, version_date='2020-02-19')	
-        errors += scraper_archiving.errors			
+		
+        while(len(archiving_dates) > 0):
+            archiving_date = archiving_dates.pop()
+            archiving_url = 'https://transitfeeds.com/p/sfmta/60/' + archiving_date.replace("-","") + '/download'
+            scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True, archiving_url=archiving_url)			
+            scraper_archiving.save_routes(False, d, version_date=archiving_date)	
+            errors += scraper_archiving.errors			
 
-        archiving_url = archiving_urls.pop()
-        scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True, archiving_url=archiving_url)			
-        scraper_archiving.save_routes(False, d, version_date='2020-04-09')	
-        errors += scraper_archiving.errors	
-		
-		
+
 		
 
         if args.timetables:
