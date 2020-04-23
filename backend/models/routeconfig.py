@@ -121,8 +121,8 @@ class RouteConfig:
             for s in direction['stops'] if s == stop_id
         ]
 
-def get_cache_path(agency_id, version=DefaultVersion, use_versioning=False, version_date=None):
-    # use_versioning is for saving old versions of routes
+def get_cache_path(agency_id, version=DefaultVersion, version_date=None):
+    # version_date is for saving old versions of routes
     # It has nothing to do with version=DefaultVersion
     if version_date == None:
         return f'{util.get_data_dir()}/routes_{version}_{agency_id}_notdated.json'
@@ -188,21 +188,13 @@ def get_route_config(agency_id, route_id, version=DefaultVersion):
             return route
     return None
 
-def save_routes(agency_id, routes, save_to_s3=False, use_versioning=False, version_date=None):
+def save_routes(agency_id, routes, save_to_s3=False, version_date=None):
     data_str = json.dumps({
         'version': DefaultVersion,
         'routes': [route.data for route in routes]
     }, separators=(',', ':'))
 
-    cache_path = get_cache_path(agency_id, use_versioning=use_versioning, version_date=version_date)
-
-    print(use_versioning)
-    ##bri##
-    #if(use_versioning == True):
-     #   cache_path = f'{util.get_data_dir()}/routes_{agency_id}_hey.json'
-    ##bri##exit()##bri##
-    #print(cache_path)
-    ##bri##exit()
+    cache_path = get_cache_path(agency_id, version_date=version_date)
 	
     from pathlib import Path
     cache_dir = Path(cache_path).parent
