@@ -261,7 +261,8 @@ class GtfsScraper:
         agency_id = self.agency_id
 
         dates_map = self.get_services_by_date()
-
+        ##bri##  print('here\n\n\n',dates_map)
+        ##bri##  exit()
         #
         # Typically, many dates have identical scheduled timetables (with times relative to midnight on that date).
         # Instead of storing redundant timetables for each date, store one timetable per route for each unique set of service_ids.
@@ -1100,4 +1101,4 @@ class GtfsScraper:
 
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
-        routeconfig.save_routes(agency_id, routes, save_to_s3=False)
+        routeconfig.save_routes(agency_id, routes, save_to_s3=False, use_versioning=True, version_date=d)
