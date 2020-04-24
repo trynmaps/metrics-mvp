@@ -3,7 +3,7 @@ from compute_stats import compute_stats_for_dates
 import argparse
 from datetime import date
 import requests
-from secrets import transitfeeds_api_key
+from secrets import transitfeeds_api_key # you may have to create this
 
 # Downloads and parses the GTFS specification
 # and saves the configuration for all routes to S3.
@@ -80,8 +80,6 @@ if __name__ == '__main__':
 		
         '''
 
-
-		
         while(len(archiving_dates) > 0):
             archiving_date = archiving_dates.pop()
             archiving_url = archiving_urls.pop()
@@ -96,8 +94,6 @@ if __name__ == '__main__':
                 dates = sorted(scraper.get_services_by_date().keys())
                 compute_stats_for_dates(dates, agency, scheduled=True, save_to_s3=save_to_s3)
 
-
-	
 
     if errors:
         raise Exception("\n".join(errors))
