@@ -70,7 +70,7 @@ if __name__ == '__main__':
         archiving_dates[i] = archiving_dates[i][:4]+'-'+archiving_dates[i][4:6]+'-'+archiving_dates[i][6:]
 	
     for agency in agencies:
-        scraper = gtfs.GtfsScraper(agency, archiving_old=False)
+        scraper = gtfs.GtfsScraper(agency, archiving_url=None)
         scraper.save_routes(save_to_s3, d)
         errors += scraper.errors		
         '''
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         while(len(archiving_dates) > 0):
             archiving_date = archiving_dates.pop()
             archiving_url = archiving_urls.pop()
-            scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True, archiving_url=archiving_url)			
+            scraper_archiving = gtfs.GtfsScraper(agency, archiving_url=archiving_url)			
             scraper_archiving.save_routes(False, d, version_date=archiving_date)	
             errors += scraper_archiving.errors			
 

@@ -52,25 +52,17 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
         'offset': int(best_offset) # distance in meters between this stop and the closest line segment of shape
     }
 
-def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_old=False, archiving_url=None):
+def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_url=None):
     cache_dir = Path(gtfs_cache_dir)
     zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
-    if archiving_old == False:
+    if archiving_url == None:
         gtfs_url = agency.gtfs_url
     else:
-        '''
-		need to set up a system for properly getting URLs for archiving routes
-		
-        get an old GFTS file from 2020-02-19
-        https://transitfeeds.com/p/sfmta/60/20200219/download	
-        '''
-        #####gtfs_url = "https://transitfeeds.com/p/sfmta/60/20200219/download"
         gtfs_url = archiving_url
+		
         # need to delete existing zip file and directory in order
         # to reuse for the archiving passes
-
         if cache_dir.exists():	
-            #exit()
             shutil.rmtree(cache_dir)
             print('removed',cache_dir)
             os.remove(zip_path)
@@ -93,8 +85,7 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_old=Fals
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(gtfs_cache_dir)
 			
-			
-			
+	
 def is_subsequence(smaller, bigger):
     smaller_len = len(smaller)
     bigger_len = len(bigger)
@@ -132,16 +123,14 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
     return False
 
 class GtfsScraper:
-    def __init__(self, agency: config.Agency, archiving_old=False, archiving_url=None):
+    def __init__(self, agency: config.Agency, archiving_url=None):
         self.agency = agency
         self.agency_id = agency_id = agency.id
         gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 
-        download_gtfs_data(agency, gtfs_cache_dir, archiving_old=archiving_old, archiving_url=archiving_url)
-        #download_old_gtfs_data(agency, gtfs_cache_dir)
+        download_gtfs_data(agency, gtfs_cache_dir, archiving_url=archiving_url)
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
-
         self.errors = []
         self.stop_times_by_trip = None
         self.stops_df = None
