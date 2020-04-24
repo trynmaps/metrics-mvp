@@ -2,6 +2,8 @@ from models import gtfs, config
 from compute_stats import compute_stats_for_dates
 import argparse
 from datetime import date
+import requests
+from secrets import transitfeeds_api_key
 
 # Downloads and parses the GTFS specification
 # and saves the configuration for all routes to S3.
@@ -34,7 +36,7 @@ from datetime import date
 #
 # Currently the script just overwrites the one S3 path, but this process could be extended in the future to
 # store different paths for different dates, to allow fetching historical data for route configurations.
-#
+# UPDATE: We are now saving some older routes in versioned directories in metrics-mvp/backend/data
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Save route configuration from GTFS and possibly Nextbus API')
@@ -52,14 +54,21 @@ if __name__ == '__main__':
 
     save_to_s3 = args.s3
     d = date.today()
-	##bri##
-    # dont forget to take this out so the date is truly today
-    # this fake date is for testing
-    import datetime
-    d = d + datetime.timedelta(days=3)
-
+    archive_date = date.today()
     errors = []
 
+    limit = '10'
+    urls_feed = 'https://api.transitfeeds.com/v1/getFeedVersions?key=' + transitfeeds_api_key + '&feed=sfmta%2F60&page=1&limit=' + limit + '&err=1&warn=1'
+	
+    response = requests.get(urls_feed)
+    data = response.json()
+    archiving_urls = []
+    archiving_dates = []
+    for i in range(len(data['results']['versions'])):
+        archiving_urls.append(data['results']['versions'][i]['url'])	
+        archiving_dates.append(archiving_urls[i].split('/')[6])
+        archiving_dates[i] = archiving_dates[i][:4]+'-'+archiving_dates[i][4:6]+'-'+archiving_dates[i][6:]
+	
     for agency in agencies:
         scraper = gtfs.GtfsScraper(agency, archiving_old=False)
         scraper.save_routes(save_to_s3, d)
@@ -68,30 +77,17 @@ if __name__ == '__main__':
         use https://transitfeeds.com/api/swagger/ 
         to get old routes 
         and cache them in date versioned folders
+		
         '''
-		
-        archiving_dates = []
-        archiving_dates.append('2020-02-19')
-        archiving_dates.append('2020-04-09')
-        archiving_dates.append('2020-01-26')
-        archiving_dates.append('2020-03-28')		
 
-		
-        #archiving_urls = []
-        #archiving_urls.append('https://transitfeeds.com/p/sfmta/60/20200219/download')
-        #archiving_urls.append('https://transitfeeds.com/p/sfmta/60/20200409/download')		
-		##bri## set save_to_s3 to False for archived routes
-        ##bri## figure out what date to really put in for d here
+
 		
         while(len(archiving_dates) > 0):
             archiving_date = archiving_dates.pop()
-            archiving_url = 'https://transitfeeds.com/p/sfmta/60/' + archiving_date.replace("-","") + '/download'
+            archiving_url = archiving_urls.pop()
             scraper_archiving = gtfs.GtfsScraper(agency, archiving_old=True, archiving_url=archiving_url)			
             scraper_archiving.save_routes(False, d, version_date=archiving_date)	
             errors += scraper_archiving.errors			
-
-
-		
 
         if args.timetables:
             timetables_updated = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)

@@ -70,6 +70,7 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_old=Fals
         # to reuse for the archiving passes
 
         if cache_dir.exists():	
+            #exit()
             shutil.rmtree(cache_dir)
             print('removed',cache_dir)
             os.remove(zip_path)
