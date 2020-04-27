@@ -67,6 +67,7 @@ if __name__ == '__main__':
 	
         if gtfs_date is None:
             # save the normal way, downloading the most recent GTFS file
+            # should probably not be using both date_to_use and gtfs_date_to_use
             date_to_use=date.today()
             gtfs_date_to_use=date.today()
             gtfs_path = None
