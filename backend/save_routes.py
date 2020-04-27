@@ -1,8 +1,9 @@
-from models import gtfs, config
+from models import gtfs, config, util
 from compute_stats import compute_stats_for_dates
 import argparse
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import requests
+from pathlib import Path
 from secrets import transitfeeds_api_key # you may have to create this
 
 # Downloads and parses the GTFS specification
@@ -70,11 +71,29 @@ if __name__ == '__main__':
         else:
             # save with date suffix, using the GTFS file provided
             save_to_s3=False
-            date_to_use=datetime.strptime(gtfs_date, "%Y-%m-%d").date()			
+            date_to_use=datetime.strptime(gtfs_date, "%Y-%m-%d").date()	
+            
+            gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
+
+
+            # check if this zip file exists
+            loops = 0
+            max_loops = 365
+            gtfs_date_to_use = gtfs_date
+            while Path(gtfs_path).is_file() == False and loops < max_loops:
+            
+                # go back one day and re-represent date as a string
+                gtfs_date_to_use = (datetime.strptime(gtfs_date_to_use, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d') 		
+                gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date_to_use}.zip'
+                gtfs_cache_dir_to_use = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date_to_use}.zip'
+                
+                loops += 1
+
+            
 
         # save the routes
-        scraper = gtfs.GtfsScraper(agency, gtfs_date=gtfs_date)		
-        scraper.save_routes(save_to_s3, date_to_use, version_date=gtfs_date)	
+        scraper = gtfs.GtfsScraper(agency, gtfs_date=gtfs_date_to_use)		
+        scraper.save_routes(save_to_s3, date_to_use, version_date=gtfs_date_to_use)	
         errors += scraper.errors
 			
 			

@@ -54,8 +54,6 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
     }
 		
 
-	
-# dont forget to refactor to remove repetition with download_gtfs_data
 def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_date=None):
     if gtfs_date == None:
         cache_dir = Path(gtfs_cache_dir)
@@ -93,6 +91,7 @@ def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_date=None):
             # go back one day and re-represent date as a string
             gtfs_date_to_use = (datetime.strptime(gtfs_date_to_use, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d') 		
             gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date_to_use}.zip'
+            gtfs_cache_dir_to_use = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date_to_use}.zip'
 		    
             loops += 1
 			
@@ -291,8 +290,6 @@ class GtfsScraper:
         agency_id = self.agency_id
 
         dates_map = self.get_services_by_date()
-        ##bri##  print('here\n\n\n',dates_map)
-        ##bri##  exit()
         #
         # Typically, many dates have identical scheduled timetables (with times relative to midnight on that date).
         # Instead of storing redundant timetables for each date, store one timetable per route for each unique set of service_ids.
