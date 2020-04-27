@@ -68,6 +68,8 @@ if __name__ == '__main__':
         if gtfs_date is None:
             # save the normal way, downloading the most recent GTFS file
             date_to_use=date.today()
+            gtfs_date_to_use=date.today()
+            gtfs_path = None
         else:
             # save with date suffix, using the GTFS file provided
             save_to_s3=False
