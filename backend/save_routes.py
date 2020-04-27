@@ -60,12 +60,17 @@ if __name__ == '__main__':
 
     errors = []
 	
+	# should probably change things so we supply gtfs_path 
+	# instead of archiving_date
+	
     for agency in agencies:
         if archiving_date is None:
+            # save the normal way, downloading the most recent GTFS file
             scraper = gtfs.GtfsScraper(agency)
             scraper.save_routes(save_to_s3, d)
             errors += scraper.errors
         else:
+            # save with date suffix, using the GTFS file provided
             scraper_archiving = gtfs.GtfsScraper(agency, archiving_date=archiving_date)		
             scraper_archiving.save_routes(False, datetime.strptime(archiving_date, "%Y-%m-%d").date(), version_date=archiving_date)	
             errors += scraper_archiving.errors	           		
