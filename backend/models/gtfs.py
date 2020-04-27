@@ -54,8 +54,8 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
     }
 		
 
-def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_date=None):
-    if gtfs_date == None:
+def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_path=None):
+    if gtfs_path == None:
         cache_dir = Path(gtfs_cache_dir)
         zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
         gtfs_url = agency.gtfs_url
@@ -80,7 +80,6 @@ def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_date=None):
 
     else:
         cache_dir = Path(gtfs_cache_dir)
-        gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
         zip_path = gtfs_path
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -124,12 +123,12 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
     return False
 
 class GtfsScraper:
-    def __init__(self, agency: config.Agency, gtfs_date=None):
+    def __init__(self, agency: config.Agency, gtfs_path=None):
         self.agency = agency
         self.agency_id = agency_id = agency.id
         gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 
-        get_gtfs_data(agency, gtfs_cache_dir, gtfs_date=gtfs_date)
+        get_gtfs_data(agency, gtfs_cache_dir, gtfs_path=gtfs_path)
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
         self.errors = []

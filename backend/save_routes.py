@@ -92,7 +92,8 @@ if __name__ == '__main__':
             
 
         # save the routes
-        scraper = gtfs.GtfsScraper(agency, gtfs_date=gtfs_date_to_use)		
+        #scraper = gtfs.GtfsScraper(agency, gtfs_date=gtfs_date_to_use)
+        scraper = gtfs.GtfsScraper(agency, gtfs_path=gtfs_path)		
         scraper.save_routes(save_to_s3, date_to_use, version_date=gtfs_date_to_use)	
         errors += scraper.errors
 			
