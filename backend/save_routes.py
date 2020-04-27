@@ -55,7 +55,6 @@ if __name__ == '__main__':
     agencies = [config.get_agency(args.agency)] if args.agency is not None else config.agencies
 
     save_to_s3 = args.s3
-    d = date.today()
     gtfs_date = args.gtfs_date 
 
     errors = []
@@ -67,19 +66,18 @@ if __name__ == '__main__':
 	
         if gtfs_date is None:
             # save the normal way, downloading the most recent GTFS file
-            date_to_use=d
+            date_to_use=date.today()
         else:
             # save with date suffix, using the GTFS file provided
             save_to_s3=False
             date_to_use=datetime.strptime(gtfs_date, "%Y-%m-%d").date()			
 
-        # saves the routes
+        # save the routes
         scraper = gtfs.GtfsScraper(agency, gtfs_date=gtfs_date)		
         scraper.save_routes(save_to_s3, date_to_use, version_date=gtfs_date)	
         errors += scraper.errors
 			
-      
-		
+			
         if args.timetables:
             timetables_updated = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)
 
