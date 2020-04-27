@@ -44,11 +44,11 @@ if __name__ == '__main__':
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
     parser.add_argument('--timetables', dest='timetables', action='store_true', help='also save timetables')
     parser.add_argument('--scheduled-stats', dest='scheduled_stats', action='store_true', help='also compute scheduled stats if the timetable has new dates (requires --timetables)')
-    parser.add_argument('--archiving_date', required=False)	
+    parser.add_argument('--gtfs_date', required=False)	
     parser.set_defaults(s3=False)
     parser.set_defaults(timetables=False)
     parser.set_defaults(scheduled_stats=False)
-    parser.set_defaults(archiving_date=None)	
+    parser.set_defaults(gtfs_date=None)	
 
     args = parser.parse_args()
 
@@ -56,23 +56,23 @@ if __name__ == '__main__':
 
     save_to_s3 = args.s3
     d = date.today()
-    archiving_date = args.archiving_date 
+    gtfs_date = args.gtfs_date 
 
     errors = []
 	
 	# should probably change things so we supply gtfs_path 
-	# instead of archiving_date
+	# instead of gtfs_date
 	
     for agency in agencies:
-        if archiving_date is None:
+        if gtfs_date is None:
             # save the normal way, downloading the most recent GTFS file
             scraper = gtfs.GtfsScraper(agency)
             scraper.save_routes(save_to_s3, d)
             errors += scraper.errors
         else:
             # save with date suffix, using the GTFS file provided
-            scraper_archiving = gtfs.GtfsScraper(agency, archiving_date=archiving_date)		
-            scraper_archiving.save_routes(False, datetime.strptime(archiving_date, "%Y-%m-%d").date(), version_date=archiving_date)	
+            scraper_archiving = gtfs.GtfsScraper(agency, gtfs_date=gtfs_date)		
+            scraper_archiving.save_routes(False, datetime.strptime(gtfs_date, "%Y-%m-%d").date(), version_date=gtfs_date)	
             errors += scraper_archiving.errors	           		
       
 		

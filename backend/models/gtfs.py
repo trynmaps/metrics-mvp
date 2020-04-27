@@ -55,8 +55,8 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
 
 	
 # dont forget to refactor to remove repetition with download_gtfs_data
-def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_date=None):
-    if archiving_date == None:
+def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_date=None):
+    if gtfs_date == None:
         cache_dir = Path(gtfs_cache_dir)
         zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
         gtfs_url = agency.gtfs_url
@@ -80,17 +80,14 @@ def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_date=None):
                 zip_ref.extractall(gtfs_cache_dir)
 
     else:
-	
         cache_dir = Path(gtfs_cache_dir)
-        #zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
-        gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{archiving_date}.zip'
+        gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
         print(gtfs_path)
         print(gtfs_cache_dir)
         zip_path = gtfs_path
 
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            #zip_ref.extractall(gtfs_cache_dir+archiving_date)
             zip_ref.extractall(gtfs_cache_dir)
 				
 	
@@ -131,12 +128,12 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
     return False
 
 class GtfsScraper:
-    def __init__(self, agency: config.Agency, archiving_date=None):
+    def __init__(self, agency: config.Agency, gtfs_date=None):
         self.agency = agency
         self.agency_id = agency_id = agency.id
         gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 
-        get_gtfs_data(agency, gtfs_cache_dir, archiving_date=archiving_date)
+        get_gtfs_data(agency, gtfs_cache_dir, gtfs_date=gtfs_date)
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
         self.errors = []
