@@ -81,20 +81,6 @@ def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_date=None):
     else:
         cache_dir = Path(gtfs_cache_dir)
         gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
-		
-        # check if this zip file exists
-        loops = 0
-        max_loops = 365
-        gtfs_date_to_use = gtfs_date
-        while Path(gtfs_path).is_file() == False and loops < max_loops:
-		
-            # go back one day and re-represent date as a string
-            gtfs_date_to_use = (datetime.strptime(gtfs_date_to_use, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d') 		
-            gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date_to_use}.zip'
-            gtfs_cache_dir_to_use = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date_to_use}.zip'
-		    
-            loops += 1
-			
         zip_path = gtfs_path
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
