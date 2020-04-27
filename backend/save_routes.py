@@ -1,7 +1,7 @@
 from models import gtfs, config
 from compute_stats import compute_stats_for_dates
 import argparse
-from datetime import date
+from datetime import date, datetime
 import requests
 from secrets import transitfeeds_api_key # you may have to create this
 
@@ -83,8 +83,8 @@ if __name__ == '__main__':
         while(len(archiving_dates) > 0):
             archiving_date = archiving_dates.pop()
             archiving_url = archiving_urls.pop()
-            scraper_archiving = gtfs.GtfsScraper(agency, archiving_url=archiving_url)			
-            scraper_archiving.save_routes(False, d, version_date=archiving_date)	
+            scraper_archiving = gtfs.GtfsScraper(agency, archiving_url=archiving_url)		
+            scraper_archiving.save_routes(False, datetime.strptime(archiving_date, "%Y-%m-%d").date(), version_date=archiving_date)	
             errors += scraper_archiving.errors			
 
         if args.timetables:
