@@ -82,10 +82,7 @@ def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_date=None):
     else:
         cache_dir = Path(gtfs_cache_dir)
         gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
-        print(gtfs_path)
-        print(gtfs_cache_dir)
         zip_path = gtfs_path
-
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(gtfs_cache_dir)

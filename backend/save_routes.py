@@ -64,16 +64,20 @@ if __name__ == '__main__':
 	# instead of gtfs_date
 	
     for agency in agencies:
+	
         if gtfs_date is None:
             # save the normal way, downloading the most recent GTFS file
-            scraper = gtfs.GtfsScraper(agency)
-            scraper.save_routes(save_to_s3, d)
-            errors += scraper.errors
+            date_to_use=d
         else:
             # save with date suffix, using the GTFS file provided
-            scraper_archiving = gtfs.GtfsScraper(agency, gtfs_date=gtfs_date)		
-            scraper_archiving.save_routes(False, datetime.strptime(gtfs_date, "%Y-%m-%d").date(), version_date=gtfs_date)	
-            errors += scraper_archiving.errors	           		
+            save_to_s3=False
+            date_to_use=datetime.strptime(gtfs_date, "%Y-%m-%d").date()			
+
+        # saves the routes
+        scraper = gtfs.GtfsScraper(agency, gtfs_date=gtfs_date)		
+        scraper.save_routes(save_to_s3, date_to_use, version_date=gtfs_date)	
+        errors += scraper.errors
+			
       
 		
         if args.timetables:
