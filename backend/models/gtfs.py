@@ -51,40 +51,48 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
         'after_index': best_index, # the index of the coordinate of the shape just before this stop
         'offset': int(best_offset) # distance in meters between this stop and the closest line segment of shape
     }
-
-def download_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_url=None):
-    cache_dir = Path(gtfs_cache_dir)
-    zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
-    if archiving_url == None:
-        gtfs_url = agency.gtfs_url
-    else:
-        gtfs_url = archiving_url
 		
-        # need to delete existing zip file and directory in order
-        # to reuse for the archiving passes
-        if cache_dir.exists():	
-            shutil.rmtree(cache_dir)
-            print('removed',cache_dir)
-            os.remove(zip_path)
-            print('removed',zip_path)					
+
 	
-    if gtfs_url is None:
-        raise Exception(f'agency {agency.id} does not have gtfs_url in config')
+# dont forget to refactor to remove repetition with download_gtfs_data
+def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, archiving_date=None):
+    if archiving_date == None:
+        cache_dir = Path(gtfs_cache_dir)
+        zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
+        gtfs_url = agency.gtfs_url
+					
+	
+        if gtfs_url is None:
+            raise Exception(f'agency {agency.id} does not have gtfs_url in config')
 
 
-    if not cache_dir.exists():
-        print(f'downloading gtfs data from {gtfs_url}')
-        r = requests.get(gtfs_url)
+        if not cache_dir.exists():
+            print(f'downloading gtfs data from {gtfs_url}')
+            r = requests.get(gtfs_url)
 
-        if r.status_code != 200:
-            raise Exception(f"Error fetching {gtfs_url}: HTTP {r.status_code}: {r.text}")
+            if r.status_code != 200:
+                raise Exception(f"Error fetching {gtfs_url}: HTTP {r.status_code}: {r.text}")
 
-        with open(zip_path, 'wb') as f:
-            f.write(r.content)
+            with open(zip_path, 'wb') as f:
+                f.write(r.content)
+
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(gtfs_cache_dir)
+
+    else:
+	
+        cache_dir = Path(gtfs_cache_dir)
+        #zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
+        gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{archiving_date}.zip'
+        print(gtfs_path)
+        print(gtfs_cache_dir)
+        zip_path = gtfs_path
+
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            #zip_ref.extractall(gtfs_cache_dir+archiving_date)
             zip_ref.extractall(gtfs_cache_dir)
-			
+				
 	
 def is_subsequence(smaller, bigger):
     smaller_len = len(smaller)
@@ -123,12 +131,12 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
     return False
 
 class GtfsScraper:
-    def __init__(self, agency: config.Agency, archiving_url=None):
+    def __init__(self, agency: config.Agency, archiving_date=None):
         self.agency = agency
         self.agency_id = agency_id = agency.id
         gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 
-        download_gtfs_data(agency, gtfs_cache_dir, archiving_url=archiving_url)
+        get_gtfs_data(agency, gtfs_cache_dir, archiving_date=archiving_date)
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
         self.errors = []

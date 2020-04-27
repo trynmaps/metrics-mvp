@@ -44,9 +44,11 @@ if __name__ == '__main__':
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
     parser.add_argument('--timetables', dest='timetables', action='store_true', help='also save timetables')
     parser.add_argument('--scheduled-stats', dest='scheduled_stats', action='store_true', help='also compute scheduled stats if the timetable has new dates (requires --timetables)')
+    parser.add_argument('--archiving_date', required=False)	
     parser.set_defaults(s3=False)
     parser.set_defaults(timetables=False)
     parser.set_defaults(scheduled_stats=False)
+    parser.set_defaults(archiving_date=None)	
 
     args = parser.parse_args()
 
@@ -54,39 +56,21 @@ if __name__ == '__main__':
 
     save_to_s3 = args.s3
     d = date.today()
+    archiving_date = args.archiving_date 
 
     errors = []
-
-    limit = '10'
-    urls_feed = 'https://api.transitfeeds.com/v1/getFeedVersions?key=' + transitfeeds_api_key + '&feed=sfmta%2F60&page=1&limit=' + limit + '&err=1&warn=1'
-	
-    response = requests.get(urls_feed)
-    data = response.json()
-    archiving_urls = []
-    archiving_dates = []
-    for i in range(len(data['results']['versions'])):
-        archiving_urls.append(data['results']['versions'][i]['url'])	
-        archiving_dates.append(archiving_urls[i].split('/')[6])
-        archiving_dates[i] = archiving_dates[i][:4]+'-'+archiving_dates[i][4:6]+'-'+archiving_dates[i][6:]
 	
     for agency in agencies:
-        scraper = gtfs.GtfsScraper(agency, archiving_url=None)
-        scraper.save_routes(save_to_s3, d)
-        errors += scraper.errors		
-        '''
-        use https://transitfeeds.com/api/swagger/ 
-        to get old routes 
-        and cache them in date versioned folders
-		
-        '''
-
-        while(len(archiving_dates) > 0):
-            archiving_date = archiving_dates.pop()
-            archiving_url = archiving_urls.pop()
-            scraper_archiving = gtfs.GtfsScraper(agency, archiving_url=archiving_url)		
+        if archiving_date is None:
+            scraper = gtfs.GtfsScraper(agency)
+            scraper.save_routes(save_to_s3, d)
+            errors += scraper.errors
+        else:
+            scraper_archiving = gtfs.GtfsScraper(agency, archiving_date=archiving_date)		
             scraper_archiving.save_routes(False, datetime.strptime(archiving_date, "%Y-%m-%d").date(), version_date=archiving_date)	
-            errors += scraper_archiving.errors			
-
+            errors += scraper_archiving.errors	           		
+      
+		
         if args.timetables:
             timetables_updated = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)
 
