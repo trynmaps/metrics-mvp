@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     save_to_s3 = args.s3
     d = date.today()
-    archive_date = date.today()
+
     errors = []
 
     limit = '10'
