@@ -75,15 +75,15 @@ def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_path=None):
             with open(zip_path, 'wb') as f:
                 f.write(r.content)
 
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                zip_ref.extractall(gtfs_cache_dir)
+            #with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            #    zip_ref.extractall(gtfs_cache_dir)
 
     else:
         cache_dir = Path(gtfs_cache_dir)
         zip_path = gtfs_path
 
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(gtfs_cache_dir)
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(gtfs_cache_dir)
 				
 	
 def is_subsequence(smaller, bigger):
