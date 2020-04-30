@@ -128,6 +128,8 @@ export default function SummaryRow(props) {
   console.log(diff, firstColumnText, secondColumnText);
   if (diff != null) {
     const absDiff = Math.abs(diff);
+    // Not sure if this should be <1 or <0.5. A number like 0.6 rounds to 1,
+    // but it's also less than 1, so both "1" and "<1" could apply.
     const diffStr = absDiff < 1 ? '< 1' : absDiff.toFixed(precision);
 
     comparisonText = `${diffStr}${unitsSuffix} ${
