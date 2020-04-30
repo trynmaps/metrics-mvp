@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 import requests
 from pathlib import Path
 from secrets import transitfeeds_api_key # you may have to create this
+import os
 
 # Downloads and parses the GTFS specification
 # and saves the configuration for all routes to S3.
@@ -75,18 +76,27 @@ if __name__ == '__main__':
             # save with date suffix, using the GTFS file provided
             save_to_s3=False
             date_to_use=datetime.strptime(gtfs_date, "%Y-%m-%d").date()	
-            
             gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
-            # check if this zip file exists
-            loops = 0
-            max_loops = 365
-            gtfs_date_to_use = gtfs_date
-            while Path(gtfs_path).is_file() == False and loops < max_loops:
-                # go back one day and re-represent date as a string
-                gtfs_date_to_use = (datetime.strptime(gtfs_date_to_use, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d') 		
-                gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date_to_use}.zip'
-                gtfs_cache_dir_to_use = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date_to_use}.zip'
-                loops += 1
+ 
+            # find most recent zip file before gtfs_date
+            best_candidate_zip_file = ""
+            best_candidate_date = datetime.today()
+            smallest_timedelta_so_far = timedelta.max
+            for candidate_zip_file in os.listdir(util.get_data_dir()):
+                if f'gtfs-{agency.id}-' in candidate_zip_file and '.zip' in candidate_zip_file:
+                    candidate_year = candidate_zip_file.split('-')[2]
+                    candidate_month = candidate_zip_file.split('-')[3]
+                    candidate_day = candidate_zip_file.split('-')[4]
+                    candidate_day = candidate_day.split(".zip")[0]
+                    candidate_date_string = candidate_year+"-"+candidate_month+"-"+candidate_day
+                    candidate_date = datetime.strptime(candidate_date_string,"%Y-%m-%d").date()
+                    if candidate_date - date_to_use <= smallest_timedelta_so_far and candidate_date <= date_to_use:
+                        best_candidate_date = candidate_date
+                        best_candidate_zip_file = candidate_zip_file
+
+            gtfs_date_to_use = best_candidate_date
+            gtfs_path = best_candidate_zip_file
+            gtfs_path = f'{util.get_data_dir()}/{best_candidate_zip_file}'
 
         # save the routes
         scraper = gtfs.GtfsScraper(agency, gtfs_path=gtfs_path)		
