@@ -45,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
     parser.add_argument('--timetables', dest='timetables', action='store_true', help='also save timetables')
     parser.add_argument('--scheduled-stats', dest='scheduled_stats', action='store_true', help='also compute scheduled stats if the timetable has new dates (requires --timetables)')
-    parser.add_argument('--gtfs_date', required=False)	
+    parser.add_argument('--date', required=False)	
     parser.set_defaults(s3=False)
     parser.set_defaults(timetables=False)
     parser.set_defaults(scheduled_stats=False)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     agencies = [config.get_agency(args.agency)] if args.agency is not None else config.agencies
 
     save_to_s3 = args.s3
-    gtfs_date = args.gtfs_date 
+    gtfs_date = args.date 
 
     errors = []
 	
