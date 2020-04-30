@@ -36,7 +36,7 @@ export default function About() {
       </p>
       <p>
         OpenTransit is an open-source project developed by volunteers at Code
-        for PDX and Code for San Francisco.
+        for PDX, Code for San Francisco, and volunteers like you from all around the world.
       </p>
     </div>
   );
