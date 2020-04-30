@@ -125,12 +125,11 @@ export default function SummaryRow(props) {
   }
 
   let comparisonText = null;
-  if (diff != null && firstColumnText !== secondColumnText) {
+  console.log(diff, firstColumnText, secondColumnText);
+  if (diff != null) {
     const absDiff = Math.abs(diff);
-    let diffStr = absDiff.toFixed(precision);
-    if (diffStr === '0') {
-      diffStr = '< 1';
-    }
+    const diffStr = absDiff < 1 ? '< 1' : absDiff.toFixed(precision);
+
     comparisonText = `${diffStr}${unitsSuffix} ${
       diff > 0 ? positiveDiffDesc : negativeDiffDesc
     }`; // ${diffPercentStr}`;
