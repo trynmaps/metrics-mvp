@@ -109,14 +109,19 @@ export default function SummaryRow(props) {
     fontSize: 16,
   };
 
-  let comparisonCellColor = 'green';
+  const COMPARISON_GOOD_COLOR = 'green';
+  const COMPARISON_BAD_COLOR = '#f07d02';
+
+  let comparisonCellColor;
   if (
     goodDiffDirection != null &&
     diff != null &&
     firstColumnText !== secondColumnText &&
     goodDiffDirection * diff < 0
   ) {
-    comparisonCellColor = '#f07d02';
+    comparisonCellColor = COMPARISON_BAD_COLOR;
+  } else {
+    comparisonCellColor = COMPARISON_GOOD_COLOR;
   }
 
   let comparisonText = null;
