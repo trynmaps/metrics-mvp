@@ -86,7 +86,7 @@ if __name__ == '__main__':
             '''
 
             recentmost_date_qualified_zip_file = ""
-            recentmost_date_qualified_date = datetime.today()
+            recentmost_date_qualified_date = gtfs_date
             smallest_timedelta_so_far = timedelta.max
             for candidate_zip_file in os.listdir(util.get_data_dir()):
                 if f'gtfs-{agency.id}-' in candidate_zip_file and '.zip' in candidate_zip_file:
