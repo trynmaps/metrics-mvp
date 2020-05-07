@@ -55,8 +55,8 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
 		
 
 def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_path=None):
+    cache_dir = Path(gtfs_cache_dir)
     if gtfs_path == None:
-        cache_dir = Path(gtfs_cache_dir)
         zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
         gtfs_url = agency.gtfs_url
 					
@@ -79,7 +79,6 @@ def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_path=None):
             #    zip_ref.extractall(gtfs_cache_dir)
 
     else:
-        cache_dir = Path(gtfs_cache_dir)
         zip_path = gtfs_path
 
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
