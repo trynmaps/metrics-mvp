@@ -6,6 +6,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import IconButton from '@material-ui/core/IconButton';
 import Popover from '@material-ui/core/Popover';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
+import green from '@material-ui/core/colors/green';
+import red from '@material-ui/core/colors/red';
 
 /*
  * Renders a row of a table that renders two columns of data
@@ -109,24 +111,18 @@ export default function SummaryRow(props) {
     fontSize: 16,
   };
 
-  const COMPARISON_GOOD_COLOR = 'green';
-  const COMPARISON_BAD_COLOR = '#f07d02';
-
-  let comparisonCellColor;
-  if (
-    goodDiffDirection != null &&
-    diff != null &&
-    firstColumnText !== secondColumnText &&
-    goodDiffDirection * diff < 0
-  ) {
-    comparisonCellColor = COMPARISON_BAD_COLOR;
-  } else {
-    comparisonCellColor = COMPARISON_GOOD_COLOR;
-  }
-
+  // Determine what to write as the comparison (which one is better and by
+  // how much)
   let comparisonText = null;
-  console.log(diff, firstColumnText, secondColumnText);
-  if (diff != null) {
+  let comparisonCellColor = null;
+
+  if (firstColumnText === secondColumnText) {
+    // the two routes' stats will appear identical, so don't write anything
+    comparisonText = null;
+  } else if (diff != null) {
+    // write something like "X mph higher"
+
+    // Determine text
     const absDiff = Math.abs(diff);
     // DESIGN DECISION:
     // Not sure if this cutoff should be <1 or <0.5. A number like 0.6
@@ -136,6 +132,16 @@ export default function SummaryRow(props) {
     comparisonText = `${diffStr}${unitsSuffix} ${
       diff > 0 ? positiveDiffDesc : negativeDiffDesc
     }`;
+
+    // Determine color
+    // const COMPARISON_EVEN_COLOR = grey[700];
+    const COMPARISON_GOOD_COLOR = green[700];
+    const COMPARISON_BAD_COLOR = red[700];
+    if (goodDiffDirection != null && goodDiffDirection * diff < 0) {
+      comparisonCellColor = COMPARISON_BAD_COLOR;
+    } else {
+      comparisonCellColor = COMPARISON_GOOD_COLOR;
+    }
   }
 
   return (
