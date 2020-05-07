@@ -61,9 +61,6 @@ if __name__ == '__main__':
 
     errors = []
 	
-	# should probably change things so we supply gtfs_path 
-	# instead of gtfs_date
-	
     for agency in agencies:
 	
         if gtfs_date is None:
