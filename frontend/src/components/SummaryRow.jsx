@@ -116,8 +116,8 @@ export default function SummaryRow(props) {
   let comparisonText = null;
   let comparisonCellColor = null;
 
-  if (firstColumnText === secondColumnText) {
-    // the two routes' stats will appear identical, so don't write anything
+  if (diff === 0) {
+    // the two routes' stats are identical, so don't write anything
     comparisonText = null;
   } else if (diff != null) {
     // write something like "X mph higher"
