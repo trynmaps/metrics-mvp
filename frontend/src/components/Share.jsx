@@ -1,9 +1,17 @@
 import React from 'react';
-import { withStyles, makeStyles } from '@material-ui/core/styles';
+import {
+  withStyles,
+  makeStyles,
+  createMuiTheme,
+} from '@material-ui/core/styles';
+import { ThemeProvider } from '@material-ui/styles';
+import grey from '@material-ui/core/colors/grey';
+import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
+import ShareIcon from '@material-ui/icons/Share';
 
 import {
   TwitterShareButton,
@@ -36,7 +44,7 @@ const StyledMenu = withStyles({
 
 const StyledMenuItem = withStyles(theme => ({
   root: {
-    '&:hover': {
+    '&:focus': {
       backgroundColor: theme.palette.primary.main,
       '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
         color: theme.palette.common.white,
@@ -45,21 +53,17 @@ const StyledMenuItem = withStyles(theme => ({
   },
 }))(MenuItem);
 
-const Share = props => {
-  const { anchorEl, handleClose } = props;
-
+function Share() {
   const shareComponents = {
     twitter: TwitterShareButton,
     reddit: RedditShareButton,
     facebook: FacebookShareButton,
   };
-
   const iconComponents = {
     twitter: TwitterIcon,
     reddit: RedditIcon,
     facebook: FacebookIcon,
   };
-
   const dropDownItems = [
     {
       shareComponent: shareComponents.twitter,
@@ -78,6 +82,15 @@ const Share = props => {
     },
   ];
 
+  const [anchorEl, setAnchorEl] = React.useState(null);
+
+  const handleClick = event => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
   const useStyles = makeStyles({
     flex: {
       display: 'flex',
@@ -86,9 +99,25 @@ const Share = props => {
   const classes = useStyles();
   const { flex } = classes;
   const url = window.location.href;
+  const theme = createMuiTheme({
+    palette: {
+      primary: { main: grey[50] },
+    },
+  });
   return (
-    <div>
+    <div style={{ display: 'flex' }}>
+      <IconButton
+        aria-controls="customized-menu"
+        aria-haspopup="true"
+        color="primary"
+        onClick={handleClick}
+      >
+        <ThemeProvider theme={theme}>
+          <ShareIcon color="primary" />
+        </ThemeProvider>
+      </IconButton>
       <StyledMenu
+        id="customized-menu"
         anchorEl={anchorEl}
         keepMounted
         open={Boolean(anchorEl)}
@@ -113,6 +142,6 @@ const Share = props => {
       </StyledMenu>
     </div>
   );
-};
+}
 
 export default Share;
