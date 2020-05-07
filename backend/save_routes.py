@@ -71,7 +71,6 @@ if __name__ == '__main__':
             gtfs_path = None
         else:
             # save with date suffix, using the GTFS file provided
-            save_to_s3=False
             date_to_use=datetime.strptime(gtfs_date, "%Y-%m-%d").date()	
             gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
  
