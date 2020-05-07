@@ -127,14 +127,15 @@ export default function SummaryRow(props) {
     // DESIGN DECISION:
     // Not sure if this cutoff should be <1 or <0.5. A number like 0.6
     // rounds to 1, but it's also less than 1, so both "1" and "<1" could apply.
-    const diffStr = absDiff < 0.5 ? '< 1' : absDiff.toFixed(precision);
+    const NEGLIGIBLE_CUTOFF = 0.5;
+    const diffStr =
+      absDiff < NEGLIGIBLE_CUTOFF ? '< 1' : absDiff.toFixed(precision);
 
     comparisonText = `${diffStr}${unitsSuffix} ${
       diff > 0 ? positiveDiffDesc : negativeDiffDesc
     }`;
 
     // Determine color
-    // const COMPARISON_EVEN_COLOR = grey[700];
     const COMPARISON_GOOD_COLOR = green[700];
     const COMPARISON_BAD_COLOR = red[700];
     if (goodDiffDirection != null && goodDiffDirection * diff < 0) {
