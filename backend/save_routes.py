@@ -74,9 +74,19 @@ if __name__ == '__main__':
             date_to_use=datetime.strptime(gtfs_date, "%Y-%m-%d").date()	
             gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
  
-            # find most recent zip file before gtfs_date
-            best_candidate_zip_file = ""
-            best_candidate_date = datetime.today()
+            ''' 
+            Find most recent zip file before gtfs_date.
+            recentmost_date_qualified_zip_file is:
+                "date qualified" and "recentmost"
+            
+            "date qualified" means the date of the file is no later than the date
+            argument given.
+            
+            "recentmost" means it is the most recent file that qualifies.
+            '''
+
+            recentmost_date_qualified_zip_file = ""
+            recentmost_date_qualified_date = datetime.today()
             smallest_timedelta_so_far = timedelta.max
             for candidate_zip_file in os.listdir(util.get_data_dir()):
                 if f'gtfs-{agency.id}-' in candidate_zip_file and '.zip' in candidate_zip_file:
@@ -87,12 +97,12 @@ if __name__ == '__main__':
                     candidate_date_string = candidate_year+"-"+candidate_month+"-"+candidate_day
                     candidate_date = datetime.strptime(candidate_date_string,"%Y-%m-%d").date()
                     if candidate_date - date_to_use <= smallest_timedelta_so_far and candidate_date <= date_to_use:
-                        best_candidate_date = candidate_date
-                        best_candidate_zip_file = candidate_zip_file
+                        recentmost_date_qualified_date = candidate_date
+                        recentmost_date_qualified_zip_file = candidate_zip_file
 
-            gtfs_date_to_use = best_candidate_date
-            gtfs_path = best_candidate_zip_file
-            gtfs_path = f'{util.get_data_dir()}/{best_candidate_zip_file}'
+            gtfs_date_to_use = recentmost_date_qualified_date
+            gtfs_path = recentmost_date_qualified_zip_file
+            gtfs_path = f'{util.get_data_dir()}/{recentmost_date_qualified_zip_file}'
 
         # save the routes
         scraper = gtfs.GtfsScraper(agency, gtfs_path=gtfs_path)		
