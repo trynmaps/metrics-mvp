@@ -1,6 +1,7 @@
 {
   "name": "metrics-mvp",
-  "version": "0.1.0",
+  "version": "0.5.0",
+  "homepage": "https://muni.opentransit.city",
   "private": true,
   "engines": {
     "yarn": "NO LONGER USED - Please use npm"
@@ -80,6 +81,5 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ],
-  "homepage": "frontend/build"
+  ]
 }
