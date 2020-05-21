@@ -33,9 +33,11 @@ import os
 #}
 #
 #
-# Currently the script just overwrites the one S3 path, but this process could be extended in the future to
-# store different paths for different dates, to allow fetching historical data for route configurations.
-# UPDATE: We are now saving some older routes in versioned directories in metrics-mvp/backend/data
+# When no date is provided the script just overwrites the one S3 path 
+# representing the recentmost GTFS that an agency has made available that # is active. Providing the date adds _YYYY-MM-DD to the routes path, 
+# which would allow the backend to use versioned route files.
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Save route configuration from GTFS and possibly Nextbus API')
