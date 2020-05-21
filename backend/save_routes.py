@@ -64,14 +64,11 @@ if __name__ == '__main__':
 	
         if gtfs_date is None:
             # save the normal way, downloading the most recent GTFS file
-            # should probably not be using both date_to_use and gtfs_date_to_use
-            date_to_use=date.today()
-            gtfs_date_to_use=date.today()
-            gtfs_date = date.today()
+            gtfs_date=date.today()
             gtfs_path = None
         else:
             # save with date suffix, using the GTFS file provided
-            date_to_use=datetime.strptime(gtfs_date, "%Y-%m-%d").date()	
+            gtfs_date=datetime.strptime(gtfs_date, "%Y-%m-%d").date()	
             gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
  
             ''' 
@@ -95,7 +92,7 @@ if __name__ == '__main__':
                     candidate_day = candidate_zip_file.split('-')[4].split(".zip")[0]
                     candidate_date_string = candidate_year+"-"+candidate_month+"-"+candidate_day
                     candidate_date = datetime.strptime(candidate_date_string,"%Y-%m-%d").date()
-                    if candidate_date - date_to_use <= smallest_timedelta_so_far and candidate_date <= date_to_use:
+                    if candidate_date - gtfs_date <= smallest_timedelta_so_far and candidate_date <= gtfs_date:
                         recentmost_date_qualified_date = candidate_date
                         recentmost_date_qualified_zip_file = candidate_zip_file
 
