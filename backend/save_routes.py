@@ -92,8 +92,7 @@ if __name__ == '__main__':
                 if f'gtfs-{agency.id}-' in candidate_zip_file and '.zip' in candidate_zip_file:
                     candidate_year = candidate_zip_file.split('-')[2]
                     candidate_month = candidate_zip_file.split('-')[3]
-                    candidate_day = candidate_zip_file.split('-')[4]
-                    candidate_day = candidate_day.split(".zip")[0]
+                    candidate_day = candidate_zip_file.split('-')[4].split(".zip")[0]
                     candidate_date_string = candidate_year+"-"+candidate_month+"-"+candidate_day
                     candidate_date = datetime.strptime(candidate_date_string,"%Y-%m-%d").date()
                     if candidate_date - date_to_use <= smallest_timedelta_so_far and candidate_date <= date_to_use:
