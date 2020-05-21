@@ -122,13 +122,11 @@ class RouteConfig:
             for s in direction['stops'] if s == stop_id
         ]
 
-def get_cache_path(agency_id, version=DefaultVersion, version_date=None):
-    # version_date is for saving old versions of routes
-    # It has nothing to do with version=DefaultVersion
-    if version_date == None:
+def get_cache_path(agency_id, version=DefaultVersion, gtfs_date=None):
+    if gtfs_date == None:
         return f'{util.get_data_dir()}/routes_{version}_{agency_id}.json'
 
-    return f'{util.get_data_dir()}/routes_{version}_{agency_id}_{version_date}/routes_{version}_{agency_id}_{version_date}.json'
+    return f'{util.get_data_dir()}/routes_{version}_{agency_id}_{gtfs_date}/routes_{version}_{agency_id}_{gtfs_date}.json'
 		
 		
 
@@ -187,13 +185,13 @@ def get_route_config(agency_id, route_id, version=DefaultVersion):
             return route
     return None
 
-def save_routes(agency_id, routes, save_to_s3=False, version_date=None):
+def save_routes(agency_id, routes, save_to_s3=False, gtfs_date=None):
     data_str = json.dumps({
         'version': DefaultVersion,
         'routes': [route.data for route in routes]
     }, separators=(',', ':'))
 
-    cache_path = get_cache_path(agency_id, version_date=version_date)
+    cache_path = get_cache_path(agency_id, gtfs_date=gtfs_date)
     cache_dir = Path(cache_path).parent
     if not cache_dir.exists():
         cache_dir.mkdir(parents = True, exist_ok = True)
