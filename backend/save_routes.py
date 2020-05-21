@@ -67,6 +67,7 @@ if __name__ == '__main__':
             # should probably not be using both date_to_use and gtfs_date_to_use
             date_to_use=date.today()
             gtfs_date_to_use=date.today()
+            gtfs_date = date.today()
             gtfs_path = None
         else:
             # save with date suffix, using the GTFS file provided
@@ -98,13 +99,12 @@ if __name__ == '__main__':
                         recentmost_date_qualified_date = candidate_date
                         recentmost_date_qualified_zip_file = candidate_zip_file
 
-            gtfs_date_to_use = recentmost_date_qualified_date
-            gtfs_path = recentmost_date_qualified_zip_file
+            gtfs_date = recentmost_date_qualified_date
             gtfs_path = f'{util.get_data_dir()}/{recentmost_date_qualified_zip_file}'
 
         # save the routes
         scraper = gtfs.GtfsScraper(agency, gtfs_path=gtfs_path)		
-        scraper.save_routes(save_to_s3, date_to_use, gtfs_date=gtfs_date_to_use)	
+        scraper.save_routes(save_to_s3, gtfs_date)	
         errors += scraper.errors
 			
 			
