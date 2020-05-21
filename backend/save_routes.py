@@ -2,9 +2,6 @@ from models import gtfs, config, util
 from compute_stats import compute_stats_for_dates
 import argparse
 from datetime import date, datetime, timedelta
-#import requests
-#from pathlib import Path
-#from secrets import transitfeeds_api_key # you may have to create this
 import os
 
 # Downloads and parses the GTFS specification
