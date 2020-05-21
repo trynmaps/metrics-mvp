@@ -8,7 +8,6 @@ import boto3
 import gzip
 import hashlib
 import zipfile
-import shutil
 import os
 from datetime import datetime, timedelta
 
