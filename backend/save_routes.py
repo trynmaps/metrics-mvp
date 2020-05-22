@@ -103,7 +103,7 @@ if __name__ == '__main__':
             gtfs_date=datetime.strptime(gtfs_date, "%Y-%m-%d").date()	
             gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
  
-        gtfs_path, gtfs_date = get_recentmost_date_qualified_gtfs_path(gtfs_date)
+            gtfs_path, gtfs_date = get_recentmost_date_qualified_gtfs_path(gtfs_date)
 
         # save the routes
         scraper = gtfs.GtfsScraper(agency, gtfs_path=gtfs_path)		
