@@ -124,7 +124,11 @@ class GtfsScraper:
 
         get_gtfs_data(agency, gtfs_cache_dir, gtfs_path=gtfs_path)
 
-        self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
+        if gtfs_path is None:
+            self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
+        else:
+            self.feed = ptg.load_geo_feed(gtfs_path, {})
+            
         self.errors = []
         self.stop_times_by_trip = None
         self.stops_df = None
