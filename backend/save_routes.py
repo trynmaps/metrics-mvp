@@ -34,7 +34,7 @@ import os
 #
 #
 # When no date is provided the script just overwrites the one S3 path 
-# representing the recentmost GTFS that an agency has made available that # is active. Providing the date adds _YYYY-MM-DD to the routes path, 
+# representing the recentmost GTFS that an agency has made available that # is active. Providing the date adds -YYYY-MM-DD to the routes path, 
 # which would allow the backend to use versioned route files.
 
 

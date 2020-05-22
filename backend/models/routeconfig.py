@@ -126,7 +126,7 @@ def get_cache_path(agency_id, version=DefaultVersion, gtfs_date=None):
     if gtfs_date == None:
         return f'{util.get_data_dir()}/routes_{version}_{agency_id}.json'
 
-    return f'{util.get_data_dir()}/routes_{version}_{agency_id}_{gtfs_date}/routes_{version}_{agency_id}_{gtfs_date}.json'
+    return f'{util.get_data_dir()}/routes_{version}_{agency_id}-{gtfs_date}/routes_{version}_{agency_id}-{gtfs_date}.json'
 		
 		
 
