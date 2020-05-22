@@ -38,6 +38,38 @@ import os
 # which would allow the backend to use versioned route files.
 
 
+def get_recentmost_date_qualified_gtfs_path(gtfs_date):
+    ''' 
+    Find most recent zip file before gtfs_date.
+    recentmost_date_qualified_zip_file is:
+        "date qualified" and "recentmost"
+            
+    "date qualified" means the date of the file is no later than the date
+    argument given.
+            
+    "recentmost" means it is the most recent file that qualifies.
+    '''
+
+    recentmost_date_qualified_zip_file = ""
+    recentmost_date_qualified_date = gtfs_date
+    smallest_timedelta_so_far = timedelta.max
+    for candidate_zip_file in os.listdir(util.get_data_dir()):
+        if f'gtfs-{agency.id}-' in candidate_zip_file and '.zip' in candidate_zip_file:
+            candidate_year = candidate_zip_file.split('-')[2]
+            candidate_month = candidate_zip_file.split('-')[3]
+            candidate_day = candidate_zip_file.split('-')[4].split(".zip")[0]
+            candidate_date_string = candidate_year+"-"+candidate_month+"-"+candidate_day
+            candidate_date = datetime.strptime(candidate_date_string,"%Y-%m-%d").date()
+            if candidate_date - gtfs_date <= smallest_timedelta_so_far and candidate_date <= gtfs_date:
+                recentmost_date_qualified_date = candidate_date
+                recentmost_date_qualified_zip_file = candidate_zip_file
+
+    gtfs_date = recentmost_date_qualified_date
+    gtfs_path = f'{util.get_data_dir()}/{recentmost_date_qualified_zip_file}'
+    if recentmost_date_qualified_zip_file == "":
+        print("an active GTFS for this date was not found")
+        raise SystemExit
+    return gtfs_path, gtfs_date
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Save route configuration from GTFS and possibly Nextbus API')
@@ -71,33 +103,7 @@ if __name__ == '__main__':
             gtfs_date=datetime.strptime(gtfs_date, "%Y-%m-%d").date()	
             gtfs_path = f'{util.get_data_dir()}/gtfs-{agency.id}-{gtfs_date}.zip'
  
-            ''' 
-            Find most recent zip file before gtfs_date.
-            recentmost_date_qualified_zip_file is:
-                "date qualified" and "recentmost"
-            
-            "date qualified" means the date of the file is no later than the date
-            argument given.
-            
-            "recentmost" means it is the most recent file that qualifies.
-            '''
-
-            recentmost_date_qualified_zip_file = ""
-            recentmost_date_qualified_date = gtfs_date
-            smallest_timedelta_so_far = timedelta.max
-            for candidate_zip_file in os.listdir(util.get_data_dir()):
-                if f'gtfs-{agency.id}-' in candidate_zip_file and '.zip' in candidate_zip_file:
-                    candidate_year = candidate_zip_file.split('-')[2]
-                    candidate_month = candidate_zip_file.split('-')[3]
-                    candidate_day = candidate_zip_file.split('-')[4].split(".zip")[0]
-                    candidate_date_string = candidate_year+"-"+candidate_month+"-"+candidate_day
-                    candidate_date = datetime.strptime(candidate_date_string,"%Y-%m-%d").date()
-                    if candidate_date - gtfs_date <= smallest_timedelta_so_far and candidate_date <= gtfs_date:
-                        recentmost_date_qualified_date = candidate_date
-                        recentmost_date_qualified_zip_file = candidate_zip_file
-
-            gtfs_date = recentmost_date_qualified_date
-            gtfs_path = f'{util.get_data_dir()}/{recentmost_date_qualified_zip_file}'
+        gtfs_path, gtfs_date = get_recentmost_date_qualified_gtfs_path(gtfs_date)
 
         # save the routes
         scraper = gtfs.GtfsScraper(agency, gtfs_path=gtfs_path)		
