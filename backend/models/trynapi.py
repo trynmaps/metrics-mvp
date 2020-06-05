@@ -16,12 +16,37 @@ class CachedState:
     def add(self, route_id, cache_path):
         self.cache_paths[route_id] = cache_path
 
-    def get_for_route(self, route_id):
+    def get_for_route(self, route_id) -> pd.DataFrame:
+        if route_id not in self.cache_paths:
+            return None
+
         cache_path = self.cache_paths[route_id]
         print(f'loading state for route {route_id} from cache: {cache_path}')
-        with open(cache_path, "r") as f:
-            return json.loads(f.read())
+        buses = pd.read_csv(
+                cache_path,
+                dtype={
+                    'vid': str,
+                    'did': str,
+                },
+                float_precision='high', # keep precision for rounding lat/lon
+            ) \
+            .rename(columns={
+                'lat': 'LAT',
+                'lon': 'LON',
+                'vid': 'VID',
+                'did': 'DID',
+                'secsSinceReport': 'AGE',
+                'timestamp': 'RAW_TIME'
+            }) \
+            .reindex(['RAW_TIME', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
 
+        # adjust each observation time for the number of seconds old the GPS location was when the observation was recorded
+        buses['TIME'] = (buses['RAW_TIME'] - buses['AGE'].fillna(0)) #.astype(np.int64)
+
+        buses = buses.drop(['RAW_TIME','AGE'], axis=1)
+        buses = buses.sort_values('TIME', axis=0)
+
+        return buses
 
 def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> CachedState:
     # don't try to fetch historical vehicle data from the future
@@ -64,11 +89,16 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
     chunk_minutes = math.ceil(trynapi_max_chunk / len(route_ids))
     chunk_minutes = max(chunk_minutes, trynapi_min_chunk)
-    
+
     print(f"chunk_minutes = {chunk_minutes}")
 
     chunk_start_time = start_time
     allow_chunk_error = True # allow up to one trynapi error before raising an exception
+
+    state_cache_dir = Path(get_state_cache_dir(agency_id))
+    if not state_cache_dir.exists():
+        state_cache_dir.mkdir(parents = True, exist_ok = True)
+
     remove_route_temp_cache(agency_id)
     while chunk_start_time < end_time:
         # download trynapi data in chunks; each call return data for all routes
@@ -92,42 +122,55 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
     # if a route appears in a different list of routes
     for route_id in uncached_route_ids:
         cache_path = get_cache_path(agency_id, d, start_time, end_time, route_id)
-        states = read_temp_chunk_state(agency_id, route_id)
+
         cache_dir = Path(cache_path).parent
         if not cache_dir.exists():
             cache_dir.mkdir(parents = True, exist_ok = True)
 
-        with open(cache_path, "w") as f:
-            print(f'writing state for route {route_id} to cache: {cache_path}')
-            f.write(json.dumps(states))
+        temp_cache_path = get_route_temp_cache_path(agency_id, route_id)
+        if not os.path.exists(temp_cache_path):
+            # create empty cache file so that get_state doesn't need to request routes with no data again
+            # if it is called again later
+            write_csv_header(temp_cache_path)
+
+        os.rename(temp_cache_path, cache_path)
 
         state.add(route_id, cache_path)
-    remove_route_temp_cache(agency_id)
+
     return state
 
 
-def validate_agency_route_path_attributes(agency_id: str, route_id: str):
+def validate_agency_id(agency_id: str):
     if re.match('^[\w\-]+$', agency_id) is None:
         raise Exception(f"Invalid agency: {agency_id}")
+
+def validate_agency_route_path_attributes(agency_id: str, route_id: str):
+    validate_agency_id(agency_id)
 
     if re.match('^[\w\-]+$', route_id) is None:
         raise Exception(f"Invalid route id: {route_id}")
 
-
-def get_route_temp_cache_path(agency_id: str, route_id: str) -> str:
-    validate_agency_route_path_attributes(agency_id, route_id)
-    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) 
+def get_state_cache_dir(agency_id):
+    validate_agency_id(agency_id)
+    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     return os.path.join(
         source_dir,
         'data',
-        f"state_v2_{agency_id}/state_{agency_id}_{route_id}_temp_cache.csv",
+        f"state_v2_{agency_id}",
     )
 
+def get_route_temp_cache_path(agency_id: str, route_id: str) -> str:
+    validate_agency_route_path_attributes(agency_id, route_id)
+    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    return os.path.join(
+        get_state_cache_dir(agency_id),
+        f"state_{agency_id}_{route_id}_temp_cache.csv",
+    )
 
 def remove_route_temp_cache(agency_id: str):
     """Removes all files with the ending temp_cache.csv in the
     source data directory"""
-    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) 
+    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     dir = os.path.join(
         source_dir,
         'data',
@@ -137,14 +180,11 @@ def remove_route_temp_cache(agency_id: str):
         if path.endswith('_temp_cache.csv'):
             os.remove(os.path.join(dir, path))
 
-
 def get_cache_path(agency_id: str, d: date, start_time, end_time, route_id) -> str:
     validate_agency_route_path_attributes(agency_id, route_id)
-    source_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     return os.path.join(
-        source_dir,
-        'data',
-        f"state_v2_{agency_id}/{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.json",
+        get_state_cache_dir(agency_id),
+        f"{str(d)}/state_{agency_id}_{route_id}_{int(start_time)}_{int(end_time)}.csv",
     )
 
 
@@ -193,6 +233,11 @@ def get_chunk_state(
 # used for writing and reading chunk states to and from CSV files
 vehicle_keys = ['vid', 'lat', 'lon', 'did', 'secsSinceReport']
 
+def write_csv_header(path):
+    header_keys = ['timestamp'] + vehicle_keys
+    with open(path, 'w+') as chunk_out:
+        chunk_out.writelines([','.join(header_keys) + '\n'])
+
 def write_chunk_state(chunk_state, agency_id):
     # TODO - use the write functions part of PR #578
     """Writes chunks to a CSV for the given route in the given directory.
@@ -202,10 +247,10 @@ def write_chunk_state(chunk_state, agency_id):
     states = chunk_state['states']
     if len(states) == 0:
         return
-    header_keys = ['timestamp'] + vehicle_keys
+
     if not os.path.exists(path):
-        with open(path, 'w+') as chunk_out:
-            chunk_out.writelines([','.join(header_keys) + '\n'])
+        write_csv_header(path)
+
     with open(path, 'a') as chunk_out:
         chunk_lines = []
         for state in states:
@@ -217,38 +262,6 @@ def write_chunk_state(chunk_state, agency_id):
                 ])) + '\n'
                 chunk_lines.append(chunk_line)
         chunk_out.writelines(chunk_lines)
-
-
-def read_temp_chunk_state(agency_id, route_id):
-    """Reads chunk_state from temporary CSV cache for the given
-    agency_id and route_id. Returns the chunk_state as a dict,
-    or None if it does not exist."""
-    path = get_route_temp_cache_path(agency_id, route_id)
-    if not os.path.exists(path):
-        return None
-    chunk_state_dict = pd.read_csv(
-        path,
-        dtype={
-            'vid': str,
-            'did': str,
-        },
-        float_precision='high', # keep precision for rounding lat/lon
-    ).groupby('timestamp').agg(list).to_dict('index')
-    chunk_state = {'routeId': route_id, 'states': []}
-    for timestamp in chunk_state_dict:
-        vehicle_row = chunk_state_dict[timestamp]
-        state = {
-            'timestamp': timestamp,
-            'vehicles': []
-        }
-        for vehicle_idx in range(len(vehicle_row[vehicle_keys[0]])):
-            state['vehicles'].append({
-                vehicle_key: vehicle_row[vehicle_key][vehicle_idx]
-                for vehicle_key in vehicle_keys
-            })
-        chunk_state['states'].append(state)
-    return chunk_state
-
 
 def get_state_raw(agency_id, start_time, end_time, route_ids):
 

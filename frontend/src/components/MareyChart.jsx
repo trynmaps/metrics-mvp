@@ -19,7 +19,6 @@ import '../../node_modules/react-vis/dist/style.css';
 
 import { connect } from 'react-redux';
 
-import Typography from '@material-ui/core/Typography';
 import { Radio, FormControl, FormControlLabel } from '@material-ui/core';
 
 import Moment from 'moment';
@@ -73,7 +72,8 @@ function MareyChart(props) {
   const agency = getAgency(graphParams.agencyId);
   const timezoneId = agency ? agency.timezoneId : 'UTC';
 
-  const mareyChartSupported = graphParams.date === graphParams.startDate;
+  const mareyChartSupported =
+    graphParams.date === graphParams.startDate && !graphParams.secondDateRange;
 
   // Request missing arrival data lazily, only when this chart is tabbed into view.
   // This makes the app more responsive to route and date changes if we are hidden.
@@ -253,7 +253,9 @@ function MareyChart(props) {
 
   if (!mareyChartSupported) {
     return (
-      <div>The Marey chart is only available when viewing a single date.</div>
+      <div>
+        The time-distance chart is only available when viewing a single date.
+      </div>
     );
   }
 
@@ -364,7 +366,6 @@ function MareyChart(props) {
 
   return processedArrivals ? (
     <Fragment>
-      <Typography variant="h5">Marey chart</Typography>
       Vehicle runs: {series.length} <br />
       <FormControl>
         <div className="controls">
@@ -491,7 +492,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(MareyChart);
+export default connect(mapStateToProps, mapDispatchToProps)(MareyChart);

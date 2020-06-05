@@ -41,7 +41,7 @@ default_directions:
 
 `custom_directions` - an optional object that allows manually defining directions for certain routes, in order to support routes with multiple branches. Each key in this object is a route ID, and the value is an array of directions for that route, with the properties `id`, `title` (optional), `gtfs_direction_id`, `included_stop_ids` (optional), and `excluded_stop_ids` (optional).
 
-The `gtfs_direction_id`, `included_stop_ids`, and `excluded_stop_ids` properties are used to filter the shape_ids referred to by trips.txt in the GTFS feed. Each filter should match exactly one unique shape from the GTFS feed (after merging shapes with common subsequences of stops). If included_stop_ids contains multiple stop IDs, they must be listed in order.
+The `gtfs_direction_id`, `included_stop_ids`, and `excluded_stop_ids` properties are used to filter the shape_ids referred to by trips.txt in the GTFS feed. Each custom direction should match at least one shape in the GTFS feed. If a custom direction can be matched to multiple shapes, it is matched to the one associated with the most trips in the GTFS feed. If a custom direction cannot be matched to any shapes, the direction will be omitted and an exception will be raised by save_routes.py after saving the new routes file. If included_stop_ids contains multiple stop IDs, they must be listed in order.
 
 For example:
 
