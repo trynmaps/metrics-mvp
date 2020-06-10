@@ -6,11 +6,14 @@ import {
 } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
 import grey from '@material-ui/core/colors/grey';
+import {
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+} from '@material-ui/core';
 import IconButton from '@material-ui/core/IconButton';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
 import ShareIcon from '@material-ui/icons/Share';
 
 import {
@@ -105,13 +108,16 @@ function Share() {
     },
   });
   return (
-    <div style={{ display: 'flex' }}>
+    <div>
       <IconButton
         aria-controls="customized-menu"
         aria-haspopup="true"
         color="primary"
         onClick={handleClick}
       >
+        <div>
+          <Typography variant="subtitle1">SHARE</Typography>
+        </div>
         <ThemeProvider theme={theme}>
           <ShareIcon color="primary" />
         </ThemeProvider>
