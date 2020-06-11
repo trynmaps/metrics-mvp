@@ -16,16 +16,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-
       - name: Change directories
         run: cd frontend
-
       - name: Install dependencies
         run: npm ci
-
       - name: Build
         run: npm run build
-        
       - name: Deploy
         uses: reggionick/s3-deploy@v1
         with:
