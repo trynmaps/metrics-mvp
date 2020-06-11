@@ -7,11 +7,21 @@ function Home(props) {
   return (
     <div style={{ padding: '0px 20px', maxWidth: '800px' }}>
       <p>
-        <em>
-          OpenTransit is currently in development. All metrics are unverified
-          and unofficial.
-        </em>
+        <strong>Welcome to OpenTransit!</strong> This project is dedicated to
+        empowering people around the world to work with local governments to
+        improve public transit using data.
       </p>
+      <p>
+        OpenTransit provides statistics and visualizations of the performance of
+        public transit systems, such as on-time rates, service frequencies, wait
+        times, and trip times, based on historical GPS data collected from
+        transit vehicles.
+      </p>
+      <p>
+        This app is still in development, but feel free to check out our data
+        through the following tools:
+      </p>
+
       <div>
         <h3 style={{ marginBottom: '5px' }}>
           <Navlink
