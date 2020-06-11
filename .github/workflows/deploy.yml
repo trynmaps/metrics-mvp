@@ -13,8 +13,10 @@ jobs:
         steps:
             - uses: actions/checkout@v1
 
-            - name: Install dependencies
+            - name: Change directories
             run: cd frontend
+
+            - name: Install dependencies
             run: npm ci
 
             - name: Build
