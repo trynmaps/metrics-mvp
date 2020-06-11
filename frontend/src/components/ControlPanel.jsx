@@ -8,10 +8,15 @@ import BackspaceIcon from '@material-ui/icons/Backspace';
 import { getDownstreamStopIds } from '../helpers/mapGeometry';
 import ReactSelect from './ReactSelect';
 import DateTimeRangeControls from './DateTimeRangeControls';
+import Share from './Share';
 
 const useStyles = makeStyles(() => ({
   root: {
     paddingLeft: 8,
+  },
+  shareContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
   },
   formControl: {
     margin: '8px 8px 8px 0px',
@@ -159,174 +164,181 @@ function ControlPanel(props) {
 
   return (
     <div className={classes.root}>
-      <FormControl className={classes.formControl}>
-        <ReactSelect
-          onChange={onSelectRouteId}
-          inputId="route"
-          textFieldProps={{
-            label: (
-              <span style={labelStyle}>
-                Route{' '}
-                <Navlink
-                  to={{
-                    type: 'DASHBOARD',
-                    query: props.query,
-                  }}
-                >
-                  <BackspaceIcon className="clear-filter" />
-                </Navlink>
-              </span>
-            ),
-            InputLabelProps: {
-              htmlFor: 'route',
-              shrink: true,
-            },
-          }}
-          options={(routes || []).map(route => ({
-            value: route.id,
-            label: route.title,
-          }))}
-          placeholder="None"
-          value={graphParams.routeId}
-        />
-      </FormControl>
-      {selectedRoute ? (
-        <FormControl className={classes.formControl}>
-          <ReactSelect
-            onChange={onSelectDirectionId}
-            inputId="direction"
-            textFieldProps={{
-              label: (
-                <span style={labelStyle}>
-                  Direction{' '}
-                  {graphParams.directionId ? (
+      <div className={classes.shareContainer}>
+        <div>
+          <FormControl className={classes.formControl}>
+            <ReactSelect
+              onChange={onSelectRouteId}
+              inputId="route"
+              textFieldProps={{
+                label: (
+                  <span style={labelStyle}>
+                    Route{' '}
                     <Navlink
                       to={{
-                        type: 'ROUTESCREEN',
-                        payload: {
-                          ...graphParams,
-                          directionId: null,
-                          startStopId: null,
-                          endStopId: null,
-                        },
+                        type: 'DASHBOARD',
                         query: props.query,
                       }}
                     >
                       <BackspaceIcon className="clear-filter" />
                     </Navlink>
-                  ) : null}
-                </span>
-              ),
-              InputLabelProps: {
-                htmlFor: 'direction',
-                shrink: true,
-              },
-            }}
-            options={(selectedRoute.directions || []).map(direction => ({
-              value: direction.id,
-              label: direction.title,
-            }))}
-            placeholder="All"
-            value={graphParams.directionId}
-          />
-        </FormControl>
-      ) : null}
-      {selectedDirection ? (
-        <>
-          <FormControl className={classes.formControl}>
-            <ReactSelect
-              onChange={onSelectFirstStop}
-              inputId="fromstop"
-              textFieldProps={{
-                label: (
-                  <span style={labelStyle}>
-                    Origin Stop{' '}
-                    {graphParams.startStopId ? (
-                      <Navlink
-                        to={{
-                          type: 'ROUTESCREEN',
-                          payload: {
-                            ...graphParams,
-                            startStopId: null,
-                            endStopId: null,
-                          },
-                          query: props.query,
-                        }}
-                      >
-                        <BackspaceIcon className="clear-filter" />
-                      </Navlink>
-                    ) : null}
                   </span>
                 ),
                 InputLabelProps: {
-                  htmlFor: 'fromstop',
+                  htmlFor: 'route',
                   shrink: true,
                 },
               }}
-              options={directionStops.map(firstStopId => ({
-                value: firstStopId,
-                label: (
-                  selectedRoute.stops[firstStopId] || {
-                    title: firstStopId,
-                  }
-                ).title,
+              options={(routes || []).map(route => ({
+                value: route.id,
+                label: route.title,
               }))}
-              placeholder="Search..."
-              value={graphParams.startStopId}
-              onOpen={() => setAllowHover(true)}
-              onClose={handleSelectClose}
-              onItemMouseOver={onStopMouseOver}
-              onItemMouseOut={onStopMouseOut}
+              placeholder="None"
+              value={graphParams.routeId}
             />
           </FormControl>
-          <FormControl className={classes.formControl}>
-            <ReactSelect
-              onChange={onSelectSecondStop}
-              inputId="tostop"
-              textFieldProps={{
-                label: (
-                  <span style={labelStyle}>
-                    Destination Stop{' '}
-                    {graphParams.endStopId ? (
-                      <Navlink
-                        to={{
-                          type: 'ROUTESCREEN',
-                          payload: {
-                            ...graphParams,
-                            endStopId: null,
-                          },
-                          query: props.query,
-                        }}
-                      >
-                        <BackspaceIcon className="clear-filter" />
-                      </Navlink>
-                    ) : null}
-                  </span>
-                ),
-                InputLabelProps: {
-                  htmlFor: 'tostop',
-                  shrink: true,
-                },
-              }}
-              options={(secondStopList || []).map(secondStopId => ({
-                value: secondStopId,
-                label: (
-                  selectedRoute.stops[secondStopId] || {
-                    title: secondStopId,
-                  }
-                ).title,
-              }))}
-              placeholder="Search..."
-              value={graphParams.endStopId}
-              onOpen={() => setAllowHover(true)}
-              onClose={handleSelectClose}
-              onItemMouseOver={onStopMouseOver}
-              onItemMouseOut={onStopMouseOut}
-            />
-          </FormControl>
-        </>
-      ) : null}
-      <DateTimeRangeControls compareSupported />
+          {selectedRoute ? (
+            <FormControl className={classes.formControl}>
+              <ReactSelect
+                onChange={onSelectDirectionId}
+                inputId="direction"
+                textFieldProps={{
+                  label: (
+                    <span style={labelStyle}>
+                      Direction{' '}
+                      {graphParams.directionId ? (
+                        <Navlink
+                          to={{
+                            type: 'ROUTESCREEN',
+                            payload: {
+                              ...graphParams,
+                              directionId: null,
+                              startStopId: null,
+                              endStopId: null,
+                            },
+                            query: props.query,
+                          }}
+                        >
+                          <BackspaceIcon className="clear-filter" />
+                        </Navlink>
+                      ) : null}
+                    </span>
+                  ),
+                  InputLabelProps: {
+                    htmlFor: 'direction',
+                    shrink: true,
+                  },
+                }}
+                options={(selectedRoute.directions || []).map(direction => ({
+                  value: direction.id,
+                  label: direction.title,
+                }))}
+                placeholder="All"
+                value={graphParams.directionId}
+              />
+            </FormControl>
+          ) : null}
+          {selectedDirection ? (
+            <>
+              <FormControl className={classes.formControl}>
+                <ReactSelect
+                  onChange={onSelectFirstStop}
+                  inputId="fromstop"
+                  textFieldProps={{
+                    label: (
+                      <span style={labelStyle}>
+                        Origin Stop{' '}
+                        {graphParams.startStopId ? (
+                          <Navlink
+                            to={{
+                              type: 'ROUTESCREEN',
+                              payload: {
+                                ...graphParams,
+                                startStopId: null,
+                                endStopId: null,
+                              },
+                              query: props.query,
+                            }}
+                          >
+                            <BackspaceIcon className="clear-filter" />
+                          </Navlink>
+                        ) : null}
+                      </span>
+                    ),
+                    InputLabelProps: {
+                      htmlFor: 'fromstop',
+                      shrink: true,
+                    },
+                  }}
+                  options={directionStops.map(firstStopId => ({
+                    value: firstStopId,
+                    label: (
+                      selectedRoute.stops[firstStopId] || {
+                        title: firstStopId,
+                      }
+                    ).title,
+                  }))}
+                  placeholder="Search..."
+                  value={graphParams.startStopId}
+                  onOpen={() => setAllowHover(true)}
+                  onClose={handleSelectClose}
+                  onItemMouseOver={onStopMouseOver}
+                  onItemMouseOut={onStopMouseOut}
+                />
+              </FormControl>
+              <FormControl className={classes.formControl}>
+                <ReactSelect
+                  onChange={onSelectSecondStop}
+                  inputId="tostop"
+                  textFieldProps={{
+                    label: (
+                      <span style={labelStyle}>
+                        Destination Stop{' '}
+                        {graphParams.endStopId ? (
+                          <Navlink
+                            to={{
+                              type: 'ROUTESCREEN',
+                              payload: {
+                                ...graphParams,
+                                endStopId: null,
+                              },
+                              query: props.query,
+                            }}
+                          >
+                            <BackspaceIcon className="clear-filter" />
+                          </Navlink>
+                        ) : null}
+                      </span>
+                    ),
+                    InputLabelProps: {
+                      htmlFor: 'tostop',
+                      shrink: true,
+                    },
+                  }}
+                  options={(secondStopList || []).map(secondStopId => ({
+                    value: secondStopId,
+                    label: (
+                      selectedRoute.stops[secondStopId] || {
+                        title: secondStopId,
+                      }
+                    ).title,
+                  }))}
+                  placeholder="Search..."
+                  value={graphParams.endStopId}
+                  onOpen={() => setAllowHover(true)}
+                  onClose={handleSelectClose}
+                  onItemMouseOver={onStopMouseOver}
+                  onItemMouseOut={onStopMouseOut}
+                />
+              </FormControl>
+            </>
+          ) : null}
+          <DateTimeRangeControls compareSupported />
+        </div>
+        <div>
+          <Share />
+        </div>
+      </div>
     </div>
   );
 }
