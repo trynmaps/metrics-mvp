@@ -11,7 +11,7 @@ defaults:
 
 jobs:
   run:
-#    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 #    steps:
 #    - uses: actions/checkout@v1
 #    - name: Configure AWS Credentials
