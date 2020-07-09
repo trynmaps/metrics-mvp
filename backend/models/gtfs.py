@@ -116,7 +116,7 @@ class GtfsScraper:
         download_gtfs_data(agency, gtfs_cache_dir)
 
         self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
-
+        print(self.feed.routes.head())
         self.errors = []
         self.stop_times_by_trip = None
         self.stops_df = None
@@ -735,7 +735,8 @@ class GtfsScraper:
             if len(excluded_stop_ids) > 0:
                 error_message += f" excluding {','.join(excluded_stop_ids)}"
 
-            self.errors.append(error_message)
+            # Redundant custom directions shouldn't cause an exception
+            # self.errors.append(error_message)
             print(f'  {error_message}')
             return None
         elif len(matching_shapes) > 1:
@@ -753,10 +754,11 @@ class GtfsScraper:
             gtfs_shape_id=matching_shape_id,
             gtfs_direction_id=gtfs_direction_id,
             stop_ids=matching_shape['stop_ids'],
-            title=custom_direction_info.get('title', None)
+            route_id=route_id,
+            title=custom_direction_info.get('title', None),
         )
 
-    def get_default_direction_data(self, direction_id, route_trips_df):
+    def get_default_direction_data(self, direction_id, route_trips_df, route_id):
         print(f' default direction = {direction_id}')
 
         route_direction_id_values = route_trips_df['direction_id'].values
@@ -775,21 +777,22 @@ class GtfsScraper:
             id=direction_id,
             gtfs_shape_id=best_shape_id,
             gtfs_direction_id=direction_id,
-            stop_ids=best_shape['stop_ids']
+            stop_ids=best_shape['stop_ids'],
+            route_id=route_id,
         )
 
-    def get_direction_data(self, id, gtfs_shape_id, gtfs_direction_id, stop_ids, title = None):
+    def get_direction_data(self, id, gtfs_shape_id, gtfs_direction_id, stop_ids, route_id, title=None):
         agency = self.agency
         if title is None:
-            default_direction_info = agency.default_directions.get(gtfs_direction_id, {})
-            custom_default_directions = agency.custom_default_directions
-            for custom_default_direction_key in custom_default_directions:
-                custom_default_direction = custom_default_directions[
-                    custom_default_direction_key
-                ]
-                if id in custom_default_direction['routes']:
-                    default_direction_info = custom_default_direction.get(gtfs_direction_id, {})
-            title_prefix = default_direction_info.get('title_prefix', None)
+            # use the first directions map each route matches.
+            title_prefix = None
+            for default_direction in agency.default_directions:
+                if 'routes' not in default_direction or route_id in default_direction['routes']:
+                    title_prefix = default_direction['directions'][id].get(
+                        'title_prefix',
+                        None,
+                    )
+                    break
 
             last_stop_id = stop_ids[-1]
             last_stop = self.get_stop_row(last_stop_id)
@@ -950,7 +953,7 @@ class GtfsScraper:
                     route_data['directions'].append(custom_direction_data)
         else:
             route_data['directions'] = [
-                self.get_default_direction_data(direction_id, route_trips_df)
+                self.get_default_direction_data(direction_id, route_trips_df, route_id)
                 for direction_id in np.unique(route_trips_df['direction_id'].values)
             ]
 
@@ -1067,7 +1070,7 @@ class GtfsScraper:
             return route_data['title']
         return sorted(routes_data, key=get_sort_key)
 
-    def save_routes(self, save_to_s3, d):
+    def save_routes(self, save_to_s3, d, included_stop_ids):
         agency = self.agency
         agency_id = agency.id
         routes_df = self.get_gtfs_routes()
@@ -1078,6 +1081,11 @@ class GtfsScraper:
                 f'Ensure the GTFS is active for the given date {d}'
             ))
             return
+
+        # Only return routes that we want to include
+        routes_df = routes_df[
+            routes_df[agency.route_id_gtfs_field].isin(included_stop_ids)
+        ]
 
         routes_data = [
             self.get_route_data(route)

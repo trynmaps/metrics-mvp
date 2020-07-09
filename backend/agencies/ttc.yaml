@@ -15,6 +15,7 @@ js_properties:
     '3',
     '4',
   ]
+  routeSortingKey: 'id'
 default_day_start_hour: 4
 custom_day_start_hours:
   - start_hour: 1 # Blue Night Network (300 series) routes run from 1:30-6 am (1:30-8am Sundays)
@@ -27,16 +28,11 @@ custom_day_start_hours:
       '301', '304', '306', '310',
     ]
 default_directions:
-  '0':
-    title_prefix: Southbound
-  '1':
-    title_prefix: Northbound
-custom_default_directions:
-  'east-west':
-    '0':
-      title_prefix: Eastbound
-    '1':
-      title_prefix: Westbound
+  - directions:
+      '0':
+        title_prefix: Eastbound
+      '1':
+        title_prefix: Westbound
     routes: [
       # subway
       '2', '3', '4',
@@ -58,6 +54,11 @@ custom_default_directions:
       '190', '191', '192', '193', '196', '198', '199', '185', '186',
       '514', 
     ]
+  - directions:
+      '0':
+        title_prefix: Southbound
+      '1':
+        title_prefix: Northbound 
 custom_directions:
   '25': # Don Mills
     - id: "25A-NB"

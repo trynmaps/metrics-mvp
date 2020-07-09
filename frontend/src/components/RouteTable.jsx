@@ -15,6 +15,7 @@ import { connect } from 'react-redux';
 import Navlink from 'redux-first-router-link';
 import { filterRoutes } from '../helpers/routeCalculations';
 import DateTimeRangeControls from './DateTimeRangeControls';
+import { Agencies } from '../config';
 
 function getComparisonFunction(order, orderBy) {
   // Sort null values to bottom regardless of ascending/descending
@@ -236,7 +237,10 @@ const useStyles = makeStyles(theme => ({
 function RouteTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
-  const [orderBy, setOrderBy] = React.useState('title');
+  const agency = Agencies[0];
+  const [orderBy, setOrderBy] = React.useState(
+    agency.routeSortingKey || 'title',
+  );
   const theme = useTheme();
 
   const { statsByRouteId } = props;
@@ -248,6 +252,7 @@ function RouteTable(props) {
   }
 
   let routes = props.routes ? filterRoutes(props.routes) : [];
+  console.log(routes);
   const spiderLines = props.spiderSelection.nearbyLines;
 
   // filter the route list down to the spider routes if needed

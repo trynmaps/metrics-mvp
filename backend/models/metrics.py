@@ -569,7 +569,7 @@ class DirectionIntervalMetrics:
 
         if first_stop_geometry is None or last_stop_geometry is None:
             raise Exception(
-                f'Missing stop geometry on route {route_id}, {direction_id}, Stop {first_stop_id} to {last_stop_id}'
+                f'Missing stop geometry on route {self.route_id}, {self.direction_id}, Stop {first_stop_id} to {last_stop_id}'
             )
 
         dist = last_stop_geometry['distance'] - first_stop_geometry['distance']

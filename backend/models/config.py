@@ -46,14 +46,12 @@ class Agency:
         # by finding the most common GTFS shape_id for each direction_id.
         self.custom_directions = conf.get('custom_directions', {})
 
-        # map of GTFS direction_id (string) to object with metadata about that direction ID.
+        # array of objects containing a directions map (GTFS direction_id (string) to object with metadata about
+        # that direction ID) and a routes list (listing the routes matched to the directions map, by default
+        # all routes are matched to the object)
         # `title_prefix` property will be prepended to the title of the direction for display in the UI.
         self.default_directions = conf.get('default_directions', {})
 
-        # map of custom default direction name to object containing a default_directions object
-        # and routes, a list of route IDs that should use this type of directions.
-        self.custom_default_directions = conf.get('custom_default_directions', {})
-    
         self.conf = conf
 
     def get_route_list(self):
