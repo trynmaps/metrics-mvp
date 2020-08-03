@@ -8,6 +8,8 @@ import boto3
 import gzip
 import hashlib
 import zipfile
+import os
+from datetime import datetime, timedelta
 
 from . import config, util, nextbus, routeconfig, timetables
 
@@ -49,13 +51,18 @@ def get_stop_geometry(stop_xy, shape_lines_xy, shape_cumulative_dist, start_inde
         'after_index': best_index, # the index of the coordinate of the shape just before this stop
         'offset': int(best_offset) # distance in meters between this stop and the closest line segment of shape
     }
+		
 
-def download_gtfs_data(agency: config.Agency, gtfs_cache_dir):
+def get_gtfs_data(agency: config.Agency, gtfs_cache_dir, gtfs_path=None):
+    cache_dir = Path(gtfs_cache_dir)
+    zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
     gtfs_url = agency.gtfs_url
+					
+	
     if gtfs_url is None:
         raise Exception(f'agency {agency.id} does not have gtfs_url in config')
 
-    cache_dir = Path(gtfs_cache_dir)
+
     if not cache_dir.exists():
         print(f'downloading gtfs data from {gtfs_url}')
         r = requests.get(gtfs_url)
@@ -63,14 +70,16 @@ def download_gtfs_data(agency: config.Agency, gtfs_cache_dir):
         if r.status_code != 200:
             raise Exception(f"Error fetching {gtfs_url}: HTTP {r.status_code}: {r.text}")
 
-        zip_path = f'{util.get_data_dir()}/gtfs-{agency.id}.zip'
-
         with open(zip_path, 'wb') as f:
             f.write(r.content)
 
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(gtfs_cache_dir)
+    if gtfs_path is not None:
+        zip_path = gtfs_path
 
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(gtfs_cache_dir)
+				
+	
 def is_subsequence(smaller, bigger):
     smaller_len = len(smaller)
     bigger_len = len(bigger)
@@ -108,15 +117,18 @@ def contains_excluded_stop(shape_stop_ids, excluded_stop_ids):
     return False
 
 class GtfsScraper:
-    def __init__(self, agency: config.Agency):
+    def __init__(self, agency: config.Agency, gtfs_path=None):
         self.agency = agency
         self.agency_id = agency_id = agency.id
         gtfs_cache_dir = f'{util.get_data_dir()}/gtfs-{agency_id}'
 
-        download_gtfs_data(agency, gtfs_cache_dir)
+        get_gtfs_data(agency, gtfs_cache_dir, gtfs_path=gtfs_path)
 
-        self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
-
+        if gtfs_path is None:
+            self.feed = ptg.load_geo_feed(gtfs_cache_dir, {})
+        else:
+            self.feed = ptg.load_geo_feed(gtfs_path, {})
+            
         self.errors = []
         self.stop_times_by_trip = None
         self.stops_df = None
@@ -261,7 +273,6 @@ class GtfsScraper:
         agency_id = self.agency_id
 
         dates_map = self.get_services_by_date()
-
         #
         # Typically, many dates have identical scheduled timetables (with times relative to midnight on that date).
         # Instead of storing redundant timetables for each date, store one timetable per route for each unique set of service_ids.
@@ -1078,4 +1089,4 @@ class GtfsScraper:
 
         routes = [routeconfig.RouteConfig(agency_id, route_data) for route_data in routes_data]
 
-        routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3)
+        routeconfig.save_routes(agency_id, routes, save_to_s3=save_to_s3, gtfs_date=d)

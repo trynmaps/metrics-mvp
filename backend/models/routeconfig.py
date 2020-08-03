@@ -1,4 +1,5 @@
 import re, os, time, requests, json, boto3, gzip
+from pathlib import Path
 from . import util, config
 
 DefaultVersion = 'v3a'
@@ -121,8 +122,13 @@ class RouteConfig:
             for s in direction['stops'] if s == stop_id
         ]
 
-def get_cache_path(agency_id, version=DefaultVersion):
-    return f'{util.get_data_dir()}/routes_{version}_{agency_id}.json'
+def get_cache_path(agency_id, version=DefaultVersion, gtfs_date=None):
+    if gtfs_date == None:
+        return f'{util.get_data_dir()}/routes_{version}_{agency_id}.json'
+
+    return f'{util.get_data_dir()}/routes_{version}_{agency_id}-{gtfs_date}/routes_{version}_{agency_id}-{gtfs_date}.json'
+		
+		
 
 def get_s3_path(agency_id, version=DefaultVersion):
     return f'routes/{version}/routes_{version}_{agency_id}.json.gz'
@@ -179,14 +185,17 @@ def get_route_config(agency_id, route_id, version=DefaultVersion):
             return route
     return None
 
-def save_routes(agency_id, routes, save_to_s3=False):
+def save_routes(agency_id, routes, save_to_s3=False, gtfs_date=None):
     data_str = json.dumps({
         'version': DefaultVersion,
         'routes': [route.data for route in routes]
     }, separators=(',', ':'))
 
-    cache_path = get_cache_path(agency_id)
-
+    cache_path = get_cache_path(agency_id, gtfs_date=gtfs_date)
+    cache_dir = Path(cache_path).parent
+    if not cache_dir.exists():
+        cache_dir.mkdir(parents = True, exist_ok = True)
+		
     with open(cache_path, "w") as f:
         f.write(data_str)
 
