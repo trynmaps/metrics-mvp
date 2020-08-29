@@ -150,6 +150,9 @@ function RouteSummary(props) {
             scheduled=""
             units="%"
             precision={0}
+            positiveDiffDesc="higher"
+            negativeDiffDesc="lower"
+            goodDiffDirection={1}
             infoContent={
               <>
                 This is the percentage of scheduled departure times where a

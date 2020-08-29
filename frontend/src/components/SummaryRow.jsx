@@ -6,6 +6,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import IconButton from '@material-ui/core/IconButton';
 import Popover from '@material-ui/core/Popover';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
+import green from '@material-ui/core/colors/green';
+import red from '@material-ui/core/colors/red';
 
 /*
  * Renders a row of a table that renders two columns of data
@@ -109,26 +111,38 @@ export default function SummaryRow(props) {
     fontSize: 16,
   };
 
-  let comparisonCellColor = 'green';
-  if (
-    goodDiffDirection != null &&
-    diff != null &&
-    firstColumnText !== secondColumnText &&
-    goodDiffDirection * diff < 0
-  ) {
-    comparisonCellColor = '#f07d02';
-  }
-
+  // Determine what to write as the comparison (which one is better and by
+  // how much)
   let comparisonText = null;
-  if (diff != null && firstColumnText !== secondColumnText) {
+  let comparisonCellColor = null;
+
+  if (diff === 0) {
+    // the two routes' stats are identical, so don't write anything
+    comparisonText = null;
+  } else if (diff != null) {
+    // write something like "X mph higher"
+
+    // Determine text
     const absDiff = Math.abs(diff);
-    let diffStr = absDiff.toFixed(precision);
-    if (diffStr === '0') {
-      diffStr = '< 1';
-    }
+    // DESIGN DECISION:
+    // Not sure if this cutoff should be <1 or <0.5. A number like 0.6
+    // rounds to 1, but it's also less than 1, so both "1" and "<1" could apply.
+    const NEGLIGIBLE_CUTOFF = 0.5;
+    const diffStr =
+      absDiff < NEGLIGIBLE_CUTOFF ? '< 1' : absDiff.toFixed(precision);
+
     comparisonText = `${diffStr}${unitsSuffix} ${
       diff > 0 ? positiveDiffDesc : negativeDiffDesc
-    }`; // ${diffPercentStr}`;
+    }`;
+
+    // Determine color
+    const COMPARISON_GOOD_COLOR = green[700];
+    const COMPARISON_BAD_COLOR = red[700];
+    if (goodDiffDirection != null && goodDiffDirection * diff < 0) {
+      comparisonCellColor = COMPARISON_BAD_COLOR;
+    } else {
+      comparisonCellColor = COMPARISON_GOOD_COLOR;
+    }
   }
 
   return (
