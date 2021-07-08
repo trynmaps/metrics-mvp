@@ -6,10 +6,11 @@ gtfs_url: http://gtfs.sfmta.com/transitdata/google_transit.zip
 route_id_gtfs_field: route_short_name
 stop_id_gtfs_field: stop_code
 default_directions:
-  '0':
-    title_prefix: Outbound
-  '1':
-    title_prefix: Inbound
+  - directions:
+      '0':
+        title_prefix: Outbound
+      '1':
+        title_prefix: Inbound
 custom_directions:
   '38':
     - id: "1-48th"

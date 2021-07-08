@@ -42,22 +42,30 @@ if __name__ == '__main__':
     parser.add_argument('--s3', dest='s3', action='store_true', help='store in s3')
     parser.add_argument('--timetables', dest='timetables', action='store_true', help='also save timetables')
     parser.add_argument('--scheduled-stats', dest='scheduled_stats', action='store_true', help='also compute scheduled stats if the timetable has new dates (requires --timetables)')
+    parser.add_argument('--routes', dest='routes', required=False, help='Comma-separated string of routes to include, otherwise include all')
     parser.set_defaults(s3=False)
     parser.set_defaults(timetables=False)
     parser.set_defaults(scheduled_stats=False)
+    parser.set_defaults(routes=None)
 
     args = parser.parse_args()
 
     agencies = [config.get_agency(args.agency)] if args.agency is not None else config.agencies
 
     save_to_s3 = args.s3
+    routes = args.routes
+
     d = date.today()
+
 
     errors = []
 
     for agency in agencies:
         scraper = gtfs.GtfsScraper(agency)
-        scraper.save_routes(save_to_s3, d)
+        include_route_ids = []
+        if routes is not None:
+            include_route_ids = routes.split(',')
+        scraper.save_routes(save_to_s3, d, include_route_ids)
 
         if args.timetables:
             timetables_updated = scraper.save_timetables(save_to_s3=save_to_s3, skip_existing=True)
