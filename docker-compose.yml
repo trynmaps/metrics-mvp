@@ -22,8 +22,12 @@ services:
       - ./backend:/app/backend
     environment:
       FLASK_DEBUG: 1
-      TRYNAPI_URL: http://tryn-api.opentransit.city
-      OPENTRANSIT_AGENCY_IDS: muni
+      TRYNAPI_URL: http://{insert_your_IP_for_local_test}:4000
+      OPENTRANSIT_AGENCY_IDS: trimet
+      TRYNAPI_MAX_CHUNK: 100
+      TRYNAPI_S3_BUCKET: "opentransit-pdx"
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
   react-dev:
     container_name: metrics-react-dev
     image: metrics-mvp_react-dev:latest

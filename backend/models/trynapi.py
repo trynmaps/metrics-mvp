@@ -71,8 +71,12 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
 
     print(f"chunk_minutes = {chunk_minutes}")
 
+    num_chunks = 1
+
     chunk_start_time = start_time
     while chunk_start_time < end_time:
+
+        print(f"chunk {num_chunks}")
 
         chunk_end_time = min(chunk_start_time + 60 * chunk_minutes, end_time)
 
@@ -104,6 +108,8 @@ def get_state(agency_id: str, d: date, start_time, end_time, route_ids) -> Cache
                 route_state_map[route_id]['states'].extend(chunk_route_state['states'])
 
         chunk_start_time = chunk_end_time
+
+        num_chunks += 1
 
     # cache state per route so we don't have to request it again if a route appears in a different list of routes
     for route_id in uncached_route_ids:
@@ -147,7 +153,7 @@ def get_state_raw(agency_id, start_time, end_time, route_ids):
           routeId
           states {{
             timestamp
-            vehicles {{ vid lat lon did secsSinceReport }}
+            vehicles {{ vehicleID latitude longitude direction secsSinceReport }}
           }}
         }}
       }}

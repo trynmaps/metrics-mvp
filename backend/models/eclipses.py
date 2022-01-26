@@ -4,14 +4,15 @@ import pandas as pd
 import numpy as np
 from . import routeconfig, util, config
 
+
 def produce_buses(route_state: dict) -> pd.DataFrame:
     buses = pd.io.json.json_normalize(route_state,
                                       record_path=['states', 'vehicles'],
                                       meta=[['states', 'timestamp']]) \
-            .rename(columns={'lat': 'LAT',
-                             'lon': 'LON',
-                             'vid': 'VID',
-                             'did': 'DID',
+            .rename(columns={'latitude': 'LAT',
+                             'longitude': 'LON',
+                             'vehicleID': 'VID',
+                             'direction': 'DID',
                              'secsSinceReport': 'AGE',
                              'states.timestamp': 'RAW_TIME'}) \
             .reindex(['RAW_TIME', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
