@@ -281,10 +281,14 @@ def compute_stats(d: date, agency: config.Agency, routes, scheduled=False, save_
         try:
             timetable = timetables.get_by_date(agency.id, route_id, d)
         except (FileNotFoundError, KeyError) as ex:
-            print(ex)
-            continue
+            if scheduled:
+                print(ex)
+                continue
+            else:
+                print(f'{ex} - skipping schedule adherence stats')
+                timetable = None
 
-        timetable_df = timetable.get_data_frame()
+        timetable_df = timetable.get_data_frame() if timetable is not None else None
 
         for stat_id in stat_ids:
             for interval_index, _ in enumerate(timestamp_intervals):
@@ -300,7 +304,7 @@ def compute_stats(d: date, agency: config.Agency, routes, scheduled=False, save_
         add_trip_time_stats_for_route(all_stats, timestamp_intervals, route_config, base_df)
         add_headway_and_wait_time_stats_for_route(all_stats, timestamp_intervals, route_config, base_df)
 
-        if not scheduled:
+        if not scheduled and timetable_df is not None:
             add_schedule_adherence_stats_for_route(all_stats, timestamp_intervals, route_config, history_df, timetable_df)
 
         t2 = time.time()
