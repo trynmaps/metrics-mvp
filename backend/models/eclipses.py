@@ -17,6 +17,8 @@ def produce_buses(route_state: dict) -> pd.DataFrame:
                              'states.timestamp': 'RAW_TIME'}) \
             .reindex(['RAW_TIME', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
 
+    buses['RAW_TIME'] = buses['RAW_TIME'] / 1000 # convert to seconds
+
     # adjust each observation time for the number of seconds old the GPS location was when the observation was recorded
     buses['TIME'] = (buses['RAW_TIME'] - buses['AGE'].fillna(0)) #.astype(np.int64)
 

@@ -25,19 +25,17 @@ class CachedState:
         buses = pd.read_csv(
                 cache_path,
                 dtype={
-                    'vid': str,
-                    'did': str,
+                    'vehicleID': str,
+                    'direction': str,
                 },
                 float_precision='high', # keep precision for rounding lat/lon
             ) \
-            .rename(columns={
-                'lat': 'LAT',
-                'lon': 'LON',
-                'vid': 'VID',
-                'did': 'DID',
-                'secsSinceReport': 'AGE',
-                'timestamp': 'RAW_TIME'
-            }) \
+                .rename(columns={'latitude': 'LAT',
+                             'longitude': 'LON',
+                             'vehicleID': 'VID',
+                             'direction': 'DID',
+                             'secsSinceReport': 'AGE',
+                             'states.timestamp': 'RAW_TIME'}) \
             .reindex(['RAW_TIME', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
 
         # adjust each observation time for the number of seconds old the GPS location was when the observation was recorded
@@ -236,7 +234,7 @@ def get_chunk_state(
 
 # Properties of each vehicle as returned from tryn-api,
 # used for writing and reading chunk states to and from CSV files
-vehicle_keys = ['vid', 'lat', 'lon', 'did', 'secsSinceReport']
+vehicle_keys = ['vehicleID', 'latitude', 'longitude', 'direction', 'secsSinceReport']
 
 def write_csv_header(path):
     header_keys = ['timestamp'] + vehicle_keys
