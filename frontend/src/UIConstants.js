@@ -50,19 +50,19 @@ export const TIME_RANGE_ALL_DAY = 'allday';
 // contexts.
 export const TIME_RANGES = [
   { value: TIME_RANGE_ALL_DAY, shortLabel: 'All Day', restOfLabel: '' },
-  { value: '07:00-19:00', shortLabel: 'Daytime', restOfLabel: ' (7AM - 7PM)' },
+  { value: '07:00-19:00', shortLabel: 'Daytime', restOfLabel: ' (7am - 7pm)' },
   {
     value: '03:00-07:00',
     shortLabel: 'Early Morning',
-    restOfLabel: ' (3AM - 7AM)',
+    restOfLabel: ' (3am - 7am)',
   },
-  { value: '07:00-10:00', shortLabel: 'AM Peak', restOfLabel: ' (7AM - 10AM)' },
-  { value: '10:00-16:00', shortLabel: 'Midday', restOfLabel: ' (10AM - 4PM)' },
-  { value: '16:00-19:00', shortLabel: 'PM Peak', restOfLabel: ' (4PM - 7PM)' },
+  { value: '07:00-10:00', shortLabel: 'AM Peak', restOfLabel: ' (7am - 10am)' },
+  { value: '10:00-16:00', shortLabel: 'Midday', restOfLabel: ' (10am - 4pm)' },
+  { value: '16:00-19:00', shortLabel: 'PM Peak', restOfLabel: ' (4pm - 7pm)' },
   {
     value: '19:00-03:00+1',
     shortLabel: 'Late Evening',
-    restOfLabel: ' (7PM - 3AM)',
+    restOfLabel: ' (7pm - 3am)',
   },
 ];
 
@@ -92,3 +92,5 @@ export const WEEKENDS = [
 
 // Marey chart:  how long of a dwell at a stop results in a second data point for exit.
 export const DWELL_THRESHOLD_SECS = 120;
+
+export const APP_NAME = 'OpenTransit';

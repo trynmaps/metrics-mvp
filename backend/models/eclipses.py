@@ -148,7 +148,7 @@ def get_invalid_direction_times(agency: config.Agency, route_config: routeconfig
                 ))
     return invalid_times
 
-def find_arrivals(agency: config.Agency, route_state: dict, route_config: routeconfig.RouteConfig, d: date) -> pd.DataFrame:
+def find_arrivals(agency: config.Agency, route_state: pd.DataFrame, route_config: routeconfig.RouteConfig, d: date) -> pd.DataFrame:
 
     tz = agency.tz
 
@@ -158,16 +158,14 @@ def find_arrivals(agency: config.Agency, route_state: dict, route_config: routec
 
     print(f'{route_id}: {round(time.time() - t0, 1)} generating data frame of GPS observations')
 
-    buses = produce_buses(route_state)
-
-    if buses.empty:
+    if route_state.empty:
         return make_arrivals_frame([])
 
-    print(f'{route_id}: {round(time.time() - t0, 1)} resampling {len(buses["TIME"].values)} GPS observations')
+    print(f'{route_id}: {round(time.time() - t0, 1)} resampling {len(route_state["TIME"].values)} GPS observations')
 
     buses = pd.concat([
         resample_bus(bus)
-        for vid, bus in buses.groupby(buses['VID'])
+        for vid, bus in route_state.groupby(route_state['VID'])
     ], ignore_index=True)
 
     def remove_bus_separators():

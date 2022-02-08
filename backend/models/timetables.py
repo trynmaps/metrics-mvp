@@ -308,11 +308,33 @@ def get_s3_path(agency_id, route_id, date_key, version=DefaultVersion):
 
 def get_date_key(agency_id, d: date, version = DefaultVersion):
     date_keys = get_date_keys(agency_id, version)
+    date_key = date_keys.get(str(d), None)
+    if date_key is not None:
+        return date_key
 
-    try:
-        return date_keys[str(d)]
-    except KeyError as ex:
-        raise KeyError(f"Date key not found for {d} on {agency_id}")
+    # Return the recentmost date key that is on the same day of
+    # week if one exists, required if the GTFS being used is
+    # not active for the given date. Does not account for holidays.
+
+    # Required if an agency does not update their GTFS as was the
+    # case for Muni in May 2020.
+    day_of_week = d.isoweekday()
+    possible_dates = [
+        date for date in date_keys
+        if datetime.strptime(date, "%Y-%m-%d").isoweekday() == day_of_week
+    ]
+    if len(possible_dates) == 0:
+        raise Exception((
+            f"Date key not found for {d} on {agency_id}, "
+            f"no other Date Keys on the same day of week were found"
+        ))
+    recentmost_date = max(possible_dates)
+    date_key = date_keys[recentmost_date]
+    print((
+        f"Date key not found for {d} on {agency_id}, "
+        f"using Date Key of {date_key} for {recentmost_date}"
+    ))
+    return date_key
 
 def get_date_keys(agency_id, version = DefaultVersion):
     cache_path = get_date_keys_cache_path(agency_id, version)

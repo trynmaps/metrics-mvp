@@ -118,13 +118,13 @@ class BasicStats(ObjectType):
         percentiles = List(Float, required = False),
     )
     histogram = List(HistogramBin,
-        min = Float(required=False, default_value=0),
-        max = Float(required=False),
-        bin_size = Float(required=False, default_value=5)
+        min_value = Float(name='min', required=False),
+        max_value = Float(name='max', required=False),
+        bin_size = Float(required=False)
     )
     countRange = Int(
-        min = Float(required=False),
-        max = Float(required=False),
+        min_value = Float(name='min', required=False),
+        max_value = Float(name='max', required=False),
     )
     values = List(Float)
 
@@ -136,13 +136,13 @@ class BasicStats(ObjectType):
     def resolve_count(values, info):
         return len(values)
 
-    def resolve_countRange(values, info, min=None, max=None):
-        if min is not None and max is not None:
-            return np.sum((values >= min) & (values < max))
-        elif min is not None:
-            return np.sum(values >= min)
-        elif max is not None:
-            return np.sum(values < max)
+    def resolve_countRange(values, info, min_value=None, max_value=None):
+        if min_value is not None and max_value is not None:
+            return np.sum((values >= min_value) & (values < max_value))
+        elif min_value is not None:
+            return np.sum(values >= min_value)
+        elif max_value is not None:
+            return np.sum(values < max_value)
         else:
             return len(values)
 
@@ -185,15 +185,15 @@ class BasicStats(ObjectType):
         else:
             return None
 
-    def resolve_histogram(values, info, bin_size = None, min = None, max = None):
+    def resolve_histogram(values, info, bin_size = None, min_value = None, max_value = None):
         if len(values) > 0:
             percentile_values = np.percentile(values, [0, 100])
 
             if bin_size is None or bin_size <= 0:
                 bin_size = 5
 
-            bin_min = min if min is not None else 0 # math.floor(percentile_values[0] / bin_size) * bin_size
-            bin_max = max if max is not None else math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
+            bin_min = min_value if min_value is not None else math.floor(percentile_values[0] / bin_size) * bin_size
+            bin_max = max_value if max_value is not None else math.ceil(percentile_values[-1] / bin_size) * bin_size + bin_size
             bins = np.arange(bin_min, bin_max, bin_size)
 
             histogram, bin_edges = np.histogram(values, bins)
@@ -211,8 +211,8 @@ class WaitTimeStats(ObjectType):
         percentiles = List(Float, required = False),
     )
     histogram = List(HistogramBin,
-        min = Float(required=False, default_value=0),
-        max = Float(required=False, default_value=90),
+        min_value = Float(required=False, default_value=0, name='min'),
+        max_value = Float(required=False, default_value=90, name='max'),
         bin_size = Float(required=False, default_value=5)
     )
 
@@ -240,11 +240,11 @@ class WaitTimeStats(ObjectType):
         else:
             return None
 
-    def resolve_histogram(wait_stats, info, bin_size = 5, min = 0, max = 90):
+    def resolve_histogram(wait_stats, info, bin_size = 5, min_value = 0, max_value = 90):
         if bin_size < 0:
             bin_size = 5
 
-        bins = np.arange(min, max + bin_size, bin_size)
+        bins = np.arange(min_value, max_value + bin_size, bin_size)
 
         histogram = wait_stats.get_histogram(bins)
         if histogram is not None:

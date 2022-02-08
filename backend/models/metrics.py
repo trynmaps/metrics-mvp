@@ -186,8 +186,10 @@ class RouteMetrics:
 
         if len(compared_timetable_arr) == 1:
             return compared_timetable_arr[0]
-        else:
+        elif len(compared_timetable_arr) != 0:
             return pd.concat(compared_timetable_arr)
+        else:
+            return None
 
     def get_headway_schedule_deltas(self, direction_id, stop_id, rng: Range):
 
@@ -289,8 +291,10 @@ class RouteMetrics:
 
         if len(completed_trips_arr) == 1:
             return completed_trips_arr[0]
-        else:
+        elif len(completed_trips_arr) != 0:
             return np.concatenate(completed_trips_arr)
+        else:
+            return None
 
     def get_headways(self, direction_id, stop_id, rng: Range, scheduled=False):
         headway_min_arr = []
@@ -315,8 +319,10 @@ class RouteMetrics:
 
         if len(headway_min_arr) == 1:
             return headway_min_arr[0]
-        else:
+        elif len(headway_min_arr) != 0:
             return np.concatenate(headway_min_arr)
+        else:
+            return None
 
 class TripMetrics:
     def __init__(self, route_metrics, direction_id, start_stop_id, end_stop_id):
@@ -562,11 +568,11 @@ class DirectionIntervalMetrics:
         last_stop_geometry = dir_info.get_stop_geometry(last_stop_id)
 
         if first_stop_geometry is None or last_stop_geometry is None:
-            raise Exception("Missing stop geometry")
+            return None
 
         dist = last_stop_geometry['distance'] - first_stop_geometry['distance']
         if dist <= 0:
-            raise Exception(f'invalid distance {dist} between {first_stop_id} and {last_stop_id} in route_id {route_id} direction {direction_id}') # file=sys.stderr)
+            return None
 
         rng = self.rng
         for d in rng.dates:

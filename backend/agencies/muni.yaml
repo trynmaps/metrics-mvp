@@ -16,10 +16,10 @@ custom_directions:
       title: "Inbound from 48th Ave & Point Lobos Ave to Transit Center"
       gtfs_direction_id: "1"
       included_stop_ids: ["13608"]
-    - id: "1-VA"
-      title: "Inbound from V.A. Hospital to Transit Center"
-      gtfs_direction_id: "1"
-      included_stop_ids: ["15511"]
+    #- id: "1-VA"
+    #  title: "Inbound from V.A. Hospital to Transit Center"
+    #  gtfs_direction_id: "1"
+    #  included_stop_ids: ["15511"]
     - id: "0-32nd"
       gtfs_direction_id: "0"
       included_stop_ids: ["14275"]
