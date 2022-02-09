@@ -14,7 +14,7 @@ def produce_buses(route_state: dict) -> pd.DataFrame:
                              'vehicleID': 'VID',
                              'direction': 'DID',
                              'secsSinceReport': 'AGE',
-                             'states.timestamp': 'RAW_TIME'}) \
+                             'timestamp': 'RAW_TIME'}) \
             .reindex(['RAW_TIME', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
 
     # adjust each observation time for the number of seconds old the GPS location was when the observation was recorded
@@ -29,8 +29,12 @@ def resample_bus(bus: pd.DataFrame) -> pd.DataFrame:
 
     time_diffs = np.diff(bus['TIME'].values, prepend=0)
 
+    # print(f'len bus df before resample: {len(bus)}')
+
     # remove duplicates (positions are observed every 15 seconds, but usually only update every minute or so)
     bus = bus[time_diffs > 2]
+
+    # print(f'len bus df after resample: {len(bus)}')
 
     new_rows = []
 

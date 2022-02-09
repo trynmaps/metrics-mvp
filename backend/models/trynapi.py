@@ -35,14 +35,13 @@ class CachedState:
                              'vehicleID': 'VID',
                              'direction': 'DID',
                              'secsSinceReport': 'AGE',
-                             'states.timestamp': 'RAW_TIME'}) \
+                             'timestamp': 'RAW_TIME'}) \
             .reindex(['RAW_TIME', 'VID', 'LAT', 'LON', 'DID', 'AGE'], axis='columns')
-
         # adjust each observation time for the number of seconds old the GPS location was when the observation was recorded
         buses['TIME'] = (buses['RAW_TIME'] - buses['AGE'].fillna(0)) #.astype(np.int64)
 
         buses = buses.drop(['RAW_TIME','AGE'], axis=1)
-        buses = buses.sort_values('TIME', axis=0)
+        buses = buses.sort_values('TIME', axis=0)   
 
         return buses
 
