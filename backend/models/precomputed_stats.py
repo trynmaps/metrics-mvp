@@ -91,9 +91,8 @@ def get_precomputed_stats(agency_id, stat_id: str, d: date, start_time_str = Non
     cache_path = get_cache_path(agency_id, stat_id, d, start_time_str, end_time_str, scheduled, version)
 
     try:
-        with open(cache_path, "r") as f:
-            text = f.read()
-            return PrecomputedStats(json.loads(text))
+        text = util.read_from_file(cache_path)
+        return PrecomputedStats(json.loads(text))
     except FileNotFoundError as err:
         pass
 
@@ -116,9 +115,7 @@ def get_precomputed_stats(agency_id, stat_id: str, d: date, start_time_str = Non
     if not cache_dir.exists():
         cache_dir.mkdir(parents = True, exist_ok = True)
 
-    with open(cache_path, "w") as f:
-        f.write(r.text)
-
+    util.write_to_file(cache_path, r.text)
     return PrecomputedStats(data)
 
 def get_time_range_path(start_time_str, end_time_str):
@@ -172,9 +169,8 @@ def save_stats(agency_id, stat_id, d, start_time_str, end_time_str, scheduled, d
         cache_dir.mkdir(parents = True, exist_ok = True)
 
     print(f'saving to {cache_path}')
-    with open(cache_path, "w") as f:
-        f.write(data_str)
 
+    util.write_to_file(cache_path, data_str)
     if save_to_s3:
         s3 = boto3.resource('s3')
         s3_path = get_s3_path(agency_id, stat_id, d, start_time_str, end_time_str, scheduled)

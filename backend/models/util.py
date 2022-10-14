@@ -1,7 +1,33 @@
 from datetime import datetime, date, timedelta
 import os
 import pytz
+import fcntl
 import numpy as np
+
+
+def read_from_file(filepath=None, mode='r', **kwargs) -> str:
+    with open(filepath, mode, **kwargs) as f:
+        text = f.read()
+    return text
+
+
+def write_to_file(filepath=None, data=None, mode='w', **kwargs) -> int:
+    '''
+    Concurrency safe function for writing data to the file.
+    Param mode: file open mode ('a' for appending, 'w' for writing)
+    '''
+    assert mode == 'w' or mode == 'a'
+
+    with open(filepath, mode, **kwargs) as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        written_characters = f.write(data)
+        fcntl.flock(f, fcntl.LOCK_UN)
+    return written_characters
+
+
+def append_to_file(filepath=None, data=None, mode='a', **kwargs):
+    return write_to_file(filepath, data, mode, **kwargs)
+
 
 def quantile_sorted(sorted_arr, quantile):
     # For small arrays (less than about 4000 items) np.quantile is significantly

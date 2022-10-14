@@ -140,12 +140,11 @@ def get_route_list(agency_id, version=DefaultVersion):
         mtime = os.stat(cache_path).st_mtime
         now = time.time()
         if now - mtime < 86400:
-            with open(cache_path, mode='r', encoding='utf-8') as f:
-                data_str = f.read()
-                try:
-                    return route_list_from_data(json.loads(data_str))
-                except Exception as err:
-                    print(err)
+            data_str = util.read_from_file(cache_path, encoding='utf-8')
+            try:
+                return route_list_from_data(json.loads(data_str))
+            except Exception as err:
+                print(err)
     except FileNotFoundError as err:
         pass
 
@@ -168,8 +167,7 @@ def get_route_list(agency_id, version=DefaultVersion):
     if not 'routes' in data:
         raise Exception("S3 object did not contain 'routes' key")
 
-    with open(cache_path, mode='w', encoding='utf-8') as f:
-        f.write(r.text)
+    util.write_to_file(cache_path, r.text, encoding='utf-8')
 
     return route_list_from_data(data)
 
@@ -187,8 +185,7 @@ def save_routes(agency_id, routes, save_to_s3=False):
 
     cache_path = get_cache_path(agency_id)
 
-    with open(cache_path, "w") as f:
-        f.write(data_str)
+    util.write_to_file(cache_path, data_str)
 
     if save_to_s3:
         s3 = boto3.resource('s3')
